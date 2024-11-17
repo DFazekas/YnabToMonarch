@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YNAB to Monarch Money</title>
+  <meta name="description" content="CSV Converter tool for migrating from YNAB to Monarch Money.">
+  <link rel="stylesheet" href="https://example-styles.netlify.app/styles.css">
+  <style>
+    #accountsForm {
+      text-align: left;
+    }
+
+    #accountsForm label {
+      display: flex;
+      align-items: baseline;
+      margin-bottom: 10px;
+      gap: 10px;
+    }
+
+    #accountsForm input[type="checkbox"] {
+      width: auto;
+      height: auto;
+      flex-shrink: 0;
+    }
+
+    .strikethrough {
+      text-decoration: line-through;
+      color: grey;
+    }
+
+    .copy-button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      display: flex;
+      align-items: center;
+    }
+
+    .copy-button svg {
+      width: 16px;
+      height: 16px;
+      fill: #007bff;
+    }
+
+    .copy-button:hover svg {
+      fill: #0056b3;
+    }
+
+    .collapsible {
+      cursor: pointer;
+      background-color: #f1f1f1;
+      padding: 10px;
+      border: none;
+      text-align: left;
+      outline: none;
+      width: 100%;
+      font-size: 1rem;
+      font-weight: bold;
+    }
+
+    .collapsible:after {
+      content: '\25BC';
+      float: right;
+    }
+
+    .collapsible.active:after {
+      content: '\25B2';
+    }
+
+    .content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.2s ease-out;
+      padding: 0 10px;
+    }
+
+    .content.open {
+      max-height: 300px;
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #333;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 5px;
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+      z-index: 1000;
+    }
+
+    #toast.show {
+      opacity: 1;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <section>
+      <h1>YNAB to Monarch Money</h1>
+      <p>
+        A CSV Converter tool to help migrate your transactions from the YNAB app to the Monarch Money app.
+        Upload your YNAB CSV file, and the tool will generate a formatted file ready for Monarch Money.
+      </p>
+    </section>
+  </header>
+  <hr>
+  <main>
+    <section>
+      <h2>Upload Your File</h2>
+      <p>Select your CSV file exported from YNAB and click "Convert and Download" to get the converted file.</p>
+      <input type="file" id="fileInput" accept=".csv" />
+      <button id="convertButton">Generate Monarch Transaction Files</button>
+    </section>
+    <section id="accountsSection" style="display: none; margin-top: 20px;">
+      <h3>Required Accounts</h3>
+      <button class="collapsible">How to Import Transactions without Existing Accounts</button>
+      <div class="content">
+        <ol>
+          <li>In Monarch, go to the Accounts tab.</li>
+          <li>Click "+ Add Account" in the top-right corner.</li>
+          <li>Select "Add Manual Account."</li>
+          <li>Choose the appropriate account type.</li>
+          <li>Copy the account name from this list into the name field in Monarch.</li>
+          <li>Set the starting balance to $0.</li>
+        </ol>
+      </div>
+      <button class="collapsible">How to Import Transactions into Existing Accounts</button>
+      <div class="content">
+        <ol>
+          <li>In Monarch, go to the Accounts tab.</li>
+          <li>Click on the corresponding Account that you want to import transactions into.</li>
+          <li>In the top-right corner of the Account page, click Select "Edit", then choose "Upload transactions".</li>
+          <li>Click "UPLOAD A CSV FILE", then upload the converted transactions file for the corresponding Account.</li>
+          <li>Enable the "Adjust account's balances based on these transactions" toggle.</li>
+          <li>Click "Add to account".</li>
+        </ol>
+      </div>
+      <form id="accountsForm">
+        <!-- Checkboxes with copy buttons will be dynamically added here -->
+      </form>
+    </section>
+    <hr>
+  </main>
+  <footer>
+    <small>
+      <div>© 2024 Fazekas Solutions</div>
+    </small>
+  </footer>
+
+  <div id="toast"></div>
+
+  <script>
+    document.getElementById('convertButton').addEventListener('click', async () => {
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert('Please select a file to upload.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const response = await fetch('http://localhost:8888/.netlify/functions/convertFile', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        const accounts = result.accounts || [];
+
+        if (accounts.length > 0) {
+          const accountsSection = document.getElementById('accountsSection');
+          const accountsForm = document.getElementById('accountsForm');
+          accountsForm.innerHTML = ''; // Clear previous list
+
+          accounts.forEach((account) => {
+            const label = document.createElement('label');
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.addEventListener('change', (e) => {
+              if (e.target.checked) {
+                span.classList.add('strikethrough');
+              } else {
+                span.classList.remove('strikethrough');
+              }
+            });
+
+            const span = document.createElement('span');
+            span.textContent = account;
+
+            const copyButton = document.createElement('span');
+            copyButton.className = 'copy-button';
+            copyButton.innerHTML = `
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"></path>
+              </svg>
+            `;
+            copyButton.addEventListener('click', () => {
+              navigator.clipboard.writeText(account);
+              showToast(`Copied "${account}" to clipboard.`);
+            });
+
+            label.appendChild(checkbox);
+            label.appendChild(span);
+            label.appendChild(copyButton);
+
+            accountsForm.appendChild(label);
+          });
+
+          accountsSection.style.display = 'block';
+        }
+
+        const blob = new Blob([result.convertedFile], { type: 'text/csv' });
+        const downloadUrl = window.URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = 'converted_monarch.csv';
+        document.body.appendChild(link);
+        // link.click();
+        document.body.removeChild(link);
+      } catch (error) {
+        console.error('Error converting the file:', error);
+        alert('An error occurred while converting the file. Please try again.');
+      }
+    });
+
+    // Toast Notification
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2000);
+    }
+
+    // Collapsible Instructions
+    document.querySelectorAll('.collapsible').forEach((button) => {
+      button.addEventListener('click', () => {
+        const content = button.nextElementSibling;
+        content.classList.toggle('open');
+        button.classList.toggle('active');
+      });
+    });
+  </script>
+</body>
+
+</html>
