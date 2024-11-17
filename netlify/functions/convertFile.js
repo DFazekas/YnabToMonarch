@@ -1,5 +1,6 @@
 const csv = require('csv-parser')
 const { Readable } = require('stream')
+const { parse } = require('json2csv')
 
 exports.handler = async (event) => {
     if (event.httpMethod !== 'POST') {
@@ -31,8 +32,8 @@ exports.handler = async (event) => {
         const fileContentStart = filePart.indexOf('\r\n\r\n') + 4
         const fileContent = filePart.slice(fileContentStart, -2)
 
-        // Parse CSV and collect unique accounts
-        const accountsSet = new Set()
+        // Parse CSV and organize transactions by account
+        const transactionsByAccount = {}
         const inputStream = Readable.from(fileContent)
 
         await new Promise((resolve, reject) => {
@@ -43,24 +44,39 @@ exports.handler = async (event) => {
                     })
                 )
                 .on('data', (row) => {
-                    if (row.Account) {
-                        accountsSet.add(row.Account.trim())
+                    const account = row.Account?.trim()
+                    if (account) {
+                        if (!transactionsByAccount[account]) {
+                            transactionsByAccount[account] = []
+                        }
+                        transactionsByAccount[account].push({
+                            Date: row.Date,
+                            Merchant: row.Payee || '',
+                            Category: row.Category,
+                            'Original Statement': '',
+                            Notes: row.Memo || '',
+                            Amount: parseFloat(row.Inflow || 0) - parseFloat(row.Outflow || 0),
+                            Tags: row.Flag || ''
+                        })
                     }
                 })
                 .on('end', resolve)
                 .on('error', reject)
         })
 
-        // Convert the set of accounts to a sorted array
-        const sortedAccounts = Array.from(accountsSet).sort()
+        // Generate CSV files for each account
+        const files = Object.keys(transactionsByAccount).map((account) => {
+            const csvData = parse(transactionsByAccount[account])
+            return { account, filename: `${account}_transactions.csv`, content: csvData }
+        })
 
-        // Return the sorted list of accounts
+        // Return files as a JSON response
         return {
             statusCode: 200,
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ accounts: sortedAccounts })
+            body: JSON.stringify({ files })
         }
     } catch (error) {
         console.error('Error processing file:', error.message)
