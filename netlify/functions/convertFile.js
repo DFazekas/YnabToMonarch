@@ -53,9 +53,12 @@ exports.handler = async (event) => {
                             Date: row.Date,
                             Merchant: row.Payee || '',
                             Category: row.Category,
+                            Account: row.Account,
                             'Original Statement': '',
                             Notes: row.Memo || '',
-                            Amount: parseFloat(row.Inflow || 0) - parseFloat(row.Outflow || 0),
+                            Amount:
+                                parseFloat((row.Inflow || '0').replace(/[$,]/g, '')) -
+                                parseFloat((row.Outflow || '0').replace(/[$,]/g, '')),
                             Tags: row.Flag || ''
                         })
                     }

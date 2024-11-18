@@ -12,14 +12,22 @@
       text-align: left;
     }
 
+    #accountsForm div {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
     #accountsForm label {
       display: flex;
       align-items: baseline;
       margin-bottom: 10px;
       gap: 10px;
+      flex-grow: 1;
     }
 
-    #accountsForm input[type="checkbox"] {
+    #accountsForm div input[type="checkbox"] {
       width: auto;
       height: auto;
       flex-shrink: 0;
@@ -102,69 +110,69 @@
 
 <body>
   <header>
-    <section>
-      <h1>YNAB to Monarch Money</h1>
-      <p>
-        A CSV Converter tool to help migrate your transactions from the YNAB app to the Monarch Money app.
-        Upload your YNAB CSV file, and the tool will generate a formatted file ready for Monarch Money.
-      </p>
-    </section>
+    <h1>YNAB to Monarch Money</h1>
+    <p>Upload your YNAB Registry CSV file and download account-specific transaction files for Monarch Money.</p>
   </header>
-  <hr>
   <main>
     <section>
       <h2>Upload Your File</h2>
-      <p>Select your CSV file exported from YNAB and click "Convert and Download" to get the converted file.</p>
       <input type="file" id="fileInput" accept=".csv" />
-      <button id="convertButton">Generate Monarch Transaction Files</button>
+      <button id="processButton" disabled>Generate Monarch Transaction Files</button>
     </section>
     <section id="accountsSection" style="display: none; margin-top: 20px;">
-      <h3>Required Accounts</h3>
-      <button class="collapsible">How to Import Transactions without Existing Accounts</button>
+      <button class="collapsible">Importing Transactions into New Account</button>
       <div class="content">
         <ol>
           <li>In Monarch, go to the Accounts tab.</li>
           <li>Click "+ Add Account" in the top-right corner.</li>
-          <li>Select "Add Manual Account."</li>
+          <li>Select "Add Manual Account".</li>
           <li>Choose the appropriate account type.</li>
           <li>Copy the account name from this list into the name field in Monarch.</li>
           <li>Set the starting balance to $0.</li>
+          <li>In the top-right corner of the newly created Account page, click "Edit", then choose "Upload
+            transactions".</li>
+          <li>Click "UPLOAD A CSV FILE", then upload the transactions file for the corresponding Account.</li>
+          <li>Enable the "Adjust account's balances based on these transactions" toggle.</li>
+          <li>Click "Add to account".</li>
         </ol>
       </div>
-      <button class="collapsible">How to Import Transactions into Existing Accounts</button>
+      <button class="collapsible">Importing Transactions into Existing Account</button>
       <div class="content">
         <ol>
           <li>In Monarch, go to the Accounts tab.</li>
           <li>Click on the corresponding Account that you want to import transactions into.</li>
-          <li>In the top-right corner of the Account page, click Select "Edit", then choose "Upload transactions".</li>
+          <li>In the top-right corner of the Account page, click "Edit", then choose "Upload transactions".</li>
           <li>Click "UPLOAD A CSV FILE", then upload the converted transactions file for the corresponding Account.</li>
           <li>Enable the "Adjust account's balances based on these transactions" toggle.</li>
           <li>Click "Add to account".</li>
         </ol>
       </div>
       <form id="accountsForm">
-        <!-- Checkboxes with copy buttons will be dynamically added here -->
+        // Elements added dynamically
       </form>
     </section>
     <hr>
   </main>
   <footer>
-    <small>
-      <div>© 2024 Fazekas Solutions</div>
-    </small>
+    <small>© 2024 Fazekas Solutions</small>
   </footer>
 
   <div id="toast"></div>
 
   <script>
-    document.getElementById('convertButton').addEventListener('click', async () => {
-      const fileInput = document.getElementById('fileInput');
-      const file = fileInput.files[0];
+    const fileInput = document.getElementById('fileInput');
+    const processButton = document.getElementById('processButton');
+    const accountsSection = document.getElementById('accountsSection');
+    const accountsForm = document.getElementById('accountsForm');
+    const toast = document.getElementById('toast');
 
-      if (!file) {
-        alert('Please select a file to upload.');
-        return;
-      }
+    fileInput.addEventListener('change', () => {
+      processButton.disabled = !fileInput.files.length;
+    });
+
+    processButton.addEventListener('click', async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
 
       const formData = new FormData();
       formData.append('file', file);
@@ -179,70 +187,76 @@
           throw new Error(`Error: ${response.statusText}`);
         }
 
-        const result = await response.json();
-        const accounts = result.accounts || [];
+        const { files } = await response.json();
+        accountsForm.innerHTML = ''; // Clear previous results
+        accountsSection.style.display = 'block';
 
-        if (accounts.length > 0) {
-          const accountsSection = document.getElementById('accountsSection');
-          const accountsForm = document.getElementById('accountsForm');
-          accountsForm.innerHTML = ''; // Clear previous list
+        files.forEach(({ account, filename, content }) => {
+          const label = document.createElement('label');
 
-          accounts.forEach((account) => {
-            const label = document.createElement('label');
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+              accountName.classList.add('strikethrough');
+            } else {
+              accountName.classList.remove('strikethrough');
+            }
+          });
 
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.addEventListener('change', (e) => {
-              if (e.target.checked) {
-                span.classList.add('strikethrough');
-              } else {
-                span.classList.remove('strikethrough');
-              }
-            });
+          const accountContainer = document.createElement('div');
+          const accountName = document.createElement('span');
+          accountName.textContent = account;
 
-            const span = document.createElement('span');
-            span.textContent = account;
+          label.appendChild(checkbox)
+          label.appendChild(accountName)
 
-            const copyButton = document.createElement('span');
-            copyButton.className = 'copy-button';
-            copyButton.innerHTML = `
+          const copyButton = document.createElement('span');
+          copyButton.className = 'copy-button';
+          copyButton.title = 'Copy account name to clipboard';
+          copyButton.innerHTML = `
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                 <path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"></path>
               </svg>
             `;
-            copyButton.addEventListener('click', () => {
-              navigator.clipboard.writeText(account);
-              showToast(`Copied "${account}" to clipboard.`);
-            });
-
-            label.appendChild(checkbox);
-            label.appendChild(span);
-            label.appendChild(copyButton);
-
-            accountsForm.appendChild(label);
+          copyButton.addEventListener('click', () => {
+            navigator.clipboard.writeText(accountName.innerText);
+            showToast(`Copied "${accountName.innerText}" to clipboard.`);
           });
 
-          accountsSection.style.display = 'block';
-        }
+          const downloadButton = document.createElement('button');
+          downloadButton.textContent = 'Download';
+          downloadButton.className = 'download-button';
+          downloadButton.type = "button";
+          downloadButton.title = 'Download account transactions';
+          downloadButton.addEventListener('click', () => {
+            const blob = new Blob([content], { type: 'text/csv' });
+            const downloadUrl = window.URL.createObjectURL(blob);
 
-        const blob = new Blob([result.convertedFile], { type: 'text/csv' });
-        const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
 
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = 'converted_monarch.csv';
-        document.body.appendChild(link);
-        // link.click();
-        document.body.removeChild(link);
+            showToast(`Downloaded "${filename}"`);
+          });
+
+          accountContainer.appendChild(label);
+          accountContainer.appendChild(copyButton);
+          accountContainer.appendChild(downloadButton);
+
+          accountsForm.appendChild(accountContainer);
+        });
       } catch (error) {
-        console.error('Error converting the file:', error);
-        alert('An error occurred while converting the file. Please try again.');
+        console.error('Error processing file:', error);
+        alert('An error occurred while processing the file.');
       }
     });
 
     // Toast Notification
     function showToast(message) {
-      const toast = document.getElementById('toast');
       toast.textContent = message;
       toast.classList.add('show');
       setTimeout(() => {
