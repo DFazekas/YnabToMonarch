@@ -74,6 +74,9 @@ exports.handler = async (event) => {
         })
 
         // Return files as a JSON response
+        if (!files.length) {
+            throw new Error("File must be YNAB's Register file.")
+        }
         return {
             statusCode: 200,
             headers: {

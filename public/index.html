@@ -166,7 +166,21 @@
     const accountsForm = document.getElementById('accountsForm');
     const toast = document.getElementById('toast');
 
-    fileInput.addEventListener('change', () => {
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files[0]
+      // 2MB limit
+      if (file && file.size > 2 * 1024 * 1024) {
+        showToast('Uploaded file is too large (greater than 2MB).', true)
+        fileInput = ''
+        return;
+      }
+
+      if (file && file.type !== 'text/csv') {
+        showToast('Only CSV files are allowed.', true)
+        fileInput = ''
+        return;
+      }
+
       processButton.disabled = !fileInput.files.length;
     });
 
@@ -251,17 +265,19 @@
         });
       } catch (error) {
         console.error('Error processing file:', error);
-        alert('An error occurred while processing the file.');
+
+        showToast('An error occurred while processing the file.', true)
       }
     });
 
     // Toast Notification
-    function showToast(message) {
+    function showToast(message, isError = false) {
       toast.textContent = message;
+      toast.style.backgroundColor = isError ? '#d9534f' : '#333'
       toast.classList.add('show');
       setTimeout(() => {
         toast.classList.remove('show');
-      }, 2000);
+      }, 4000);
     }
 
     // Collapsible Instructions
