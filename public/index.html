@@ -8,6 +8,10 @@
   <meta name="description" content="CSV Converter tool for migrating from YNAB to Monarch Money.">
   <link rel="stylesheet" href="https://example-styles.netlify.app/styles.css">
   <style>
+    button {
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
     #accountsForm {
       text-align: left;
     }
@@ -27,10 +31,15 @@
       flex-grow: 1;
     }
 
+    #accountsForm label {
+      line-height: 1;
+    }
+
     #accountsForm div input[type="checkbox"] {
       width: auto;
       height: auto;
       flex-shrink: 0;
+      margin: 0;
     }
 
     .strikethrough {
@@ -44,13 +53,14 @@
       cursor: pointer;
       padding: 0;
       display: flex;
-      align-items: center;
+      align-items: baseline;
     }
 
     .copy-button svg {
       width: 16px;
       height: 16px;
       fill: #007bff;
+      vertical-align: baseline;
     }
 
     .copy-button:hover svg {
@@ -105,25 +115,34 @@
     #toast.show {
       opacity: 1;
     }
+
+    .header {
+      padding-bottom: 10px;
+    }
+
+    #processButton {
+      margin-bottom: 5px;
+    }
+
+    .download-button {
+      font-size: 12px;
+      padding: 5px 10px;
+      line-height: 1;
+    }
   </style>
 </head>
 
 <body>
   <header>
-    <h1>YNAB to Monarch Money</h1>
-    <p>Upload your YNAB Registry CSV file and download account-specific transaction files for Monarch Money.</p>
+    <h1 class="header">YNAB to Monarch Money</h1>
+    <p>Effortlessly migrate your YNAB transaction records into Monarch Money</p>
   </header>
   <main>
     <section>
-      <h2>Upload Your File</h2>
-      <input type="file" id="fileInput" accept=".csv" />
-      <button id="processButton" disabled>Generate Monarch Transaction Files</button>
-    </section>
-    <section id="accountsSection" style="display: none; margin-top: 20px;">
       <button class="collapsible">Importing Transactions into New Account</button>
       <div class="content">
         <ol>
-          <li>In Monarch, go to the Accounts tab.</li>
+          <li>In <a href="https://app.monarchmoney.com/" target="_blank">Monarch Money</a>, go to the Accounts tab.</li>
           <li>Click "+ Add Account" in the top-right corner.</li>
           <li>Select "Add Manual Account".</li>
           <li>Choose the appropriate account type.</li>
@@ -139,7 +158,7 @@
       <button class="collapsible">Importing Transactions into Existing Account</button>
       <div class="content">
         <ol>
-          <li>In Monarch, go to the Accounts tab.</li>
+          <li>In <a href="https://app.monarchmoney.com/" target="_blank">Monarch Money</a>, go to the Accounts tab.</li>
           <li>Click on the corresponding Account that you want to import transactions into.</li>
           <li>In the top-right corner of the Account page, click "Edit", then choose "Upload transactions".</li>
           <li>Click "UPLOAD A CSV FILE", then upload the converted transactions file for the corresponding Account.</li>
@@ -147,11 +166,24 @@
           <li>Click "Add to account".</li>
         </ol>
       </div>
+
+      <label for="fileInput">Upload Your YNAB Register File:</label>
+      <input type="file" id="fileInput" accept=".csv" aria-label="Upload YNAB Register File" />
+      <button id="processButton" type="button" disabled aria-label="Generate transaction files">Generate Monarch
+        Transaction Files</button>
+      <div>
+        <small>Your financial data is processed securely and is not stored at any point.</small>
+      </div>
+    </section>
+    <section id="accountsSection" style="display: none; margin-top: 20px;">
+      <hr />
+      <h4 class="header">Accounts Found in File</h4>
+      <p>Monarch doesn't support importing multiple accounts at once, so you'll need to import these account
+        individually. Use the checkboxes to track your progress.</p>
       <form id="accountsForm">
-        // Elements added dynamically
+        <!-- Elements added dynamically -->
       </form>
     </section>
-    <hr>
   </main>
   <footer>
     <small>© 2024 Fazekas Solutions</small>
