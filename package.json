@@ -1,16 +1,25 @@
 {
-  "name": "ynabtomonarch",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "csv-parser": "^3.0.0",
-    "json2csv": "^6.0.0-alpha.2",
-    "streams": "^2.0.0"
-  }
+    "name": "ynabtomonarch",
+    "version": "1.0.0",
+    "description": "A tool to migrate YNAB transaction records into Monarch Money.",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "Devon Fazekas",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/yourusername/ynabtomonarch.git"
+    },
+    "bugs": {
+        "url": "https://github.com/yourusername/ynabtomonarch/issues"
+    },
+    "homepage": "https://github.com/yourusername/ynabtomonarch#readme",
+    "dependencies": {
+        "csv-parser": "^3.0.0",
+        "json2csv": "^6.0.0-alpha.2",
+        "streams": "^2.0.0"
+    }
 }

@@ -129,10 +129,55 @@
       padding: 5px 10px;
       line-height: 1;
     }
+
+    /* Spinner */
+    #loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .spinner {
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #3498db;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Disable pointer events for the body when processing */
+    body.processing {
+      pointer-events: none;
+      user-select: none;
+    }
   </style>
 </head>
 
 <body>
+  <!-- Loader spinner -->
+  <div id="loader" style="display: none;">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Header -->
   <header>
     <div style="margin-top: 20px;">
       <a href="https://buymeacoffee.com/fazekasdevh" target="_blank">
@@ -140,47 +185,66 @@
           style="height: 48px; width: 173.6px;" />
       </a>
     </div>
-    <h1 class="header">YNAB to Monarch Money</h1>
+    <h1 class="header">Migrate YNAB to Monarch Money</h1>
     <p>Effortlessly migrate your YNAB transaction records into Monarch Money</p>
   </header>
+
   <main>
     <section>
-      <button class="collapsible">Importing Transactions into New Account</button>
-      <div class="content">
-        <ol>
-          <li>In <a href="https://app.monarchmoney.com/" target="_blank">Monarch Money</a>, go to the Accounts tab.</li>
-          <li>Click "+ Add Account" in the top-right corner.</li>
-          <li>Select "Add Manual Account".</li>
-          <li>Choose the appropriate account type.</li>
-          <li>Copy the account name from this list into the name field in Monarch.</li>
-          <li>Set the starting balance to $0.</li>
-          <li>In the top-right corner of the newly created Account page, click "Edit", then choose "Upload
-            transactions".</li>
-          <li>Click "UPLOAD A CSV FILE", then upload the transactions file for the corresponding Account.</li>
-          <li>Enable the "Adjust account's balances based on these transactions" toggle.</li>
-          <li>Click "Add to account".</li>
-        </ol>
-      </div>
-      <button class="collapsible">Importing Transactions into Existing Account</button>
-      <div class="content">
-        <ol>
-          <li>In <a href="https://app.monarchmoney.com/" target="_blank">Monarch Money</a>, go to the Accounts tab.</li>
-          <li>Click on the corresponding Account that you want to import transactions into.</li>
-          <li>In the top-right corner of the Account page, click "Edit", then choose "Upload transactions".</li>
-          <li>Click "UPLOAD A CSV FILE", then upload the converted transactions file for the corresponding Account.</li>
-          <li>Enable the "Adjust account's balances based on these transactions" toggle.</li>
-          <li>Click "Add to account".</li>
-        </ol>
+      <!-- File importer -->
+      <span>
+        <label for="fileInput">Upload Your YNAB Register File:</label>
+        <input type="file" id="fileInput" accept=".csv" aria-label="Upload YNAB Register File" />
+        <button id="processButton" type="button" disabled aria-label="Generate downloadable transaction files">Convert
+          to
+          Monarch format</button>
+        <div id="convertedFiles"></div>
+      </span>
+
+      <!-- Divider -->
+      <div style="margin-top: 20px;">
+        <div style="display: flex; align-items: center; justify-content: center; margin: 20px 0;">
+          <hr style="flex-grow: 1; border: none; border-top: 1px solid #ccc; margin: 0 10px;">
+          <div>Optional: Automated Importer</div>
+          <hr style="flex-grow: 1; border: none; border-top: 1px solid #ccc; margin: 0 10px;">
+        </div>
       </div>
 
-      <label for="fileInput">Upload Your YNAB Register File:</label>
-      <input type="file" id="fileInput" accept=".csv" aria-label="Upload YNAB Register File" />
-      <button id="processButton" type="button" disabled aria-label="Generate transaction files">Generate Monarch
-        Transaction Files</button>
+      <!-- Monarch login -->
+      <form>
+        <div>Enter your Monarch credentials to pull your Accounts and automatically import the transactions into
+          Monarch:
+        </div>
+        <div style="display: flex; gap: 20px; align-items: flex-start; margin-top: 10px;">
+          <div style="flex: 1;">
+            <label for="email">Monarch Email:</label>
+            <input type="email" id="email" aria-label="Email" placeholder="Enter your Monarch email" required
+              style="width: 100%;" />
+          </div>
+          <div style="flex: 1;">
+            <label for="password">Monarch Password:</label>
+            <input type="password" id="password" aria-label="Password" placeholder="Enter your Monarch password"
+              required style="width: 100%;" />
+          </div>
+        </div>
+        <button id="loginButton" type="button" disabled aria-label="Login" style="margin-top: 10px;">Pull Accounts from
+          Monarch</button>
+      </form>
+
+      <!-- Security note -->
       <div>
-        <small>Your financial data is processed securely and is not stored at any point.</small>
+        <small style="align-items: baseline;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"
+            style="vertical-align: middle; fill: white;">
+            <path
+              d="M12 2C9.243 2 7 4.243 7 7v3H5v12h14V10h-2V7c0-2.757-2.243-5-5-5zm0 2c1.654 0 3 1.346 3 3v3H9V7c0-1.654 1.346-3 3-3zm-5 8h10v10H7V12z" />
+          </svg>
+          Your financial data is processed securely and is not stored at any point.
+        </small>
       </div>
     </section>
+
+    <!-- Accounts container -->
     <section id="accountsSection" style="display: none; margin-top: 20px;">
       <hr />
       <h4 class="header">Accounts Found in File</h4>
@@ -191,18 +255,25 @@
       </form>
     </section>
   </main>
+
+  <!-- Footer -->
   <footer>
     <small>© 2024 Fazekas Solutions</small>
   </footer>
 
+  <!-- Toast -->
   <div id="toast"></div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <script>
     const fileInput = document.getElementById('fileInput');
     const processButton = document.getElementById('processButton');
-    const accountsSection = document.getElementById('accountsSection');
-    const accountsForm = document.getElementById('accountsForm');
     const toast = document.getElementById('toast');
+    const emailInput = document.getElementById("email")
+    const passwordInput = document.getElementById("password")
+    const loginButton = document.getElementById("loginButton")
+
+    const accountsFromMonarch = {}
 
     fileInput.addEventListener('change', async () => {
       const file = fileInput.files[0]
@@ -222,94 +293,113 @@
       processButton.disabled = !fileInput.files.length;
     });
 
+    emailInput.addEventListener('input', () => {
+      loginButton.disabled = !(emailInput.value && passwordInput.value);
+    });
+
+    passwordInput.addEventListener('input', () => {
+      loginButton.disabled = !(emailInput.value && passwordInput.value);
+    });
+
     processButton.addEventListener('click', async () => {
       const file = fileInput.files[0];
       if (!file) return;
 
-      const formData = new FormData();
-      formData.append('file', file);
+      // Show the loader
+      const startTime = Date.now();
+      showLoader();
 
       try {
-        const response = await fetch(
-          'https://ynab-to-monarch.netlify.app/.netlify/functions/convertFile'
-          // 'http://localhost:8888/.netlify/functions/convertFile'
-          , {
-            method: 'POST',
-            body: formData,
-          });
+        // Read the CSV file
+        const reader = new FileReader()
+        reader.onload = (event) => {
+          const csvContent = event.target.result
 
-        if (!response.ok) {
-          throw new Error(`Error: ${response.statusText}`);
+          // Parse CSV using PapaParse
+          Papa.parse(csvContent, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+              const data = results.data
+              processCSVData(data)
+
+              // Hide the loader after processing
+              hideLoader(startTime)
+            },
+            error: (error) => {
+              console.error("Error parsing CSV:", error)
+              showToast('An error occurred while processing the CSV file.', true)
+
+              // Hide the loader on error
+              hideLoader(startTime)
+            }
+          })
         }
 
-        const { files } = await response.json();
-        accountsForm.innerHTML = ''; // Clear previous results
-        accountsSection.style.display = 'block';
-
-        files.forEach(({ account, filename, content }) => {
-          const label = document.createElement('label');
-
-          const checkbox = document.createElement('input');
-          checkbox.type = 'checkbox';
-          checkbox.addEventListener('change', (e) => {
-            if (e.target.checked) {
-              accountName.classList.add('strikethrough');
-            } else {
-              accountName.classList.remove('strikethrough');
-            }
-          });
-
-          const accountContainer = document.createElement('div');
-          const accountName = document.createElement('span');
-          accountName.textContent = account;
-
-          label.appendChild(checkbox)
-          label.appendChild(accountName)
-
-          const copyButton = document.createElement('span');
-          copyButton.className = 'copy-button';
-          copyButton.title = 'Copy account name to clipboard';
-          copyButton.innerHTML = `
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"></path>
-              </svg>
-            `;
-          copyButton.addEventListener('click', () => {
-            navigator.clipboard.writeText(accountName.innerText);
-            showToast(`Copied "${accountName.innerText}" to clipboard.`);
-          });
-
-          const downloadButton = document.createElement('button');
-          downloadButton.textContent = 'Download';
-          downloadButton.className = 'download-button';
-          downloadButton.type = "button";
-          downloadButton.title = 'Download account transactions';
-          downloadButton.addEventListener('click', () => {
-            const blob = new Blob([content], { type: 'text/csv' });
-            const downloadUrl = window.URL.createObjectURL(blob);
-
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            showToast(`Downloaded "${filename}"`);
-          });
-
-          accountContainer.appendChild(label);
-          accountContainer.appendChild(copyButton);
-          accountContainer.appendChild(downloadButton);
-
-          accountsForm.appendChild(accountContainer);
-        });
+        reader.readAsText(file)
       } catch (error) {
-        console.error('Error processing file:', error);
+        console.error('Error during file processing:', error);
+        showToast('An error occurred during file processing.', true);
 
-        showToast('An error occurred while processing the file.', true)
+        // Hide the loader on exception
+        hideLoader(startTime);
       }
-    });
+    })
+
+    function processCSVData(data) {
+      // Group transactions by account
+      const transactionsByAccount = {}
+
+      data.forEach((row) => {
+        const account = row.Account?.trim()
+        if (!account) return
+
+        if (!transactionsByAccount[account]) {
+          transactionsByAccount[account] = []
+        }
+
+        transactionsByAccount[account].push({
+          Date: row.Date,
+          Merchant: row.Payee || '',
+          Category: row.Category,
+          Account: row.Account,
+          'Original Statement': '',
+          Notes: row.Memo || '',
+          Amount:
+            parseFloat((row.Inflow || '0').replace(/[$,]/g, '')) -
+            parseFloat((row.Outflow || '0').replace(/[$,]/g, '')),
+          Tags: row.Flag || '',
+        })
+      })
+
+      console.table(transactionsByAccount)
+      // Generate downloadable CSV files for each account
+      generateDownloadableFiles(transactionsByAccount)
+    }
+
+    function generateDownloadableFiles(transactionsByAccount) {
+      const convertedFiles = document.getElementById('convertedFiles');
+      convertedFiles.innerHTML = '<h3>Converted Account Files:</h3>';
+      Object.keys(transactionsByAccount).forEach((account) => {
+        const csvData = transactionsByAccount[account];
+        const csvContent = Papa.unparse(csvData);
+
+        // Create a downloadable link
+        const fileName = `${account}_transactions.csv`;
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const downloadUrl = URL.createObjectURL(blob);
+
+        const downloadLink = document.createElement('a');
+        downloadLink.href = downloadUrl;
+        downloadLink.download = fileName;
+        downloadLink.textContent = fileName;
+        downloadLink.style.display = 'block';
+
+        convertedFiles.appendChild(downloadLink);
+      });
+
+      showToast('Conversion complete! Download your files below.');
+    }
 
     // Toast Notification
     function showToast(message, isError = false) {
@@ -322,13 +412,108 @@
     }
 
     // Collapsible Instructions
-    document.querySelectorAll('.collapsible').forEach((button) => {
-      button.addEventListener('click', () => {
-        const content = button.nextElementSibling;
-        content.classList.toggle('open');
-        button.classList.toggle('active');
-      });
+    // document.querySelectorAll('.collapsible').forEach((button) => {
+    //   button.addEventListener('click', () => {
+    //     const content = button.nextElementSibling;
+    //     content.classList.toggle('open');
+    //     button.classList.toggle('active');
+    //   });
+    // });
+
+    // Log into Monarch and get accounts
+    loginButton.addEventListener('click', async () => {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      if (!email || !password) {
+        showToast('Please enter both email and password.', true);
+        return;
+      }
+
+      try {
+        const accounts = await loginAndFetchAccounts(email, password)
+        displayAccounts(accounts)
+      } catch (error) {
+        console.error('Error during login:', error);
+        showToast('An error occurred during login.', true);
+      }
     });
+
+    async function loginAndFetchAccounts(username, password) {
+      try {
+        // Login request
+        const loginResponse = await fetch('https://api.monarchmoney.com/auth/login/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            username: username,
+            password: password
+          })
+        });
+
+        if (!loginResponse.ok) {
+          throw new Error('Login failed. Check your credentials.');
+        }
+
+        const loginData = await loginResponse.json();
+        const token = loginData.token;
+
+        const accounts = await fetchAccounts(token)
+        return accounts
+      } catch (error) {
+        console.error('Error:', error)
+        throw new Error(error.message);
+      }
+    }
+
+    async function fetchAccounts(token) {
+      const graphqlResponse = await fetch('https://api.monarchmoney.com/graphql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Token ${token}`,
+        },
+        body: JSON.stringify({ query: 'query { accounts { id displayName } }' }),
+      });
+
+      if (!graphqlResponse.ok) {
+        throw new Error('Failed to fetch accounts.');
+      }
+
+      const graphqlData = await graphqlResponse.json();
+      return graphqlData.data.accounts;
+    }
+
+    function displayAccounts(accounts) {
+      const accountsContainer = document.getElementById('accountsContainer');
+      accountsContainer.innerHTML = '<h3>Your Accounts:</h3>';
+
+      accounts.forEach(account => {
+        const accountDiv = document.createElement('div');
+        accountDiv.textContent = account.displayName
+        accountDiv.classList.add('account');
+
+        accountsContainer.appendChild(accountDiv);
+      });
+    }
+
+    // Loader
+    function showLoader() {
+      document.getElementById('loader').style.display = 'flex'
+      document.body.classList.add('processing')
+    }
+
+    function hideLoader(startTime) {
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, 3000 - elapsedTime); // Ensure 3 seconds minimum
+
+      setTimeout(() => {
+        document.getElementById('loader').style.display = 'none';
+        document.body.classList.remove('processing');
+      }, remainingTime);
+    }
   </script>
 </body>
 
