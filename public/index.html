@@ -202,16 +202,16 @@
       </span>
 
       <!-- Divider -->
-      <div style="margin-top: 20px;">
+      <!-- <div style="margin-top: 20px;">
         <div style="display: flex; align-items: center; justify-content: center; margin: 20px 0;">
           <hr style="flex-grow: 1; border: none; border-top: 1px solid #ccc; margin: 0 10px;">
           <div>Optional: Automated Importer</div>
           <hr style="flex-grow: 1; border: none; border-top: 1px solid #ccc; margin: 0 10px;">
         </div>
-      </div>
+      </div> -->
 
       <!-- Monarch login -->
-      <form>
+      <!-- <form>
         <div>Enter your Monarch credentials to pull your Accounts and automatically import the transactions into
           Monarch:
         </div>
@@ -229,10 +229,11 @@
         </div>
         <button id="loginButton" type="button" disabled aria-label="Login" style="margin-top: 10px;">Pull Accounts from
           Monarch</button>
-      </form>
+      </form> -->
 
       <!-- Security note -->
       <div>
+        <hr />
         <small style="align-items: baseline;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"
             style="vertical-align: middle; fill: white;">
@@ -293,13 +294,13 @@
       processButton.disabled = !fileInput.files.length;
     });
 
-    emailInput.addEventListener('input', () => {
-      loginButton.disabled = !(emailInput.value && passwordInput.value);
-    });
+    // emailInput.addEventListener('input', () => {
+    //   loginButton.disabled = !(emailInput.value && passwordInput.value);
+    // });
 
-    passwordInput.addEventListener('input', () => {
-      loginButton.disabled = !(emailInput.value && passwordInput.value);
-    });
+    // passwordInput.addEventListener('input', () => {
+    //   loginButton.disabled = !(emailInput.value && passwordInput.value);
+    // });
 
     processButton.addEventListener('click', async () => {
       const file = fileInput.files[0];
@@ -421,23 +422,23 @@
     // });
 
     // Log into Monarch and get accounts
-    loginButton.addEventListener('click', async () => {
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
+    // loginButton.addEventListener('click', async () => {
+    //   const email = document.getElementById('email').value;
+    //   const password = document.getElementById('password').value;
 
-      if (!email || !password) {
-        showToast('Please enter both email and password.', true);
-        return;
-      }
+    //   if (!email || !password) {
+    //     showToast('Please enter both email and password.', true);
+    //     return;
+    //   }
 
-      try {
-        const accounts = await loginAndFetchAccounts(email, password)
-        displayAccounts(accounts)
-      } catch (error) {
-        console.error('Error during login:', error);
-        showToast('An error occurred during login.', true);
-      }
-    });
+    //   try {
+    //     const accounts = await loginAndFetchAccounts(email, password)
+    //     displayAccounts(accounts)
+    //   } catch (error) {
+    //     console.error('Error during login:', error);
+    //     showToast('An error occurred during login.', true);
+    //   }
+    // });
 
     async function loginAndFetchAccounts(username, password) {
       try {
