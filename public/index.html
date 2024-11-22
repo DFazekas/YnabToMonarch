@@ -69,34 +69,68 @@
 
     .collapsible {
       cursor: pointer;
-      background-color: #f1f1f1;
-      padding: 10px;
-      border: none;
-      text-align: left;
-      outline: none;
-      width: 100%;
+      padding: 12px 16px;
+      border-radius: 4px;
+      background-color: #f9f9f9;
       font-size: 1rem;
       font-weight: bold;
+      color: #333;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .collapsible:hover {
+      background-color: #f1f1f1;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
 
     .collapsible:after {
       content: '\25BC';
-      float: right;
+      /* Down arrow */
+      font-size: 1.2rem;
+      color: #333;
+      transition: transform 0.3s ease;
     }
 
     .collapsible.active:after {
-      content: '\25B2';
+      transform: rotate(180deg);
+    }
+
+    .collapsible.active {
+      background-color: #e6f7ff;
+      border-color: #007bff;
+      color: #007bff;
     }
 
     .content {
       max-height: 0;
       overflow: hidden;
-      transition: max-height 0.2s ease-out;
-      padding: 0 10px;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+      padding: 0 16px;
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      background-color: #fff;
+      margin-bottom: 3px;
     }
 
     .content.open {
-      max-height: 300px;
+      padding: 12px 16px;
+    }
+
+    .content p,
+    .content ol,
+    .content ul {
+      margin: 0;
+      padding: 0;
+      color: #555;
+      line-height: 1.6;
+    }
+
+    .content ul,
+    .content ol {
+      padding-left: 20px;
     }
 
     #toast {
@@ -191,45 +225,37 @@
 
   <main>
     <section>
-      <!-- File importer -->
-      <span>
-        <label for="fileInput">Upload Your YNAB Register File:</label>
-        <input type="file" id="fileInput" accept=".csv" aria-label="Upload YNAB Register File" />
-        <button id="processButton" type="button" disabled aria-label="Generate downloadable transaction files">Convert
-          to
-          Monarch format</button>
-        <div id="convertedFiles"></div>
-      </span>
-
-      <!-- Divider -->
-      <!-- <div style="margin-top: 20px;">
-        <div style="display: flex; align-items: center; justify-content: center; margin: 20px 0;">
-          <hr style="flex-grow: 1; border: none; border-top: 1px solid #ccc; margin: 0 10px;">
-          <div>Optional: Automated Importer</div>
-          <hr style="flex-grow: 1; border: none; border-top: 1px solid #ccc; margin: 0 10px;">
+      <form>
+        <span>
+          <label for="fileInput">Upload Your YNAB Register File:</label>
+          <input type="file" id="fileInput" accept=".csv" aria-label="Upload YNAB Register File" />
+        </span>
+        <div>(Optional) For auto-importing transactions into Monarch, enter your Monarch credentials to pull your
+          Accounts and map the accounts between YNAB and Monarch:
         </div>
-      </div> -->
 
-      <!-- Monarch login -->
-      <!-- <form>
-        <div>Enter your Monarch credentials to pull your Accounts and automatically import the transactions into
-          Monarch:
-        </div>
+        <!-- Login fields -->
         <div style="display: flex; gap: 20px; align-items: flex-start; margin-top: 10px;">
+          <!-- Email field -->
           <div style="flex: 1;">
             <label for="email">Monarch Email:</label>
             <input type="email" id="email" aria-label="Email" placeholder="Enter your Monarch email" required
               style="width: 100%;" />
           </div>
+
+          <!-- Password field -->
           <div style="flex: 1;">
             <label for="password">Monarch Password:</label>
             <input type="password" id="password" aria-label="Password" placeholder="Enter your Monarch password"
               required style="width: 100%;" />
           </div>
         </div>
-        <button id="loginButton" type="button" disabled aria-label="Login" style="margin-top: 10px;">Pull Accounts from
-          Monarch</button>
-      </form> -->
+
+        <button id="processButton" type="button" disabled aria-label="Generate downloadable transaction files">(Manual)
+          Generate Downloadable Files</button>
+        <button id="loginButton" type="button" disabled aria-label="Login" style="margin-top: 10px;">(Auto) Generate
+          Account Mappings</button>
+      </form>
 
       <!-- Security note -->
       <div>
@@ -245,15 +271,32 @@
       </div>
     </section>
 
-    <!-- Accounts container -->
-    <section id="accountsSection" style="display: none; margin-top: 20px;">
-      <hr />
+    <!-- Mappings container -->
+    <section id="mappingsContainer">
+      <h4 class="header">Account Mappings</h4>
+      <p>Choose how to import your YNAB transactions into Monarch:</p>
+      <span id="accountMappingsContainer">
+        <!-- Elements added dynamically -->
+      </span>
+      <button id="processMappingsButton" type="button" style="margin-top: 20px;">Import into Monarch</button>
+    </section>
+
+    <!-- File accounts container -->
+    <section id="fileAccountsContainer">
       <h4 class="header">Accounts Found in File</h4>
-      <p>Monarch doesn't support importing multiple accounts at once, so you'll need to import these account
-        individually. Use the checkboxes to track your progress.</p>
-      <form id="accountsForm">
+      <p>Monarch doesn't support importing multiple accounts at once, so you'll need to import these accounts
+        individually:</p>
+      <form id="convertedFiles">
         <!-- Elements added dynamically -->
       </form>
+    </section>
+
+    <!-- Logs container -->
+    <section>
+      <h4>Logs</h4>
+      <span id="logsContainer">
+        <!-- Elements added dynamically -->
+      </span>
     </section>
   </main>
 
@@ -273,8 +316,83 @@
     const emailInput = document.getElementById("email")
     const passwordInput = document.getElementById("password")
     const loginButton = document.getElementById("loginButton")
+    const processMappingButton = document.getElementById('processMappingsButton')
+    const logsContainer = document.getElementById('logsContainer')
 
+    let allLogs = []
+    let accountsFromFile = {}
     const accountsFromMonarch = {}
+
+    processMappingButton.addEventListener('click', async () => {
+      const logTitle = "Import accounts into Monarch"
+      const logs = ["Attempting import account mappings into Monarch..."]
+
+      const mappings = [];
+      const omittedAccounts = [];
+
+      const accountMappingsContainer = document.getElementById('accountMappingsContainer')
+      console.table({ accountMappingsContainer })
+      console.table({ children: accountMappingsContainer.children })
+      Array.from(accountMappingsContainer.children).forEach(divElement => {
+        const selectElement = divElement.children[1]
+        const ynabAccount = selectElement.id
+        const destination = selectElement.selectedOption
+
+        if (destination === "new") {
+          // Create a new account in Monarch before importing transactions
+          const mappedValue = ""
+          mappings.push({ ynabAccount, mappedValue })
+        } else if (destination === true) {
+          // Import transactions into existing account
+          const mappedValue = ""
+          mappings.push({ ynabAccount, mappedValue })
+        } else {
+          // Do not import these transactions into Monarch
+          omittedAccounts.push(ynabAccount)
+        }
+      })
+
+      // Show confirmation dialog
+      const confirmationMessage = omittedAccounts.length
+        ? `You're omitting ${omittedAccounts.length} accounts for importing. This action is irreversible.`
+        : `You're about to process the account mappings. This action is irreversible.`
+
+      if (!confirm(confirmationMessage)) {
+        return
+      }
+
+      const startTime = Date.now()
+      showLoader()
+
+      try {
+        const response = await fetch(
+          'http://localhost:8888/.netlify/functions/MonarchMapAccounts',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mappings })
+          }
+        )
+
+        if (!response.ok) {
+          throw new Error('Importing accounts into Monarch failed.')
+        }
+
+        logs.push("Importing accounts into Monarch successful.")
+
+        const result = await response.json()
+        showToast('Mappings processed successfully.')
+      } catch (error) {
+        allLogs.push({
+          title: logTitle,
+          status: "Failed",
+          logs: [error.message || 'An error occurred during file processing.']
+        });
+      } finally {
+        hideLoader(startTime)
+        displayLogs(allLogs)
+      }
+    })
 
     fileInput.addEventListener('change', async () => {
       const file = fileInput.files[0]
@@ -292,62 +410,164 @@
       }
 
       processButton.disabled = !fileInput.files.length;
+
+      loginButton.disabled = !(fileInput.files.length && emailInput.value && passwordInput.value)
     });
 
-    // emailInput.addEventListener('input', () => {
-    //   loginButton.disabled = !(emailInput.value && passwordInput.value);
-    // });
+    emailInput.addEventListener('input', () => {
+      loginButton.disabled = !(fileInput.files.length && emailInput.value && passwordInput.value)
+    });
 
-    // passwordInput.addEventListener('input', () => {
-    //   loginButton.disabled = !(emailInput.value && passwordInput.value);
-    // });
+    passwordInput.addEventListener('input', () => {
+      loginButton.disabled = !(fileInput.files.length && emailInput.value && passwordInput.value)
+    });
 
     processButton.addEventListener('click', async () => {
-      const file = fileInput.files[0];
-      if (!file) return;
+      const startTime = Date.now()
 
-      // Show the loader
-      const startTime = Date.now();
-      showLoader();
+      allLogs = [] // Clear previous logs
 
       try {
-        // Read the CSV file
-        const reader = new FileReader()
-        reader.onload = (event) => {
-          const csvContent = event.target.result
-
-          // Parse CSV using PapaParse
-          Papa.parse(csvContent, {
-            header: true,
-            skipEmptyLines: true,
-            complete: (results) => {
-              const data = results.data
-              processCSVData(data)
-
-              // Hide the loader after processing
-              hideLoader(startTime)
-            },
-            error: (error) => {
-              console.error("Error parsing CSV:", error)
-              showToast('An error occurred while processing the CSV file.', true)
-
-              // Hide the loader on error
-              hideLoader(startTime)
-            }
-          })
+        const file = fileInput.files[0]
+        if (!file) {
+          showToast('Please upload a YNAB Register file.', true)
+          allLogs.push({
+            title: "File Processing",
+            status: "Failed",
+            logs: ['No file uploaded.']
+          });
+          displayLogs(allLogs);
+          return
         }
 
-        reader.readAsText(file)
-      } catch (error) {
-        console.error('Error during file processing:', error);
-        showToast('An error occurred during file processing.', true);
+        const { accounts: accountsFromFile, logs: fileLogs } = await processFile(file)
+        if (!accountsFromFile) {
+          allLogs.push(fileLogs)
+          throw new Error('Processing YNAB Register file failed.')
+        }
 
-        // Hide the loader on exception
-        hideLoader(startTime);
+        allLogs.push(fileLogs)
+
+        generateDownloadableFiles(accountsFromFile)
+      } catch (error) {
+        console.error('Error:', error);
+        if (error.logs) {
+          allLogs.push(error.logs);
+        } else {
+          allLogs.push({
+            title: "File Processing",
+            status: "Failed",
+            logs: [error.message || 'An error occurred during file processing.']
+          });
+        }
+      } finally {
+        hideLoader(startTime)
+        displayLogs(allLogs)
       }
     })
 
-    function processCSVData(data) {
+    function displayLogs(logs) {
+      console.table(logs)
+
+      logsContainer.innerHTML = '';
+
+      logs.forEach(sectionLog => {
+        const collapsibleDiv = document.createElement('div')
+        collapsibleDiv.classList.add('collapsible')
+
+        const titleContainer = document.createElement('span')
+
+        const statusElement = document.createElement('span')
+        statusElement.style.color = sectionLog.status === "Success" ? "green" : "red"
+        statusElement.innerHTML = sectionLog.status === "Success" ? "✔" : "✖"
+
+        const titleElement = document.createElement('span')
+        titleElement.innerHTML = `${sectionLog.status}: ${sectionLog.title}`
+
+        titleContainer.appendChild(statusElement)
+        titleContainer.appendChild(titleElement)
+
+        collapsibleDiv.appendChild(titleContainer)
+
+        // Create content div
+        const contentDiv = document.createElement('div');
+        contentDiv.classList.add('content');
+
+        const ol = document.createElement('ol');
+        sectionLog.logs.forEach(logMessage => {
+          const li = document.createElement('li');
+          li.textContent = logMessage;
+          ol.appendChild(li);
+        });
+
+        contentDiv.appendChild(ol);
+
+        // Append to logs container
+        logsContainer.appendChild(collapsibleDiv);
+        logsContainer.appendChild(contentDiv);
+      })
+
+      initializeCollapsible();
+    }
+
+    function processFile(file) {
+      const logTitle = "Processing YNAB Register file"
+      const logs = ["Attempting to process YNAB Register file..."]
+
+      return new Promise((resolve, reject) => {
+        const startTime = Date.now();
+
+        try {
+          const reader = new FileReader()
+          reader.onload = (event) => {
+            const csvContent = event.target.result
+
+            // Parse CSV using PapaParse
+            Papa.parse(csvContent, {
+              header: true,
+              skipEmptyLines: true,
+              complete: (results) => {
+                logs.push("File imported successfully.")
+                const data = results.data
+                logs.push("Grouping transactions by accounts...")
+                const accounts = groupTransactionsByAccount(data)
+                logs.push("Grouping transactions complete.")
+                // Hide the loader after processing
+                hideLoader(startTime)
+                resolve({ accounts, logs: { title: logTitle, status: "Success", logs } })
+              },
+              error: (error) => {
+                logs.push("Error processing YNAB Register file.")
+                console.error("Error parsing CSV:", error)
+                showToast('An error occurred while processing the CSV file.', true)
+
+                // Hide the loader on error
+                hideLoader(startTime)
+
+                const err = new Error("Error processing YNAB Register file.");
+                err.logs = { title: logTitle, status: "Failed", logs };
+                reject(err);
+              }
+            })
+          }
+
+          reader.readAsText(file)
+        } catch (error) {
+          logs.push("Error processing YNAB Register file.");
+          console.error('Error during file processing:', error);
+          showToast('An error occurred during file processing.', true);
+
+          // Hide the loader on exception
+          hideLoader(startTime);
+
+          const err = new Error("Error processing YNAB Register file.");
+          err.logs = { title: logTitle, status: "Failed", logs };
+          reject(err);
+        }
+      })
+    }
+
+    function groupTransactionsByAccount(data) {
       // Group transactions by account
       const transactionsByAccount = {}
 
@@ -373,14 +593,11 @@
         })
       })
 
-      console.table(transactionsByAccount)
-      // Generate downloadable CSV files for each account
-      generateDownloadableFiles(transactionsByAccount)
+      return transactionsByAccount
     }
 
     function generateDownloadableFiles(transactionsByAccount) {
       const convertedFiles = document.getElementById('convertedFiles');
-      convertedFiles.innerHTML = '<h3>Converted Account Files:</h3>';
       Object.keys(transactionsByAccount).forEach((account) => {
         const csvData = transactionsByAccount[account];
         const csvContent = Papa.unparse(csvData);
@@ -412,92 +629,211 @@
       }, 4000);
     }
 
-    // Collapsible Instructions
-    // document.querySelectorAll('.collapsible').forEach((button) => {
-    //   button.addEventListener('click', () => {
-    //     const content = button.nextElementSibling;
-    //     content.classList.toggle('open');
-    //     button.classList.toggle('active');
-    //   });
-    // });
+    function initializeCollapsible() {
+      const collapsibleElements = document.querySelectorAll('.collapsible')
+
+      collapsibleElements.forEach(collapsible => {
+        collapsible.addEventListener('click', () => {
+          const content = collapsible.nextElementSibling
+
+          collapsible.classList.toggle('active')
+
+          if (content.classList.contains('open')) {
+            content.style.maxHeight = null
+            content.classList.remove('open')
+          } else {
+            content.style.maxHeight = `${content.scrollHeight + 20}px`;
+            content.classList.add('open')
+          }
+        })
+      })
+    }
+    initializeCollapsible()
 
     // Log into Monarch and get accounts
-    // loginButton.addEventListener('click', async () => {
-    //   const email = document.getElementById('email').value;
-    //   const password = document.getElementById('password').value;
+    loginButton.addEventListener('click', async () => {
+      console.log("Login button clicked")
+      allLogs = []
 
-    //   if (!email || !password) {
-    //     showToast('Please enter both email and password.', true);
-    //     return;
-    //   }
-
-    //   try {
-    //     const accounts = await loginAndFetchAccounts(email, password)
-    //     displayAccounts(accounts)
-    //   } catch (error) {
-    //     console.error('Error during login:', error);
-    //     showToast('An error occurred during login.', true);
-    //   }
-    // });
-
-    async function loginAndFetchAccounts(username, password) {
-      try {
-        // Login request
-        const loginResponse = await fetch('https://api.monarchmoney.com/auth/login/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            username: username,
-            password: password
-          })
+      const file = fileInput.files[0]
+      if (!file) {
+        showToast('Please upload a YNAB Register file.', true)
+        allLogs.push({
+          title: "Monarch Authentication",
+          status: "Failed",
+          logs: ['No file uploaded.']
         });
+        displayLogs(allLogs);
+        return;
+      }
 
-        if (!loginResponse.ok) {
-          throw new Error('Login failed. Check your credentials.');
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      if (!email || !password) {
+        showToast('Please enter both email and password.', true);
+        allLogs.push({
+          title: "Monarch Authentication",
+          status: "Failed",
+          logs: ['Email or password not provided.']
+        });
+        displayLogs(allLogs);
+        return;
+      }
+
+      const startTime = Date.now();
+      showLoader();
+
+      try {
+        console.log("GetMonarchToken:")
+        const { token, logs: authLogs } = await getMonarchToken(email, password)
+        console.table({ authLogs })
+        allLogs.push(authLogs)
+
+        if (!token) {
+          throw new Error("Monarch authentication failed.")
         }
 
+        console.log("ProcessFile():")
+        const { accounts: ynabAccounts, logs: fileLogs } = await processFile(file)
+        console.table({ fileLogs })
+        allLogs.push(fileLogs)
+
+        if (!ynabAccounts) {
+          allLogs.push(fileLogs)
+          throw new Error('Processing YNAB Register file failed.')
+        }
+
+        console.log("FetchAccounts():")
+        const { accounts: monarchAccounts, logs: fetchAccountLogs } = await fetchAccounts(token)
+        allLogs.push(fetchAccountLogs)
+        console.table({ fetchAccountLogs })
+        console.table({ monarchAccounts })
+
+        hideLoader(startTime)
+        const { logs: mappingLogs } = displayAccountMappings(monarchAccounts, ynabAccounts)
+        console.table({ mappingLogs })
+        allLogs.push(mappingLogs)
+
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('An error occurred.', true);
+      }
+      finally {
+        hideLoader(startTime)
+        displayLogs(allLogs)
+      }
+    });
+
+    async function getMonarchToken(email, password) {
+      const logTitle = "Monarch authentication"
+      const logs = ["Attempting to log into Monarch..."]
+
+      try {
+        const loginResponse = await fetch(
+          // 'https://ynab-to-monarch.netlify.app/.netlify/functions/MonarchLogin'
+          'http://localhost:8888/.netlify/functions/MonarchLogin'
+          , {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password }),
+          });
+
+        if (!loginResponse.ok) {
+          logs.push("Login failed.")
+          return { token: null, logs: { title: logTitle, status: "Failed", logs } }
+        }
+
+        logs.push("Login successful.")
         const loginData = await loginResponse.json();
         const token = loginData.token;
+        logs.push("Acquired user token.")
 
-        const accounts = await fetchAccounts(token)
-        return accounts
+        return { token, logs: { title: logTitle, status: "Success", logs } }
       } catch (error) {
-        console.error('Error:', error)
-        throw new Error(error.message);
+        logs.push("An error occurred during authentication.");
+        console.error('Authentication Error:', error);
+        return { token: null, logs: { title: logTitle, status: "Failed", logs } };
       }
     }
 
     async function fetchAccounts(token) {
-      const graphqlResponse = await fetch('https://api.monarchmoney.com/graphql', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Token ${token}`,
-        },
-        body: JSON.stringify({ query: 'query { accounts { id displayName } }' }),
-      });
+      const logTitle = "Fetch Monarch Accounts"
+      const logs = ["Attempting to fetch accounts from Monarch..."]
 
-      if (!graphqlResponse.ok) {
-        throw new Error('Failed to fetch accounts.');
+      try {
+        const accountsResponse = await fetch(
+          // 'https://ynab-to-monarch.netlify.app/.netlify/functions/MonarchLogin'
+          'http://localhost:8888/.netlify/functions/MonarchAccounts'
+          , {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ token }),
+          });
+
+        if (!accountsResponse.ok) {
+          logs.push("Account fetching failed.")
+          return { accounts: null, logs: { title: logTitle, status: "Failed", logs } }
+        }
+
+        logs.push("Account fetching successful.")
+        const data = await accountsResponse.json();
+        const accounts = data.accounts
+
+        return { accounts, logs: { title: logTitle, status: "Success", logs } }
+      } catch (error) {
+        logs.push("An error occurred while fetching Monarch Accounts.");
+        console.error('Account fetching error:', error);
+        return { accounts: null, logs: { title: logTitle, status: "Failed", logs } };
       }
-
-      const graphqlData = await graphqlResponse.json();
-      return graphqlData.data.accounts;
     }
 
-    function displayAccounts(accounts) {
-      const accountsContainer = document.getElementById('accountsContainer');
-      accountsContainer.innerHTML = '<h3>Your Accounts:</h3>';
+    function displayAccountMappings(monarchAccounts, ynabAccounts) {
+      const logTitle = "Generating account mappings"
+      const logs = ["Attempting to generate account mappings..."]
+      const accountMappingsContainer = document.getElementById('accountMappingsContainer');
 
-      accounts.forEach(account => {
+      Object.keys(ynabAccounts).forEach(ynabAccount => {
         const accountDiv = document.createElement('div');
-        accountDiv.textContent = account.displayName
         accountDiv.classList.add('account');
 
-        accountsContainer.appendChild(accountDiv);
-      });
+        const accountLabel = document.createElement('label');
+        accountLabel.textContent = ynabAccount;
+        accountLabel.htmlFor = `ynab-${ynabAccount}`;
+
+        const accountSelect = document.createElement('select');
+        accountSelect.id = `${ynabAccount}`;
+        accountSelect.name = `${ynabAccount}`;
+
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = "Don't import";
+        accountSelect.appendChild(defaultOption);
+
+        // Option for creating new account in Monarch
+        const optionCreateNewAccount = document.createElement('option')
+        optionCreateNewAccount.value = "new"
+        optionCreateNewAccount.textContent = "Create new account"
+        accountSelect.appendChild(optionCreateNewAccount)
+
+        // List Monarch accounts as options
+        monarchAccounts.forEach(monarchAccount => {
+          const option = document.createElement('option');
+          option.value = monarchAccount.id;
+          option.textContent = monarchAccount.displayName;
+          accountSelect.appendChild(option);
+        });
+
+        accountDiv.appendChild(accountLabel);
+        accountDiv.appendChild(accountSelect);
+        accountMappingsContainer.appendChild(accountDiv);
+      })
+
+      logs.push("Generating account mapping successful.")
+      return { logs: { title: logTitle, status: "Success", logs } }
     }
 
     // Loader
