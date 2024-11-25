@@ -18,7 +18,9 @@
     "homepage": "https://github.com/yourusername/ynabtomonarch#readme",
     "dependencies": {
         "csv-parser": "^3.0.0",
+        "form-data": "^4.0.1",
         "json2csv": "^6.0.0-alpha.2",
+        "node-fetch": "^2.7.0",
         "streams": "^2.0.0"
     }
 }

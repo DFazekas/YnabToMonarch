@@ -318,6 +318,7 @@
     const loginButton = document.getElementById("loginButton")
     const processMappingButton = document.getElementById('processMappingsButton')
     const logsContainer = document.getElementById('logsContainer')
+    let apiToken = null
 
     let allLogs = []
     let accountsFromFile = {}
@@ -326,29 +327,25 @@
     processMappingButton.addEventListener('click', async () => {
       const logTitle = "Import accounts into Monarch"
       const logs = ["Attempting import account mappings into Monarch..."]
-
       const mappings = [];
       const omittedAccounts = [];
 
       const accountMappingsContainer = document.getElementById('accountMappingsContainer')
-      console.table({ accountMappingsContainer })
-      console.table({ children: accountMappingsContainer.children })
-      Array.from(accountMappingsContainer.children).forEach(divElement => {
-        const selectElement = divElement.children[1]
-        const ynabAccount = selectElement.id
-        const destination = selectElement.selectedOption
 
-        if (destination === "new") {
-          // Create a new account in Monarch before importing transactions
-          const mappedValue = ""
-          mappings.push({ ynabAccount, mappedValue })
-        } else if (destination === true) {
-          // Import transactions into existing account
-          const mappedValue = ""
-          mappings.push({ ynabAccount, mappedValue })
+      Array.from(accountMappingsContainer.children).forEach(divElement => {
+        const selectElement = divElement.querySelector('select')
+        const ynabAccountName = selectElement.id
+        const monarchAccountId = selectElement.value
+        const monarchAccountName = selectElement.options[selectElement.selectedIndex].text
+        const transactions = accountsFromFile[ynabAccountName] || []
+
+        if (monarchAccountId === "new") {
+          mappings.push({ ynabAccountName, monarchAccountName, monarchAccountId: "", transactions })
+        } else if (monarchAccountId) {
+          mappings.push({ ynabAccountName, monarchAccountName, monarchAccountId, transactions })
         } else {
           // Do not import these transactions into Monarch
-          omittedAccounts.push(ynabAccount)
+          omittedAccounts.push(ynabAccountName)
         }
       })
 
@@ -365,28 +362,46 @@
       showLoader()
 
       try {
+        const payload = {
+          token: apiToken,
+          mappings
+        }
+
         const response = await fetch(
           'http://localhost:8888/.netlify/functions/MonarchMapAccounts',
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mappings })
+            body: JSON.stringify(payload)
           }
         )
 
         if (!response.ok) {
-          throw new Error('Importing accounts into Monarch failed.')
+          const errorText = await response.text()
+          throw new Error(`Failed to import accounts. Response: ${errorText}`)
         }
 
-        logs.push("Importing accounts into Monarch successful.")
-
         const result = await response.json()
+        logs.push(...result.logs)
+
+        logs.push("Importing accounts into Monarch successful.")
         showToast('Mappings processed successfully.')
+
+        allLogs.push({
+          title: logTitle,
+          status: "Success",
+          logs: logs
+        });
+
       } catch (error) {
+        console.error(error);
+        showToast(error.message || 'An error occurred while processing mappings', true);
+
+        logs.push("Mappings processed failed.")
         allLogs.push({
           title: logTitle,
           status: "Failed",
-          logs: [error.message || 'An error occurred during file processing.']
+          logs: logs
         });
       } finally {
         hideLoader(startTime)
@@ -467,8 +482,6 @@
     })
 
     function displayLogs(logs) {
-      console.table(logs)
-
       logsContainer.innerHTML = '';
 
       logs.forEach(sectionLog => {
@@ -652,7 +665,6 @@
 
     // Log into Monarch and get accounts
     loginButton.addEventListener('click', async () => {
-      console.log("Login button clicked")
       allLogs = []
 
       const file = fileInput.files[0]
@@ -684,18 +696,15 @@
       showLoader();
 
       try {
-        console.log("GetMonarchToken:")
         const { token, logs: authLogs } = await getMonarchToken(email, password)
-        console.table({ authLogs })
         allLogs.push(authLogs)
 
         if (!token) {
           throw new Error("Monarch authentication failed.")
         }
 
-        console.log("ProcessFile():")
+        apiToken = token
         const { accounts: ynabAccounts, logs: fileLogs } = await processFile(file)
-        console.table({ fileLogs })
         allLogs.push(fileLogs)
 
         if (!ynabAccounts) {
@@ -703,15 +712,13 @@
           throw new Error('Processing YNAB Register file failed.')
         }
 
-        console.log("FetchAccounts():")
+        // Make YNAB account globally available
+        accountsFromFile = ynabAccounts
         const { accounts: monarchAccounts, logs: fetchAccountLogs } = await fetchAccounts(token)
         allLogs.push(fetchAccountLogs)
-        console.table({ fetchAccountLogs })
-        console.table({ monarchAccounts })
 
         hideLoader(startTime)
         const { logs: mappingLogs } = displayAccountMappings(monarchAccounts, ynabAccounts)
-        console.table({ mappingLogs })
         allLogs.push(mappingLogs)
 
       } catch (error) {
@@ -801,7 +808,7 @@
         accountDiv.classList.add('account');
 
         const accountLabel = document.createElement('label');
-        accountLabel.textContent = ynabAccount;
+        accountLabel.textContent = `${ynabAccount} (${ynabAccounts[ynabAccount].length} transactions)`;
         accountLabel.htmlFor = `ynab-${ynabAccount}`;
 
         const accountSelect = document.createElement('select');
