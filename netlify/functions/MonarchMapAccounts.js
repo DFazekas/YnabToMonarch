@@ -88,13 +88,12 @@ async function createManualAccount(token, accountInput, logger) {
 
     const { data, errors } = await performGraphQLRequest(token, query, variables)
 
-    if (data) {
-        logger.add('Account created successfully.')
-        return { account: data.createManualAccount.account }
-    } else {
+    if (errors) {
         logger.add(`Error creating account: ${JSON.stringify(errors)}`)
         throw new Error(`Error creating account: ${JSON.stringify(errors)}`)
     }
+
+    return { account: data.createManualAccount.account }
 }
 
 async function uploadStatementsFile(token, transactions, logger) {
@@ -139,7 +138,7 @@ async function uploadStatementsFile(token, transactions, logger) {
 }
 
 async function importTransactions(token, accountId, sessionKey, logger) {
-    logger.add(`Importing transactions into account '${accountId}'...`)
+    logger.add(`Importing transactions into account...`)
 
     const query = `
             mutation Web_ParseUploadStatementSession($input: ParseStatementInput!) {
@@ -179,7 +178,6 @@ async function importTransactions(token, accountId, sessionKey, logger) {
 
     if (data) {
         const uploadSession = data.parseUploadStatementSession.uploadStatementSession
-        logger.add(`Transactions imported successfully into account '${accountId}' with status '${uploadSession.status}'.`)
         return { status: uploadSession.status }
     } else {
         console.error('Transactions importing failed:', errors)
@@ -268,7 +266,11 @@ async function processMapping(token, mapping, logger) {
 
             // Handle statement file upload and importing into account
             await handleUploadAndImport(token, account.id, transactions, logger)
-            logger.add(`Imported '${transactions.length}' transactions into account '${ynabAccountName}'.`)
+            logger.add(
+                `Imported '${transactions.length}' ${
+                    transactions.length === 1 ? 'transaction' : 'transactions'
+                } into account '${ynabAccountName}'.`
+            )
         } catch (error) {
             logger.add(`Failed to process account '${ynabAccountName}'.`)
             throw new Error(`Failed to process account '${ynabAccountName}': ${error.message}`)
