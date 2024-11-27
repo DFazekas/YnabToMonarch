@@ -1,5 +1,7 @@
 # YNAB to Monarch Money
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/6eccae9f-57ac-4659-ab15-5242c66e525c/deploy-status)](https://app.netlify.com/sites/ynab-to-monarch/deploys)
+
 A tool to migrate YNAB transaction records into Monarch Money.
 
 ## Features
@@ -37,6 +39,8 @@ A tool to migrate YNAB transaction records into Monarch Money.
    ```
 
 ## Usage
+
+Visit the live site at [https://ynab-to-monarch.netlify.app/](https://ynab-to-monarch.netlify.app/)
 
 1. Upload your YNAB Register CSV file.
 2. Download the generated transaction files.

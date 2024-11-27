@@ -9,47 +9,100 @@
   <link rel="stylesheet" href="https://example-styles.netlify.app/styles.css">
   <style>
     /* General Styles */
+    [hidden] {
+      display: none !important;
+    }
+
+    html,
+    body {
+      padding: 0;
+      margin: 0;
+    }
+
     body {
       font-family: Arial, sans-serif;
-      margin: 0;
       padding-top: 20px;
-      padding-left: 20px;
-      padding-right: 20px;
+      display: flex;
+      flex-direction: column;
     }
 
     header {
       text-align: center;
     }
 
+    footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      width: 100%;
+      background-color: #f8f9fa;
+      margin: 0;
+    }
+
     footer small {
-      height: 50px;
       margin: 0px;
       text-align: center;
       padding: 20px;
     }
 
+    footer .source-link {
+      margin-left: auto;
+    }
+
     header .donate-button img {
       height: 48px;
       width: auto;
+      margin-left: 20px;
+    }
+
+    header .donate-button img:hover {
+      opacity: 0.8;
     }
 
     h1 {
       margin-top: 10px;
     }
 
+    h2,
+    h3 {
+      padding: 0px;
+    }
+
     main {
       max-width: 800px;
+      width: 100%;
       margin: 0 auto;
       padding: 20px;
       border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      flex: 1;
     }
 
     section {
+      margin: 0px auto;
+      margin-top: 20px;
+      width: 100%;
+      max-width: 800px;
+      box-sizing: border-box;
+    }
+
+    section[hidden] {
       margin: 0px;
+      display: none;
     }
 
     /* Uploader Styles */
+    #uploaderSection {
+      width: 100%;
+      display: flex;
+      align-items: stretch;
+    }
+
     .uploader {
+      width: 100%;
       border-radius: 10px;
       padding: 40px;
       text-align: center;
@@ -83,6 +136,12 @@
       transition: background-color 0.3s ease, color 0.3s ease;
     }
 
+    button:not(:disabled):hover {
+      border: none !important;
+      transform: none !important;
+      opacity: 0.8 !important;
+    }
+
     button:disabled {
       background-color: #ccc;
       cursor: not-allowed;
@@ -98,7 +157,13 @@
       color: #fff;
     }
 
-    #startOver {
+    #startOverSection {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #startOverButton {
       background-color: #dc3545;
       color: #fff;
     }
@@ -246,6 +311,40 @@
       pointer-events: none;
       user-select: none;
     }
+
+    #logsSection {
+      margin-top: 40px;
+      border: 1px solid #ccc;
+      overflow: hidden;
+      border-radius: 5px;
+    }
+
+    #logsSection header {
+      background-color: #f1f1f1;
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    #logsContainer {
+      background-color: #fff;
+      overflow-y: auto;
+      max-height: 300px;
+      padding: 10px;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+    }
+
+    #arrow-icon {
+      transition: transform 0.3s ease;
+      color: #666;
+    }
+
+    #logsSection header h4 {
+      color: #666;
+      padding: 0;
+    }
   </style>
 </head>
 
@@ -279,59 +378,68 @@
 
 
     <!-- Conversion form section -->
-    <form id="conversionSection" hidden>
-      <p>Either generate downloadable statements files for manually importing into Monarch, or use the auto-importer
-        tool</p>
+    <section id="conversionSection" hidden>
+      <form>
+        <p>Either generate downloadable statements files for manually importing into Monarch, or use the auto-importer
+          tool</p>
 
 
-      <!-- Login fields -->
-      <div className="form-group">
-        <!-- Email field -->
-        <div className="input-group">
-          <label for="email">Monarch Email:</label>
-          <input type="email" id="email" aria-label="Email" placeholder="Enter your Monarch email" required />
+        <!-- Login fields -->
+        <div className="form-group">
+          <!-- Email field -->
+          <div className="input-group">
+            <label for="email">Monarch Email:</label>
+            <input type="email" id="email" aria-label="Email" placeholder="Enter your Monarch email" required />
+          </div>
+
+
+          <!-- Password field -->
+          <div className="input-group">
+            <label for="password">Monarch Password:</label>
+            <input type="password" id="password" aria-label="Password" placeholder="Enter your Monarch password"
+              required />
+          </div>
         </div>
 
 
-        <!-- Password field -->
-        <div className="input-group">
-          <label for="password">Monarch Password:</label>
-          <input type="password" id="password" aria-label="Password" placeholder="Enter your Monarch password"
-            required />
+
+        <!-- Action buttons -->
+        <div className="button-group">
+          <button id="generateStatementFilesButton" type="button" disabled
+            aria-label="Generate Statement Files">Generate
+            Statement Files</button>
+          <span>OR</span>
+          <button id="autoImporterButton" type="button" disabled aria-label="Auto-Importer
+          Tool">Auto-Importer
+            Tool</button>
         </div>
-      </div>
 
-
-      <!-- Action buttons -->
-      <div className="button-group">
-        <button id="generateStatementFilesButton" type="button" disabled aria-label="Generate Statement Files">Generate
-          Statement Files</button>
-        <span>OR</span>
-        <button id="autoImporterButton" type="button" disabled aria-label="Login">Auto-Importer
-          Tool</button>
-      </div>
-
-      <small>Auto-Importer requires your Monarch credentials for accessing the API.</small>
-    </form>
-
+        <small>Auto-Importer requires your Monarch credentials for accessing the API.</small>
+      </form>
+    </section>
 
     <!-- Account mappings section -->
     <section id="mappingsSection" hidden>
-      <h3>Choose how to import your YNAB transactions into Monarch</h3>
-      <div id="mappingsContainer">
-        <!-- Dynamic elements -->
-      </div>
-      <button id="importMappingsButton" type="button" disabled>Import into Monarch</button>
+      <form>
+        <h3>Choose how to import your YNAB transactions into Monarch</h3>
+        <div id="mappingsContainer">
+          <!-- Dynamic elements -->
+        </div>
+        <button id="importMappingsButton" type="button" aria-label="Import into Monarch" disabled>Import into
+          Monarch</button>
+      </form>
     </section>
 
 
     <!-- File accounts section -->
     <section id="downloadableFilesSection" hidden>
-      <h2>Accounts Found in File</h2>
-      <p>Monarch doesn't support importing multiple accounts at once, so you'll need to import these accounts
-        individually:</p>
-      <form id="downloadableFilesContainer">
-        <!-- Dynamic elements -->
+      <form>
+        <h2>Accounts Found in File</h2>
+        <div id="downloadableFilesContainer">
+          <!-- Dynamic elements -->
+        </div>
+        <small>Monarch doesn't support importing multiple accounts at once, so you'll need to import these accounts
+          individually.</small>
       </form>
     </section>
 
@@ -357,9 +465,13 @@
 
     <!-- Logs section -->
     <section id="logsSection" hidden>
-      <h2>Logs</h2>
+      <header>
+        <h4>Logs</h4>
+        <span id="arrow-icon">▼</span>
+      </header>
       <div id="logsContainer">
         <!-- Dynamic elements -->
+        <div style="margin-bottom: 8px; color: rgb(92, 184, 92);">✅ Reading file...</div>
       </div>
     </section>
   </main>
@@ -368,6 +480,11 @@
   <!-- Footer section -->
   <footer>
     <small>© 2024 Fazekas Solutions</small>
+    <small class="source-link">
+      <a href="https://github.com/DFazekas/YnabToMonarch" target="_blank" rel="noopener noreferrer">
+        View Source Code on GitHub
+      </a>
+    </small>
   </footer>
 
 
@@ -378,6 +495,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <script>
     'use strict';
+
+    const isLocal = window.location.hostname === 'localhost'
+    const baseURL = isLocal ? 'http://localhost:8888/.netlify/functions' : 'https://ynab-to-monarch.app/.netlify/functions'
 
     // DOM elements
     const subheader = document.getElementById('subheader');
@@ -471,6 +591,14 @@
 
     startOverButton.addEventListener('click', resetApplication)
 
+    // Logs section listener
+
+    logsSection.addEventListener('click', () => {
+      logsContainer.hidden = !logsContainer.hidden;
+      const arrowIcon = document.getElementById('arrow-icon')
+      arrowIcon.style.transform = !logsContainer.hidden ? 'rotate(180deg)' : 'rotate(0deg)'
+    })
+
     // File processing
 
     async function handleFile(file) {
@@ -520,11 +648,18 @@
 
         // Group transactions by account
         accountsFromFile = groupTransactionsByAccount(parsedData.data)
+        if (Object.keys(accountsFromFile).length === 0) {
+          logger.addError("No transactions found in uploaded file.")
+          hideLoader(startTime)
+          return;
+        }
+
         logger.add('Transactions grouped by account successfully.')
 
         // Show next step in processing flow
         subheader.hidden = true
         uploaderSection.hidden = true
+        uploader.hidden = true
         conversionSection.hidden = false
         startOverSection.hidden = false
 
@@ -579,8 +714,7 @@
           mappings
         };
 
-        const url = 'https://ynab-to-monarch.netlify.app/.netlify/functions/MonarchMapAccounts'
-        // const url = 'http://localhost:8888/.netlify/functions/MonarchMapAccounts'
+        const url = `${baseURL}/MonarchMapAccounts`
         const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -641,8 +775,7 @@
       logger.add("Attempting to log into Monarch...");
 
       try {
-        const url = 'https://ynab-to-monarch.netlify.app/.netlify/functions/MonarchLogin'
-        // const url = 'http://localhost:8888/.netlify/functions/MonarchLogin'
+        const url = `${baseURL}/MonarchLogin`
         const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -669,8 +802,7 @@
       logger.add("Attempting to fetch accounts from Monarch...")
 
       try {
-        const url = 'https://ynab-to-monarch.netlify.app/.netlify/functions/MonarchAccounts'
-        // const url = 'http://localhost:8888/.netlify/functions/MonarchAccounts'
+        const url = `${baseURL}/MonarchAccounts`
         const response = await fetch(url, {
           method: 'POST',
           headers: {
@@ -794,7 +926,6 @@
         downloadableFilesContainer.appendChild(listContainer);
         downloadableFilesSection.hidden = false;
         logger.add('Statement files generated successfully.');
-        showToast("Conversion complete! Download your files.")
       } catch (error) {
         console.error('Error Generating Statement Files:', error);
         showToast('Failed to generate statement files.', true);
@@ -876,6 +1007,7 @@
       subheader.hidden = false
       conversionSection.hidden = true
       uploaderSection.hidden = false
+      uploader.hidden = false
       fileInput.value = '';
       downloadableFilesContainer.innerHTML = '';
       mappingsSection.hidden = true;
@@ -938,12 +1070,12 @@
       }
 
       add(message) {
-        this.logs.push(message)
+        this.logs.push({ type: 'success', message })
         this.displayLogs()
       }
 
       addError(errorMessage) {
-        this.logs.push({ type: 'error', errorMessage })
+        this.logs.push({ type: 'error', message: errorMessage })
         this.displayLogs()
       }
 
@@ -961,7 +1093,7 @@
         this.container.innerHTML = ''
         this.logs.forEach(log => {
           const logElement = document.createElement('div')
-          logElement.textContent = log.type === 'error' ? `❌ ${log.message}` : `✅ ${log}`;
+          logElement.textContent = log.type === 'error' ? `❌ ${log.message}` : `✅ ${log.message}`;
           logElement.style.marginBottom = '8px'
           logElement.style.color = log.type === 'error' ? '#d9534f' : '#5cb85c'
           this.container.appendChild(logElement)
