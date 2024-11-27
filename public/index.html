@@ -579,8 +579,8 @@
           mappings
         };
 
-        // const url = 'https://ynab-to-monarch.netlify.app/.netlify/functions/MonarchMapAccounts'
-        const url = 'http://localhost:8888/.netlify/functions/MonarchMapAccounts'
+        const url = 'https://ynab-to-monarch.netlify.app/.netlify/functions/MonarchMapAccounts'
+        // const url = 'http://localhost:8888/.netlify/functions/MonarchMapAccounts'
         const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -641,8 +641,8 @@
       logger.add("Attempting to log into Monarch...");
 
       try {
-        // const url = 'https://ynab-to-monarch.netlify.app/.netlify/functions/MonarchLogin'
-        const url = 'http://localhost:8888/.netlify/functions/MonarchLogin'
+        const url = 'https://ynab-to-monarch.netlify.app/.netlify/functions/MonarchLogin'
+        // const url = 'http://localhost:8888/.netlify/functions/MonarchLogin'
         const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -669,8 +669,8 @@
       logger.add("Attempting to fetch accounts from Monarch...")
 
       try {
-        // const url = 'https://ynab-to-monarch.netlify.app/.netlify/functions/MonarchAccounts'
-        const url = 'http://localhost:8888/.netlify/functions/MonarchAccounts'
+        const url = 'https://ynab-to-monarch.netlify.app/.netlify/functions/MonarchAccounts'
+        // const url = 'http://localhost:8888/.netlify/functions/MonarchAccounts'
         const response = await fetch(url, {
           method: 'POST',
           headers: {
