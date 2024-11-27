@@ -1,0 +1,23 @@
+{
+    "[markdown]": {
+        "editor.wordWrap": "on",
+        "editor.wordWrapColumn": 132,
+        "editor.rulers": [
+            132
+        ],
+        "editor.lineNumbers": "on",
+        "editor.defaultFormatter": "yzhang.markdown-all-in-one",
+        "editor.tabSize": 4
+    },
+    "markdown.extension.toc.unorderedList.marker": "-",
+    "markdown.extension.toc.updateOnSave": false,
+    "[yaml]": {
+        "editor.defaultFormatter": "redhat.vscode-yaml"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "[shellscript]": {
+        "files.eol": "\n"
+    }
+}
