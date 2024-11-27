@@ -9,23 +9,41 @@
   <link rel="stylesheet" href="https://example-styles.netlify.app/styles.css">
   <style>
     /* General Styles */
+    html,
+    body {
+      padding: 0;
+      margin: 0;
+    }
+
     body {
       font-family: Arial, sans-serif;
-      margin: 0;
       padding-top: 20px;
-      padding-left: 20px;
-      padding-right: 20px;
+      display: flex;
+      flex-direction: column;
     }
 
     header {
       text-align: center;
     }
 
+    footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      width: 100%;
+      background-color: #f8f9fa;
+      margin: 0;
+    }
+
     footer small {
-      height: 50px;
       margin: 0px;
       text-align: center;
       padding: 20px;
+    }
+
+    footer .source-link {
+      margin-left: auto;
     }
 
     header .donate-button img {
@@ -42,6 +60,7 @@
       margin: 0 auto;
       padding: 20px;
       border-radius: 8px;
+      flex: 1;
     }
 
     section {
@@ -368,6 +387,11 @@
   <!-- Footer section -->
   <footer>
     <small>© 2024 Fazekas Solutions</small>
+    <small class="source-link">
+      <a href="https://github.com/DFazekas/YnabToMonarch" target="_blank" rel="noopener noreferrer">
+        View Source Code on GitHub
+      </a>
+    </small>
   </footer>
 
 
