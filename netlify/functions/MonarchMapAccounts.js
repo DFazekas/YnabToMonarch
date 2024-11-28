@@ -12,11 +12,11 @@ class Logger {
     }
 
     add(message) {
-        this.logs.push(message)
+        this.logs.push({ type: 'success', message })
     }
 
-    merge(otherLogs) {
-        this.logs.push(...otherLogs)
+    addError(message) {
+        this.logs.push({ type: 'error', message })
     }
 
     getLogs() {
@@ -29,7 +29,7 @@ module.exports.handler = async (event) => {
 
     // Validate HTTP method
     if (event.httpMethod !== 'POST') {
-        logger.add('Invalid method call. Use POST.')
+        logger.addError('Invalid method call. Use POST.')
         return createResponse(405, logger.getLogs(), 'Method not allowed. Use POST.')
     }
 
@@ -38,13 +38,13 @@ module.exports.handler = async (event) => {
 
         // Validate token
         if (!token) {
-            logger.add('Missing API key.')
+            logger.addError('Missing API key.')
             return createResponse(400, logger.getLogs(), 'API token is required.')
         }
 
         // Validate mappings
         if (!mappings || !Array.isArray(mappings)) {
-            logger.add('Invalid account mappings; must be an array.')
+            logger.addError('Invalid account mappings; must be an array.')
             return createResponse(400, logger.getLogs(), 'Mappings are required and should be an array.')
         }
 
@@ -57,7 +57,7 @@ module.exports.handler = async (event) => {
         return createResponse(200, logger.getLogs(), 'Account mappings and transactions imported.')
     } catch (error) {
         console.error('Error processing account mappings and transactions:', error)
-        logger.add('Error processing account mappings and transactions.')
+        logger.addError('Error processing account mappings and transactions.')
         return createResponse(500, logger.getLogs(), 'Internal Server Error')
     }
 }
@@ -89,7 +89,7 @@ async function createManualAccount(token, accountInput, logger) {
     const { data, errors } = await performGraphQLRequest(token, query, variables)
 
     if (errors) {
-        logger.add(`Error creating account: ${JSON.stringify(errors)}`)
+        logger.addError(`Error creating account: ${JSON.stringify(errors)}`)
         throw new Error(`Error creating account: ${JSON.stringify(errors)}`)
     }
 
@@ -128,11 +128,11 @@ async function uploadStatementsFile(token, transactions, logger) {
             logger.add('Statement file uploaded successfully.')
             return { sessionKey: result.session_key }
         } else {
-            logger.add('Statement file uploaded failed.')
+            logger.addError('Statement file uploaded failed.')
             throw new Error(`Statement file upload failed: ${JSON.stringify(result)}`)
         }
     } catch (error) {
-        logger.add(`Error uploading statement file.`)
+        logger.addError(`Error uploading statement file.`)
         throw new Error(`Error uploading statement file: ${error.message}`)
     }
 }
@@ -181,7 +181,7 @@ async function importTransactions(token, accountId, sessionKey, logger) {
         return { status: uploadSession.status }
     } else {
         console.error('Transactions importing failed:', errors)
-        logger.add('Transactions importing failed.')
+        logger.addError('Transactions importing failed.')
         throw new Error(`Transactions importing failed: ${JSON.stringify(errors)}`)
     }
 }
@@ -231,7 +231,7 @@ async function handleUploadAndImport(token, accountId, transactions, logger) {
         await importTransactions(token, accountId, sessionKey, logger)
     } catch (error) {
         console.error(`Failed to upload and import transactions: ${error.message}`)
-        logger.add(`Failed to upload and import transactions.`)
+        logger.addError(`Failed to upload and import transactions.`)
         throw error
     }
 }
@@ -272,7 +272,7 @@ async function processMapping(token, mapping, logger) {
                 } into account '${ynabAccountName}'.`
             )
         } catch (error) {
-            logger.add(`Failed to process account '${ynabAccountName}'.`)
+            logger.addError(`Failed to process account '${ynabAccountName}'.`)
             throw new Error(`Failed to process account '${ynabAccountName}': ${error.message}`)
         }
     } else {
@@ -282,7 +282,7 @@ async function processMapping(token, mapping, logger) {
             await handleUploadAndImport(token, monarchAccountId, transactions, logger)
             logger.add(`Imported ${transactions.length} transactions into account '${monarchAccountName}'.`)
         } catch (error) {
-            logger.add(`Failed to import transactions into account '${monarchAccountName}'.`)
+            logger.addError(`Failed to import transactions into account '${monarchAccountName}'.`)
             throw new Error(`Failed to import transactions into account '${monarchAccountName}': ${error.message}`)
         }
     }
