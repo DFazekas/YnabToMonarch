@@ -48,6 +48,15 @@ Visit the live site at [https://ynab-to-monarch.netlify.app/](https://ynab-to-mo
 4. Map your YNAB accounts to Monarch accounts.
 5. Import accounts and transactions into Monarch.
 
+### Instruction Videos
+
+<!-- [How to Manually Migrate to Monarch](https://ynab-to-monarch.netlify.app/videos/manual_upload.mp4) -->
+
+<video width="600" controls>
+  <source src="./public/videos/manual_upload.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
 ## Contributing
 
 Contributions are welcome! Please read the [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
