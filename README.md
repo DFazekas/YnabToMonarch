@@ -52,10 +52,7 @@ Visit the live site at [https://ynab-to-monarch.netlify.app/](https://ynab-to-mo
 
 <!-- [How to Manually Migrate to Monarch](https://ynab-to-monarch.netlify.app/videos/manual_upload.mp4) -->
 
-<video width="600" controls>
-  <source src="./public/videos/manual_upload.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+[How to Manually Migrate to Monarch](./public/videos/manual_upload.mp4)
 
 ## Contributing
 
