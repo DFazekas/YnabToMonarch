@@ -405,7 +405,7 @@
 
         <!-- Action buttons -->
         <div className="button-group">
-          <button id="generateStatementFilesButton" type="button" disabled
+          <button id="generateStatementFilesButton" type="button"
             aria-label="Generate Statement Files">Generate
             Statement Files</button>
           <span>OR</span>
@@ -891,8 +891,6 @@
         return;
       }
 
-      generateStatementFilesButton.disabled = true;
-
       const startTime = Date.now()
       showLoader();
       showToast('Generating statement files...');
@@ -931,7 +929,6 @@
         showToast('Failed to generate statement files.', true);
         logger.addError('Failed to generate statement files.');
       } finally {
-        generateStatementFilesButton.disabled = false;
         hideLoader(startTime)
       }
     }
@@ -995,7 +992,6 @@
 
     function toggleActionButtons() {
       const isFormValid = fileInput.files.length > 0 && emailInput.value.trim() !== '' && passwordInput.value.trim() !== '';
-      generateStatementFilesButton.disabled = !fileInput.files.length;
       autoImporterButton.disabled = !isFormValid;
     }
 
@@ -1054,10 +1050,8 @@
 
       if (importCount > 0) {
         importButton.textContent = `Import (${importCount}) accounts into Monarch`
-        importButton.disabled = false
       } else {
         importButton.textContent = `Import into Monarch`
-        importButton.disabled = true
       }
     }
 
