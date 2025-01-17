@@ -573,14 +573,6 @@
       }
     });
 
-    // Action button listeners
-
-    [emailInput, passwordInput, fileInput].forEach(input => {
-      input.addEventListener('input', toggleActionButtons)
-    })
-
-    document.addEventListener('DOMContentLoaded', toggleActionButtons)
-
     // Account processor button listeners
 
     generateStatementFilesButton.addEventListener('click', generateStatementFiles)
@@ -992,11 +984,6 @@
       logger.add("Generating account mapping successful.")
     }
 
-    function toggleActionButtons() {
-      const isFormValid = fileInput.files.length > 0 && emailInput.value.trim() !== '' && passwordInput.value.trim() !== '';
-      autoImporterButton.disabled = !isFormValid;
-    }
-
     function resetApplication() {
       apiToken = null;
       logger.clear();
@@ -1011,7 +998,6 @@
       mappingsSection.hidden = true;
       downloadableFilesSection.hidden = true;
       startOverSection.hidden = true;
-      toggleActionButtons();
       showToast('Application has been reset.');
     }
 
