@@ -409,7 +409,7 @@
             aria-label="Generate Statement Files">Generate
             Statement Files</button>
           <span>OR</span>
-          <button id="autoImporterButton" type="button" disabled aria-label="Auto-Importer
+          <button id="autoImporterButton" type="button" aria-label="Auto-Importer
           Tool">Auto-Importer
             Tool</button>
         </div>
@@ -578,6 +578,8 @@
     [emailInput, passwordInput, fileInput].forEach(input => {
       input.addEventListener('input', toggleActionButtons)
     })
+
+    document.addEventListener('DOMContentLoaded', toggleActionButtons)
 
     // Account processor button listeners
 
@@ -1017,7 +1019,7 @@
       toast.textContent = message;
       toast.style.backgroundColor = isError ? '#d9534f' : '#333'
       toast.classList.add('show');
-      setTimeout(() => {
+      setTimeout(function(){
         toast.classList.remove('show');
       }, 4000);
     }
@@ -1031,7 +1033,7 @@
       const elapsedTime = Date.now() - startTime;
       const remainingTime = Math.max(0, 3000 - elapsedTime); // Ensure 3 seconds minimum
 
-      setTimeout(() => {
+      setTimeout(function(){
         spinnerSection.hidden = true
         document.body.classList.remove('processing');
       }, remainingTime);
