@@ -351,6 +351,7 @@
         }
       });
 
+      console.log("Mappings:", mappings)
       if (mappings.length == 0) {
         console.error('No mappings selected.');
         showToast('Please select a mapping before proceeding', true);
@@ -675,8 +676,10 @@
       toast.textContent = message;
       toast.style.backgroundColor = isError ? '#d9534f' : '#333'
       toast.classList.add('show');
+      toast.classList.remove('hidden');
       setTimeout(function(){
         toast.classList.remove('show');
+        toast.classList.add('hidden');
       }, 4000);
     }
 

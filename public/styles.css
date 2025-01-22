@@ -251,6 +251,10 @@ button:disabled {
   opacity: 1;
 }
 
+.toast.hidden {
+  display: none;
+}
+
 /* Collapsible Styles */
 .content {
   max-height: 0;
