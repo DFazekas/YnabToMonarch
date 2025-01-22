@@ -87,7 +87,7 @@
         <div id="mappingsContainer">
           <!-- Dynamic elements -->
         </div>
-        <button id="importMappingsButton" type="button" aria-label="Import into Monarch" disabled>Import into
+        <button id="importMappingsButton" type="button" aria-label="Import into Monarch">Import into
           Monarch</button>
       </form>
     </section>
@@ -159,7 +159,8 @@
     'use strict';
 
     const isLocal = window.location.hostname === 'localhost'
-    const baseURL = isLocal ? 'http://localhost:8888/.netlify/functions' : 'https://ynab-to-monarch.netlify.app/.netlify/functions'
+    console.log("is local?", isLocal)
+    const baseURL = isLocal ? 'http://localhost:8888/netlify/functions' : 'https://ynab-to-monarch.netlify.app/.netlify/functions'
 
     // DOM elements
     const subheader = document.getElementById('subheader');
@@ -333,6 +334,13 @@
       const omittedAccounts = [];
 
       const mappingElements = mappingsContainer.querySelectorAll('.account-mapping');
+
+      if (mappingElements.length == 0) {
+        console.error('No mappings selected.');
+        showToast('Please select a mapping before proceeding', true);
+        logger.addError("No mappings selected.");
+        return
+      }
 
       mappingElements.forEach(div => {
         const select = div.querySelector('select');
