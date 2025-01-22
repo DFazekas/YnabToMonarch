@@ -335,13 +335,6 @@
 
       const mappingElements = mappingsContainer.querySelectorAll('.account-mapping');
 
-      if (mappingElements.length == 0) {
-        console.error('No mappings selected.');
-        showToast('Please select a mapping before proceeding', true);
-        logger.addError("No mappings selected.");
-        return
-      }
-
       mappingElements.forEach(div => {
         const select = div.querySelector('select');
         const ynabAccountName = select.name.replace('mapping-', '');
@@ -357,6 +350,13 @@
           omittedAccounts.push(ynabAccountName);
         }
       });
+
+      if (mappings.length == 0) {
+        console.error('No mappings selected.');
+        showToast('Please select a mapping before proceeding', true);
+        logger.addError("No mappings selected.");
+        return
+      }
 
       // Confirmation Dialog
       const confirmationMessage = omittedAccounts.length
