@@ -2,9 +2,8 @@
     "name": "ynabtomonarch",
     "version": "1.0.0",
     "description": "A tool to migrate YNAB transaction records into Monarch Money.",
-    "main": "index.js",
     "scripts": {
-        "start": "node index.js"
+        "dev": "netlify dev"
     },
     "author": "Devon Fazekas",
     "license": "MIT",
