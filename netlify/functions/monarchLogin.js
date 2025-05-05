@@ -16,7 +16,7 @@ module.exports.handler = async (event, context) => {
   }
   try {
     console.log("MonarchLogin parsing request body");
-    const { email, password } = JSON.parse(event.body)
+    const { email, password, deviceUuid, otp } = JSON.parse(event.body)
     if (!email || !password) {
       console.error("MonarchLogin ❌ missing credentials");
       return {
@@ -29,20 +29,36 @@ module.exports.handler = async (event, context) => {
     console.log("MonarchLogin forwarding credentials to API");
     const response = await fetch('https://api.monarchmoney.com/auth/login/', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: email, password })
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'client-platform': 'web',
+        'device-uuid': deviceUuid,
+      },
+      body: JSON.stringify({
+        username: email,
+        password,
+        trusted_device: !!otp, // only trusted after OTP
+        supports_mfa: true,
+        supports_email_otp: true,
+        supports_recaptcha: true,
+        ...(otp && { email_otp: otp }) // include OTP if present
+      })
     })
 
+    const data = await response.json().catch(() => ({}));
+
+    if (response.status === 202 && data.detail && data.detail.includes('OTP')) {
+      return { statusCode: 200, body: JSON.stringify({ otpRequired: true, detail: data.detail }) };
+    }
     if (!response.ok) {
-      const error = await response.json()
-      console.error("MonarchLogin ❌ login failed", { status: response.status, error: error })
+      console.error("MonarchLogin ❌ login failed", { status: data.status, error: error })
       return {
         statusCode: response.status,
-        body: JSON.stringify({ error: error.message || 'Login failed.' })
+        body: JSON.stringify({ error: data.message || 'Login failed.' })
       }
     }
 
-    const data = await response.json()
     if (!data.token) {
       console.error("MonarchLogin ❌ token missing in response")
       return {

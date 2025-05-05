@@ -3,7 +3,8 @@
     "version": "1.0.0",
     "description": "A tool to migrate YNAB transaction records into Monarch Money.",
     "scripts": {
-        "dev": "netlify dev"
+        "dev": "netlify dev",
+        "dev-watch": "nodemon --watch netlify/functions --watch public --exec \"netlify dev\""
     },
     "author": "Devon Fazekas",
     "license": "MIT",
@@ -17,6 +18,8 @@
     "homepage": "https://github.com/DFazekas/YnabToMonarch#readme",
     "dependencies": {
         "form-data": "^4.0.1",
-        "node-fetch": "^2.7.0"
+        "node-fetch": "^2.7.0",
+        "nodemon": "^3.1.10",
+        "papaparse": "^5.5.2"
     }
 }
