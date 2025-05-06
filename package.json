@@ -1,25 +1,29 @@
 {
-    "name": "ynabtomonarch",
-    "version": "1.0.0",
-    "description": "A tool to migrate YNAB transaction records into Monarch Money.",
-    "scripts": {
-        "dev": "netlify dev",
-        "dev-watch": "nodemon --watch netlify/functions --watch public --exec \"netlify dev\""
-    },
-    "author": "Devon Fazekas",
-    "license": "MIT",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/DFazekas/YnabToMonarch.git"
-    },
-    "bugs": {
-        "url": "https://github.com/DFazekas/YnabToMonarch/issues"
-    },
-    "homepage": "https://github.com/DFazekas/YnabToMonarch#readme",
-    "dependencies": {
-        "form-data": "^4.0.1",
-        "node-fetch": "^2.7.0",
-        "nodemon": "^3.1.10",
-        "papaparse": "^5.5.2"
-    }
+  "name": "ynabtomonarch",
+  "version": "1.0.0",
+  "description": "A tool to migrate YNAB transaction records into Monarch Money.",
+  "scripts": {
+    "functions": "serverless offline --reloadHandler",
+    "website": "npx live-server public"
+  },
+  "author": "Devon Fazekas",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DFazekas/YnabToMonarch.git"
+  },
+  "bugs": {
+    "url": "https://github.com/DFazekas/YnabToMonarch/issues"
+  },
+  "homepage": "https://github.com/DFazekas/YnabToMonarch#readme",
+  "dependencies": {
+    "d3-dsv": "^3.0.1",
+    "form-data": "^4.0.1",
+    "node-fetch": "^2.7.0",
+    "papaparse": "^5.5.2"
+  },
+  "devDependencies": {
+    "serverless": "^4.14.2",
+    "serverless-offline": "^14.4.0"
+  }
 }

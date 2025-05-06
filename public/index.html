@@ -1,21 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>YNAB to Monarch Money</title>
   <meta name="description" content="CSV Converter tool for migrating from YNAB to Monarch Money.">
   <link rel="stylesheet" href="https://example-styles.netlify.app/styles.css">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
-  <!-- Loader spinner -->
-  <div id="spinnerSection" class="spinnerSection" hidden>
+  <!-- Loading spinner -->
+  <div id="spinner" class="spinnerSection hidden">
     <div class="spinner"></div>
   </div>
-
 
   <!-- Header -->
   <header>
@@ -24,123 +22,50 @@
         <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" />
       </a>
     </div>
-    <h1>Migrate YNAB to Monarch Money</h1>
-    <p id="subheader">Effortlessly migrate your YNAB transaction records into Monarch Money</p>
+    <h1>YNAB → Monarch Money</h1>
+    <p id="subheader">Effortlessly migrate your YNAB register into Monarch</p>
   </header>
 
 
   <main>
     <!-- File uploader -->
-    <section id="uploaderSection">
-      <div class="uploader" id="uploader" tabindex="0" role="button" aria-label="File uploader">
-        <input type="file" id="fileInput" accept=".csv" aria-label="Upload YNAB Register File" />
-        <p>Drag & Drop your YNAB Register file or click to upload</p>
-      </div>
+    <section id="uploader" class="uploader" tabindex="0" aria-label="Upload CSV">
+      <input type="file" id="fileInput" accept=".csv" hidden />
+      <p>Drag &amp; drop or click to upload your YNAB register</p>
     </section>
 
 
     <!-- Conversion form section -->
-    <section id="conversionSection" hidden>
-      <form>
-        <p>Either generate downloadable statements files for manually importing into Monarch, or use the auto-importer
-          tool</p>
-
-
-        <!-- Login fields -->
-        <div className="form-group">
-          <!-- Email field -->
-          <div className="input-group">
-            <label for="email">Monarch Email:</label>
-            <input type="email" id="email" aria-label="Email" placeholder="Enter your Monarch email" required />
-          </div>
-
-
-          <!-- Password field -->
-          <div className="input-group">
-            <label for="password">Monarch Password:</label>
-            <input type="password" id="password" aria-label="Password" placeholder="Enter your Monarch password"
-              required />
-          </div>
-
-          <!-- OTP field, hidden until needed -->
-          <div class="input-group" id="otpGroup" hidden>
-            <label for="otp">One-Time Code:</label>
-            <input type="text" id="otp" aria-label="One-Time Password" placeholder="Enter the code from your email" />
-          </div>
-
+    <section id="conversion" class="hidden">
+      <form id="conversionForm">
+        <p>Select an action:</p>
+        <div class="actions">
+          <button type="button" data-action="generate" class="btn btn-primary">Generate CSVs</button>
+          <button type="button" data-action="import" class="btn btn-outline">Auto-Import</button>
         </div>
-
-
-
-        <!-- Action buttons -->
-        <div className="button-group">
-          <button id="generateStatementFilesButton" type="button" aria-label="Generate Statement Files">Generate
-            Statement Files</button>
-          <span>OR</span>
-          <button id="autoImporterButton" type="button" aria-label="Auto-Importer
-          Tool">Auto-Importer
-            Tool</button>
-        </div>
-
-        <small>Auto-Importer requires your Monarch credentials for accessing the API.</small>
       </form>
     </section>
 
-    <!-- Account mappings section -->
-    <section id="mappingsSection" hidden>
-      <form>
-        <h3>Choose how to import your YNAB transactions into Monarch</h3>
-        <div id="mappingsContainer">
-          <!-- Dynamic elements -->
-        </div>
-        <button id="importMappingsButton" type="button" aria-label="Import into Monarch">Import into
-          Monarch</button>
-      </form>
+    <section id="importDetails" class="hidden">
+      <p>
+        Monarch Money currently only supports importing one account at a time.
+        You can import the CSV files individually, or use our Auto-Import feature to process all your accounts automatically.
+      </p>
     </section>
 
-
-    <!-- File accounts section -->
-    <section id="downloadableFilesSection" hidden>
-      <form>
-        <h2>Accounts Found in File</h2>
-        <div id="downloadableFilesContainer">
-          <!-- Dynamic elements -->
-        </div>
-        <small>Monarch doesn't support importing multiple accounts at once, so you'll need to import these accounts
-          individually.</small>
-      </form>
+    <section id="mappings" class="hidden">
+      <h2>Map Accounts</h2>
+      <div id="mappingsContainer"></div>
+      <button type="button" data-action="applyMappings" class="btn btn-primary">Import into Monarch</button>
     </section>
 
-
-    <!-- Start over button -->
-    <section id="startOverSection" hidden>
-      <button id="startOverButton" type="button" aria-label="Start again">Start again</button>
+    <section id="startOver" class="hidden">
+      <button type="button" data-action="reset" class="btn btn-secondary">Start Over</button>
     </section>
 
-
-    <!-- Security note section -->
-    <section>
-      <hr />
-      <small>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-          <path
-            d="M12 2C9.243 2 7 4.243 7 7v3H5v12h14V10h-2V7c0-2.757-2.243-5-5-5zm0 2c1.654 0 3 1.346 3 3v3H9V7c0-1.654 1.346-3 3-3zm-5 8h10v10H7V12z" />
-        </svg>
-        Your financial data is processed securely and is not stored at any point.
-      </small>
-    </section>
-
-
-    <!-- Logs section -->
-    <section id="logsSection" hidden>
-      <header>
-        <h4>Logs</h4>
-        <span id="arrow-icon">▼</span>
-      </header>
-      <div id="logsContainer">
-        <!-- Dynamic elements -->
-        <div style="margin-bottom: 8px; color: rgb(92, 184, 92);">✅ Reading file...</div>
-      </div>
+    <section id="logs" class="hidden">
+      <button type="button" data-action="toggleLogs" class="logs-toggle">Show Logs</button>
+      <div id="logsContainer" class="hidden"></div>
     </section>
   </main>
 
@@ -150,16 +75,13 @@
     <small>© 2024 Fazekas Solutions</small>
     <small class="source-link">
       <a href="https://github.com/DFazekas/YnabToMonarch" target="_blank" rel="noopener noreferrer">
-        View Source Code on GitHub
+        Source on GitHub
       </a>
     </small>
   </footer>
 
-
-  <!-- Toast notification section -->
-  <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true"></div>
-
-  <script type="module" src="/scripts/main.js"></script>
+  <script type="module" src="/src/main.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
 </body>
 
 </html>

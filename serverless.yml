@@ -1,0 +1,19 @@
+service: ynabtomonarch
+provider:
+  name: aws
+  runtime: nodejs14.x
+plugins:
+  - serverless-offline
+functions:
+  parseCsv:
+    handler: netlify/functions/parseCsv.handler
+    events:
+      - http:
+          path: parseCsv
+          method: post
+  generateStatements:
+    handler: netlify/functions/generateStatements.handler
+    events:
+      - http:
+          path: generateStatements
+          method: post

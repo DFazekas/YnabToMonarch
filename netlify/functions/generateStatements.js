@@ -1,6 +1,6 @@
 const Papa = require('papaparse');
 
-exports.handler = async (event) => {
+module.exports.handler = async (event) => {
   try {
     const { accounts } = JSON.parse(event.body);
     const files = Object.keys(accounts).map(acc => ({

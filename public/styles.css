@@ -3,6 +3,10 @@
   display: none !important;
 }
 
+.hidden {
+  display: none !important;
+}
+
 html,
 body {
   padding: 0;
