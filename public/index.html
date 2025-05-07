@@ -30,23 +30,26 @@
 
   <main>
     <!-- File uploader -->
-    <section id="uploader" class="uploader" tabindex="0" aria-label="Upload CSV">
-      <input type="file" id="fileInput" accept=".csv" hidden />
-      <p>Drag &amp; drop or click to upload your YNAB register</p>
+    <section class="section">
+      <div id="uploader" class="uploader" tabindex="0" aria-label="Upload CSV">
+        <input type="file" id="fileInput" accept=".csv" hidden />
+        <p>Drag &amp; drop or click to upload your YNAB register</p>
+      </div>
+      <br />
+      <a href="#" id="howToFindRegisterFile" class="aligned-center">Where can I find my YNAB register file?</a>
     </section>
-    <br/>
-    <a href="#" id="howToFindRegisterFile">Where can I find my YNAB register file?</a>
 
     <!-- Conversion form section -->
     <section id="conversion" class="section">
       <form id="conversionForm">
         <h2>Select Your Import Method</h2>
-        <br/>
+        <br />
         <p>
-          <strong>Download CSV ZIP:</strong><br/>Save a zip folder containing all your YNAB account data. You can then
+          <strong>Download CSV ZIP:</strong><br />Save a zip folder containing all your YNAB account data. You can then
           upload these files manually into Monarch.
           <br><br>
-          <strong>Quick Auto‑Import:</strong><br/>Let our system automatically map and import your accounts into Monarch for
+          <strong>Quick Auto‑Import:</strong><br />Let our system automatically map and import your accounts into
+          Monarch for
           you.
         </p>
         <div class="actions">
@@ -159,7 +162,8 @@
     </div>
 
     <!-- Modal for "How does this work?" -->
-    <div id="registerFileModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="howToFindRegisterFileTitle">
+    <div id="registerFileModal" class="modal hidden" role="dialog" aria-modal="true"
+      aria-labelledby="howToFindRegisterFileTitle">
       <div class="modal-content">
         <span class="close">&times;</span>
         <h2>Exporting Your YNAB Budget</h2>
@@ -172,7 +176,8 @@
             <strong>Open the Menu:</strong> From the dashboard, click your budget name in the top left corner.
           </li>
           <li>
-            <strong>Export Budget:</strong> Then, select <em>Export Budget</em> from the dropdown menu. This action will download a zipped folder containing a <em>Budget.csv</em> and <em>Register.csv</em> file.
+            <strong>Export Budget:</strong> Then, select <em>Export Budget</em> from the dropdown menu. This action will
+            download a zipped folder containing a <em>Budget.csv</em> and <em>Register.csv</em> file.
           </li>
           <li>
             <strong>Unzip:</strong> Lastly, unzip the downloaded folder. Upload the <em>Register.csv</em> file here.

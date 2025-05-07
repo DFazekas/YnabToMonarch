@@ -7,6 +7,11 @@
   display: none !important;
 }
 
+.aligned-center {
+  justify-content: center;
+  display: flex;
+}
+
 html,
 body {
   padding: 0;
@@ -97,12 +102,18 @@ section[hidden] {
 
 .uploader {
   width: 100%;
+  border: 2px dashed #ccc;
   border-radius: 10px;
   padding: 40px;
   text-align: center;
   background-color: #fff;
   transition: background-color 0.3s ease, border-color 0.3s ease;
   cursor: pointer;
+}
+
+.uploader:hover {
+  background-color: #f7f7f7;
+  border-color: #007bff;  /* On hover, change the border to the primary color */
 }
 
 .uploader.dragover,
