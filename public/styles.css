@@ -415,6 +415,11 @@ body.processing {
   color: #005B96; /* darker blue */
 }
 
+.modal-content a {
+  color: #005B96; /* darker blue for better contrast */
+  text-decoration: underline;
+}
+
 .modal-content .note {
   margin-top: 1rem;
   font-size: 0.9rem;
@@ -436,4 +441,40 @@ body.processing {
 .modal-content .close:focus {
   color: #000;
   text-decoration: none;
+}
+
+/* **************************** */
+
+button[data-action="import"].btn {
+  background: linear-gradient(135deg, #6a11cb, #2575fc);
+  border: 2px solid transparent;
+  color: #fff;
+  font-weight: bold;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  /* Continuous default glow effect */
+  animation: defaultGlow 3s infinite;
+}
+
+@keyframes defaultGlow {
+  0% {
+    filter: brightness(1);
+    transform: scale(1);
+  }
+  50% {
+    filter: brightness(1.2);
+    transform: scale(1.02);
+  }
+  100% {
+    filter: brightness(1);
+    transform: scale(1);
+  }
+}
+
+/* On hover, cancel the default animation and apply a different effect */
+button[data-action="import"].btn:hover {
+  animation: none;
+  transform: scale(1.08);
+  box-shadow: 0 4px 15px rgba(37, 117, 252, 0.5);
 }

@@ -34,16 +34,26 @@
       <input type="file" id="fileInput" accept=".csv" hidden />
       <p>Drag &amp; drop or click to upload your YNAB register</p>
     </section>
-
+    <br/>
+    <a href="#" id="howToFindRegisterFile">Where can I find my YNAB register file?</a>
 
     <!-- Conversion form section -->
-    <section id="conversion" class="hidden">
+    <section id="conversion" class="section">
       <form id="conversionForm">
-        <p>Select an action:</p>
+        <h2>Select Your Import Method</h2>
+        <br/>
+        <p>
+          <strong>Download CSV ZIP:</strong><br/>Save a zip file containing all your YNAB account data. You can then
+          upload these files manually into Monarch.
+          <br><br>
+          <strong>Quick Auto‑Import:</strong><br/>Let our system automatically map and import your accounts into Monarch for
+          you.
+        </p>
         <div class="actions">
           <button type="button" data-action="generate" class="btn btn-primary">Generate CSVs</button>
           <button type="button" data-action="import" class="btn btn-outline">Auto-Import</button>
         </div>
+        <a href="#" id="howItWorksLink">What is Auto-Import?</a>
       </form>
     </section>
 
@@ -59,28 +69,32 @@
     </section>
 
     <!-- Credentials Section -->
-    <section id="credentials">
-      <h2>Monarch Credentials</h2>
-      <p>Enter your Monarch credentials to control how to import your YNAB accounts.<br/><a href="#" id="howItWorksLink">How does
-          this work?</a>
-      </p>
-      <form id="credentialsForm" class="form-group">
+    <section id="credentials" class="section">
+      <form id="credentialsForm">
+        <h2>Monarch Credentials</h2>
+        <p>Enter your Monarch credentials to control how to import your YNAB accounts.<br /><a href="#"
+            id="howItWorksLink">What is Auto-Import?</a>
+        </p>
+        <br />
+
         <!-- Username -->
         <div class="input-group">
           <label for="monarchUsername">Username</label>
-          <input type="text" id="monarchUsername" name="monarchUsername" placeholder="Enter your Monarch username" />
+          <input type="text" id="monarchUsername" name="monarchUsername" placeholder="Enter your Monarch username"
+            autocomplete="username" />
         </div>
 
         <!-- Password -->
         <div class="input-group">
           <label for="monarchPassword">Password</label>
-          <input type="password" id="monarchPassword" name="monarchPassword" placeholder="Enter your password" />
+          <input type="password" id="monarchPassword" name="monarchPassword" placeholder="Enter your password"
+            autocomplete="current-password" />
         </div>
 
         <!-- OTP field is hidden by default -->
         <div class="input-group hidden" id="otpGroup">
           <label for="monarchOtp">OTP (One-Time Password)</label>
-          <input type="text" id="monarchOtp" name="monarchOtp" placeholder="Enter OTP if required" />
+          <input type="text" id="monarchOtp" name="monarchOtp" placeholder="Enter OTP" />
         </div>
 
         <button type="button" data-action="login" class="btn btn-primary">Login</button>
@@ -117,7 +131,7 @@
     <div id="infoModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="howItWorksTitle">
       <div class="modal-content">
         <span class="close">&times;</span>
-        <h2>How Auto‑Import Works</h2>
+        <h2>Auto-Import</h2>
         <p>Our Auto‑Import feature makes it simple to bring your YNAB data into Monarch Money securely.</p>
         <h4>How it works</h4>
         <ol>
@@ -129,10 +143,12 @@
             <strong>Fetch Your Accounts:</strong> Using that token, we pull your existing Monarch accounts.
           </li>
           <li>
-            <strong>Define Your Mappings:</strong> For each YNAB account, choose whether to <em>create</em> a new Monarch account or <em>insert</em> into an existing one.
+            <strong>Define Your Mappings:</strong> For each YNAB account, choose whether to <em>create</em> a new
+            Monarch account or <em>insert</em> into an existing one.
           </li>
           <li>
-            <strong>Apply Changes:</strong> Once you review and confirm your mappings, we use the token to update your Monarch accounts accordingly.
+            <strong>Apply Changes:</strong> Once you review and confirm your mappings, we use the token to update your
+            Monarch accounts accordingly.
           </li>
         </ol>
         <p class="note">
@@ -140,6 +156,29 @@
           doesn’t offer a public API, so this approach uses the same network calls their website does to bring your data
           in. It’s the only way for now, but your credentials remain safe with Monarch.
         </p>
+      </div>
+    </div>
+
+    <!-- Modal for "How does this work?" -->
+    <div id="registerFileModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="howToFindRegisterFileTitle">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Exporting Your YNAB Budget</h2>
+        <h4>How to Export YNAB Data:</h4>
+        <ol>
+          <li>
+            <strong>Sign In:</strong> Log into your <a href="https://www.ynab.com">YNAB profile</a>.
+          </li>
+          <li>
+            <strong>Open the Menu:</strong> From the dashboard, click your budget name in the top left corner.
+          </li>
+          <li>
+            <strong>Export Budget:</strong> Then, select <em>Export Budget</em> from the dropdown menu. This action will download a zipped folder containing a <em>Budget.csv</em> and <em>Register.csv</em> file.
+          </li>
+          <li>
+            <strong>Unzip:</strong> Lastly, unzip the downloaded folder. Upload the <em>Register.csv</em> file here.
+          </li>
+        </ol>
       </div>
     </div>
 

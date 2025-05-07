@@ -22,13 +22,45 @@ bind('[data-action="import"]', 'click', () => {
 bind('[data-action="downloadAll"]', 'click', generateAccounts);
 bind('[data-action="reset"]', () => window.location.reload());
 bind('[data-action="toggleLogs"]', 'click', toggleLogs);
+
+// Bind opening of modals for specific triggers
 bind('#howItWorksLink', 'click', (e) => {
   e.preventDefault();
-  toggleSection('infoModal')
+  openModal('infoModal');
 });
-bind('.modal .close', 'click', () => {
-  toggleSection('infoModal', false)
+bind('#howToFindRegisterFile', 'click', (e) => {
+  e.preventDefault();
+  openModal('registerFileModal');
 });
+// Reusable binding to close any modal via its close button
+document.querySelectorAll('.modal .close').forEach(button => {
+  button.addEventListener('click', () => {
+    const modal = button.closest('.modal');
+    if (modal && modal.id) {
+      closeModal(modal.id);
+    }
+  });
+});
+
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex'; // Ensures the modal remains centered using flex layout
+  } else {
+    console.warn(`openModal: No modal found with id "${modalId}"`);
+  }
+}
+
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+  } else {
+    console.warn(`closeModal: No modal found with id "${modalId}"`);
+  }
+}
 
 export function toggleSection(id, show = true) {
   document.getElementById(id).classList.toggle('hidden', !show);
