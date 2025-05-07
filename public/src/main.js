@@ -41,6 +41,13 @@ document.querySelectorAll('.modal .close').forEach(button => {
     }
   });
 });
+window.addEventListener('click', (event) => {
+  document.querySelectorAll('.modal').forEach(modal => {
+    if (event.target === modal) {
+      closeModal(modal.id);
+    }
+  });
+});
 
 function openModal(modalId) {
   const modal = document.getElementById(modalId);
@@ -69,13 +76,6 @@ export function toggleSection(id, show = true) {
 export function toggleLogs() {
   toggleSection('logsContainer');
 }
-
-window.addEventListener('click', (event) => {
-  const modal = document.getElementById('infoModal');
-  if (event.target === modal) {
-    modal.style.display = 'none';
-  }
-});
 
 function bind(selector, event, handler) {
   const el = document.querySelector(selector);
