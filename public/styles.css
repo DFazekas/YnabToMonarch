@@ -151,13 +151,13 @@ button:disabled {
   color: #fff;
 }
 
-#startOverSection {
+#startOver {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-#startOverButton {
+#startOver .btn {
   background-color: #dc3545;
   color: #fff;
 }
@@ -196,12 +196,11 @@ button:disabled {
 .security-note small {
   display: flex;
   align-items: center;
-  color: #555;
+  color: #ffffff;
 }
 
-.security-note svg {
-  margin-right: 8px;
-  fill: #333;
+.security-note svg path {
+  fill: white;
 }
 
 /* spinnerSection Styles */
@@ -342,4 +341,99 @@ body.processing {
 #logsSection header h4 {
   color: #666;
   padding: 0;
+}
+
+.filled-box {
+  background-color: #f0f4f8;  /* light, subtle background */
+  border: 1px solid #d0dae2;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Improve typography for the filled box */
+.filled-box p {
+  font-size: 1.1em;
+  line-height: 1.5;
+  color: #333;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* Center the Auto-Import button */
+.button-container {
+  text-align: center;
+}
+
+/* Modal container */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 1.5rem;
+  max-width: 1000px;
+  width: 90%;
+  border-radius: 8px;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  color: #333;
+}
+
+.modal-content h2 {
+  color: #333;
+  margin-top: 0;
+}
+
+.modal-content h4 {
+  color: #333;
+  margin-top: 0;
+  padding-bottom: 0;
+}
+
+.modal-content ol {
+  padding-left: 1.2rem;
+  text-align: left;
+}
+
+.modal-content ol li {
+  margin-bottom: 1rem;
+}
+
+.modal-content ol li::marker {
+  color: #005B96; /* darker blue */
+}
+
+.modal-content .note {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: #444;
+  border-top: 1px solid #eee;
+  padding-top: 0.8rem;
+}
+
+/* Close button */
+.modal-content .close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.modal-content .close:hover,
+.modal-content .close:focus {
+  color: #000;
+  text-decoration: none;
 }

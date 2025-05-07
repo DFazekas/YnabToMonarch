@@ -22,6 +22,13 @@ bind('[data-action="import"]', 'click', () => {
 bind('[data-action="downloadAll"]', 'click', generateAccounts);
 bind('[data-action="reset"]', () => window.location.reload());
 bind('[data-action="toggleLogs"]', 'click', toggleLogs);
+bind('#howItWorksLink', 'click', (e) => {
+  e.preventDefault();
+  toggleSection('infoModal')
+});
+bind('.modal .close', 'click', () => {
+  toggleSection('infoModal', false)
+});
 
 export function toggleSection(id, show = true) {
   document.getElementById(id).classList.toggle('hidden', !show);
@@ -30,6 +37,13 @@ export function toggleSection(id, show = true) {
 export function toggleLogs() {
   toggleSection('logsContainer');
 }
+
+window.addEventListener('click', (event) => {
+  const modal = document.getElementById('infoModal');
+  if (event.target === modal) {
+    modal.style.display = 'none';
+  }
+});
 
 function bind(selector, event, handler) {
   const el = document.querySelector(selector);
