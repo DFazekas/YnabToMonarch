@@ -30,7 +30,6 @@ header {
 }
 
 footer {
-  display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 10px 0;
@@ -39,14 +38,46 @@ footer {
   margin: 0;
 }
 
-footer small {
-  margin: 0px;
+.footer-row {
+  width: 100%;
+  padding: 5px 20px;
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   text-align: center;
-  padding: 20px;
 }
 
-footer .source-link {
-  margin-left: auto;
+.footer-row .left {
+  text-align: left;
+  border: none;
+  margin: 0;
+}
+
+.footer-row .middle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 0.9rem;
+  color: #333;
+  border: none;
+  margin: 0;
+}
+
+.footer-row .middle svg path {
+  fill: #333;
+}
+
+.footer-row .right {
+  border: none;
+  margin: 0;
+}
+
+.footer-row .right a {
+  text-decoration: none;
+  color: #005B96;
+  font-weight: bold;
 }
 
 header .donate-button img {
@@ -201,17 +232,6 @@ button:disabled {
   align-items: center;
   gap: 10px;
   margin-top: 20px;
-}
-
-/* Security Note */
-.security-note small {
-  display: flex;
-  align-items: center;
-  color: #ffffff;
-}
-
-.security-note svg path {
-  fill: white;
 }
 
 /* spinnerSection Styles */
