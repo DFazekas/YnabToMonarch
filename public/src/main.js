@@ -53,7 +53,8 @@ function openModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) {
     modal.classList.remove('hidden');
-    modal.style.display = 'flex'; // Ensures the modal remains centered using flex layout
+    modal.style.display = 'flex';
+    document.body.classList.add('modal-open');
   } else {
     console.warn(`openModal: No modal found with id "${modalId}"`);
   }
@@ -64,6 +65,7 @@ function closeModal(modalId) {
   if (modal) {
     modal.classList.add('hidden');
     modal.style.display = 'none';
+    document.body.classList.remove('modal-open');
   } else {
     console.warn(`closeModal: No modal found with id "${modalId}"`);
   }
