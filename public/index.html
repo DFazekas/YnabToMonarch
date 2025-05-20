@@ -43,20 +43,38 @@
     <section id="conversion" class="section">
       <form id="conversionForm">
         <h2>Select Your Migration Method</h2>
-        <br />
-        <p>
-          <strong>Download CSV ZIP:</strong><br />Save a zip folder containing all your YNAB account data. You can then
-          upload these files manually into Monarch.
-          <br><br>
-          <strong>Quick Auto‑Import:</strong><br />Let our system automatically map and import your accounts into
-          Monarch for
-          you.
-        </p>
-        <div class="actions">
-          <button type="button" data-action="generate" class="btn btn-primary">Generate CSVs</button>
-          <button type="button" data-action="import" class="btn btn-outline">Auto-Import</button>
+        <div class="migration-cards">
+          
+          <div class="method-card">
+            <div class="card-content">
+              <div class="icon">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="#005B96">
+                  <path d="M5 20h14v-2H5v2zm7-18v12l4-4h-3v-6h-2v6H8l4 4z" />
+                </svg>
+              </div>
+              <h3>Download CSV ZIP</h3>
+              <p>Save a zip folder containing all your YNAB account data. Upload manually into Monarch.</p>
+              <button type="button" data-action="generate" class="btn btn-primary">Download ZIP</button>
+            </div>
+          </div>
+
+          <div class="method-card">
+            <div class="card-content">
+              <div class="icon">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="#005B96">
+                  <path d="M13 2L3 14h6v8l10-12h-6z" />
+                </svg>
+              </div>
+              <h3>Auto-Import</h3>
+              <p>Let our system automatically map and import your accounts into Monarch.</p>
+              <button type="button" data-action="import" class="btn btn-primary">
+                Start Auto-Import
+              </button>
+              <a href="#" id="howItWorksLink" class="card-hint">What is Auto-Import?</a>
+            </div>
+          </div>
+
         </div>
-        <a href="#" id="howItWorksLink">What is Auto-Import?</a>
       </form>
     </section>
 
