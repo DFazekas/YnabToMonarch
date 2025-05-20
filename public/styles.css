@@ -12,6 +12,13 @@
   display: flex;
 }
 
+.aligned-vert {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
 html,
 body {
   padding: 0;
@@ -525,10 +532,23 @@ button[data-action="import"].btn:hover {
 
 .method-card {
   flex: 1;
-  border: 1px solid #ccc;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   padding: 20px;
   transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  height: 100%;
+  justify-content: space-between;
+}
+
+.card-content .btn, .card-content .card-hint {
+  margin-left: 0;
+  margin-bottom: 8px;
 }
 
 .method-card .icon {
@@ -552,7 +572,23 @@ button[data-action="import"].btn:hover {
 }
 
 .card-hint {
+  text-decoration: none !important;
+  font-size: 1rem;
+}
+
+.card-hint:hover {
+  text-decoration: underline !important;
+}
+
+#preDownloadHowToImportLink {
   display: block;
-  font-size: 0.9rem;
-  text-decoration: underline;
+}
+
+#howItWorksLink {
+  display: block;
+}
+
+/* OTP */
+#resendOtp {
+  margin-left: 0.6rem;
 }

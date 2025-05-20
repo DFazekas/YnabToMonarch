@@ -30,7 +30,7 @@
 
   <main>
     <!-- File uploader -->
-    <section class="section">
+    <section id="uploader-section" class="section">
       <div id="uploader" class="uploader" tabindex="0" aria-label="Upload CSV">
         <input type="file" id="fileInput" accept=".csv" hidden />
         <p>Drag &amp; drop or click to upload your YNAB register</p>
@@ -44,7 +44,7 @@
       <form id="conversionForm">
         <h2>Select Your Migration Method</h2>
         <div class="migration-cards">
-          
+
           <div class="method-card">
             <div class="card-content">
               <div class="icon">
@@ -55,6 +55,7 @@
               <h3>Download CSV ZIP</h3>
               <p>Save a zip folder containing all your YNAB account data. Upload manually into Monarch.</p>
               <button type="button" data-action="generate" class="btn btn-primary">Download ZIP</button>
+              <a href="#" id="preDownloadHowToImportLink" class="card-hint">How to Import into Monarch?</a>
             </div>
           </div>
 
@@ -79,19 +80,46 @@
     </section>
 
     <!-- Downloaded message -->
-    <section id="importDetails" class="filled-box hidden">
-      <p>
-        Monarch Money currently only supports importing one account at a time.<br /><br />You can import the CSV files
-        individually, or use our Auto-Import feature to process all your accounts automatically.
-      </p>
-      <div class="button-container">
-        <button type="button" data-action="import" class="btn btn-primary">Auto-Import</button>
-      </div>
+    <section id="importDetails" class="section">
+      <form>
+        <h2>Import Into Monarch</h2>
+        <p>
+          Monarch currently only supports manually importing one account at a time.
+        </p>
+        <br />
+
+        <div class="migration-cards">
+
+          <!-- Manual Import Card -->
+          <div class="method-card">
+            <div class="card-content">
+              <h3>Manual CSV Import</h3>
+              <p>Import one account at a time by uploading your CSVs.</p>
+
+              <a href="/docs/import-guide" class="btn btn-secondary">
+                View Import Guide
+              </a>
+            </div>
+          </div>
+
+          <!-- Auto Import Card -->
+          <div class="method-card">
+            <div class="card-content">
+              <h3>Quick Auto-Import</h3>
+              <p>Let us fetch & map all your YNAB accounts for you automatically.</p>
+              <button type="button" data-action="import" class="btn btn-primary">
+                Start Auto-Import
+              </button>
+              <a href="#" id="howItWorksLink" class="card-hint">What is Auto-Import?</a>
+            </div>
+          </div>
+      </form>
     </section>
 
     <!-- Credentials Section -->
     <section id="credentials" class="section">
-      <form id="credentialsForm">
+
+      <form id="loginForm">
         <h2>Monarch Credentials</h2>
         <p>Enter your Monarch credentials to control how to import your YNAB accounts.<br />
         </p>
@@ -100,34 +128,42 @@
         <!-- Username -->
         <div class="input-group">
           <label for="monarchUsername">Username</label>
-          <input type="text" id="monarchUsername" name="monarchUsername" placeholder="Enter your Monarch username"
-            autocomplete="username" />
+          <input type="text" id="monarchUsername" name="monarchUsername" placeholder="you@example.com"
+            autocomplete="username" required />
         </div>
 
         <!-- Password -->
         <div class="input-group">
           <label for="monarchPassword">Password</label>
-          <input type="password" id="monarchPassword" name="monarchPassword" placeholder="Enter your password"
-            autocomplete="current-password" />
-        </div>
-
-        <!-- OTP field is hidden by default -->
-        <div class="input-group hidden" id="otpGroup">
-          <label for="monarchOtp">OTP (One-Time Password)</label>
-          <input type="text" id="monarchOtp" name="monarchOtp" placeholder="Enter OTP" />
+          <input type="password" id="monarchPassword" name="monarchPassword" placeholder="●●●●●●●●"
+            autocomplete="current-password" required />
         </div>
 
         <button type="button" data-action="login" class="btn btn-primary">Login</button>
       </form>
+
+      <form id="otpForm">
+        <h2>Verify One-Time Password</h2>
+        <p>Monarch sent a 6-digit code to your email.</p>
+        <br />
+        <div class="input-group">
+          <label for="monarchOtp">One-Time Password (OTP)</label>
+          <input type="text" id="monarchOtp" name="monarchOtp" inputMode="numeric" pattern="\d{6}"
+            autocomplete="one-time-code" placeholder="123456" required />
+        </div>
+
+        <button type="button" class="btn btn-primary">Verify Code</button>
+        <a href="#" id="resendOtp" class="card-hint">Resend OTP</a>
+      </form>
     </section>
 
-    <section id="mappings"> <!--class="hidden">-->
+    <section id="mappings" class="section">
       <h2>Map Accounts</h2>
       <div id="mappingsContainer"></div>
       <button type="button" data-action="applyMappings" class="btn btn-primary">Import into Monarch</button>
     </section>
 
-    <section id="startOver"> <!--class="hidden">-->
+    <section id="startOver" class="hidden">
       <button type="button" data-action="reset" class="btn btn-secondary">Start Over</button>
     </section>
 
@@ -136,7 +172,7 @@
       <div id="logsContainer" class="hidden"></div>
     </section>
 
-    <!-- Modal for "How does this work?" -->
+    <!-- Modal for "How does Auto-Import work?" -->
     <div id="infoModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="howItWorksTitle">
       <div class="modal-content">
         <span class="close">&times;</span>
@@ -168,7 +204,7 @@
       </div>
     </div>
 
-    <!-- Modal for "How does this work?" -->
+    <!-- Modal for "Where to Find Register File?" -->
     <div id="registerFileModal" class="modal hidden" role="dialog" aria-modal="true"
       aria-labelledby="howToFindRegisterFileTitle">
       <div class="modal-content">
@@ -188,6 +224,45 @@
           </li>
           <li>
             <strong>Unzip:</strong> Lastly, unzip the downloaded folder. Upload the <em>Register.csv</em> file here.
+          </li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Modal for "How to Manually Import into Monarch?" -->
+    <div id="manualImportModal" class="modal hidden" role="dialog" aria-modal="true"
+      aria-labelledby="howToManuallyImportIntoMonarchTitle">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Manually Import Into Monarch</h2>
+        <h4>How to Manually Import Transactions into Monarch:</h4>
+        <ol>
+          <li>
+            <strong>Unzip Accounts:</strong> Find your downloaded ZIP folder containing your account data, then unzip
+            its contents.
+          </li>
+          <li>
+            <strong>Sign In:</strong> Log into your <a href="https://app.monarchmoney.com">Monarch profile</a>.
+          </li>
+          <li>
+            <strong>(optional) Create an Account:</strong> Navigate to the <strong>Accounts</strong> page and click the
+            <em>Add account</em> button. In the next window, select <em>Add manual account</em> and choose the
+            appropriate <strong>type</strong>. Then give your account a <strong>name</strong> and set its starting
+            <strong>Balance</strong> to zero.
+          </li>
+          <li>
+            <strong>Open Account:</strong> Open the account you wish to import transactions into and click the
+            <em>Edit</em> dropdown and select
+            <em>Upload transactions</em>.
+          </li>
+          <li>
+            <strong>Import Transactions:</strong> In the new window, click the <em>Upload a CSV file</em> button and
+            choose the
+            unzipped account file. Then <strong>enable</strong> the <em>Adjust account's balances based on these
+              transactions</em> toggle, and click <em>Add to account</em>.
+          </li>
+          <li>
+            <strong>Rinse & Repeat:</strong> Repeat the process for each account you want to import.
           </li>
         </ol>
       </div>

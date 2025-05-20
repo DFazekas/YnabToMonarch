@@ -32,6 +32,14 @@ bind('#howToFindRegisterFile', 'click', (e) => {
   e.preventDefault();
   openModal('registerFileModal');
 });
+bind('#preDownloadHowToImportLink', 'click', (e) => {
+  e.preventDefault();
+  openModal('manualImportModal');
+});
+bind('#postDownloadHowToImportLink', 'click', (e) => {
+  e.preventDefault();
+  openModal('manualImportModal');
+});
 // Reusable binding to close any modal via its close button
 document.querySelectorAll('.modal .close').forEach(button => {
   button.addEventListener('click', () => {
