@@ -30,7 +30,7 @@ export async function handleFile(file) {
     document.getElementById('accountCount').textContent = Object.keys(result).length;
     
     // Hide file uploader and show action buttons plus reset
-    toggleSection('uploader', false);
+    toggleSection('uploader-section', false);
     toggleSection('conversion', true);
     toggleSection('startOver', true);
     logger.log('Parsed and grouped successfully.');
