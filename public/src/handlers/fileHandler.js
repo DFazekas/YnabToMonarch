@@ -25,6 +25,10 @@ export async function handleFile(file) {
     const csvText = await file.text();
     const result = await parseCsv(csvText);
     state.accounts = result;
+    
+    // Update the UI
+    document.getElementById('accountCount').textContent = Object.keys(result).length;
+    
     // Hide file uploader and show action buttons plus reset
     toggleSection('uploader', false);
     toggleSection('conversion', true);
