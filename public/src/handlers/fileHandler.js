@@ -40,6 +40,5 @@ export async function handleFile(file) {
   function onError(msg) {
     showToast(msg, true);
     logger.error(msg);
-    hideLoader();
   }
 }
