@@ -71,7 +71,7 @@
               <button type="button" data-action="import" class="btn btn-primary">
                 Start Auto-Import
               </button>
-              <a href="#" id="howItWorksLink" class="card-hint">What is Auto-Import?</a>
+              <a href="#" id="preDownloadWhatIsAutoImporter" class="card-hint">What is Auto-Import?</a>
             </div>
           </div>
 
@@ -96,7 +96,7 @@
               <h3>Manual CSV Import</h3>
               <p>Import one account at a time by uploading your CSVs.</p>
 
-              <a href="/docs/import-guide" class="btn btn-secondary">
+              <a href="#" id="postDownloadHowToImportLink" class="btn btn-secondary">
                 View Import Guide
               </a>
             </div>
@@ -110,7 +110,7 @@
               <button type="button" data-action="import" class="btn btn-primary">
                 Start Auto-Import
               </button>
-              <a href="#" id="howItWorksLink" class="card-hint">What is Auto-Import?</a>
+              <a href="#" id="postDownloadWhatIsAutoImporter" class="card-hint">What is Auto-Import?</a>
             </div>
           </div>
       </form>
@@ -173,7 +173,7 @@
     </section>
 
     <!-- Modal for "How does Auto-Import work?" -->
-    <div id="infoModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="howItWorksTitle">
+    <div id="whatIsAutoImporterModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="whatIsAutoImporterTitle">
       <div class="modal-content">
         <span class="close">&times;</span>
         <h2>Auto-Import</h2>
@@ -205,8 +205,8 @@
     </div>
 
     <!-- Modal for "Where to Find Register File?" -->
-    <div id="registerFileModal" class="modal hidden" role="dialog" aria-modal="true"
-      aria-labelledby="howToFindRegisterFileTitle">
+    <div id="whereToFindRegisterModal" class="modal hidden" role="dialog" aria-modal="true"
+      aria-labelledby="whereToFindRegisterTitle">
       <div class="modal-content">
         <span class="close">&times;</span>
         <h2>Exporting Your YNAB Budget</h2>
@@ -230,8 +230,8 @@
     </div>
 
     <!-- Modal for "How to Manually Import into Monarch?" -->
-    <div id="manualImportModal" class="modal hidden" role="dialog" aria-modal="true"
-      aria-labelledby="howToManuallyImportIntoMonarchTitle">
+    <div id="howToManuallyImportModal" class="modal hidden" role="dialog" aria-modal="true"
+      aria-labelledby="howToManuallyImportTitle">
       <div class="modal-content">
         <span class="close">&times;</span>
         <h2>Manually Import Into Monarch</h2>

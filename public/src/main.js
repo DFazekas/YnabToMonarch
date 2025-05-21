@@ -24,21 +24,25 @@ bind('[data-action="reset"]', () => window.location.reload());
 bind('[data-action="toggleLogs"]', 'click', toggleLogs);
 
 // Bind opening of modals for specific triggers
-bind('#howItWorksLink', 'click', (e) => {
+bind('#preDownloadWhatIsAutoImporter', 'click', (e) => {
   e.preventDefault();
-  openModal('infoModal');
+  openModal('whatIsAutoImporterModal');
+});
+bind('#postDownloadWhatIsAutoImporter', 'click', (e) => {
+  e.preventDefault();
+  openModal('whatIsAutoImporterModal');
 });
 bind('#howToFindRegisterFile', 'click', (e) => {
   e.preventDefault();
-  openModal('registerFileModal');
+  openModal('whereToFindRegisterModal');
 });
 bind('#preDownloadHowToImportLink', 'click', (e) => {
   e.preventDefault();
-  openModal('manualImportModal');
+  openModal('howToManuallyImportModal');
 });
 bind('#postDownloadHowToImportLink', 'click', (e) => {
   e.preventDefault();
-  openModal('manualImportModal');
+  openModal('howToManuallyImportModal');
 });
 // Reusable binding to close any modal via its close button
 document.querySelectorAll('.modal .close').forEach(button => {
