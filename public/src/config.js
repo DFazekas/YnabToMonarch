@@ -6,4 +6,4 @@ export const API = {
   generateStatements: 'http://localhost:3000/dev/generateStatements',
 };
 
-export const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+export const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
