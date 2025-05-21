@@ -1,14 +1,5 @@
 import { API } from '../config.js';
-
-async function postJson(url, body) {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error((await res.json()).error || 'API error');
-  return res.json();
-}
+import { postJson } from './utils.js';
 
 export const monarchApi = {
   login: (email, password, deviceUuid, otp) => postJson(API.login, { email, password, deviceUuid, otp }),
