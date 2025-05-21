@@ -14,6 +14,7 @@ export async function handleFile(file) {
   if (file.size > MAX_FILE_SIZE) return onError('File too large.');
   if (!file.name.endsWith('.csv')) return onError('Only CSV allowed.');
 
+  showToast(`Uploading file...`);
   showLoader()
 
   try {
