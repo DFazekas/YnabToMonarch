@@ -6,6 +6,8 @@ import { state } from '../state.js';
 import { toggleSection } from '../main.js';
 
 export async function handleFile(file) {
+  if (!file) return;
+  
   const logger = new Logger(document.getElementById('logsContainer'));
   logger.clear()
 
