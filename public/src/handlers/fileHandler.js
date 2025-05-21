@@ -4,6 +4,7 @@ import { Logger } from '../utils/logger.js';
 import { MAX_FILE_SIZE } from '../config.js';
 import { state } from '../state.js';
 import { toggleSection } from '../main.js';
+import { parseCsv } from '../api/parseCsv.js';
 
 export async function handleFile(file) {
   if (!file) return;
@@ -22,12 +23,7 @@ export async function handleFile(file) {
   try {
     logger.log('Parsing file contents...')
     const csvText = await file.text();
-    const result = await fetch('http://localhost:3000/dev/parseCsv', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ csvText })
-    }).then(res => res.json());
-
+    const result = await parseCsv(csvText);
     state.accounts = result;
     // Hide file uploader and show action buttons plus reset
     toggleSection('uploader', false);
