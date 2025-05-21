@@ -1,8 +1,8 @@
 export const API = {
-  parseCsv: '/dev/parseCsv',
-  login: '/dev/monarchLogin',
-  fetchAccounts: '/dev/monarchAccounts',
-  mapAccounts: '/dev/mapAccounts',
+  parseCsv: 'http://localhost:3000/dev/parseCsv',
+  login: 'http://localhost:3000/dev/monarchLogin',
+  fetchAccounts: 'http://localhost:3000/dev/monarchAccounts',
+  mapAccounts: 'http://localhost:3000/dev/mapAccounts',
   generateStatements: 'http://localhost:3000/dev/generateStatements',
 };
 
