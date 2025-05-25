@@ -161,29 +161,20 @@
     <form id="step1" class="section">
       <div class="controls">
         <input type="text" id="ynabSearch" placeholder="🔍 Search YNAB accounts..." />
-        <button id="selectAllFiltered">Select All Filtered</button>
-        <button id="deselectAll">Clear Selection</button>
+        <button id="selectAllFiltered" type="button">Select All Filtered</button>
+        <button id="deselectAll" type="button">Clear Selection</button>
       </div>
       <ul id="ynabList"></ul>
       <button id="toStep2" class="primary" disabled>Import →</button>
     </form>
 
     <form id="step2" class="section">
-      <button id="backToStep1" class="secondary">← Back</button>
-      <div class="bulk-actions">
-        <label for="bulkAction">Bulk action:</label>
-        <select id="bulkAction">
-          <option value="">—</option>
-          <option value="create_new">Create new Monarch accounts for all YNAB accounts</option>
-          <option value="import_existing">Import into existing Monarch account</option>
-        </select>
-        <input id="bulkExisting" type="text" list="monarchList" placeholder="Type to search..." />
-        <button id="applyBulk">Apply</button>
-      </div>
+      <button id="backToStep1" type="button" class="secondary">← Choose YNAB accounts to import</button>
 
       <table id="mappingTable">
         <thead>
           <tr>
+            <th></th>
             <th>YNAB Account</th>
             <th>Transactions</th>
             <th>Monarch Account</th>
@@ -194,7 +185,47 @@
       </table>
 
       <div id="summary" class="summary"></div>
-      <button id="confirmImport" class="primary">Confirm & Import</button>
+      <button id="confirmImport" type="button" class="primary">Confirm & Import</button>
+
+      <!-- floating bulk-action bar -->
+      <div id="bulkActionBar" class="bulk-action-bar hidden">
+        <button id="bulkClose" type="button" class="bar-btn" title="Unselect all">0 Accounts</button>
+        <div class="bulk-separator"></div>
+        <button id="bulkCreate" type="button" class="bar-btn" title="Create new accounts">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span class="label">Create new</span>
+        </button>
+        <button id="bulkReset" type="button" class="bar-btn" title="Reset mapping">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 0-6"></path>
+          </svg>
+          <span class="label">Reset</span>
+        </button>
+        <button id="bulkRename" type="button" class="bar-btn" title="Rename new accounts">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+          </svg>
+          <span class="label">Rename</span>
+        </button>
+        <button id="bulkRemove" type="button" class="bar-btn" title="Remove selected">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
+          </svg>
+          <span class="label">Remove</span>
+        </button>
+      </div>
     </form>
 
     <datalist id="monarchList"></datalist>
@@ -202,9 +233,10 @@
     <!-- Mapping section -->
     <section id="mappings" class="section hidden">
       <h2>Map Accounts</h2>
-      
+
       <div id="mappingsContainer"></div>
-      <button id="importMappingsButton" type="button" data-action="applyMappings" class="btn btn-primary" aria-label="Import into Monarch">Import into Monarch</button>
+      <button id="importMappingsButton" type="button" data-action="applyMappings" class="btn btn-primary"
+        aria-label="Import into Monarch">Import into Monarch</button>
     </section>
 
     <!-- Reset button -->
@@ -219,7 +251,8 @@
     </section>
 
     <!-- Modal for "How does Auto-Import work?" -->
-    <div id="whatIsAutoImporterModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="whatIsAutoImporterTitle">
+    <div id="whatIsAutoImporterModal" class="modal hidden" role="dialog" aria-modal="true"
+      aria-labelledby="whatIsAutoImporterTitle">
       <div class="modal-content">
         <span class="close">&times;</span>
         <h2>Auto-Import</h2>
@@ -259,7 +292,8 @@
         <h4>How to Export From YNAB:</h4>
         <ol>
           <li>
-            <strong>Sign In:</strong> Log into your <a href="https://www.ynab.com" target="_blank" rel="noopener noreferrer">YNAB profile</a>.
+            <strong>Sign In:</strong> Log into your <a href="https://www.ynab.com" target="_blank"
+              rel="noopener noreferrer">YNAB profile</a>.
           </li>
           <li>
             <strong>Open the Menu:</strong> From the dashboard, click your budget name in the top left corner.
@@ -288,7 +322,8 @@
             its contents.
           </li>
           <li>
-            <strong>Sign In:</strong> Log into your <a href="https://app.monarchmoney.com" target="_blank" rel="noopener noreferrer">Monarch profile</a>.
+            <strong>Sign In:</strong> Log into your <a href="https://app.monarchmoney.com" target="_blank"
+              rel="noopener noreferrer">Monarch profile</a>.
           </li>
           <li>
             <strong>(optional) Create an Account:</strong> Navigate to the <strong>Accounts</strong> page and click the

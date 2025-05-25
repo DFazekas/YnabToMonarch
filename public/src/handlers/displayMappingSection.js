@@ -27,17 +27,17 @@ function renderMappingTable() {
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
+      <td><input type="checkbox" class="row-select"></td>
       <td class="account-cell">${acc.name}</td>
       <td class="num-txn-cell">${acc.numTransactions} ${acc.numTransactions === 1 ? "Transaction" : "Transactions"}</td>
       <td>
         <select class="account-select" title="${defaultSelect || "Create new account"}">
           <option value="">Create new account</option>
-          ${state.monarchAccounts
-        .map(m => `
+          ${state.monarchAccounts.map(m => `
               <option value="${m.displayName}" ${m.displayName === defaultSelect ? "selected" : ""}>
                 ${m.displayName}
-              </option>`)
-        .join("")}
+              </option>
+            `).join("")}
         </select>
         <input 
           type="text"
@@ -60,18 +60,15 @@ function renderMappingTable() {
     `;
     mappingTableBody.appendChild(tr);
 
-    // listen for changes
+    // toggle text-input visibility based on select
     const select = tr.querySelector("select.account-select");
     const newInput = tr.querySelector("input.new-account-name");
-    // toggle text-input visibility based on select
     select.addEventListener("change", () => {
-      if (!select.value) newInput.classList.remove("hidden");
-      else newInput.classList.add("hidden");
-      // update the select's title for tooltip
+      newInput.classList.toggle("hidden", !!select.value)
       select.title = select.value || "Create new account";
       updateSummary();
     });
-    // initialize
+
     select.dispatchEvent(new Event("change"));
 
     tr.querySelector(".remove-account").addEventListener("click", (e) => {
@@ -239,40 +236,97 @@ function initializeStep1Section() {
 function initializeStep2Section() {
   console.log("Initializing Step 2 section...");
   const backBtn = document.getElementById("backToStep1");
-  const bulkAction = document.getElementById("bulkAction");
-  const bulkExisting = document.getElementById("bulkExisting");
-  const applyBulk = document.getElementById("applyBulk");
   const mappingTableBody = document.querySelector("#mappingTable tbody");
   const confirmImport = document.getElementById("confirmImport");
+  const bar = document.getElementById("bulkActionBar");
+  const cbClose = document.getElementById("bulkClose");
+  const cbCreate = document.getElementById("bulkCreate");
+  const cbReset = document.getElementById("bulkReset");
+  const cbRename = document.getElementById("bulkRename");
+  const cbRemove = document.getElementById("bulkRemove");
+  const table = document.querySelector("#mappingTable");
+
+  table.addEventListener("change", e => {
+    if (!e.target.classList.contains("row-select")) return;
+    const selected = document.querySelectorAll(".row-select:checked");
+    if (selected.length) {
+      bar.classList.remove("hidden");
+      cbClose.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+           viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+      <span class="label"> ${selected.length} Account${selected.length > 1 ? "s" : ""}</span>
+    `;
+    } else {
+      bar.classList.add("hidden");
+    }
+  });
+
+  cbClose.addEventListener("click", (event) => {
+    event.preventDefault();
+    document.querySelectorAll(".row-select").forEach(cb => cb.checked = false);
+    bar.classList.add("hidden");
+  });
+
+  cbCreate.addEventListener("click", (event) => {
+    event.preventDefault();
+    document.querySelectorAll(".row-select:checked").forEach(trCb => {
+      const tr = trCb.closest("tr");
+      tr.querySelector("select.account-select").value = "";
+      const inp = tr.querySelector("input.new-account-name");
+      inp.value = tr.querySelector(".account-cell").textContent;
+      inp.classList.remove("hidden");
+    });
+    updateSummary();
+  });
+
+  cbReset.addEventListener("click", (event) => {
+    event.preventDefault();
+    document.querySelectorAll(".row-select:checked").forEach(trCb => {
+      const tr = trCb.closest("tr");
+      const sel = tr.querySelector("select.account-select");
+      sel.value = sel.dataset.default;
+      sel.dispatchEvent(new Event("change"));
+    });
+    updateSummary();
+  });
+
+  cbRename.addEventListener("click", (event) => {
+    event.preventDefault();
+    const pattern = prompt("Pattern (use {{origName}}):", "YNAB - {{origName}}");
+    if (!pattern) return;
+    document.querySelectorAll(".row-select:checked").forEach(trCb => {
+      const tr = trCb.closest("tr");
+      const sel = tr.querySelector("select.account-select");
+      if (!sel.value) {
+        const orig = tr.querySelector(".account-cell").textContent;
+        tr.querySelector("input.new-account-name").value =
+          pattern.replace("{{origName}}", orig);
+      }
+    });
+    updateSummary();
+  });
+
+  cbRemove.addEventListener("click", (event) => {
+    event.preventDefault();
+    const rows = Array.from(document.querySelectorAll(".row-select:checked"))
+      .map(cb => cb.closest("tr"));
+    rows.reverse().forEach(tr => {
+      const idx = Array.from(table.tBodies[0].rows).indexOf(tr);
+      state.selectedYnabAccounts.splice(idx, 1);
+    });
+    renderMappingTable();
+    updateSummary();
+    bar.classList.add("hidden");
+  });
 
   // Set up the "Back" button
   backBtn.addEventListener("click", (event) => {
     event.preventDefault()
     renderStep1();
-  });
-
-  // Set up the "Bulk Action" dropdown
-  bulkAction.addEventListener("change", () => {
-    bulkExisting.classList.toggle("hidden", bulkAction.value !== "import_existing");
-  });
-
-  // Set up the "Apply Bulk Action" button
-  applyBulk.addEventListener("click", (event) => {
-    event.preventDefault();
-    const action = bulkAction.value;
-    const existingName = bulkExisting.value.trim();
-    mappingTableBody.querySelectorAll("tr").forEach((tr, i) => {
-      const override = tr.querySelector(".override");
-      const skip = tr.querySelector(".skip");
-      skip.checked = false;
-
-      if (action === "create_new") {
-        override.value = state.selectedYnabAccounts[i].name;
-      } else if (action === "import_existing" && existingName) {
-        override.value = existingName;
-      }
-    });
-    updateSummary();
   });
 
   // Set up the "Confirm Import" button
