@@ -23,17 +23,32 @@ function renderMappingTable() {
     );
 
     // allow typing or selecting; default to matched name or blank
-    const defaultValue = match ? match.displayName : "";
+    const defaultSelect = match ? match.displayName : "";
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td class="account-cell">${acc.name}</td>
       <td class="num-txn-cell">${acc.numTransactions} ${acc.numTransactions === 1 ? "Transaction" : "Transactions"}</td>
       <td>
-        <input type="text" class="override" list="monarchList" placeholder="Type or select account" value="${defaultValue}">
+        <select class="account-select" title="${defaultSelect || "Create new account"}">
+          <option value="">Create new account</option>
+          ${state.monarchAccounts
+        .map(m => `
+              <option value="${m.displayName}" ${m.displayName === defaultSelect ? "selected" : ""}>
+                ${m.displayName}
+              </option>`)
+        .join("")}
+        </select>
+        <input 
+          type="text"
+          title="${acc.name}" 
+          class="new-account-name ${defaultSelect ? "hidden" : ""}" 
+          placeholder="New account name" 
+          value="${acc.name}"
+        >
       </td>
       <td class="remove-cell">
-        <button type="button" class="remove-account" title="Remove this account">
+        <button type="button" class="remove-account" title="Remove this account from import">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -46,7 +61,19 @@ function renderMappingTable() {
     mappingTableBody.appendChild(tr);
 
     // listen for changes
-    tr.querySelector(".override").addEventListener("input", updateSummary);
+    const select = tr.querySelector("select.account-select");
+    const newInput = tr.querySelector("input.new-account-name");
+    // toggle text-input visibility based on select
+    select.addEventListener("change", () => {
+      if (!select.value) newInput.classList.remove("hidden");
+      else newInput.classList.add("hidden");
+      // update the select's title for tooltip
+      select.title = select.value || "Create new account";
+      updateSummary();
+    });
+    // initialize
+    select.dispatchEvent(new Event("change"));
+
     tr.querySelector(".remove-account").addEventListener("click", (e) => {
       e.preventDefault();
       state.selectedYnabAccounts.splice(idx, 1)
@@ -78,30 +105,20 @@ function updateStep1Button() {
 function updateSummary() {
   console.group("updateSummary");
   const summaryBox = document.getElementById("summary");
-  const mappingTableBody = document.querySelector("#mappingTable tbody");
-
   let useExisting = 0, createNew = 0;
-  mappingTableBody.querySelectorAll("tr").forEach((tr, idx) => {
-    // If empty, create a new account with the YNAB account name
-    let name = tr.querySelector(".override").value.trim()
-    if (!name) {
-      name = state.selectedYnabAccounts[idx].name;
-    }
 
-    // Decide: Existing import vs new creation
-    const exists = state.monarchAccounts.some(m => m.displayName === name)
-    if (exists) {
-      useExisting++
-    } else {
-      createNew++
-    }
-  });
+  document
+    .querySelectorAll("#mappingTable tbody tr")
+    .forEach(tr => {
+      const select = tr.querySelector("select.account-select");
+      if (select.value) useExisting++;
+      else createNew++;
+    });
 
-  summaryBox.textContent = `
-    ${state.selectedYnabAccounts.length} accounts selected →
-      ${useExisting} will import into existing,
-      ${createNew} will create new accounts.
-  `.replace(/\s+/g, " ").trim();
+  summaryBox.textContent =
+    `${state.selectedYnabAccounts.length} accounts selected → ` +
+    `${useExisting} will import into existing, ` +
+    `${createNew} will create new accounts.`;
 
   console.groupEnd("updateSummary");
 }
