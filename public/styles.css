@@ -592,3 +592,206 @@ button[data-action="import"].btn:hover {
 #resendOtp {
   margin-left: 0.6rem;
 }
+
+
+/* Account Mappings */
+.controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.controls input,
+.bulk-actions select,
+.bulk-actions input {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.controls button,
+.bulk-actions button {
+  padding: 6px 12px;
+  border: none;
+  background: #007aff;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#ynabList {
+  list-style: none;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 0;
+  margin: 0 0 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  /* background: #fafafa; */
+}
+#ynabList::-webkit-scrollbar {
+  width: 8px;
+}
+#ynabList::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+#ynabList::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 4px;
+}
+#ynabList::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+#ynabList,
+#ynabList li,
+#ynabList li label {
+  color: #333;  /* dark gray, high contrast on #fafafa */
+}
+
+#ynabList li {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e5e5;
+  transition: background-color 0.2 ease;
+  cursor: pointer;
+}
+#ynabList li:nth-child(odd) {
+  background-color: #fff;
+}
+#ynabList li:nth-child(even) {
+  background-color: #f9f9f9;
+}
+#ynabList li:last-child {
+  border-bottom: none;
+}
+#ynabList li:hover {
+  background-color: #e8f0fe;
+  cursor: pointer;
+}
+
+#ynabList li input[type="checkbox"] {
+  margin: 0 12px 0 0;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* Label spans the rest of the row */
+#ynabList li label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+
+#ynabList li .transaction-count {
+  margin-left: auto;
+  font-size: 0.9em;
+  color: #666;
+}
+
+.bulk-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.bulk-actions label {
+  color: #fff;
+  font-size: 0.9rem;
+}
+.bulk-actions select,
+.bulk-actions input {
+  background: #fff;
+  min-width: 200px;
+  font-size: 0.9rem;
+  color: #333;
+  border-radius: 4px;
+  border: none;
+  padding: 0.5rem 0.75rem;
+}
+.bulk-actions button {
+  background: #00ffd1;
+  color: #002b5b;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+#mappingTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+  border-spacing: 0;
+}
+#mappingTable th {
+  background: #002b5b;
+  color: #fff;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 2px solid #004a9f;
+}
+#mappingTable td {
+  color: #fff;
+  border-top: 1px solid #004a9f;
+  vertical-align: middle;
+  padding: 0.75rem 1rem;
+}
+#mappingTable tbody tr:nth-child(odd) {
+  background: #003f8e;
+}
+#mappingTable tbody tr:nth-child(even) {
+  background: #0051b0;
+}
+.account-cell {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.account-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+}
+.txn-count {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.6);
+}
+.override {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #a0a0a0;
+  border-radius: 4px;
+  background: #fff;
+  color: #333;
+  font-size: 0.9rem;
+}
+.skip {
+  width: 18px;
+  height: 18px;
+  accent-color: #00ffd1;
+  cursor: pointer;
+}
+
+.summary {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border: 1px solid #00ffd1;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}

@@ -24,15 +24,16 @@ export async function handleFile(file) {
     logger.log('Parsing file contents...')
     const csvText = await file.text();
     const result = await parseCsv(csvText);
-    state.accounts = result;
+    state.ynabAccounts = result;
+    console.log("YNAB accounts:")
+    console.dir(state.ynabAccounts)
     
     // Update the UI
     document.getElementById('accountCount').textContent = Object.keys(result).length;
-    
-    // Hide file uploader and show action buttons plus reset
     toggleSection('uploader-section', false);
     toggleSection('conversion', true);
     toggleSection('startOver', true);
+    
     logger.log('Parsed and grouped successfully.');
   } catch (error) {
     console.error("Error during file handling:", error);

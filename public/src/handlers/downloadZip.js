@@ -4,8 +4,8 @@ import { showToast } from '../ui/toast.js';
 import { state } from '../state.js';
 import { toggleSection } from '../main.js';
 
-export async function generateAccounts() {
-  if (!state.accounts) return showToast('No accounts to process.', true);
+export async function downloadZip() {
+  if (!state.ynabAccounts) return showToast('No accounts to process.', true);
   
   showToast(`Downloading...`);
   showLoader();
@@ -13,7 +13,7 @@ export async function generateAccounts() {
     // Hide action buttons when Auto-Import is pressed.
     toggleSection('conversion', false);
 
-    const response = await monarchApi.generateAccounts(state.accounts);
+    const response = await monarchApi.generateAccounts(state.ynabAccounts);
     const data = await response.json();
 
     const zip = new window.JSZip();

@@ -55,7 +55,7 @@
               </div>
               <h3>Download CSV ZIP</h3>
               <p>Save a zip folder containing all your YNAB account data. Upload manually into Monarch.</p>
-              <button type="button" data-action="generate" class="btn btn-primary">Download ZIP</button>
+              <button type="button" data-action="download-zip" class="btn btn-primary">Download ZIP</button>
               <a href="#" id="preDownloadHowToImportLink" class="card-hint">How to Import into Monarch?</a>
             </div>
           </div>
@@ -69,7 +69,7 @@
               </div>
               <h3>Auto-Import</h3>
               <p>Let our system automatically map and import your accounts into Monarch.</p>
-              <button type="button" data-action="import" class="btn btn-primary">
+              <button type="button" data-action="start-auto-import" class="btn btn-primary">
                 Start Auto-Import
               </button>
               <a href="#" id="preDownloadWhatIsAutoImporter" class="card-hint">What is Auto-Import?</a>
@@ -143,7 +143,7 @@
         <button type="button" data-action="login" class="btn btn-primary">Login</button>
       </form>
 
-      <form id="otpForm">
+      <form id="otpForm" class="hidden">
         <h2>Verify One-Time Password</h2>
         <p>Monarch sent a 6-digit code to your email.</p>
         <br />
@@ -153,21 +153,65 @@
             autocomplete="one-time-code" placeholder="123456" required />
         </div>
 
-        <button type="button" class="btn btn-primary">Verify Code</button>
+        <button id="verifyOtp" type="button" class="btn btn-primary">Verify Code</button>
         <a href="#" id="resendOtp" class="card-hint">Resend OTP</a>
       </form>
     </section>
 
+    <form id="step1" class="section">
+      <div class="controls">
+        <input type="text" id="ynabSearch" placeholder="🔍 Search YNAB accounts..." />
+        <button id="selectAllFiltered">Select All Filtered</button>
+        <button id="deselectAll">Clear Selection</button>
+      </div>
+      <ul id="ynabList"></ul>
+      <button id="toStep2" class="primary" disabled>Import →</button>
+    </form>
+
+    <form id="step2" class="section">
+      <div class="bulk-actions">
+        <label for="bulkAction">Bulk action:</label>
+        <select id="bulkAction">
+          <option value="">—</option>
+          <option value="create_new">Create new account named YNAB name</option>
+          <option value="import_existing">Import into existing Monarch account</option>
+        </select>
+        <input id="bulkExisting" type="text" list="monarchList" placeholder="Type to search..." />
+        <button id="applyBulk">Apply</button>
+      </div>
+
+      <table id="mappingTable">
+        <thead>
+          <tr>
+            <th>YNAB Account</th>
+            <th>Suggested Mapping</th>
+            <th>Override</th>
+            <th>Skip</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <div id="summary" class="summary"></div>
+      <button id="confirmImport" class="primary">Confirm & Import</button>
+    </form>
+
+    <datalist id="monarchList"></datalist>
+
+    <!-- Mapping section -->
     <section id="mappings" class="section hidden">
       <h2>Map Accounts</h2>
+      
       <div id="mappingsContainer"></div>
-      <button type="button" data-action="applyMappings" class="btn btn-primary">Import into Monarch</button>
+      <button id="importMappingsButton" type="button" data-action="applyMappings" class="btn btn-primary" aria-label="Import into Monarch">Import into Monarch</button>
     </section>
 
+    <!-- Reset button -->
     <section id="startOver" class="hidden">
       <button type="button" data-action="reset" class="btn btn-secondary">Start Over</button>
     </section>
 
+    <!-- Logs section -->
     <section id="logs" class="hidden">
       <button type="button" data-action="toggleLogs" class="logs-toggle">Show Logs</button>
       <div id="logsContainer" class="hidden"></div>
@@ -289,7 +333,6 @@
       </small>
     </div>
   </footer>
-
 
 
   <script type="module" src="/src/main.js"></script>

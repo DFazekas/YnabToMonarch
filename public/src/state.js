@@ -1,7 +1,10 @@
 export const state = {
   deviceUuid: null,
   awaitingOtp: false,
-  credentials: { email: '', password: '' },
+  credentials: { email: '', password: '', otp: '' },
   apiToken: null,
-  accounts: null,
+  ynabAccounts: null,
+  monarchAccounts: null,
+  filteredYnabAccounts: [],
+  selectedYnabAccounts: []
 };

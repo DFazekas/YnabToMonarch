@@ -1,12 +1,14 @@
 import { initDeviceUuid } from './utils/device.js';
 import { state } from './state.js';
-import { handleFile } from './handlers/fileHandler.js';
-import { generateAccounts } from './handlers/accountGenerator.js';
-import { autoImport } from './handlers/importer.js';
+import { handleFile } from './handlers/uploadFile.js';
+import { downloadZip } from './handlers/downloadZip.js';
+import { startAutoImport, login, submitOtp } from './handlers/importer.js';
 import { Logger } from './utils/logger.js';
 import { bind } from './utils/dom.js';
 import { initModalControls } from './ui/modal.js';
+import { displayMappingSection } from './handlers/displayMappingSection.js';
 
+// TODO - Fix restart button; uploading files doesn't work.
 
 // Initialize
 state.deviceUuid = initDeviceUuid();
@@ -16,13 +18,11 @@ const logger = new Logger(document.getElementById('logsContainer'));
 // Event Bindings
 bind('#uploader', 'click', () => document.getElementById('fileInput').click());
 bind('#fileInput', 'change', e => handleFile(e.target.files[0]));
-bind('[data-action="import"]', 'click', () => {
-  const email = '#email'.val();
-  const pwd = '#password'.val();
-  const otp = state.awaitingOtp ? document.getElementById('otp').value : null;
-  autoImport(email, pwd, otp);
-});
-bind('[data-action="generate"]', 'click', generateAccounts);
+bind('[data-action="start-auto-import"]', 'click', startAutoImport)
+bind('[data-action="login"]', 'click', login)
+bind('#verifyOtp', 'click', submitOtp)
+bind('#resendOtp', 'click', login)
+bind('[data-action="download-zip"]', 'click', downloadZip);
 bind('[data-action="reset"]', 'click', initializeApp);
 bind('[data-action="toggleLogs"]', 'click', toggleLogs);
 
@@ -39,11 +39,21 @@ export function toggleLogs() {
   toggleSection('logsContainer');
 }
 
-export function initializeApp() {
+export async function initializeApp() {
   // Reset in-memory state
   state.awaitingOtp = false;
   state.apiToken = null;
-  state.accounts = null;
+  const mockYnabData = await fetch('/src/tests/mockYnabAccounts.json');
+  // state.ynabAccounts = null;
+  state.ynabAccounts = await mockYnabData.json();
+  const mockMonarchData = await fetch('/src/tests/mockMonarchAccounts.json');
+  // state.monarchAccounts = null;
+  state.monarchAccounts = await mockMonarchData.json();
+
+  console.log("Ynab accounts:", state.ynabAccounts);
+  console.log("Monarch accounts:", state.monarchAccounts);
+
+  displayMappingSection(state.ynabAccounts, state.monarchAccounts);
 
   // Clear logs
   logger.clear();
@@ -54,7 +64,7 @@ export function initializeApp() {
     'conversion',
     'importDetails',
     'credentials',
-    'mappings',
+    // 'mappings',
     'startOver',
     'logsContainer'
   ].forEach(id => toggleSection(id, id === 'uploader-section'));

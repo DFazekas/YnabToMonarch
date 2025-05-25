@@ -25,6 +25,16 @@ module.exports.handler = async (event, context) => {
       }
     }
 
+    console.log("MonarchLogin login request body", {
+      username: email,
+      password,
+      trusted_device: !!otp, // only trusted after OTP
+      supports_mfa: true,
+      supports_email_otp: true,
+      supports_recaptcha: true,
+      ...(otp && { email_otp: otp }) // include OTP if present
+    });
+
     // Forward credentials to Monarch Money API
     console.log("MonarchLogin forwarding credentials to API");
     const response = await fetch('https://api.monarchmoney.com/auth/login/', {
@@ -47,12 +57,15 @@ module.exports.handler = async (event, context) => {
     })
 
     const data = await response.json().catch(() => ({}));
+    console.log("Login response (after json)", data)
+    console.log("Response status", response.status)
+    console.log("Response 'error_code' contains 'EMAIL_OTP_REQUIRED'?", data.error_code == 'EMAIL_OTP_REQUIRED')
 
-    if (response.status === 202 && data.detail && data.detail.includes('OTP')) {
+    if (response.status === 403 && data.error_code == 'EMAIL_OTP_REQUIRED') {
       return { statusCode: 200, body: JSON.stringify({ otpRequired: true, detail: data.detail }) };
     }
     if (!response.ok) {
-      console.error("MonarchLogin ❌ login failed", { status: data.status, error: error })
+      console.error("MonarchLogin ❌ login failed", { status: data.status, error: response })
       return {
         statusCode: response.status,
         body: JSON.stringify({ error: data.message || 'Login failed.' })

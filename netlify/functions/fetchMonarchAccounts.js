@@ -36,7 +36,9 @@ module.exports.handler = async (event, context) => {
       body: JSON.stringify({ query: 'query { accounts { id displayName } }' })
     })
 
-    const result = await res.json();
+    const result = await response.json();
+    console.log("ℹ️ MonarchAccount GraphQL response:")
+    console.log(result)
     if (!response.ok) {
       console.error("MonarchAccount ❌ API responded with error", { status: response.status, error: error })
       return {

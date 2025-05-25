@@ -11,6 +11,24 @@ functions:
       - http:
           path: parseCsv
           method: post
+  login:
+    handler: netlify/functions/monarchLogin.handler
+    events:
+      - http:
+          path: monarchLogin
+          method: post
+  fetchAccounts:
+    handler: netlify/functions/fetchMonarchAccounts.handler
+    events:
+      - http:
+          path: fetchMonarchAccounts
+          method: post
+  mapAccounts:
+    handler: netlify/functions/MapMonarchAccounts.handler
+    events:
+      - http:
+          path: mapMonarchAccounts
+          method: post
   generateStatements:
     handler: netlify/functions/generateStatements.handler
     events:
