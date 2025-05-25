@@ -6,9 +6,7 @@ import { startAutoImport, login, submitOtp } from './handlers/importer.js';
 import { Logger } from './utils/logger.js';
 import { bind } from './utils/dom.js';
 import { initModalControls } from './ui/modal.js';
-import { displayMappingSection } from './handlers/displayMappingSection.js';
-
-// TODO - Fix restart button; uploading files doesn't work.
+import { initializeMappingSection } from './handlers/displayMappingSection.js';
 
 // Initialize
 state.deviceUuid = initDeviceUuid();
@@ -53,7 +51,7 @@ export async function initializeApp() {
   console.log("Ynab accounts:", state.ynabAccounts);
   console.log("Monarch accounts:", state.monarchAccounts);
 
-  displayMappingSection(state.ynabAccounts, state.monarchAccounts);
+  initializeMappingSection()
 
   // Clear logs
   logger.clear();
