@@ -274,6 +274,30 @@ function initializeStep1Section() {
   });
 }
 
+// Helper to update the selectAllRows checkbox state
+function updateSelectAllCheckbox() {
+  const table = document.querySelector("#mappingTable");
+  const selectAllRows = document.getElementById("selectAllRows");
+
+  console.group("updateSelectAllCheckbox");
+  const checkboxes = table.querySelectorAll("tbody .row-select");
+  const checked = table.querySelectorAll("tbody .row-select:checked");
+
+  console.log("Checkboxes:", checkboxes.length, "Checked:", checked.length);
+
+  if (checked.length === 0) {
+    selectAllRows.checked = false;
+    selectAllRows.indeterminate = false;
+  } else if (checked.length === checkboxes.length) {
+    selectAllRows.checked = true;
+    selectAllRows.indeterminate = false;
+  } else {
+    selectAllRows.checked = false;
+    selectAllRows.indeterminate = true;
+  }
+  console.groupEnd("updateSelectAllCheckbox");
+}
+
 function initializeStep2Section() {
   console.log("Initializing Step 2 section...");
   const backBtn = document.getElementById("backToStep1");
@@ -293,27 +317,6 @@ function initializeStep2Section() {
   const patternInput = renameModal.querySelector("#bulkRenamePattern");
   const applyBtn = renameModal.querySelector("#bulkRenameApply");
   const cancelBtn = renameModal.querySelector("#bulkRenameCancel");
-
-  // Helper to update the selectAllRows checkbox state
-  function updateSelectAllCheckbox() {
-    console.group("updateSelectAllCheckbox");
-    const checkboxes = table.querySelectorAll("tbody .row-select");
-    const checked = table.querySelectorAll("tbody .row-select:checked");
-
-    console.log("Checkboxes:", checkboxes.length, "Checked:", checked.length);
-
-    if (checked.length === 0) {
-      selectAllRows.checked = false;
-      selectAllRows.indeterminate = false;
-    } else if (checked.length === checkboxes.length) {
-      selectAllRows.checked = true;
-      selectAllRows.indeterminate = false;
-    } else {
-      selectAllRows.checked = false;
-      selectAllRows.indeterminate = true;
-    }
-    console.groupEnd("updateSelectAllCheckbox");
-  }
 
   // Call after rendering table to sync state
   function afterRenderTable() {
@@ -375,6 +378,8 @@ function initializeStep2Section() {
     event.preventDefault();
     document.querySelectorAll(".row-select").forEach(cb => cb.checked = false);
     bar.classList.add("hidden");
+    updateSelectAllCheckbox()
+    event.currentTarget.blur();
   });
 
   cbCreate.addEventListener("click", (event) => {
@@ -387,6 +392,7 @@ function initializeStep2Section() {
       inp.classList.remove("hidden");
     });
     updateSummary();
+    event.currentTarget.blur();
   });
 
   cbReset.addEventListener("click", (event) => {
@@ -404,12 +410,28 @@ function initializeStep2Section() {
       sel.dispatchEvent(new Event("change"));
     });
     updateSummary();
+    event.currentTarget.blur();
   });
 
   cbRename.addEventListener("click", (event) => {
     event.preventDefault();
     patternInput.value = "YNAB - {{origName}}";
     openModal("bulkRenameModal", event);
+    event.currentTarget.blur();
+  });
+
+  cbRemove.addEventListener("click", (event) => {
+    event.preventDefault();
+    const rows = Array.from(document.querySelectorAll(".row-select:checked"))
+      .map(cb => cb.closest("tr"));
+    rows.reverse().forEach(tr => {
+      const idx = Array.from(table.tBodies[0].rows).indexOf(tr);
+      state.selectedYnabAccounts.splice(idx, 1);
+    });
+    renderMappingTable();
+    updateSummary();
+    bar.classList.add("hidden");
+    event.currentTarget.blur();
   });
 
   // When user clicks Apply in modal
@@ -442,19 +464,6 @@ function initializeStep2Section() {
   // make the modal “×” button also close
   renameModal.querySelector(".close").addEventListener("click", () => {
     closeModal("bulkRenameModal");
-  });
-
-  cbRemove.addEventListener("click", (event) => {
-    event.preventDefault();
-    const rows = Array.from(document.querySelectorAll(".row-select:checked"))
-      .map(cb => cb.closest("tr"));
-    rows.reverse().forEach(tr => {
-      const idx = Array.from(table.tBodies[0].rows).indexOf(tr);
-      state.selectedYnabAccounts.splice(idx, 1);
-    });
-    renderMappingTable();
-    updateSummary();
-    bar.classList.add("hidden");
   });
 
   // Set up the "Back" button
