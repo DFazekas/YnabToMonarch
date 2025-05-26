@@ -295,6 +295,7 @@ function updateSelectAllCheckbox() {
     selectAllRows.checked = false;
     selectAllRows.indeterminate = true;
   }
+  
   console.groupEnd("updateSelectAllCheckbox");
 }
 
@@ -376,7 +377,11 @@ function initializeStep2Section() {
 
   cbClose.addEventListener("click", (event) => {
     event.preventDefault();
-    document.querySelectorAll(".row-select").forEach(cb => cb.checked = false);
+    document.querySelectorAll(".row-select").forEach(cb => {
+      const tr = cb.closest("tr")
+      tr.classList.remove("selected");
+      cb.checked = false
+    });
     bar.classList.add("hidden");
     updateSelectAllCheckbox()
     event.currentTarget.blur();
