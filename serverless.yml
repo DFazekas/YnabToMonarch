@@ -2,6 +2,7 @@ service: ynabtomonarch
 provider:
   name: aws
   runtime: nodejs14.x
+  timeout: 30
 plugins:
   - serverless-offline
 functions:
@@ -24,7 +25,8 @@ functions:
           path: fetchMonarchAccounts
           method: post
   mapAccounts:
-    handler: netlify/functions/MapMonarchAccounts.handler
+    handler: netlify/functions/mapMonarchAccounts.handler
+    timeout: 30
     events:
       - http:
           path: mapMonarchAccounts

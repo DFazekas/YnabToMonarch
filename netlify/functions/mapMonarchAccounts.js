@@ -25,6 +25,7 @@ class Logger {
 }
 
 module.exports.handler = async (event, context) => {
+  console.group("MonarchMapAccount Lambda Handler")
   console.log("MonarchMapAccount start", {
     timestamp: new Date().toISOString(),
     requestId: context.awsRequestId,
@@ -43,7 +44,7 @@ module.exports.handler = async (event, context) => {
   try {
     console.log("MonarchMapAccount parsing request body");
     const { mappings, token } = JSON.parse(event.body)
-    console.log("MonarchMapAccount payload", { mappingsCount: Array.isArray(mappings) ? mappings.length : 0 })
+    console.log("Mappings:", mappings);
 
     // Validate token
     if (!token) {
@@ -61,16 +62,13 @@ module.exports.handler = async (event, context) => {
 
     // Process all mappings concurrently with controlled concurrency
     for (const mapping of mappings) {
-      console.log("MonarchMapAccount processing mapping", {
-        ynab: mapping.ynabAccountName,
-        monarch: mapping.monarchAccountName
-      });
       await processMapping(token, mapping, logger)
       console.log("MonarchMapAccount ✅ processed mapping", { ynab: mapping.ynabAccountName })
     }
 
     console.log("MonarchMapAccount ✅ all mappings completed")
     logger.add(`All account mappings and transactions import completed.`)
+    console.groupEnd("MonarchMapAccount Lambda Handler")
     return createResponse(200, logger.getLogs(), 'Account mappings and transactions imported.')
   } catch (error) {
     console.error("MonarchMapAccount ❌ unexpected error", error)
@@ -263,16 +261,17 @@ function generateCSV(transactions) {
 }
 
 async function processMapping(token, mapping, logger) {
-  const { ynabAccountName, monarchAccountName, monarchAccountId, transactions } = mapping
+  console.group("Processing Mapping")
+  const { ynabAccountName, monarchAccountName, monarchAccountId, transactions, action } = mapping
 
-  if (monarchAccountName === 'Create new account') {
+  if (action === 'create_new') {
     logger.add(`Creating account '${ynabAccountName}' in Monarch...`)
 
     const accountInput = {
       type: 'credit',
       subtype: 'credit_card',
       includeInNetWorth: true,
-      name: ynabAccountName,
+      name: monarchAccountName,
       displayBalance: 0.0
     }
 
@@ -302,4 +301,5 @@ async function processMapping(token, mapping, logger) {
       throw new Error(`Failed to import transactions into account '${monarchAccountName}': ${error.message}`)
     }
   }
+  console.groupEnd("Processing Mapping")
 }

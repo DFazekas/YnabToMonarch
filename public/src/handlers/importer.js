@@ -3,7 +3,7 @@ import { showLoader, hideLoader } from '../ui/loader.js';
 import { showToast } from '../ui/toast.js';
 import { state } from '../state.js';
 import { toggleSection } from '../main.js';
-import { displayAccountMappings } from './displayAccountMappings.js';
+import { initializeMappingSection } from './displayMappingSection.js';
 
 export function startAutoImport() {
   toggleSection('conversion', false)
@@ -79,8 +79,7 @@ async function fetchMonarchAccounts(apiToken) {
     state.monarchAccounts = accounts;
     toggleSection('credentials', false);
     toggleSection('otpForm', false);
-    toggleSection('mappings');
-    displayAccountMappings(state.ynabAccounts, state.monarchAccounts)
+    initializeMappingSection()
   } catch (e) {
     console.error("Error fetching accounts from Monarch:", e);
     showToast("Error fetching accounts", true);

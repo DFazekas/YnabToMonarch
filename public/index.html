@@ -158,7 +158,7 @@
       </form>
     </section>
 
-    <form id="step1" class="section">
+    <form id="step1" class="section hidden">
       <div class="controls">
         <input type="text" id="ynabSearch" placeholder="🔍 Search YNAB accounts..." />
         <button id="selectAllFiltered" type="button">Select All Filtered</button>
@@ -168,7 +168,7 @@
       <button id="toStep2" class="primary" disabled>Import →</button>
     </form>
 
-    <form id="step2" class="section">
+    <form id="step2" class="section hidden">
       <button id="backToStep1" type="button" class="secondary">← Choose YNAB accounts to import</button>
 
       <table id="mappingTable">
@@ -231,15 +231,6 @@
     </form>
 
     <datalist id="monarchList"></datalist>
-
-    <!-- Mapping section -->
-    <section id="mappings" class="section hidden">
-      <h2>Map Accounts</h2>
-
-      <div id="mappingsContainer"></div>
-      <button id="importMappingsButton" type="button" data-action="applyMappings" class="btn btn-primary"
-        aria-label="Import into Monarch">Import into Monarch</button>
-    </section>
 
     <!-- Reset button -->
     <section id="startOver" class="hidden">

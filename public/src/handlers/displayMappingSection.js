@@ -1,5 +1,6 @@
 import { state } from '../state.js';
 import { openModal, closeModal } from '../ui/modal.js';
+import { monarchApi } from '../api/monarchApi.js';
 
 export function initializeMappingSection() {
   console.group("initializeMappingSection");
@@ -295,7 +296,7 @@ function updateSelectAllCheckbox() {
     selectAllRows.checked = false;
     selectAllRows.indeterminate = true;
   }
-  
+
   console.groupEnd("updateSelectAllCheckbox");
 }
 
@@ -478,35 +479,27 @@ function initializeStep2Section() {
   });
 
   // Set up the "Confirm Import" button
-  confirmImport.addEventListener("click", (event) => {
+  confirmImport.addEventListener("click", async (event) => {
     event.preventDefault();
-    const payload = state.selectedYnabAccounts.map((acc, i) => {
-      const row = mappingTableBody.rows[i];
-      const suggestion = row.querySelector(".suggestion").textContent;
-      const override = row.querySelector(".override").value.trim();
-      const skip = row.querySelector(".skip").checked;
+    const mappingTableBody = document.querySelector("#mappingTable tbody");
+    const payload = state.selectedYnabAccounts.map((acc, idx) => {
+      const row = mappingTableBody.rows[idx];
+      const sel = row.querySelector("select.account-select");
+      const newInput = row.querySelector("input.new-account-name");
 
-      if (skip) return { ynab: acc.name, action: "skip" };
-
-      if (override) {
-        // decide new vs existing
-        const exist = state.monarchAccounts.find(m => m.displayName === override);
-        return exist
-          ? { ynab: acc.name, action: "import", monarchId: exist.id }
-          : { ynab: acc.name, action: "create_new", name: override };
-      } else {
-        // follow suggestion
-        if (suggestion === "Create new account")
-          return { ynab: acc.name, action: "create_new", name: acc.name };
-        else {
-          const exist = monarchAccounts.find(m => m.displayName === suggestion);
-          return { ynab: acc.name, action: "import", monarchId: exist.id };
-        }
-      }
+      const exist = state.monarchAccounts.find(m => m.displayName === sel.value);
+      console.log("State:", state)
+      return {
+        ynabAccountName: acc.name,
+        action: sel.value ? "import" : "create_new",
+        monarchAccountId: exist?.id || null,
+        monarchAccountName: newInput.value?.trim() || exist.displayName,
+        transactions: state.ynabAccounts[acc.name] || []
+      };
     });
 
     console.log("Import payload:", payload);
-    alert("See console for the final import payload.");
+    await monarchApi.mapAccounts(state.apiToken, payload);
   });
 }
 

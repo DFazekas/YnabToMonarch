@@ -41,17 +41,21 @@ export async function initializeApp() {
   // Reset in-memory state
   state.awaitingOtp = false;
   state.apiToken = null;
-  const mockYnabData = await fetch('/src/tests/mockYnabAccounts.json');
-  // state.ynabAccounts = null;
-  state.ynabAccounts = await mockYnabData.json();
-  const mockMonarchData = await fetch('/src/tests/mockMonarchAccounts.json');
-  // state.monarchAccounts = null;
-  state.monarchAccounts = await mockMonarchData.json();
+
+  // const mockYnabData = await fetch('/src/tests/mockYnabAccounts.json');
+  // state.ynabAccounts = await mockYnabData.json();
+  state.ynabAccounts = null;
+
+  // const mockMonarchData = await fetch('/src/tests/mockMonarchAccounts.json');
+  // state.monarchAccounts = await mockMonarchData.json();
+  state.monarchAccounts = null;
 
   console.log("Ynab accounts:", state.ynabAccounts);
   console.log("Monarch accounts:", state.monarchAccounts);
 
-  initializeMappingSection()
+  document.getElementById('fileInput').value = '';
+
+  // initializeMappingSection()
 
   // Clear logs
   logger.clear();
@@ -62,7 +66,8 @@ export async function initializeApp() {
     'conversion',
     'importDetails',
     'credentials',
-    // 'mappings',
+    'step1',
+    'step2',
     'startOver',
     'logsContainer'
   ].forEach(id => toggleSection(id, id === 'uploader-section'));

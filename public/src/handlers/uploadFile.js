@@ -7,6 +7,7 @@ import { toggleSection } from '../main.js';
 import { parseCsv } from '../api/parseCsv.js';
 
 export async function handleFile(file) {
+  console.group("File Upload Handler");
   if (!file) return;
   
   const logger = new Logger(document.getElementById('logsContainer'));
@@ -40,6 +41,7 @@ export async function handleFile(file) {
     onError(error.message);
   } finally {
     hideLoader();
+    console.groupEnd("File Upload Handler")
   }
 
   function onError(msg) {
