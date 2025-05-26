@@ -826,21 +826,22 @@ button:disabled {
   overflow-wrap: anywhere;
 }
 
-/* zebra striping with subtle contrast */
-#mappingTable tbody tr:nth-child(odd) {
-  background: #003170;
+#mappingTable tbody tr {
+  background: #003f90;
+  cursor: pointer;
 }
 
-#mappingTable tbody tr:nth-child(even) {
-  background: #003f90;
+#mappingTable tbody tr:hover:not(.selected) {
+  background: #004080;
+}
+
+#mappingTable tbody tr.selected {
+  background: #0c2e56 !important;
 }
 
 .account-cell {
   align-items: center;
   gap: 0.5rem;
-}
-
-.account-cell {
   font-size: 0.8rem;
   font-weight: 600;
   color: #fff;
@@ -1053,4 +1054,60 @@ button:disabled {
   background: rgba(255, 255, 255, 0.3);
   margin: 0 0.5rem;
   align-self: center;
+}
+
+#selectAllRows {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  appearance: none !important;
+  width: 1.2em;
+  height: 1.2em;
+  border: 2px solid #00ffd1;
+  border-radius: 3px;
+  position: relative;
+  cursor: pointer;
+  background: transparent;
+  padding: 0 !important;
+  margin: 0;
+}
+
+#selectAllRows:hover {
+  background: rgba(0,255,209,0.1);
+}
+
+#selectAllRows:checked {
+  background-color: #00ffd1;
+}
+#selectAllRows:checked::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.45em;
+  height: 0.8em;
+  border: solid #002b5b;
+  border-width: 0 0.2em 0.2em 0;
+  transform: translate(-50%, -60%) rotate(45deg);
+}
+#selectAllRows:indeterminate {
+  background-color: #00ffd1;
+}
+#selectAllRows:indeterminate::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.7em;
+  height: 0.15em;
+  background: #002b5b;
+  transform: translate(-50%, -50%);
+}
+
+/* Bulk-rename modal action row */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }

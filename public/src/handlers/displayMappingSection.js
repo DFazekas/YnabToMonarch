@@ -1,4 +1,5 @@
 import { state } from '../state.js';
+import { openModal, closeModal } from '../ui/modal.js';
 
 export function initializeMappingSection() {
   console.group("initializeMappingSection");
@@ -31,7 +32,7 @@ function renderMappingTable() {
       <td class="account-cell">${acc.name}</td>
       <td class="num-txn-cell">${acc.numTransactions} ${acc.numTransactions === 1 ? "Transaction" : "Transactions"}</td>
       <td>
-        <select class="account-select" title="${defaultSelect || "Create new account"}">
+        <select class="account-select" data-default="${defaultSelect}" title="${defaultSelect || "Create new account"}">
           <option value="">Create new account</option>
           ${state.monarchAccounts.map(m => `
               <option value="${m.displayName}" ${m.displayName === defaultSelect ? "selected" : ""}>
@@ -60,15 +61,34 @@ function renderMappingTable() {
     `;
     mappingTableBody.appendChild(tr);
 
-    // toggle text-input visibility based on select
+    const rowSelect = tr.querySelector("input.row-select");
     const select = tr.querySelector("select.account-select");
     const newInput = tr.querySelector("input.new-account-name");
+
+    // toggle row highlight
+    rowSelect.addEventListener("change", () => {
+      tr.classList.toggle("selected", rowSelect.checked);
+    });
+
+    // make row clickable (toggle checkbox) unless clicking controls
+    tr.addEventListener("click", e => {
+      if (
+        e.target.closest(".remove-account") ||
+        e.target.closest("select.account-select") ||
+        e.target.closest("input.new-account-name") ||
+        e.target === rowSelect
+      ) return;
+      rowSelect.checked = !rowSelect.checked;
+      rowSelect.dispatchEvent(new Event("change"));
+      rowSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+
+    // mapping change handler
     select.addEventListener("change", () => {
       newInput.classList.toggle("hidden", !!select.value)
       select.title = select.value || "Create new account";
       updateSummary();
     });
-
     select.dispatchEvent(new Event("change"));
 
     tr.querySelector(".remove-account").addEventListener("click", (e) => {
@@ -245,9 +265,55 @@ function initializeStep2Section() {
   const cbRename = document.getElementById("bulkRename");
   const cbRemove = document.getElementById("bulkRemove");
   const table = document.querySelector("#mappingTable");
+  const selectAllRows = document.getElementById("selectAllRows");
+
+  // grab our modal controls
+  const renameModal = document.getElementById("bulkRenameModal");
+  const patternInput = renameModal.querySelector("#bulkRenamePattern");
+  const applyBtn = renameModal.querySelector("#bulkRenameApply");
+  const cancelBtn = renameModal.querySelector("#bulkRenameCancel");
+
+  // Helper to update the selectAllRows checkbox state
+  function updateSelectAllCheckbox() {
+    console.group("updateSelectAllCheckbox");
+    const checkboxes = table.querySelectorAll("tbody .row-select");
+    const checked = table.querySelectorAll("tbody .row-select:checked");
+
+    console.log("Checkboxes:", checkboxes.length, "Checked:", checked.length);
+
+    if (checked.length === 0) {
+      selectAllRows.checked = false;
+      selectAllRows.indeterminate = false;
+    } else if (checked.length === checkboxes.length) {
+      selectAllRows.checked = true;
+      selectAllRows.indeterminate = false;
+    } else {
+      selectAllRows.checked = false;
+      selectAllRows.indeterminate = true;
+    }
+    console.groupEnd("updateSelectAllCheckbox");
+  }
+
+  // Call after rendering table to sync state
+  function afterRenderTable() {
+    console.group("afterRenderTable");
+    updateSelectAllCheckbox();
+    console.groupEnd("afterRenderTable");
+  }
+
+  // Patch renderMappingTable to call afterRenderTable at the end
+  const origRenderMappingTable = renderMappingTable;
+  renderMappingTable = function () {
+    origRenderMappingTable.apply(this, arguments);
+    afterRenderTable();
+  };
 
   table.addEventListener("change", e => {
     if (!e.target.classList.contains("row-select")) return;
+
+    updateSelectAllCheckbox()
+
+    // Update the bulk action bar visibility and content
     const selected = document.querySelectorAll(".row-select:checked");
     if (selected.length) {
       bar.classList.remove("hidden");
@@ -263,6 +329,25 @@ function initializeStep2Section() {
     } else {
       bar.classList.add("hidden");
     }
+  });
+
+  // Listen for clicks on the selectAllRows checkbox
+  selectAllRows.addEventListener("click", (event) => {
+    console.group("selectAllRows click");
+    console.log("event.target:", event.target);
+
+    const checkboxes = table.querySelectorAll("tbody .row-select");
+    const checked = table.querySelectorAll("tbody .row-select:checked");
+
+    console.log("Checkboxes:", checkboxes.length, "Checked:", checked.length, "Indeterminate:", selectAllRows.indeterminate, "Checked state:", selectAllRows.checked);
+
+    if (checked.length === checkboxes.length || checked.length > 0) {
+      checkboxes.forEach(cb => { cb.checked = false; cb.dispatchEvent(new Event("change", { bubbles: true })); });
+    } else {
+      checkboxes.forEach(cb => { cb.checked = true; cb.dispatchEvent(new Event("change", { bubbles: true })); });
+    }
+    updateSelectAllCheckbox();
+    console.groupEnd("selectAllRows click");
   });
 
   cbClose.addEventListener("click", (event) => {
@@ -289,6 +374,12 @@ function initializeStep2Section() {
       const tr = trCb.closest("tr");
       const sel = tr.querySelector("select.account-select");
       sel.value = sel.dataset.default;
+
+      const newInput = tr.querySelector("input.new-account-name");
+      const orig = tr.querySelector(".account-cell").textContent;
+      newInput.value = orig;
+      newInput.title = orig;
+
       sel.dispatchEvent(new Event("change"));
     });
     updateSummary();
@@ -296,18 +387,40 @@ function initializeStep2Section() {
 
   cbRename.addEventListener("click", (event) => {
     event.preventDefault();
-    const pattern = prompt("Pattern (use {{origName}}):", "YNAB - {{origName}}");
+    patternInput.value = "YNAB - {{origName}}";
+    openModal("bulkRenameModal", event);
+  });
+
+  // When user clicks Apply in modal
+  applyBtn.addEventListener("click", () => {
+    const pattern = patternInput.value.trim();
+    closeModal("bulkRenameModal");
     if (!pattern) return;
+    let counter = 0;
     document.querySelectorAll(".row-select:checked").forEach(trCb => {
       const tr = trCb.closest("tr");
       const sel = tr.querySelector("select.account-select");
+      // only rename the “new” rows
       if (!sel.value) {
         const orig = tr.querySelector(".account-cell").textContent;
-        tr.querySelector("input.new-account-name").value =
-          pattern.replace("{{origName}}", orig);
+        const newName = pattern
+          .replace(/{{origName}}/g, orig)
+          .replace(/{{index}}/g, ++counter);
+        tr.querySelector("input.new-account-name").value = newName;
+        tr.querySelector("input.new-account-name").title = newName
       }
     });
     updateSummary();
+  });
+
+  // Cancel just closes
+  cancelBtn.addEventListener("click", () => {
+    closeModal("bulkRenameModal");
+  });
+
+  // make the modal “×” button also close
+  renameModal.querySelector(".close").addEventListener("click", () => {
+    closeModal("bulkRenameModal");
   });
 
   cbRemove.addEventListener("click", (event) => {

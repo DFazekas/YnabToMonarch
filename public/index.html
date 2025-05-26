@@ -174,7 +174,9 @@
       <table id="mappingTable">
         <thead>
           <tr>
-            <th></th>
+            <th>
+              <input type="checkbox" id="selectAllRows" aria-label="Select all rows" />
+            </th>
             <th>YNAB Account</th>
             <th>Transactions</th>
             <th>Monarch Account</th>
@@ -346,6 +348,24 @@
             <strong>Rinse & Repeat:</strong> Repeat the process for each account you want to import.
           </li>
         </ol>
+      </div>
+    </div>
+
+    <!-- Bulk Rename Modal -->
+    <div id="bulkRenameModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="bulkRenameTitle">
+      <div class="modal-content">
+        <span class="close" data-action="close">&times;</span>
+        <h2 id="bulkRenameTitle">Bulk Rename Accounts</h2>
+        <label for="bulkRenamePattern">
+          Pattern:<br />
+          <small>Use <code>{{origName}}</code> for the YNAB name, <code>{{index}}</code> for an incrementing
+            number</small>
+        </label>
+        <input type="text" id="bulkRenamePattern" value="YNAB - {{origName}}" style="width:100%; margin-top:8px;" />
+        <div class="modal-actions" style="margin-top:1rem; text-align:right;">
+          <button id="bulkRenameCancel" class="btn btn-secondary">Cancel</button>
+          <button id="bulkRenameApply" class="btn btn-primary">Apply</button>
+        </div>
       </div>
     </div>
 
