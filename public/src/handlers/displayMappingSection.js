@@ -64,6 +64,7 @@ function renderMappingTable() {
     const rowSelect = tr.querySelector("input.row-select");
     const select = tr.querySelector("select.account-select");
     const newInput = tr.querySelector("input.new-account-name");
+    const table = document.getElementById("mappingTable");
 
     // toggle row highlight
     rowSelect.addEventListener("change", () => {
@@ -93,9 +94,29 @@ function renderMappingTable() {
 
     tr.querySelector(".remove-account").addEventListener("click", (e) => {
       e.preventDefault();
-      state.selectedYnabAccounts.splice(idx, 1)
+      // Capture which rows (by account name) are currently selected, excluding the one being removed
+      const selectedNames = Array.from(
+        table.querySelectorAll("tbody .row-select:checked")
+      )
+        .map(cb => cb.closest("tr").querySelector(".account-cell").textContent)
+        .filter(name => name !== acc.name);
+
+      // Remove the clicked account from state
+      state.selectedYnabAccounts.splice(idx, 1);
+
+      // Re‐render the table & summary
       renderMappingTable();
       updateSummary();
+
+      // 4) Re‐apply the remaining selections so the bulk bar updates
+      Array.from(table.querySelectorAll("tbody tr")).forEach(row => {
+        const name = row.querySelector(".account-cell").textContent;
+        if (selectedNames.includes(name)) {
+          const cb = row.querySelector(".row-select");
+          cb.checked = true;
+          cb.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      });
     });
   });
 
