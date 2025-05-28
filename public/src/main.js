@@ -6,7 +6,6 @@ import { startAutoImport, login, submitOtp } from './handlers/importer.js';
 import { Logger } from './utils/logger.js';
 import { bind } from './utils/dom.js';
 import { initModalControls } from './ui/modal.js';
-import { initializeMappingSection } from './handlers/displayMappingSection.js';
 
 // Initialize
 state.deviceUuid = initDeviceUuid();

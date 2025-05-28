@@ -1111,3 +1111,67 @@ button:disabled {
   justify-content: flex-end;
   gap: 0.5rem;
 }
+
+/* Full-page backdrop & centered card */
+.processing-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem 1rem;
+  /* background: linear-gradient(180deg, #001f4d 0%, #002f6c 100%); */
+}
+.processing-card {
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  padding: 2rem;
+  max-width: 600px;
+  width: 100%;
+  text-align: center;
+}
+
+.processing-card hr {
+  border: none;
+  border-top: 1px solid #e0e0e0;
+  margin: 1.5rem 0;
+}
+
+/* Headings & text */
+.processing-title {
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+  color: black;
+}
+.processing-subtitle, a {
+  color: #555;
+  margin: 0.75rem 0;
+  line-height: 1.4;
+}
+
+.processing-subtitle a {
+  color: #555;
+  margin: 0.75rem 0;
+  line-height: 1.4;
+  text-decoration: underline;
+}
+
+/* Buttons */
+.processing-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin: 1.5rem 0;
+}
+
+
+/* Thank-you & OSS prompt */
+.opensource-cta {
+  font-size: 0.9rem;
+  color: #555;
+}
+.opensource-cta a {
+  font-weight: 600;
+  color: #007aff;
+  text-decoration: none;
+}
+

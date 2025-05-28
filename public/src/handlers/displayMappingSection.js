@@ -499,7 +499,9 @@ function initializeStep2Section() {
     });
 
     console.log("Import payload:", payload);
-    await monarchApi.mapAccounts(state.apiToken, payload);
+    monarchApi.mapAccounts(state.apiToken, payload);
+
+    renderProcessingPage()
   });
 }
 
@@ -524,4 +526,25 @@ function renderStep2() {
   renderMappingTable();
   updateSummary();
   console.groupEnd("renderStep2");
+}
+
+function renderProcessingPage() {
+  console.group("renderProcessingPage");
+  const step1 = document.getElementById("step1");
+  const step2 = document.getElementById("step2");
+  step1.classList.add("hidden");
+  step2.classList.add("hidden");
+
+  const processingPage = document.getElementById("processingPage");
+  processingPage.classList.remove("hidden");
+
+  // Simulate processing delay
+  setTimeout(() => {
+    closeModal("bulkRenameModal");
+    processingPage.classList.add("hidden");
+    alert("Import completed successfully!");
+    renderStep1();
+  }, 2000);
+  
+  console.groupEnd("renderProcessingPage");
 }
