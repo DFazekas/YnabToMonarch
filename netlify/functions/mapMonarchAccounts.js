@@ -78,6 +78,7 @@ module.exports.handler = async (event, context) => {
 }
 
 async function createManualAccount(token, accountInput, logger) {
+  console.group("Creating Manual Account")
   const query = `
         mutation Web_CreateManualAccount($input: CreateManualAccountMutationInput!) {
             createManualAccount(input: $input) {
@@ -108,10 +109,12 @@ async function createManualAccount(token, accountInput, logger) {
     throw new Error(`Error creating account: ${JSON.stringify(errors)}`)
   }
 
+  console.groupEnd("Creating Manual Account")
   return { account: data.createManualAccount.account }
 }
 
 async function uploadStatementsFile(token, transactions, logger) {
+  console.group("Uploading Statements File")
   logger.add('Uploading statement file...')
 
   // Generate CSV content
@@ -149,10 +152,13 @@ async function uploadStatementsFile(token, transactions, logger) {
   } catch (error) {
     logger.addError(`Error uploading statement file.`)
     throw new Error(`Error uploading statement file: ${error.message}`)
+  } finally {
+    console.groupEnd("Uploading Statements File")
   }
 }
 
 async function importTransactions(token, accountId, sessionKey, logger) {
+  console.group("Importing Transactions")
   logger.add(`Importing transactions into account...`)
 
   const query = `
@@ -193,10 +199,12 @@ async function importTransactions(token, accountId, sessionKey, logger) {
 
   if (data) {
     const uploadSession = data.parseUploadStatementSession.uploadStatementSession
+    console.groupEnd("Importing Transactions")
     return { status: uploadSession.status }
   } else {
     console.error('Transactions importing failed:', errors)
     logger.addError('Transactions importing failed.')
+    console.groupEnd("Importing Transactions")
     throw new Error(`Transactions importing failed: ${JSON.stringify(errors)}`)
   }
 }
@@ -211,6 +219,7 @@ function createResponse(statusCode, logs = [], message = null) {
 }
 
 async function performGraphQLRequest(token, query, variables) {
+  console.group("Performing GraphQL Request")
   try {
     const response = await fetch(GRAPHQL_ENDPOINT, {
       method: 'POST',
@@ -222,7 +231,7 @@ async function performGraphQLRequest(token, query, variables) {
     })
 
     const result = await response.json()
-
+    console.groupEnd("Performing GraphQL Request")
     if (response.ok && !result.errors) {
       return { data: result.data }
     } else {
@@ -230,11 +239,13 @@ async function performGraphQLRequest(token, query, variables) {
       return { errors }
     }
   } catch (error) {
+    console.groupEnd("Performing GraphQL Request")
     return { errors: error.message }
   }
 }
 
 async function handleUploadAndImport(token, accountId, transactions, logger) {
+  console.group("Handling Upload and Import")
   try {
     // Upload statement file
     const { sessionKey } = await uploadStatementsFile(token, transactions, logger)
@@ -244,19 +255,23 @@ async function handleUploadAndImport(token, accountId, transactions, logger) {
 
     // Import transactions into the account
     await importTransactions(token, accountId, sessionKey, logger)
+    console.groupEnd("Handling Upload and Import")
   } catch (error) {
     console.error(`Failed to upload and import transactions: ${error.message}`)
     logger.addError(`Failed to upload and import transactions.`)
+    console.groupEnd("Handling Upload and Import")
     throw error
   }
 }
 
 function generateCSV(transactions) {
+  console.group("Generating CSV")
   const headers = `"Date","Merchant","Category","Account","Original Statement","Notes","Amount","Tags"`
   const rows = transactions.map(
     (tx) =>
       `"${tx.Date}","${tx.Merchant}","${tx.Category}","${tx.Account}","${tx['Original Statement']}","${tx.Notes}","${tx.Amount}","${tx.Tags}"`
   )
+  console.groupEnd("Generating CSV")
   return [headers, ...rows].join('\n')
 }
 
@@ -286,8 +301,10 @@ async function processMapping(token, mapping, logger) {
         `Imported '${transactions.length}' ${transactions.length === 1 ? 'transaction' : 'transactions'
         } into account '${ynabAccountName}'.`
       )
+      console.groupEnd("Processing Mapping")
     } catch (error) {
       logger.addError(`Failed to process account '${ynabAccountName}'.`)
+      console.groupEnd("Processing Mapping")
       throw new Error(`Failed to process account '${ynabAccountName}': ${error.message}`)
     }
   } else {
@@ -296,10 +313,11 @@ async function processMapping(token, mapping, logger) {
       // Handle statement file upload and importing into existing account
       await handleUploadAndImport(token, monarchAccountId, transactions, logger)
       logger.add(`Imported ${transactions.length} transactions into account '${monarchAccountName}'.`)
+      console.groupEnd("Processing Mapping")
     } catch (error) {
       logger.addError(`Failed to import transactions into account '${monarchAccountName}'.`)
+      console.groupEnd("Processing Mapping")
       throw new Error(`Failed to import transactions into account '${monarchAccountName}': ${error.message}`)
     }
   }
-  console.groupEnd("Processing Mapping")
 }
