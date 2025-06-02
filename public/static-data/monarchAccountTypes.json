@@ -384,61 +384,6 @@
       ]
     },
     {
-      "typeName": "loan",
-      "typeDisplay": "Loans",
-      "group": "liability",
-      "subtypes": [
-        {
-          "name": "auto",
-          "display": "Auto"
-        },
-        {
-          "name": "business",
-          "display": "Business"
-        },
-        {
-          "name": "commercial",
-          "display": "Commercial"
-        },
-        {
-          "name": "construction",
-          "display": "Construction"
-        },
-        {
-          "name": "consumer",
-          "display": "Consumer"
-        },
-        {
-          "name": "home",
-          "display": "Home"
-        },
-        {
-          "name": "home_equity",
-          "display": "Home Equity"
-        },
-        {
-          "name": "loan",
-          "display": "Loan"
-        },
-        {
-          "name": "mortgage",
-          "display": "Mortgage"
-        },
-        {
-          "name": "overdraft",
-          "display": "Overdraft"
-        },
-        {
-          "name": "line_of_credit",
-          "display": "Line of Credit"
-        },
-        {
-          "name": "student",
-          "display": "Student"
-        }
-      ]
-    },
-    {
       "typeName": "other_asset",
       "typeDisplay": "Other Assets",
       "group": "asset",

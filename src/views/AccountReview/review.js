@@ -2,6 +2,7 @@ import state from '../../state.js';
 import monarchAccountTypes from '../../../public/static-data/monarchAccountTypes.json';
 
 let reviewTableBody, importBtn, searchInput;
+let includeAllBtn, excludeAllBtn;
 let currentFilter = 'all';
 let searchQuery = '';
 
@@ -9,6 +10,8 @@ export default function initAccountReviewView() {
   reviewTableBody = document.getElementById('reviewTableBody');
   importBtn = document.getElementById('importBtn');
   searchInput = document.getElementById('searchInput');
+  includeAllBtn = document.getElementById('includeAllBtn');
+  excludeAllBtn = document.getElementById('excludeAllBtn');
 
   // Search listener
   searchInput.addEventListener('input', () => {
@@ -21,41 +24,65 @@ export default function initAccountReviewView() {
   document.getElementById('filterIncluded').addEventListener('click', () => { currentFilter = 'included'; updateFilters(); });
   document.getElementById('filterExcluded').addEventListener('click', () => { currentFilter = 'excluded'; updateFilters(); });
 
-  // Bulk include/exclude
-  document.getElementById('includeAllBtn').addEventListener('click', () => {
-    state.registerData.forEach(acc => { acc.excluded = false; });
+  // Bulk include/exclude actions (contextual to filtered data)
+  includeAllBtn.addEventListener('click', () => {
+    getFilteredData().forEach(acc => { acc.excluded = false; });
     renderTable();
   });
 
-  document.getElementById('excludeAllBtn').addEventListener('click', () => {
-    state.registerData.forEach(acc => { acc.excluded = true; });
+  excludeAllBtn.addEventListener('click', () => {
+    getFilteredData().forEach(acc => { acc.excluded = true; });
     renderTable();
+  });
+
+  updateFilters(); // Initialize filters on first load
+}
+
+function updateFilters() {
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.remove('bg-blue-500', 'text-white', 'bg-gray-100', 'text-gray-800');
+
+    const isActive = btn.id === `filter${capitalize(currentFilter)}`;
+    if (isActive) {
+      btn.classList.add('bg-blue-500', 'text-white');
+    } else {
+      btn.classList.add('bg-gray-100', 'text-gray-800');
+    }
   });
 
   renderTable();
 }
 
-function updateFilters() {
-  document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('bg-blue-500', 'text-white'));
-  document.getElementById(`filter${capitalize(currentFilter)}`).classList.add('bg-blue-500', 'text-white');
-  renderTable();
+function getFilteredData() {
+  return state.registerData.filter(acc => {
+    if (currentFilter === 'included' && acc.excluded) return false;
+    if (currentFilter === 'excluded' && !acc.excluded) return false;
+    if (searchQuery && !acc.name.toLowerCase().includes(searchQuery)) return false;
+    return true;
+  });
 }
 
 function renderTable() {
   reviewTableBody.innerHTML = '';
 
+  // Auto-exclude accounts with 0 transactions
   state.registerData.forEach(account => {
     if (account.transactionCount === 0) {
       account.excluded = true;
     }
   });
 
-  let filteredData = state.registerData.filter(acc => {
-    if (currentFilter === 'included' && acc.excluded) return false;
-    if (currentFilter === 'excluded' && !acc.excluded) return false;
-    if (searchQuery && !acc.name.toLowerCase().includes(searchQuery)) return false;
-    return true;
-  });
+  const filteredData = getFilteredData();
+
+  if (filteredData.length === 0) {
+    const row = document.createElement('tr');
+    const emptyTd = document.createElement('td');
+    emptyTd.colSpan = 6;
+    emptyTd.className = 'text-center py-8 text-gray-500';
+    emptyTd.textContent = 'No accounts found.';
+    row.appendChild(emptyTd);
+    reviewTableBody.appendChild(row);
+  }
 
   filteredData.forEach(account => {
     const row = document.createElement('tr');
@@ -68,11 +95,12 @@ function renderTable() {
     nameTd.textContent = account.name;
     nameTd.addEventListener('click', () => openNameEditor(account, nameTd));
 
-    // Type
+    // Type select
     const typeTd = document.createElement('td');
     typeTd.className = 'px-2 py-2';
     const typeSelect = document.createElement('select');
     typeSelect.className = 'border rounded px-2 py-1 w-full';
+
     monarchAccountTypes.data.forEach(type => {
       const opt = document.createElement('option');
       opt.value = type.typeName;
@@ -90,13 +118,13 @@ function renderTable() {
 
     typeTd.appendChild(typeSelect);
 
-    // Subtype
+    // Subtype select
     const subtypeTd = document.createElement('td');
     subtypeTd.className = 'px-2 py-2';
     const subtypeSelect = document.createElement('select');
     subtypeSelect.className = 'border rounded px-2 py-1 w-full';
-    const selectedType = monarchAccountTypes.data.find(t => t.typeName === account.type);
 
+    const selectedType = monarchAccountTypes.data.find(t => t.typeName === account.type);
     (selectedType?.subtypes || []).forEach(sub => {
       const opt = document.createElement('option');
       opt.value = sub.name;
@@ -118,12 +146,12 @@ function renderTable() {
 
     // Balance
     const balanceTd = document.createElement('td');
-    balanceTd.className = 'px-2 py-2 text-[#637988] text-center';
+    balanceTd.className = 'px-2 py-2 text-[#637988]';
     balanceTd.textContent = `$${account.balance.toFixed(2)}`;
 
     // Include toggle
     const includeTd = document.createElement('td');
-    includeTd.className = 'px-2 py-2 text-center';
+    includeTd.className = 'px-2 py-2';
     const toggleBtn = document.createElement('button');
     toggleBtn.className = 'px-2 py-2 rounded font-bold text-sm';
     toggleBtn.textContent = account.excluded ? 'Excluded' : 'Included';
@@ -134,7 +162,6 @@ function renderTable() {
     });
     includeTd.appendChild(toggleBtn);
 
-    // Append row
     row.appendChild(nameTd);
     row.appendChild(typeTd);
     row.appendChild(subtypeTd);
@@ -146,6 +173,11 @@ function renderTable() {
 
   const anyIncluded = state.registerData.some(acc => !acc.excluded);
   importBtn.disabled = !anyIncluded;
+
+  // Disable bulk buttons if no rows showing
+  const anyVisible = filteredData.length > 0;
+  includeAllBtn.disabled = !anyVisible;
+  excludeAllBtn.disabled = !anyVisible;
 }
 
 function openNameEditor(account, nameCell) {

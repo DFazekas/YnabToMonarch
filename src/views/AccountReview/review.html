@@ -10,15 +10,30 @@
 
     <!-- New control bar -->
     <div class="flex items-center justify-between px-4 py-2">
+      <!-- Search -->
       <input id="searchInput" type="text" placeholder="Search accounts..." class="border rounded px-3 py-2 w-1/3">
 
-      <div class="flex gap-2">
-        <button id="filterAll" class="filter-btn bg-blue-500 text-white px-3 py-1 rounded">All</button>
-        <button id="filterIncluded" class="filter-btn bg-gray-300 px-3 py-1 rounded">Included</button>
-        <button id="filterExcluded" class="filter-btn bg-gray-300 px-3 py-1 rounded">Excluded</button>
+      <!-- Filters & Bulk -->
+      <div class="flex items-center gap-6">
 
-        <button id="includeAllBtn" class="bg-green-500 text-white px-3 py-1 rounded font-bold">Include All</button>
-        <button id="excludeAllBtn" class="bg-red-500 text-white px-3 py-1 rounded font-bold">Exclude All</button>
+        <!-- Filters -->
+        <div class="flex border rounded overflow-hidden">
+          <button id="filterAll" class="filter-btn px-4 py-2 text-sm font-medium">All</button>
+          <button id="filterIncluded" class="filter-btn px-4 py-2 text-sm font-medium">Included</button>
+          <button id="filterExcluded" class="filter-btn px-4 py-2 text-sm font-medium">Excluded</button>
+        </div>
+
+
+        <!-- Bulk actions -->
+        <div class="flex gap-2">
+          <button id="includeAllBtn"
+            class="px-4 py-2 rounded border text-sm font-medium bg-white text-[#111518] hover:bg-gray-100">Include
+            All</button>
+          <button id="excludeAllBtn"
+            class="px-4 py-2 rounded border text-sm font-medium bg-white text-[#111518] hover:bg-gray-100">Exclude
+            All</button>
+        </div>
+
       </div>
     </div>
 
