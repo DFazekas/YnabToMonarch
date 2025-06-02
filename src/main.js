@@ -1,6 +1,7 @@
-import router from './router.js';
+import { navigate } from './router.js';
 
 // Initial app load
 window.addEventListener('DOMContentLoaded', () => {
-  router.navigate('upload');
+  // navigate('upload');
+  navigate('review');
 });

@@ -1,4 +1,4 @@
-import router from '../../router.js';
+import { navigate } from '../../router.js';
 import { openModal, closeModal } from '../../components/modal.js';
 
 export default function initManualImportView() {
@@ -25,6 +25,6 @@ export default function initManualImportView() {
 
   // Handle back navigation
   backBtn.addEventListener('click', () => {
-    router.navigate('method');
+    navigate('method');
   });
 }

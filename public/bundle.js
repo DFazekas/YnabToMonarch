@@ -584,7 +584,7 @@
         const parsedData = await parseYNABCSV(file);
         state_default.registerData = parsedData;
         console.log("State:", state_default);
-        router_default.navigate("review");
+        navigate("review");
       } catch (err) {
         errorMessage.textContent = "Failed to parse file. Please ensure it is a valid YNAB register export.";
         errorMessage.classList.remove("hidden");
@@ -1011,16 +1011,14 @@
   var reviewTableBody;
   var importBtn;
   var searchInput;
-  var includeAllBtn;
-  var excludeAllBtn;
   var currentFilter = "all";
   var searchQuery = "";
+  var selectedAccounts = /* @__PURE__ */ new Set();
+  var filteredData = [];
   function initAccountReviewView() {
     reviewTableBody = document.getElementById("reviewTableBody");
     importBtn = document.getElementById("importBtn");
     searchInput = document.getElementById("searchInput");
-    includeAllBtn = document.getElementById("includeAllBtn");
-    excludeAllBtn = document.getElementById("excludeAllBtn");
     searchInput.addEventListener("input", () => {
       searchQuery = searchInput.value.toLowerCase();
       renderTable();
@@ -1037,65 +1035,86 @@
       currentFilter = "excluded";
       updateFilters();
     });
-    includeAllBtn.addEventListener("click", () => {
-      getFilteredData().forEach((acc) => {
+    document.getElementById("includeAllBtn").addEventListener("click", () => {
+      filteredData.forEach((acc) => {
         acc.excluded = false;
       });
       renderTable();
     });
-    excludeAllBtn.addEventListener("click", () => {
-      getFilteredData().forEach((acc) => {
+    document.getElementById("excludeAllBtn").addEventListener("click", () => {
+      filteredData.forEach((acc) => {
         acc.excluded = true;
       });
       renderTable();
     });
-    updateFilters();
+    document.getElementById("unselectAllBtn").addEventListener("click", () => {
+      selectedAccounts.clear();
+      renderTable();
+    });
+    document.getElementById("bulkIncludeBtn").addEventListener("click", () => {
+      state_default.registerData.forEach((acc) => {
+        if (selectedAccounts.has(acc.id)) acc.excluded = false;
+      });
+      renderTable();
+    });
+    document.getElementById("bulkExcludeBtn").addEventListener("click", () => {
+      state_default.registerData.forEach((acc) => {
+        if (selectedAccounts.has(acc.id)) acc.excluded = true;
+      });
+      renderTable();
+    });
+    document.getElementById("bulkRenameBtn").addEventListener("click", () => {
+      alert("Bulk Rename modal not yet implemented");
+    });
+    document.getElementById("bulkTypeBtn").addEventListener("click", () => {
+      alert("Bulk Type modal not yet implemented");
+    });
+    document.getElementById("masterCheckbox").addEventListener("change", masterCheckboxChange);
+    backBtn.addEventListener("click", () => {
+      navigate("upload");
+    });
+    renderTable();
   }
   function updateFilters() {
     document.querySelectorAll(".filter-btn").forEach((btn) => {
       btn.classList.remove("bg-blue-500", "text-white", "bg-gray-100", "text-gray-800");
-      const isActive = btn.id === `filter${capitalize(currentFilter)}`;
-      if (isActive) {
-        btn.classList.add("bg-blue-500", "text-white");
-      } else {
-        btn.classList.add("bg-gray-100", "text-gray-800");
-      }
+      btn.classList.add("bg-gray-100", "text-gray-800");
     });
+    document.getElementById(`filter${capitalize(currentFilter)}`).classList.add("bg-blue-500", "text-white");
     renderTable();
   }
-  function getFilteredData() {
-    return state_default.registerData.filter((acc) => {
+  function renderTable() {
+    reviewTableBody.innerHTML = "";
+    filteredData = state_default.registerData.filter((acc) => {
+      if (acc.transactionCount === 0) acc.excluded = true;
       if (currentFilter === "included" && acc.excluded) return false;
       if (currentFilter === "excluded" && !acc.excluded) return false;
       if (searchQuery && !acc.name.toLowerCase().includes(searchQuery)) return false;
       return true;
     });
-  }
-  function renderTable() {
-    reviewTableBody.innerHTML = "";
-    state_default.registerData.forEach((account) => {
-      if (account.transactionCount === 0) {
-        account.excluded = true;
-      }
-    });
-    const filteredData = getFilteredData();
-    if (filteredData.length === 0) {
-      const row = document.createElement("tr");
-      const emptyTd = document.createElement("td");
-      emptyTd.colSpan = 6;
-      emptyTd.className = "text-center py-8 text-gray-500";
-      emptyTd.textContent = "No accounts found.";
-      row.appendChild(emptyTd);
-      reviewTableBody.appendChild(row);
-    }
     filteredData.forEach((account) => {
       const row = document.createElement("tr");
       row.classList.add("border-t", "border-[#dce1e5]");
+      const checkboxTd = document.createElement("td");
+      checkboxTd.className = "px-2 py-2 text-center";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "w-5 h-5";
+      checkbox.checked = selectedAccounts.has(account.id);
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) selectedAccounts.add(account.id);
+        else selectedAccounts.delete(account.id);
+        updateBulkBar();
+        updateMasterCheckbox();
+      });
+      checkboxTd.appendChild(checkbox);
+      row.appendChild(checkboxTd);
       const nameTd = document.createElement("td");
       nameTd.className = "px-2 py-2 max-w-[300px] truncate cursor-pointer";
       nameTd.title = account.name;
       nameTd.textContent = account.name;
       nameTd.addEventListener("click", () => openNameEditor(account, nameTd));
+      row.appendChild(nameTd);
       const typeTd = document.createElement("td");
       typeTd.className = "px-2 py-2";
       const typeSelect = document.createElement("select");
@@ -1114,6 +1133,7 @@
         renderTable();
       });
       typeTd.appendChild(typeSelect);
+      row.appendChild(typeTd);
       const subtypeTd = document.createElement("td");
       subtypeTd.className = "px-2 py-2";
       const subtypeSelect = document.createElement("select");
@@ -1130,12 +1150,15 @@
         account.subtype = subtypeSelect.value;
       });
       subtypeTd.appendChild(subtypeSelect);
+      row.appendChild(subtypeTd);
       const txTd = document.createElement("td");
       txTd.className = "px-2 py-2 text-center";
       txTd.textContent = account.transactionCount;
+      row.appendChild(txTd);
       const balanceTd = document.createElement("td");
       balanceTd.className = "px-2 py-2 text-[#637988]";
       balanceTd.textContent = `$${account.balance.toFixed(2)}`;
+      row.appendChild(balanceTd);
       const includeTd = document.createElement("td");
       includeTd.className = "px-2 py-2";
       const toggleBtn = document.createElement("button");
@@ -1147,19 +1170,38 @@
         renderTable();
       });
       includeTd.appendChild(toggleBtn);
-      row.appendChild(nameTd);
-      row.appendChild(typeTd);
-      row.appendChild(subtypeTd);
-      row.appendChild(txTd);
-      row.appendChild(balanceTd);
       row.appendChild(includeTd);
       reviewTableBody.appendChild(row);
     });
+    updateMasterCheckbox();
+    updateBulkBar();
     const anyIncluded = state_default.registerData.some((acc) => !acc.excluded);
     importBtn.disabled = !anyIncluded;
-    const anyVisible = filteredData.length > 0;
-    includeAllBtn.disabled = !anyVisible;
-    excludeAllBtn.disabled = !anyVisible;
+  }
+  function masterCheckboxChange(e) {
+    const checked = e.target.checked;
+    if (checked) {
+      filteredData.forEach((acc) => selectedAccounts.add(acc.id));
+    } else {
+      filteredData.forEach((acc) => selectedAccounts.delete(acc.id));
+    }
+    renderTable();
+  }
+  function updateMasterCheckbox() {
+    const masterCheckbox = document.getElementById("masterCheckbox");
+    const visible = filteredData;
+    const allSelected = visible.every((acc) => selectedAccounts.has(acc.id));
+    const anySelected = visible.some((acc) => selectedAccounts.has(acc.id));
+    masterCheckbox.checked = allSelected;
+    masterCheckbox.indeterminate = !allSelected && anySelected;
+  }
+  function updateBulkBar() {
+    const bar = document.getElementById("bulkActionBar");
+    const countSpan = document.getElementById("selectedCount");
+    const count = selectedAccounts.size;
+    countSpan.textContent = count;
+    if (count > 0) bar.classList.remove("hidden");
+    else bar.classList.add("hidden");
   }
   function openNameEditor(account, nameCell) {
     const overlay = document.createElement("div");
@@ -1206,7 +1248,6 @@
       account.name = input.value.trim();
       nameCell.textContent = account.name;
       nameCell.title = account.name;
-      nameCell.addEventListener("click", () => openNameEditor(account, nameCell));
       closeEditor();
     }
   }
@@ -1215,7 +1256,7 @@
   }
 
   // src/views/AccountReview/review.html
-  var review_default = '<div class="px-40 flex flex-1 justify-center py-5">\n  <div class="layout-content-container flex flex-col max-w-[960px] flex-1">\n    <div class="flex justify-between items-center p-4">\n      <h2 class="text-[#111518] text-[32px] font-bold">Review Accounts</h2>\n    </div>\n\n    <p class="text-[#111518] text-base px-4">\n      Review detected accounts and adjust their Monarch types before importing.\n    </p>\n\n    <!-- New control bar -->\n    <div class="flex items-center justify-between px-4 py-2">\n      <!-- Search -->\n      <input id="searchInput" type="text" placeholder="Search accounts..." class="border rounded px-3 py-2 w-1/3">\n\n      <!-- Filters & Bulk -->\n      <div class="flex items-center gap-6">\n\n        <!-- Filters -->\n        <div class="flex border rounded overflow-hidden">\n          <button id="filterAll" class="filter-btn px-4 py-2 text-sm font-medium">All</button>\n          <button id="filterIncluded" class="filter-btn px-4 py-2 text-sm font-medium">Included</button>\n          <button id="filterExcluded" class="filter-btn px-4 py-2 text-sm font-medium">Excluded</button>\n        </div>\n\n\n        <!-- Bulk actions -->\n        <div class="flex gap-2">\n          <button id="includeAllBtn"\n            class="px-4 py-2 rounded border text-sm font-medium bg-white text-[#111518] hover:bg-gray-100">Include\n            All</button>\n          <button id="excludeAllBtn"\n            class="px-4 py-2 rounded border text-sm font-medium bg-white text-[#111518] hover:bg-gray-100">Exclude\n            All</button>\n        </div>\n\n      </div>\n    </div>\n\n    <div class="px-4 py-3 @container">\n      <div class="flex overflow-hidden rounded-lg border border-[#dce1e5] bg-white">\n        <table class="flex-1">\n          <thead>\n            <tr class="bg-white">\n              <th class="px-2 py-3 text-left text-sm font-medium w-[230px]">Account Name</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[250px]">Type</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[250px]">Subtype</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[140px]">Transactions</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[200px]">Balance</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[150px]">Include</th>\n            </tr>\n          </thead>\n          <tbody id="reviewTableBody">\n            <!-- populated dynamically -->\n          </tbody>\n        </table>\n      </div>\n    </div>\n\n    <div class="flex justify-end px-4 py-3">\n      <button id="importBtn" class="h-10 px-6 bg-[#1993e5] text-white text-sm font-bold rounded-lg disabled:opacity-50"\n        disabled>Import Accounts</button>\n    </div>\n  </div>\n</div>';
+  var review_default = '<div class="px-40 flex flex-1 justify-center py-5">\n  <div class="layout-content-container flex flex-col max-w-[960px] flex-1">\n    <div class="flex justify-between items-center p-4">\n      <h2 class="text-[#111518] text-[32px] font-bold">Review Accounts</h2>\n    </div>\n\n    <p class="text-[#111518] text-base px-4">\n      Review detected accounts and adjust their Monarch types before importing.\n    </p>\n\n    <!-- New control bar -->\n    <div class="flex items-center justify-between px-4 py-2">\n      <!-- Search -->\n      <input id="searchInput" type="text" placeholder="Search accounts..." class="border rounded px-3 py-2 w-1/3">\n\n      <!-- Filters & Bulk -->\n      <div class="flex items-center gap-6">\n\n        <!-- Filters -->\n        <div class="flex border rounded overflow-hidden">\n          <button id="filterAll" class="filter-btn px-4 py-2 text-sm font-medium">All</button>\n          <button id="filterIncluded" class="filter-btn px-4 py-2 text-sm font-medium">Included</button>\n          <button id="filterExcluded" class="filter-btn px-4 py-2 text-sm font-medium">Excluded</button>\n        </div>\n\n\n        <!-- Bulk actions -->\n        <div class="flex gap-2">\n          <button id="includeAllBtn"\n            class="px-4 py-2 rounded border text-sm font-medium bg-white text-[#111518] hover:bg-gray-100">Include\n            All</button>\n          <button id="excludeAllBtn"\n            class="px-4 py-2 rounded border text-sm font-medium bg-white text-[#111518] hover:bg-gray-100">Exclude\n            All</button>\n        </div>\n\n      </div>\n    </div>\n\n    <div class="px-4 py-3 @container">\n      <div class="flex overflow-hidden rounded-lg border border-[#dce1e5] bg-white">\n        <table class="flex-1">\n          <thead>\n            <tr class="bg-white">\n              <th class="px-2 py-3 text-left text-sm font-medium w-[50px]">\n                <input type="checkbox" id="masterCheckbox" class="w-5 h-5">\n              </th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[230px]">Account Name</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[250px]">Type</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[250px]">Subtype</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[140px]">Transactions</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[200px]">Balance</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[150px]">Include</th>\n            </tr>\n          </thead>\n          <tbody id="reviewTableBody">\n            <!-- populated dynamically -->\n          </tbody>\n        </table>\n      </div>\n\n      <div id="bulkActionBar"\n        class="hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-white shadow-lg rounded-lg flex items-center px-6 py-3 gap-4 border border-gray-300">\n\n        <!-- Separator -->\n        <div class="h-5 border-l border-gray-300"></div>\n\n        <!-- Unselect -->\n        <button id="unselectAllBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100">\n          <span id="selectedCount">0</span> selected\n        </button>\n\n        <!-- Bulk Rename -->\n        <button id="bulkRenameBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100">\n          Rename\n        </button>\n\n        <!-- Bulk Edit Type -->\n        <button id="bulkTypeBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100">\n          Edit Type\n        </button>\n\n        <!-- Bulk Include -->\n        <button id="bulkIncludeBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100">\n          Include\n        </button>\n\n        <!-- Bulk Exclude -->\n        <button id="bulkExcludeBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100">\n          Exclude\n        </button>\n      </div>\n    </div>\n\n    <div class="flex justify-between items-center px-4 py-6 mt-6">\n      <!-- Back Button -->\n      <button id="backBtn"\n        class="px-5 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition">\n        \u2190 Back\n      </button>\n\n      <!-- Forward Button -->\n      <button id="importBtn"\n        class="px-6 py-3 bg-[#1993e5] text-white text-sm font-bold rounded-lg disabled:opacity-50 transition"\n        disabled>Import Accounts</button>\n    </div>\n\n  </div>\n</div>';
 
   // src/views/MethodSelect/method.js
   function initMethodSelectView() {
@@ -1223,11 +1264,11 @@
     const autoBtn = document.getElementById("autoImportBtn");
     manualBtn.addEventListener("click", () => {
       console.log("User selected Manual Import");
-      router_default.navigate("manualImport");
+      navigate("manualImport");
     });
     autoBtn.addEventListener("click", () => {
       console.log("User selected Auto Import");
-      router_default.navigate("autoImport");
+      navigate("autoImport");
     });
   }
 
@@ -1237,7 +1278,7 @@
   // src/views/ManualImport/manual.js
   function initManualImportView() {
     const downloadBtn = document.getElementById("downloadZipBtn");
-    const backBtn = document.getElementById("backBtn");
+    const backBtn2 = document.getElementById("backBtn");
     const importGuideBtn = document.getElementById("importGuideBtn");
     const closeImportGuideBtn = document.getElementById("closeImportGuideModal");
     downloadBtn.addEventListener("click", () => {
@@ -1250,8 +1291,8 @@
     closeImportGuideBtn.addEventListener("click", () => {
       closeModal("importGuideModal");
     });
-    backBtn.addEventListener("click", () => {
-      router_default.navigate("method");
+    backBtn2.addEventListener("click", () => {
+      navigate("method");
     });
   }
 
@@ -1260,27 +1301,31 @@
 
   // src/router.js
   var routes = {
-    upload: { template: upload_default, init: initUploadView },
-    review: { template: review_default, init: initAccountReviewView },
-    method: { template: method_default, init: initMethodSelectView },
-    manual: { template: manual_default, init: initManualImportView }
+    upload: { template: upload_default, init: initUploadView, scroll: false },
+    review: { template: review_default, init: initAccountReviewView, scroll: true },
+    method: { template: method_default, init: initMethodSelectView, scroll: false },
+    manual: { template: manual_default, init: initManualImportView, scroll: false }
   };
-  var router = {
-    navigate(viewName) {
-      const route = routes[viewName];
-      if (!route) {
-        console.error(`Unknown view: ${viewName}`);
-        return;
-      }
-      document.getElementById("app").innerHTML = route.template;
-      route.init();
+  async function navigate(view) {
+    const app = document.getElementById("app");
+    app.innerHTML = "";
+    const route = routes[view];
+    if (!route) {
+      app.innerHTML = "<p>404 - View not found</p>";
+      return;
     }
-  };
-  var router_default = router;
+    if (route.scroll) {
+      document.body.classList.add("always-scroll");
+    } else {
+      document.body.classList.remove("always-scroll");
+    }
+    document.getElementById("app").innerHTML = route.template;
+    route.init();
+  }
 
   // src/main.js
   window.addEventListener("DOMContentLoaded", () => {
-    router_default.navigate("upload");
+    navigate("review");
   });
 })();
 /*! Bundled license information:

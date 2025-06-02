@@ -1,4 +1,4 @@
-import router from '../../router.js';
+import { navigate } from '../../router.js';
 
 export default function initMethodSelectView() {
   const manualBtn = document.getElementById('manualImportBtn');
@@ -6,11 +6,11 @@ export default function initMethodSelectView() {
 
   manualBtn.addEventListener('click', () => {
     console.log("User selected Manual Import");
-    router.navigate('manualImport');
+    navigate('manualImport');
   });
 
   autoBtn.addEventListener('click', () => {
     console.log("User selected Auto Import");
-    router.navigate('autoImport');
+    navigate('autoImport');
   });
 }

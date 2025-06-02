@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@layer utilities {
+  .always-scroll {
+    overflow-y: scroll;
+  }
+}
+
 body {
   font-family: 'Inter', sans-serif;
 }

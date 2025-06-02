@@ -1,5 +1,5 @@
 import state from '../../state.js';
-import router from '../../router.js';
+import { navigate } from '../../router.js';
 import parseYNABCSV from '../../services/ynabParser.js';
 import { openModal, closeModal } from '../../components/modal.js';
 
@@ -55,7 +55,7 @@ export default function initUploadView() {
       state.registerData = parsedData;
       console.log("State:", state)
 
-      router.navigate('review');
+      navigate('review');
     } catch (err) {
       errorMessage.textContent = 'Failed to parse file. Please ensure it is a valid YNAB register export.';
       errorMessage.classList.remove('hidden');

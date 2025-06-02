@@ -10,31 +10,33 @@ import methodTemplate from './views/MethodSelect/method.html';
 import initManualImportView from './views/ManualImport/manual.js';
 import manualTemplate from './views/ManualImport/manual.html';
 
-
-
-// Define your route registry
 const routes = {
- upload: { template: uploadTemplate, init: initUploadView },
-  review: { template: reviewTemplate, init: initAccountReviewView },
-  method: { template: methodTemplate, init: initMethodSelectView },
-  manual: { template: manualTemplate, init: initManualImportView }
+  upload: { template: uploadTemplate, init: initUploadView, scroll: false },
+  review: { template: reviewTemplate, init: initAccountReviewView, scroll: true },
+  method: { template: methodTemplate, init: initMethodSelectView, scroll: false },
+  manual: { template: manualTemplate, init: initManualImportView, scroll: false }
 };
 
-// Central router object
-const router = {
-  navigate(viewName) {
-    const route = routes[viewName];
-    if (!route) {
-      console.error(`Unknown view: ${viewName}`);
-      return;
-    }
+export async function navigate(view) {
+  const app = document.getElementById('app');
+  app.innerHTML = '';
 
-    // Inject HTML template
+  const route = routes[view];
+  if (!route) {
+    app.innerHTML = '<p>404 - View not found</p>';
+    return;
+  }
+
+  // Dynamically control page overflow
+  if (route.scroll) {
+    document.body.classList.add('always-scroll');
+  } else {
+    document.body.classList.remove('always-scroll');
+  }
+
+  // Inject HTML template
     document.getElementById('app').innerHTML = route.template;
 
     // Initialize view logic
     route.init();
-  }
-};
-
-export default router;
+}
