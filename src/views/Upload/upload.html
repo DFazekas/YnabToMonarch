@@ -1,0 +1,41 @@
+<div class="flex flex-col items-center justify-center py-16 space-y-8">
+
+  <div class="text-center">
+    <h2 class="text-3xl font-bold mb-2">Migrate your YNAB data</h2>
+    <p class="text-gray-600 text-base">
+      Upload your exported YNAB register file to begin the migration process into Monarch Money.
+    </p>
+    <button id="howItWorksBtn" class="mt-4 text-sm text-blue-600 font-semibold hover:underline">
+      How does this work?
+    </button>
+  </div>
+
+  <!-- Upload Box -->
+  <div id="uploadBox" class="w-full max-w-md border-2 border-dashed border-gray-300 rounded-lg p-8 flex flex-col items-center space-y-4 transition-all">
+    <p class="text-lg font-semibold">Drag & Drop your Register CSV here</p>
+    <p class="text-sm text-gray-500">or</p>
+    <input id="fileInput" type="file" accept=".csv" hidden>
+    <button id="browseButton" class="bg-gray-100 text-sm font-bold px-5 py-2 rounded-lg hover:bg-gray-200 transition">
+      Browse Files
+    </button>
+    <p class="text-xs text-gray-400">Your file stays local. We don’t store or transmit your data.</p>
+  </div>
+
+  <div id="errorMessage" class="hidden text-red-500 text-sm"></div>
+
+</div>
+
+<!-- Modal -->
+<div id="howItWorksModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-lg p-8 max-w-lg w-full relative">
+    <button class="absolute top-3 right-3 text-gray-500 text-xl font-bold hover:text-black" id="closeHowItWorksModal">&times;</button>
+    <h3 class="text-xl font-bold mb-4">How does this work?</h3>
+    <ol class="list-decimal pl-5 space-y-2 text-sm text-gray-700">
+      <li>Export your YNAB register file.</li>
+      <li>Upload the CSV file here.</li>
+      <li>We parse and prepare Monarch-ready files automatically.</li>
+      <li>Choose between manual import or guided auto-import into Monarch Money.</li>
+    </ol>
+    <p class="mt-4 text-xs text-gray-500">Your files are never uploaded or stored externally.</p>
+  </div>
+</div>

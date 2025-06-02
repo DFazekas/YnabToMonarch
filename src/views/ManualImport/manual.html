@@ -1,0 +1,48 @@
+<div class="flex flex-col items-center justify-center py-16 space-y-8">
+
+  <div class="text-center">
+    <h2 class="text-3xl font-bold mb-2">Manual Import</h2>
+    <p class="text-gray-600 text-base max-w-md">
+      We’ve prepared your account files. Download your data and manually import them into Monarch Money.
+    </p>
+  </div>
+
+  <div class="flex flex-col gap-6 w-80">
+
+    <!-- Download ZIP Button -->
+    <button id="downloadZipBtn"
+      class="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition">
+      Download CSV ZIP
+    </button>
+
+    <!-- Link to import instructions -->
+    <button id="importGuideBtn"
+      class="text-blue-600 text-center font-semibold text-sm hover:underline">
+      How to import into Monarch?
+    </button>
+
+    <!-- Back Button -->
+    <button id="backBtn"
+      class="w-full py-3 border border-gray-300 text-gray-600 font-semibold rounded-lg hover:bg-gray-100 transition">
+      ← Back
+    </button>
+
+  </div>
+
+</div>
+
+<!-- Modal -->
+<div id="importGuideModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-lg p-8 max-w-lg w-full relative">
+    <button class="absolute top-3 right-3 text-gray-500 text-xl font-bold hover:text-black" id="closeImportGuideModal">&times;</button>
+    <h3 class="text-xl font-bold mb-4">How to manually import into Monarch</h3>
+    <ol class="list-decimal pl-5 space-y-2 text-sm text-gray-700">
+      <li>Log into your Monarch account.</li>
+      <li>Navigate to Accounts → Add Manual Account.</li>
+      <li>Choose account type and set opening balance.</li>
+      <li>Click "Upload Transactions" and select your downloaded CSV file.</li>
+      <li>Repeat for each account.</li>
+    </ol>
+    <p class="mt-4 text-xs text-gray-500">Your files are processed locally and never uploaded externally.</p>
+  </div>
+</div>

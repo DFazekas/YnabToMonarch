@@ -1,0 +1,50 @@
+<div class="px-40 flex flex-1 justify-center py-5">
+  <div class="layout-content-container flex flex-col max-w-[960px] flex-1">
+    <div class="flex justify-between items-center p-4">
+      <h2 class="text-[#111518] text-[32px] font-bold">Review Accounts</h2>
+    </div>
+
+    <p class="text-[#111518] text-base px-4">
+      Review detected accounts and adjust their Monarch types before importing.
+    </p>
+
+    <!-- New control bar -->
+    <div class="flex items-center justify-between px-4 py-2">
+      <input id="searchInput" type="text" placeholder="Search accounts..." class="border rounded px-3 py-2 w-1/3">
+
+      <div class="flex gap-2">
+        <button id="filterAll" class="filter-btn bg-blue-500 text-white px-3 py-1 rounded">All</button>
+        <button id="filterIncluded" class="filter-btn bg-gray-300 px-3 py-1 rounded">Included</button>
+        <button id="filterExcluded" class="filter-btn bg-gray-300 px-3 py-1 rounded">Excluded</button>
+
+        <button id="includeAllBtn" class="bg-green-500 text-white px-3 py-1 rounded font-bold">Include All</button>
+        <button id="excludeAllBtn" class="bg-red-500 text-white px-3 py-1 rounded font-bold">Exclude All</button>
+      </div>
+    </div>
+
+    <div class="px-4 py-3 @container">
+      <div class="flex overflow-hidden rounded-lg border border-[#dce1e5] bg-white">
+        <table class="flex-1">
+          <thead>
+            <tr class="bg-white">
+              <th class="px-2 py-3 text-left text-sm font-medium w-[230px]">Account Name</th>
+              <th class="px-2 py-3 text-left text-sm font-medium w-[250px]">Type</th>
+              <th class="px-2 py-3 text-left text-sm font-medium w-[250px]">Subtype</th>
+              <th class="px-2 py-3 text-left text-sm font-medium w-[140px]">Transactions</th>
+              <th class="px-2 py-3 text-left text-sm font-medium w-[200px]">Balance</th>
+              <th class="px-2 py-3 text-left text-sm font-medium w-[150px]">Include</th>
+            </tr>
+          </thead>
+          <tbody id="reviewTableBody">
+            <!-- populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="flex justify-end px-4 py-3">
+      <button id="importBtn" class="h-10 px-6 bg-[#1993e5] text-white text-sm font-bold rounded-lg disabled:opacity-50"
+        disabled>Import Accounts</button>
+    </div>
+  </div>
+</div>

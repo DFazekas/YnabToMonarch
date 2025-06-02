@@ -1,0 +1,464 @@
+{
+  "generatedAt": "2025-06-02T06:26:29.704Z",
+  "generatedBy": "tools/fetchMonarchAccountTypes.js",
+  "data": [
+    {
+      "typeName": "depository",
+      "typeDisplay": "Cash",
+      "group": "asset",
+      "subtypes": [
+        {
+          "name": "cd",
+          "display": "CD"
+        },
+        {
+          "name": "checking",
+          "display": "Checking"
+        },
+        {
+          "name": "savings",
+          "display": "Savings"
+        },
+        {
+          "name": "money_market",
+          "display": "Money Market"
+        },
+        {
+          "name": "paypal",
+          "display": "Mobile Payment System"
+        },
+        {
+          "name": "prepaid",
+          "display": "Prepaid"
+        },
+        {
+          "name": "cash_management",
+          "display": "Cash Management"
+        }
+      ]
+    },
+    {
+      "typeName": "brokerage",
+      "typeDisplay": "Investments",
+      "group": "asset",
+      "subtypes": [
+        {
+          "name": "st_401a",
+          "display": "401a"
+        },
+        {
+          "name": "st_401k",
+          "display": "401k"
+        },
+        {
+          "name": "st_403b",
+          "display": "403b"
+        },
+        {
+          "name": "st_457b",
+          "display": "457b"
+        },
+        {
+          "name": "st_529",
+          "display": "529 Plan"
+        },
+        {
+          "name": "brokerage",
+          "display": "Brokerage (Taxable)"
+        },
+        {
+          "name": "cash_isa",
+          "display": "Individual Savings Account (ISA) - Cash"
+        },
+        {
+          "name": "cryptocurrency",
+          "display": "Cryptocurrency"
+        },
+        {
+          "name": "education_savings_account",
+          "display": "Coverdell Education Savings Account (ESA)"
+        },
+        {
+          "name": "gic",
+          "display": "Guaranteed Investment Certificate (GIC)"
+        },
+        {
+          "name": "fixed_annuity",
+          "display": "Fixed Annuity"
+        },
+        {
+          "name": "health_reimbursement_arrangement",
+          "display": "Health Reimbursement Arrangement (HRA)"
+        },
+        {
+          "name": "health_savings_account",
+          "display": "Health Savings Account (HSA)"
+        },
+        {
+          "name": "iso",
+          "display": "Incentive Stock Options (ISO)"
+        },
+        {
+          "name": "ira",
+          "display": "Individual Retirement Account (IRA)"
+        },
+        {
+          "name": "isa",
+          "display": "Individual Savings Account (ISA) - Non-cash"
+        },
+        {
+          "name": "lif",
+          "display": "Life Income Fund (LIF) Retirement Account"
+        },
+        {
+          "name": "lira",
+          "display": "Locked-in Retirement Account (LIRA)"
+        },
+        {
+          "name": "lrif",
+          "display": "Locked-in Retirement Income Fund (LRIF)"
+        },
+        {
+          "name": "lrsp",
+          "display": "Locked-in Retirement Savings Plan (LRSP)"
+        },
+        {
+          "name": "keogh_plan",
+          "display": "Keogh Plan"
+        },
+        {
+          "name": "mutual_fund",
+          "display": "Mutual Fund"
+        },
+        {
+          "name": "nso",
+          "display": "Non-qualified Stock Options (NSO)"
+        },
+        {
+          "name": "non_taxable_brokerage_account",
+          "display": "Brokerage (Non-taxable)"
+        },
+        {
+          "name": "other",
+          "display": "Other"
+        },
+        {
+          "name": "prif",
+          "display": "Prescribed Registered Retirement Income Fund (PRIF)"
+        },
+        {
+          "name": "rdsp",
+          "display": "Registered Disability Savings Plan (RDSP)"
+        },
+        {
+          "name": "resp",
+          "display": "Registered Education Savings Plan (RESP)"
+        },
+        {
+          "name": "rlif",
+          "display": "Restricted Life Income Fund (RLIF)"
+        },
+        {
+          "name": "rrif",
+          "display": "Registered Retirement Income Fund (RRIF)"
+        },
+        {
+          "name": "pension",
+          "display": "Pension"
+        },
+        {
+          "name": "profit_sharing_plan",
+          "display": "Profit Sharing Plan"
+        },
+        {
+          "name": "qualifying_share_account",
+          "display": "Qualifying Share Account"
+        },
+        {
+          "name": "retirement",
+          "display": "Retirement"
+        },
+        {
+          "name": "roth",
+          "display": "Roth IRA"
+        },
+        {
+          "name": "roth_401k",
+          "display": "Roth 401k"
+        },
+        {
+          "name": "rrsp",
+          "display": "Registered Retirement Savings Plan (RRSP)"
+        },
+        {
+          "name": "sarsep_pension",
+          "display": "Salary Reduction Simplified Employee Pension Plan (SARSEP)"
+        },
+        {
+          "name": "sep_ira",
+          "display": "Simplified Employee Pension IRA (SEP IRA)"
+        },
+        {
+          "name": "simple_ira",
+          "display": "Simple IRA"
+        },
+        {
+          "name": "sipp",
+          "display": "Self-Invested Personal Pension (SIPP)"
+        },
+        {
+          "name": "stock_plan",
+          "display": "Stock Plan"
+        },
+        {
+          "name": "thrift_savings_plan",
+          "display": "Thrift Savings Plan (TSP)"
+        },
+        {
+          "name": "trust",
+          "display": "Trust"
+        },
+        {
+          "name": "tfsa",
+          "display": "Tax-Free Savings Account (TFSA)"
+        },
+        {
+          "name": "ugma",
+          "display": "Uniform Gift to Minors Act (UGMA)"
+        },
+        {
+          "name": "utma",
+          "display": "Uniform Transfers to Minors Act (UTMA)"
+        },
+        {
+          "name": "variable_annuity",
+          "display": "Variable Annuity"
+        },
+        {
+          "name": "fhsa",
+          "display": "First Home Savings Account (FHSA)"
+        }
+      ]
+    },
+    {
+      "typeName": "real_estate",
+      "typeDisplay": "Real Estate",
+      "group": "asset",
+      "subtypes": [
+        {
+          "name": "primary_home",
+          "display": "Primary Home"
+        },
+        {
+          "name": "secondary_home",
+          "display": "Secondary Home"
+        },
+        {
+          "name": "rental_property",
+          "display": "Rental Property"
+        }
+      ]
+    },
+    {
+      "typeName": "vehicle",
+      "typeDisplay": "Vehicles",
+      "group": "asset",
+      "subtypes": [
+        {
+          "name": "car",
+          "display": "Car"
+        },
+        {
+          "name": "boat",
+          "display": "Boat"
+        },
+        {
+          "name": "motorcycle",
+          "display": "Motorcycle"
+        },
+        {
+          "name": "snowmobile",
+          "display": "Snowmobile"
+        },
+        {
+          "name": "bicycle",
+          "display": "Bicycle"
+        },
+        {
+          "name": "other",
+          "display": "Other"
+        }
+      ]
+    },
+    {
+      "typeName": "valuables",
+      "typeDisplay": "Valuables",
+      "group": "asset",
+      "subtypes": [
+        {
+          "name": "art",
+          "display": "Art"
+        },
+        {
+          "name": "jewelry",
+          "display": "Jewelry"
+        },
+        {
+          "name": "collectibles",
+          "display": "Collectibles"
+        },
+        {
+          "name": "furniture",
+          "display": "Furniture"
+        },
+        {
+          "name": "other",
+          "display": "Other"
+        }
+      ]
+    },
+    {
+      "typeName": "credit",
+      "typeDisplay": "Credit Cards",
+      "group": "liability",
+      "subtypes": [
+        {
+          "name": "credit_card",
+          "display": "Credit Card"
+        }
+      ]
+    },
+    {
+      "typeName": "loan",
+      "typeDisplay": "Loans",
+      "group": "liability",
+      "subtypes": [
+        {
+          "name": "auto",
+          "display": "Auto"
+        },
+        {
+          "name": "business",
+          "display": "Business"
+        },
+        {
+          "name": "commercial",
+          "display": "Commercial"
+        },
+        {
+          "name": "construction",
+          "display": "Construction"
+        },
+        {
+          "name": "consumer",
+          "display": "Consumer"
+        },
+        {
+          "name": "home",
+          "display": "Home"
+        },
+        {
+          "name": "home_equity",
+          "display": "Home Equity"
+        },
+        {
+          "name": "loan",
+          "display": "Loan"
+        },
+        {
+          "name": "mortgage",
+          "display": "Mortgage"
+        },
+        {
+          "name": "overdraft",
+          "display": "Overdraft"
+        },
+        {
+          "name": "line_of_credit",
+          "display": "Line of Credit"
+        },
+        {
+          "name": "student",
+          "display": "Student"
+        }
+      ]
+    },
+    {
+      "typeName": "loan",
+      "typeDisplay": "Loans",
+      "group": "liability",
+      "subtypes": [
+        {
+          "name": "auto",
+          "display": "Auto"
+        },
+        {
+          "name": "business",
+          "display": "Business"
+        },
+        {
+          "name": "commercial",
+          "display": "Commercial"
+        },
+        {
+          "name": "construction",
+          "display": "Construction"
+        },
+        {
+          "name": "consumer",
+          "display": "Consumer"
+        },
+        {
+          "name": "home",
+          "display": "Home"
+        },
+        {
+          "name": "home_equity",
+          "display": "Home Equity"
+        },
+        {
+          "name": "loan",
+          "display": "Loan"
+        },
+        {
+          "name": "mortgage",
+          "display": "Mortgage"
+        },
+        {
+          "name": "overdraft",
+          "display": "Overdraft"
+        },
+        {
+          "name": "line_of_credit",
+          "display": "Line of Credit"
+        },
+        {
+          "name": "student",
+          "display": "Student"
+        }
+      ]
+    },
+    {
+      "typeName": "other_asset",
+      "typeDisplay": "Other Assets",
+      "group": "asset",
+      "subtypes": [
+        {
+          "name": "other",
+          "display": "Other"
+        }
+      ]
+    },
+    {
+      "typeName": "other_liability",
+      "typeDisplay": "Other Liabilities",
+      "group": "liability",
+      "subtypes": [
+        {
+          "name": "other",
+          "display": "Other"
+        }
+      ]
+    }
+  ]
+}

@@ -1,28 +1,44 @@
 {
   "name": "ynabtomonarch",
   "version": "1.0.0",
+  "type": "module",
   "description": "A tool to migrate YNAB transaction records into Monarch Money.",
-  "scripts": {
-    "functions": "serverless offline --reloadHandler",
-    "website": "npx live-server public"
-  },
   "author": "Devon Fazekas",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/DFazekas/YnabToMonarch.git"
+    "url": "git+https://github.com/DFazekas/YnabToMonarch.git"
   },
   "bugs": {
     "url": "https://github.com/DFazekas/YnabToMonarch/issues"
   },
   "homepage": "https://github.com/DFazekas/YnabToMonarch#readme",
+  "main": "tailwind.config.js",
+  "keywords": [],
+  "scripts": {
+    "functions": "serverless offline --reloadHandler",
+    "website": "npx live-server public",
+    "build:css": "tailwindcss -i ./styles/global.css -o ./public/styles.css --minify",
+    "build:js": "esbuild ./src/main.js --bundle --minify --outfile=./public/bundle.js --loader:.html=text",
+    "build": "npm run build:css && npm run build:js",
+    "watch:css": "tailwindcss -i ./styles/global.css -o ./public/styles.css --watch",
+    "watch:js": "esbuild ./src/main.js --bundle --outfile=./public/bundle.js --loader:.html=text --watch",
+    "dev": "npm-run-all --parallel watch:* website functions",
+    "update:Shortcuts": "node ./tools/fetchMonarchShortcuts.js"
+  },
   "dependencies": {
+    "@tailwindcss/cli": "^4.1.8",
     "d3-dsv": "^3.0.1",
     "form-data": "^4.0.1",
     "node-fetch": "^2.7.0",
-    "papaparse": "^5.5.2"
+    "papaparse": "^5.5.2",
+    "tailwindcss": "^4.1.8"
   },
   "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "esbuild": "^0.25.5",
+    "npm-run-all": "^4.1.5",
+    "postcss": "^8.5.4",
     "serverless": "^4.14.2",
     "serverless-offline": "^14.4.0"
   }
