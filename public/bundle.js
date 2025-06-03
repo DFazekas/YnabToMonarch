@@ -66927,7 +66927,7 @@
     document.getElementById("manualFileCount").textContent = selectedCount;
     manualBtn.addEventListener("click", () => {
       console.log("User selected Manual Import");
-      navigate("manualImport");
+      navigate("manualInstructions");
     });
     autoBtn.addEventListener("click", () => {
       console.log("User selected Auto Import");
@@ -66997,36 +66997,100 @@
 
 </div>`;
 
-  // src/views/ManualImport/manual.js
-  function initManualImportView() {
-    const downloadBtn = document.getElementById("downloadZipBtn");
+  // src/views/ManualInstructions/manualInstructions.js
+  function initManualInstructionsView() {
+    const countSpan = document.getElementById("accountCount");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const switchBtn = document.getElementById("switchToAuto");
     const backBtn2 = document.getElementById("backBtn");
-    const importGuideBtn = document.getElementById("importGuideBtn");
-    const closeImportGuideBtn = document.getElementById("closeImportGuideModal");
+    const includedAccounts = state_default.registerData.filter((acc) => !acc.excluded);
+    countSpan.textContent = `${includedAccounts.length} account${includedAccounts.length !== 1 ? "s" : ""}`;
     downloadBtn.addEventListener("click", () => {
-      console.log("Starting ZIP download...");
-      alert("Download not yet implemented");
+      alert("Generating ZIP file (not yet implemented)");
     });
-    importGuideBtn.addEventListener("click", () => {
-      openModal("importGuideModal");
-    });
-    closeImportGuideBtn.addEventListener("click", () => {
-      closeModal("importGuideModal");
+    switchBtn.addEventListener("click", () => {
+      alert("Generating ZIP file (not yet implemented)");
     });
     backBtn2.addEventListener("click", () => {
       navigate("method");
     });
   }
 
-  // src/views/ManualImport/manual.html
-  var manual_default = '<div class="flex flex-col items-center justify-center py-16 space-y-8">\n\n  <div class="text-center">\n    <h2 class="text-3xl font-bold mb-2">Manual Import</h2>\n    <p class="text-gray-600 text-base max-w-md">\n      We\u2019ve prepared your account files. Download your data and manually import them into Monarch Money.\n    </p>\n  </div>\n\n  <div class="flex flex-col gap-6 w-80">\n\n    <!-- Download ZIP Button -->\n    <button id="downloadZipBtn"\n      class="w-full py-3 bg-blue-600 text-white font-semibold cursor-pointer rounded-lg shadow hover:bg-blue-700 transition">\n      Download CSV ZIP\n    </button>\n\n    <!-- Link to import instructions -->\n    <button id="importGuideBtn"\n      class="text-blue-600 text-center font-semibold text-sm hover:underline">\n      How to import into Monarch?\n    </button>\n\n    <!-- Back Button -->\n    <button id="backBtn"\n      class="w-full py-3 border border-gray-300 text-gray-600 font-semibold cursor-pointer rounded-lg hover:bg-gray-100 transition">\n      \u2190 Back\n    </button>\n\n  </div>\n\n</div>\n\n<!-- Modal -->\n<div id="importGuideModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">\n  <div class="bg-white rounded-lg p-8 max-w-lg w-full relative">\n    <button class="absolute top-3 right-3 text-gray-500 text-xl font-bold hover:text-black" id="closeImportGuideModal">&times;</button>\n    <h3 class="text-xl font-bold mb-4">How to manually import into Monarch</h3>\n    <ol class="list-decimal pl-5 space-y-2 text-sm text-gray-700">\n      <li>Log into your Monarch account.</li>\n      <li>Navigate to Accounts \u2192 Add Manual Account.</li>\n      <li>Choose account type and set opening balance.</li>\n      <li>Click "Upload Transactions" and select your downloaded CSV file.</li>\n      <li>Repeat for each account.</li>\n    </ol>\n    <p class="mt-4 text-xs text-gray-500">Your files are processed locally and never uploaded externally.</p>\n  </div>\n</div>\n';
+  // src/views/ManualInstructions/manualInstructions.html
+  var manualInstructions_default = `<div class="flex flex-col items-center justify-center py-16 px-6 space-y-12 max-w-2xl mx-auto">
+
+  <!-- Progress -->
+  <div class="text-center space-y-2">
+    <h2 class="text-3xl font-bold text-[#111518]">You're Ready to Import</h2>
+    <p class="text-gray-600 text-base">
+      <span id="accountCount"></span> prepared for migration.
+    </p>
+  </div>
+
+  <!-- Manual Import Card -->
+  <div class="w-full bg-white border border-gray-200 rounded-xl shadow-sm p-8 space-y-6">
+
+    <!-- Download -->
+    <div>
+      <h3 class="text-xl font-semibold mb-2">Step 1 \u2014 Download Files</h3>
+      <p class="text-gray-500 mb-4">
+        Download a ZIP containing one CSV per account.
+      </p>
+
+      <button id="downloadBtn"
+        class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg transition w-full">
+        Download CSV Bundle
+      </button>
+    </div>
+
+    <!-- Upload Instructions -->
+    <div>
+      <h3 class="text-xl font-semibold mb-2">Step 2 \u2014 Import into Monarch</h3>
+      <p class="text-gray-500 mb-2">In Monarch:</p>
+
+      <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
+        <li>Go to <strong>Settings \u2192 Data Import</strong></li>
+        <li>Choose <strong>YNAB/Other CSV Import</strong></li>
+        <li>Upload your downloaded CSV files</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Auto Import Promo -->
+  <div class="flex flex-col items-center text-center gap-3 bg-[#f9fafb] rounded-lg p-6 border border-gray-200">
+    <h4 class="text-lg font-semibold text-[#111518]">Looking for the easiest way?</h4>
+    <p class="text-sm text-gray-600">
+      Our Auto Import tool transfers your accounts directly into Monarch with zero file handling.
+    </p>
+
+    <button id="switchToAuto"
+      class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold text-sm rounded-lg transition">
+      Use Auto Import Instead
+    </button>
+  </div>
+
+  <!-- Footer -->
+  <div class="flex justify-between w-full max-w-lg">
+    <button id="backBtn"
+      class="px-5 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition">
+      \u2190 Back
+    </button>
+
+    <a href="https://app.monarchmoney.com" target="_blank"
+      class="px-6 py-3 bg-[#1993e5] hover:bg-[#1679c8] text-white font-bold rounded-lg transition text-sm">
+      Open Monarch
+    </a>
+  </div>
+
+</div>
+`;
 
   // src/router.js
   var routes = {
     upload: { template: upload_default, init: initUploadView, scroll: false },
     review: { template: review_default, init: initAccountReviewView, scroll: true },
     method: { template: method_default, init: initMethodSelectView, scroll: false },
-    manual: { template: manual_default, init: initManualImportView, scroll: false }
+    manualInstructions: { template: manualInstructions_default, init: initManualInstructionsView, scroll: true }
   };
   async function navigate(view) {
     const app = document.getElementById("app");
@@ -67047,7 +67111,7 @@
 
   // src/main.js
   window.addEventListener("DOMContentLoaded", () => {
-    navigate("method");
+    navigate("manualInstructions");
   });
 })();
 /*! Bundled license information:

@@ -1,0 +1,66 @@
+<div class="flex flex-col items-center justify-center py-16 px-6 space-y-12 max-w-2xl mx-auto">
+
+  <!-- Progress -->
+  <div class="text-center space-y-2">
+    <h2 class="text-3xl font-bold text-[#111518]">You're Ready to Import</h2>
+    <p class="text-gray-600 text-base">
+      <span id="accountCount"></span> prepared for migration.
+    </p>
+  </div>
+
+  <!-- Manual Import Card -->
+  <div class="w-full bg-white border border-gray-200 rounded-xl shadow-sm p-8 space-y-6">
+
+    <!-- Download -->
+    <div>
+      <h3 class="text-xl font-semibold mb-2">Step 1 — Download Files</h3>
+      <p class="text-gray-500 mb-4">
+        Download a ZIP containing one CSV per account.
+      </p>
+
+      <button id="downloadBtn"
+        class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg transition w-full">
+        Download CSV Bundle
+      </button>
+    </div>
+
+    <!-- Upload Instructions -->
+    <div>
+      <h3 class="text-xl font-semibold mb-2">Step 2 — Import into Monarch</h3>
+      <p class="text-gray-500 mb-2">In Monarch:</p>
+
+      <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
+        <li>Go to <strong>Settings → Data Import</strong></li>
+        <li>Choose <strong>YNAB/Other CSV Import</strong></li>
+        <li>Upload your downloaded CSV files</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Auto Import Promo -->
+  <div class="flex flex-col items-center text-center gap-3 bg-[#f9fafb] rounded-lg p-6 border border-gray-200">
+    <h4 class="text-lg font-semibold text-[#111518]">Looking for the easiest way?</h4>
+    <p class="text-sm text-gray-600">
+      Our Auto Import tool transfers your accounts directly into Monarch with zero file handling.
+    </p>
+
+    <button id="switchToAuto"
+      class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold text-sm rounded-lg transition">
+      Use Auto Import Instead
+    </button>
+  </div>
+
+  <!-- Footer -->
+  <div class="flex justify-between w-full max-w-lg">
+    <button id="backBtn"
+      class="px-5 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition">
+      ← Back
+    </button>
+
+    <a href="https://app.monarchmoney.com" target="_blank"
+      class="px-6 py-3 bg-[#1993e5] hover:bg-[#1679c8] text-white font-bold rounded-lg transition text-sm">
+      Open Monarch
+    </a>
+  </div>
+
+</div>

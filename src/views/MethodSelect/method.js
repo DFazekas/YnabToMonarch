@@ -16,7 +16,7 @@ export default function initMethodSelectView() {
 
   manualBtn.addEventListener('click', () => {
     console.log("User selected Manual Import");
-    navigate('manualImport');
+    navigate('manualInstructions');
   });
 
   autoBtn.addEventListener('click', () => {
