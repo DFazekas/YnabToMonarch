@@ -59,6 +59,11 @@ export default function initAccountReviewView() {
     navigate('upload');
   });
 
+  // Handle forward navigation
+  importBtn.addEventListener('click', () => {
+    navigate('method');
+  });
+
   renderTable();
 }
 
@@ -93,7 +98,7 @@ function renderTable() {
     checkboxTd.className = 'px-2 py-2 text-center';
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
-    checkbox.className = 'w-5 h-5';
+    checkbox.className = 'w-5 h-5 cursor-pointer';
     checkbox.checked = state.selectedYnabAccounts.has(account.id);
     checkbox.addEventListener('change', () => {
       if (checkbox.checked) state.selectedYnabAccounts.add(account.id);
@@ -117,7 +122,7 @@ function renderTable() {
     const typeTd = document.createElement('td');
     typeTd.className = 'px-2 py-2';
     const typeSelect = document.createElement('select');
-    typeSelect.className = 'border rounded px-2 py-1 w-full';
+    typeSelect.className = 'border rounded px-2 py-1 w-full cursor-pointer';
     monarchAccountTypes.data.forEach(type => {
       const opt = document.createElement('option');
       opt.value = type.typeName;
@@ -138,7 +143,7 @@ function renderTable() {
     const subtypeTd = document.createElement('td');
     subtypeTd.className = 'px-2 py-2';
     const subtypeSelect = document.createElement('select');
-    subtypeSelect.className = 'border rounded px-2 py-1 w-full';
+    subtypeSelect.className = 'border rounded px-2 py-1 w-full cursor-pointer';
     const selectedType = monarchAccountTypes.data.find(t => t.typeName === account.type);
     (selectedType?.subtypes || []).forEach(sub => {
       const opt = document.createElement('option');
@@ -170,7 +175,7 @@ function renderTable() {
     const includeTd = document.createElement('td');
     includeTd.className = 'px-2 py-2';
     const toggleBtn = document.createElement('button');
-    toggleBtn.className = 'px-2 py-2 rounded font-bold text-sm';
+    toggleBtn.className = 'px-2 py-2 rounded cursor-pointer font-bold text-sm';
     toggleBtn.textContent = account.excluded ? 'Excluded' : 'Included';
     toggleBtn.classList.add(account.excluded ? 'bg-gray-300' : 'bg-green-500', 'text-white');
     toggleBtn.addEventListener('click', () => {

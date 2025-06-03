@@ -1,6 +1,8 @@
 import { navigate } from '../../router.js';
+import state from '../../state.js';
 
 export default function initMethodSelectView() {
+  console.log("State:", state)
   const manualBtn = document.getElementById('manualImportBtn');
   const autoBtn = document.getElementById('autoImportBtn');
 
@@ -13,4 +15,10 @@ export default function initMethodSelectView() {
     console.log("User selected Auto Import");
     navigate('autoImport');
   });
+
+  // Handle back navigation
+  backBtn.addEventListener('click', () => {
+    navigate('review');
+  });
+
 }

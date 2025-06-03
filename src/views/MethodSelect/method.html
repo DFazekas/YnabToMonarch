@@ -1,7 +1,7 @@
 <div class="flex flex-col items-center justify-center py-16 space-y-8">
 
   <div class="text-center">
-    <h2 class="text-3xl font-bold mb-2">Choose Your Import Method</h2>
+    <h2 class="text-3xl font-bold mb-2">Choose Your Migration Method</h2>
     <p class="text-gray-600 text-base max-w-md">
       You can either manually import your accounts into Monarch or let us automatically import your data.
     </p>
@@ -11,7 +11,7 @@
 
     <!-- Manual Import -->
     <div class="w-72 p-6 border rounded-lg shadow-sm hover:shadow-md transition cursor-pointer bg-white"
-         id="manualImportBtn">
+      id="manualImportBtn">
       <h3 class="text-xl font-semibold mb-2">Manual Import</h3>
       <p class="text-gray-500 text-sm mb-4">Download CSVs and upload them directly into Monarch yourself.</p>
       <div class="mt-auto text-blue-600 font-semibold text-sm text-right">Select →</div>
@@ -19,12 +19,21 @@
 
     <!-- Auto Import -->
     <div class="w-72 p-6 border rounded-lg shadow-sm hover:shadow-md transition cursor-pointer bg-white"
-         id="autoImportBtn">
+      id="autoImportBtn">
       <h3 class="text-xl font-semibold mb-2">Auto Import</h3>
       <p class="text-gray-500 text-sm mb-4">Let us handle the entire import process into Monarch automatically.</p>
       <div class="mt-auto text-blue-600 font-semibold text-sm text-right">Select →</div>
     </div>
 
   </div>
+
+  <div class="flex justify-between items-center px-4 py-6 mt-6">
+    <!-- Back Button -->
+    <button id="backBtn"
+      class="px-5 py-3 border border-gray-300 text-gray-700 font-semibold cursor-pointer rounded-lg hover:bg-gray-100 transition">
+      ← Back
+    </button>
+  </div>
+</div>
 
 </div>
