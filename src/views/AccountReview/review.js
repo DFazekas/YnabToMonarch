@@ -113,8 +113,8 @@ function renderTable() {
     // Account Name (clickable)
     const nameTd = document.createElement('td');
     nameTd.className = 'px-2 py-2 max-w-[300px] truncate cursor-pointer';
-    nameTd.title = account.name;
-    nameTd.textContent = account.name;
+    nameTd.title = account.modifiedName;
+    nameTd.textContent = account.modifiedName;
     nameTd.addEventListener('click', () => openNameEditor(account, nameTd));
     row.appendChild(nameTd);
 
@@ -338,9 +338,7 @@ function openBulkRenameModal() {
     const indexStart = parseInt(indexStartInput.value, 10) || 1;
 
     selectedAccounts.forEach((acc, i) => {
-      if (!acc.originalYnabName) acc.originalYnabName = acc.name;  // preserve original on first rename
       acc.modifiedName = applyPattern(pattern, acc, i + indexStart);
-      acc.name = acc.modifiedName;  // update displayed name
     });
 
     modal.classList.add('hidden');

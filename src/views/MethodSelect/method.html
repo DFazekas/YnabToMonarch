@@ -1,33 +1,51 @@
 <div class="flex flex-col items-center justify-center py-16 space-y-8">
 
-  <div class="text-center">
-    <h2 class="text-3xl font-bold mb-2">Choose Your Migration Method</h2>
-    <p class="text-gray-600 text-base max-w-md">
+  <!-- Header -->
+  <div class="text-center space-y-3">
+    <h2 class="text-3xl font-bold">Choose Your Migration Method</h2>
+    <p class="text-gray-600 text-base max-w-md mx-auto">
       You can either manually import your accounts into Monarch or let us automatically import your data.
     </p>
   </div>
 
-  <div class="flex flex-col sm:flex-row gap-6">
+  <!-- Summary Counts -->
+  <div
+    class="flex flex-col sm:flex-row items-center justify-center gap-10 bg-gray-50 rounded-lg p-6 border border-gray-200">
+    
+    <div class="text-center">
+      <div class="text-4xl font-bold" id="totalCountDisplay">0</div>
+      <div class="text-gray-500 text-sm">Total Accounts</div>
+    </div>
+
+    <div class="text-center">
+      <div class="text-4xl font-bold text-green-600" id="filesCountDisplay">0</div>
+      <div class="text-gray-500 text-sm">Files To Export</div>
+    </div>
+  </div>
+
+
+  <!-- Migration Options -->
+  <div class="flex flex-col sm:flex-row gap-8">
 
     <!-- Manual Import -->
-    <div class="w-72 p-6 border rounded-lg shadow-sm hover:shadow-md transition cursor-pointer bg-white"
-      id="manualImportBtn">
+    <div class="w-80 p-6 border rounded-lg shadow-sm hover:shadow-md transition cursor-pointer bg-white" id="manualImportBtn">
       <h3 class="text-xl font-semibold mb-2">Manual Import</h3>
-      <p class="text-gray-500 text-sm mb-4">Download CSVs and upload them directly into Monarch yourself.</p>
+      <p class="text-gray-500 text-sm mb-4">Download <span id="manualFileCount">0</span> CSVs and upload them directly into Monarch yourself.</p>
       <div class="mt-auto text-blue-600 font-semibold text-sm text-right">Select →</div>
     </div>
 
     <!-- Auto Import -->
-    <div class="w-72 p-6 border rounded-lg shadow-sm hover:shadow-md transition cursor-pointer bg-white"
+    <div class="w-80 p-6 border rounded-lg shadow-sm hover:shadow-md transition cursor-pointer bg-white"
       id="autoImportBtn">
       <h3 class="text-xl font-semibold mb-2">Auto Import</h3>
-      <p class="text-gray-500 text-sm mb-4">Let us handle the entire import process into Monarch automatically.</p>
+      <p class="text-gray-500 text-sm mb-4">We'll connect to Monarch and automatically import your selected accounts on your behalf.</p>
       <div class="mt-auto text-blue-600 font-semibold text-sm text-right">Select →</div>
     </div>
 
   </div>
 
-  <div class="flex justify-between items-center px-4 py-6 mt-6">
+  <!-- Back Button -->
+  <div class="flex justify-between items-center px-4 py-6 mt-6 w-full max-w-4xl">
     <!-- Back Button -->
     <button id="backBtn"
       class="px-5 py-3 border border-gray-300 text-gray-700 font-semibold cursor-pointer rounded-lg hover:bg-gray-100 transition">

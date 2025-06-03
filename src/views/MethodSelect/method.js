@@ -6,6 +6,14 @@ export default function initMethodSelectView() {
   const manualBtn = document.getElementById('manualImportBtn');
   const autoBtn = document.getElementById('autoImportBtn');
 
+  const totalCount = state.registerData.length;
+  const selectedCount = state.registerData.filter(acc => !acc.excluded).length;
+
+  // Set text content
+  document.getElementById('totalCountDisplay').textContent = totalCount;
+  document.getElementById('filesCountDisplay').textContent = selectedCount;
+  document.getElementById('manualFileCount').textContent = selectedCount;
+
   manualBtn.addEventListener('click', () => {
     console.log("User selected Manual Import");
     navigate('manualImport');

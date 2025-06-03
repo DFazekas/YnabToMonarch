@@ -41,6 +41,7 @@ export default async function parseYNABCSV(file, monarchAccountTypes) {
             groupedAccounts[accountName] = {
               id: generateId(),
               name: accountName,
+              modifiedName: accountName,
               type,         // Monarch compatible type (ex: 'depository')
               subtype,      // Monarch compatible subtype (ex: 'checking')
               transactions: [],
