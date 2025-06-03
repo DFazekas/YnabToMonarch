@@ -45,7 +45,7 @@ export default async function parseYNABCSV(file, monarchAccountTypes) {
               subtype,      // Monarch compatible subtype (ex: 'checking')
               transactions: [],
               transactionCount: 0,
-              balanceCents: 0,
+              balanceCents: amountCents,
               excluded: false
             };
           }

@@ -23,17 +23,6 @@ export default function initAccountReviewView() {
   document.getElementById('filterIncluded').addEventListener('click', () => { currentFilter = 'included'; updateFilters(); });
   document.getElementById('filterExcluded').addEventListener('click', () => { currentFilter = 'excluded'; updateFilters(); });
 
-  // Bulk include/exclude all (based on filtered data only)
-  document.getElementById('includeAllBtn').addEventListener('click', () => {
-    filteredData.forEach(acc => { acc.excluded = false; });
-    renderTable();
-  });
-
-  document.getElementById('excludeAllBtn').addEventListener('click', () => {
-    filteredData.forEach(acc => { acc.excluded = true; });
-    renderTable();
-  });
-
   // Bulk action bar listeners
   document.getElementById('unselectAllBtn').addEventListener('click', () => {
     state.selectedYnabAccounts.clear();
@@ -59,7 +48,7 @@ export default function initAccountReviewView() {
   });
 
   document.getElementById('bulkTypeBtn').addEventListener('click', () => {
-    alert("Bulk Type modal not yet implemented");
+    openBulkTypeModal();
   });
 
   // Master checkbox listener
@@ -173,7 +162,8 @@ function renderTable() {
     // Balance
     const balanceTd = document.createElement('td');
     balanceTd.className = 'px-2 py-2 text-[#637988]';
-    balanceTd.textContent = `$${account.balance.toFixed(2)}`;
+    const formattedBalance = Math.abs(account.balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    balanceTd.textContent = (account.balance < 0 ? '-$' : '$') + formattedBalance;
     row.appendChild(balanceTd);
 
     // Include toggle button
@@ -362,3 +352,61 @@ function applyPattern(pattern, account, index) {
     .replace(/{{Date}}/g, today);
 }
 
+function openBulkTypeModal() {
+  const modal = document.getElementById('bulkTypeModal');
+  const typeSelect = document.getElementById('bulkTypeSelect');
+  const subtypeSelect = document.getElementById('bulkSubtypeSelect');
+  const cancelBtn = document.getElementById('bulkTypeCancel');
+  const applyBtn = document.getElementById('bulkTypeApply');
+
+  modal.classList.remove('hidden');
+
+  // Populate Type dropdown
+  typeSelect.innerHTML = '';
+  monarchAccountTypes.data.forEach(type => {
+    const opt = document.createElement('option');
+    opt.value = type.typeName;
+    opt.textContent = type.typeDisplay;
+    typeSelect.appendChild(opt);
+  });
+
+  // On type change, repopulate subtype dropdown
+  function updateSubtypeOptions() {
+    const selectedType = monarchAccountTypes.data.find(t => t.typeName === typeSelect.value);
+    subtypeSelect.innerHTML = '';
+
+    (selectedType?.subtypes || []).forEach(sub => {
+      const opt = document.createElement('option');
+      opt.value = sub.name;
+      opt.textContent = sub.display;
+      subtypeSelect.appendChild(opt);
+    });
+
+    // If no subtypes available, add default empty option
+    if ((selectedType?.subtypes || []).length === 0) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = '-';
+      subtypeSelect.appendChild(opt);
+    }
+  }
+
+  typeSelect.addEventListener('change', updateSubtypeOptions);
+  updateSubtypeOptions();
+
+  cancelBtn.onclick = () => modal.classList.add('hidden');
+
+  applyBtn.onclick = () => {
+    const typeValue = typeSelect.value;
+    const subtypeValue = subtypeSelect.value;
+
+    const selectedAccounts = state.registerData.filter(acc => state.selectedYnabAccounts.has(acc.id));
+    selectedAccounts.forEach(acc => {
+      acc.type = typeValue;
+      acc.subtype = subtypeValue || null;
+    });
+
+    modal.classList.add('hidden');
+    renderTable();
+  };
+}

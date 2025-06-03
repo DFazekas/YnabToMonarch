@@ -23,17 +23,6 @@
           <button id="filterExcluded" class="filter-btn px-4 py-2 text-sm font-medium">Excluded</button>
         </div>
 
-
-        <!-- Bulk actions -->
-        <div class="flex gap-2">
-          <button id="includeAllBtn"
-            class="px-4 py-2 rounded border text-sm font-medium bg-white text-[#111518] hover:bg-gray-100">Include
-            All</button>
-          <button id="excludeAllBtn"
-            class="px-4 py-2 rounded border text-sm font-medium bg-white text-[#111518] hover:bg-gray-100">Exclude
-            All</button>
-        </div>
-
       </div>
     </div>
 
@@ -62,13 +51,13 @@
       <div id="bulkActionBar"
         class="hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-white shadow-lg rounded-lg flex items-center px-6 py-3 gap-4 border border-gray-300">
 
-        <!-- Separator -->
-        <div class="h-5 border-l border-gray-300"></div>
-
         <!-- Unselect -->
         <button id="unselectAllBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100">
           <span id="selectedCount">0</span> selected
         </button>
+
+        <!-- Separator -->
+        <div class="h-5 border-l border-gray-300"></div>
 
         <!-- Bulk Rename -->
         <button id="bulkRenameBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100">
@@ -141,5 +130,26 @@
       <button id="renameApply" class="bg-blue-500 text-white text-sm px-4 py-2 rounded font-bold">Apply</button>
     </div>
 
+  </div>
+</div>
+
+<div id="bulkTypeModal" class="fixed inset-0 bg-black bg-opacity-40 hidden z-50 flex items-center justify-center">
+  <div class="bg-white rounded-lg p-6 w-[400px]">
+    <h2 class="text-lg font-bold mb-4">Bulk Edit Account Type</h2>
+
+    <div class="mb-4">
+      <label class="block mb-1 font-medium">Account Type</label>
+      <select id="bulkTypeSelect" class="border rounded w-full px-3 py-2"></select>
+    </div>
+
+    <div class="mb-4">
+      <label class="block mb-1 font-medium">Subtype</label>
+      <select id="bulkSubtypeSelect" class="border rounded w-full px-3 py-2"></select>
+    </div>
+
+    <div class="flex justify-end gap-2">
+      <button id="bulkTypeCancel" class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
+      <button id="bulkTypeApply" class="px-4 py-2 bg-blue-500 text-white rounded font-bold">Apply</button>
+    </div>
   </div>
 </div>

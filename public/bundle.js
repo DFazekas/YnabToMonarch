@@ -494,7 +494,7 @@
                 // Monarch compatible subtype (ex: 'checking')
                 transactions: [],
                 transactionCount: 0,
-                balanceCents: 0,
+                balanceCents: amountCents,
                 excluded: false
               };
             }
@@ -1035,18 +1035,6 @@
       currentFilter = "excluded";
       updateFilters();
     });
-    document.getElementById("includeAllBtn").addEventListener("click", () => {
-      filteredData.forEach((acc) => {
-        acc.excluded = false;
-      });
-      renderTable();
-    });
-    document.getElementById("excludeAllBtn").addEventListener("click", () => {
-      filteredData.forEach((acc) => {
-        acc.excluded = true;
-      });
-      renderTable();
-    });
     document.getElementById("unselectAllBtn").addEventListener("click", () => {
       state_default.selectedYnabAccounts.clear();
       renderTable();
@@ -1067,7 +1055,7 @@
       openBulkRenameModal();
     });
     document.getElementById("bulkTypeBtn").addEventListener("click", () => {
-      alert("Bulk Type modal not yet implemented");
+      openBulkTypeModal();
     });
     document.getElementById("masterCheckbox").addEventListener("change", masterCheckboxChange);
     backBtn.addEventListener("click", () => {
@@ -1158,7 +1146,8 @@
       row.appendChild(txTd);
       const balanceTd = document.createElement("td");
       balanceTd.className = "px-2 py-2 text-[#637988]";
-      balanceTd.textContent = `$${account.balance.toFixed(2)}`;
+      const formattedBalance = Math.abs(account.balance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      balanceTd.textContent = (account.balance < 0 ? "-$" : "$") + formattedBalance;
       row.appendChild(balanceTd);
       const includeTd = document.createElement("td");
       includeTd.className = "px-2 py-2";
@@ -1304,9 +1293,54 @@
     const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
     return pattern.replace(/{{YNAB}}/g, account.originalYnabName || account.name).replace(/{{Index}}/g, index).replace(/{{Upper}}/g, (account.originalYnabName || account.name).toUpperCase()).replace(/{{Date}}/g, today);
   }
+  function openBulkTypeModal() {
+    const modal = document.getElementById("bulkTypeModal");
+    const typeSelect = document.getElementById("bulkTypeSelect");
+    const subtypeSelect = document.getElementById("bulkSubtypeSelect");
+    const cancelBtn = document.getElementById("bulkTypeCancel");
+    const applyBtn = document.getElementById("bulkTypeApply");
+    modal.classList.remove("hidden");
+    typeSelect.innerHTML = "";
+    monarchAccountTypes_default.data.forEach((type) => {
+      const opt = document.createElement("option");
+      opt.value = type.typeName;
+      opt.textContent = type.typeDisplay;
+      typeSelect.appendChild(opt);
+    });
+    function updateSubtypeOptions() {
+      const selectedType = monarchAccountTypes_default.data.find((t) => t.typeName === typeSelect.value);
+      subtypeSelect.innerHTML = "";
+      (selectedType?.subtypes || []).forEach((sub) => {
+        const opt = document.createElement("option");
+        opt.value = sub.name;
+        opt.textContent = sub.display;
+        subtypeSelect.appendChild(opt);
+      });
+      if ((selectedType?.subtypes || []).length === 0) {
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = "-";
+        subtypeSelect.appendChild(opt);
+      }
+    }
+    typeSelect.addEventListener("change", updateSubtypeOptions);
+    updateSubtypeOptions();
+    cancelBtn.onclick = () => modal.classList.add("hidden");
+    applyBtn.onclick = () => {
+      const typeValue = typeSelect.value;
+      const subtypeValue = subtypeSelect.value;
+      const selectedAccounts = state_default.registerData.filter((acc) => state_default.selectedYnabAccounts.has(acc.id));
+      selectedAccounts.forEach((acc) => {
+        acc.type = typeValue;
+        acc.subtype = subtypeValue || null;
+      });
+      modal.classList.add("hidden");
+      renderTable();
+    };
+  }
 
   // src/views/AccountReview/review.html
-  var review_default = '<div class="px-40 flex flex-1 justify-center py-5">\n  <div class="layout-content-container flex flex-col max-w-[960px] flex-1">\n    <div class="flex justify-between items-center p-4">\n      <h2 class="text-[#111518] text-[32px] font-bold">Review Accounts</h2>\n    </div>\n\n    <p class="text-[#111518] text-base px-4">\n      Review detected accounts and adjust their Monarch types before importing.\n    </p>\n\n    <!-- New control bar -->\n    <div class="flex items-center justify-between px-4 py-2">\n      <!-- Search -->\n      <input id="searchInput" type="text" placeholder="Search accounts..." class="border rounded px-3 py-2 w-1/3">\n\n      <!-- Filters & Bulk -->\n      <div class="flex items-center gap-6">\n\n        <!-- Filters -->\n        <div class="flex border rounded overflow-hidden">\n          <button id="filterAll" class="filter-btn px-4 py-2 text-sm font-medium">All</button>\n          <button id="filterIncluded" class="filter-btn px-4 py-2 text-sm font-medium">Included</button>\n          <button id="filterExcluded" class="filter-btn px-4 py-2 text-sm font-medium">Excluded</button>\n        </div>\n\n\n        <!-- Bulk actions -->\n        <div class="flex gap-2">\n          <button id="includeAllBtn"\n            class="px-4 py-2 rounded border text-sm font-medium bg-white text-[#111518] hover:bg-gray-100">Include\n            All</button>\n          <button id="excludeAllBtn"\n            class="px-4 py-2 rounded border text-sm font-medium bg-white text-[#111518] hover:bg-gray-100">Exclude\n            All</button>\n        </div>\n\n      </div>\n    </div>\n\n    <div class="px-4 py-3 @container">\n      <div class="flex overflow-hidden rounded-lg border border-[#dce1e5] bg-white">\n        <table class="flex-1">\n          <thead>\n            <tr class="bg-white">\n              <th class="px-2 py-3 text-left text-sm font-medium w-[50px]">\n                <input type="checkbox" id="masterCheckbox" class="w-5 h-5">\n              </th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[230px]">Account Name</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[250px]">Type</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[250px]">Subtype</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[140px]">Transactions</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[200px]">Balance</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[150px]">Include</th>\n            </tr>\n          </thead>\n          <tbody id="reviewTableBody">\n            <!-- populated dynamically -->\n          </tbody>\n        </table>\n      </div>\n\n      <div id="bulkActionBar"\n        class="hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-white shadow-lg rounded-lg flex items-center px-6 py-3 gap-4 border border-gray-300">\n\n        <!-- Separator -->\n        <div class="h-5 border-l border-gray-300"></div>\n\n        <!-- Unselect -->\n        <button id="unselectAllBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100">\n          <span id="selectedCount">0</span> selected\n        </button>\n\n        <!-- Bulk Rename -->\n        <button id="bulkRenameBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100">\n          Rename\n        </button>\n\n        <!-- Bulk Edit Type -->\n        <button id="bulkTypeBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100">\n          Edit Type\n        </button>\n\n        <!-- Bulk Include -->\n        <button id="bulkIncludeBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100">\n          Include\n        </button>\n\n        <!-- Bulk Exclude -->\n        <button id="bulkExcludeBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100">\n          Exclude\n        </button>\n      </div>\n    </div>\n\n    <div class="flex justify-between items-center px-4 py-6 mt-6">\n      <!-- Back Button -->\n      <button id="backBtn"\n        class="px-5 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition">\n        \u2190 Back\n      </button>\n\n      <!-- Forward Button -->\n      <button id="importBtn"\n        class="px-6 py-3 bg-[#1993e5] text-white text-sm font-bold rounded-lg disabled:opacity-50 transition"\n        disabled>Import Accounts</button>\n    </div>\n\n  </div>\n</div>\n\n<div id="bulkRenameModal" class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 hidden">\n  <div class="bg-white rounded-lg shadow-lg w-[500px] p-6 relative">\n\n    <h2 class="text-xl font-bold mb-4">Bulk Rename Accounts</h2>\n\n    <label class="font-medium text-sm">Pattern:</label>\n    <input id="renamePattern" type="text" class="border rounded w-full px-3 py-2 mb-3" placeholder="e.g. {{YNAB}} - {{Index}}">\n\n    <!-- Token shortcuts -->\n    <div class="flex flex-col gap-2 mb-4">\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max" data-token="{{YNAB}}">YNAB Name</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max" data-token="{{Index}}">Index</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max" data-token="{{Upper}}">Uppercase YNAB</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max" data-token="{{Date}}">Today (YYYY-MM-DD)</button>\n    </div>\n\n    <!-- Index start -->\n    <div class="flex items-center gap-3 mb-4">\n      <label class="text-sm">Index Start:</label>\n      <input id="indexStart" type="number" class="border rounded px-3 py-1 w-24" value="1" />\n    </div>\n\n    <!-- Preview -->\n    <div class="border rounded p-3 bg-gray-50 mb-4">\n      <div class="font-medium text-sm mb-2">Preview:</div>\n      <div id="renamePreview" class="text-sm text-gray-700 space-y-1"></div>\n    </div>\n\n    <div class="flex justify-end gap-3">\n      <button id="renameCancel" class="bg-gray-300 text-sm px-4 py-2 rounded">Cancel</button>\n      <button id="renameApply" class="bg-blue-500 text-white text-sm px-4 py-2 rounded font-bold">Apply</button>\n    </div>\n\n  </div>\n</div>\n';
+  var review_default = '<div class="px-40 flex flex-1 justify-center py-5">\n  <div class="layout-content-container flex flex-col max-w-[960px] flex-1">\n    <div class="flex justify-between items-center p-4">\n      <h2 class="text-[#111518] text-[32px] font-bold">Review Accounts</h2>\n    </div>\n\n    <p class="text-[#111518] text-base px-4">\n      Review detected accounts and adjust their Monarch types before importing.\n    </p>\n\n    <!-- New control bar -->\n    <div class="flex items-center justify-between px-4 py-2">\n      <!-- Search -->\n      <input id="searchInput" type="text" placeholder="Search accounts..." class="border rounded px-3 py-2 w-1/3">\n\n      <!-- Filters & Bulk -->\n      <div class="flex items-center gap-6">\n\n        <!-- Filters -->\n        <div class="flex border rounded overflow-hidden">\n          <button id="filterAll" class="filter-btn px-4 py-2 text-sm font-medium">All</button>\n          <button id="filterIncluded" class="filter-btn px-4 py-2 text-sm font-medium">Included</button>\n          <button id="filterExcluded" class="filter-btn px-4 py-2 text-sm font-medium">Excluded</button>\n        </div>\n\n      </div>\n    </div>\n\n    <div class="px-4 py-3 @container">\n      <div class="flex overflow-hidden rounded-lg border border-[#dce1e5] bg-white">\n        <table class="flex-1">\n          <thead>\n            <tr class="bg-white">\n              <th class="px-2 py-3 text-left text-sm font-medium w-[50px]">\n                <input type="checkbox" id="masterCheckbox" class="w-5 h-5">\n              </th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[230px]">Account Name</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[250px]">Type</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[250px]">Subtype</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[140px]">Transactions</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[200px]">Balance</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[150px]">Include</th>\n            </tr>\n          </thead>\n          <tbody id="reviewTableBody">\n            <!-- populated dynamically -->\n          </tbody>\n        </table>\n      </div>\n\n      <div id="bulkActionBar"\n        class="hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-white shadow-lg rounded-lg flex items-center px-6 py-3 gap-4 border border-gray-300">\n\n        <!-- Unselect -->\n        <button id="unselectAllBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100">\n          <span id="selectedCount">0</span> selected\n        </button>\n\n        <!-- Separator -->\n        <div class="h-5 border-l border-gray-300"></div>\n\n        <!-- Bulk Rename -->\n        <button id="bulkRenameBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100">\n          Rename\n        </button>\n\n        <!-- Bulk Edit Type -->\n        <button id="bulkTypeBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100">\n          Edit Type\n        </button>\n\n        <!-- Bulk Include -->\n        <button id="bulkIncludeBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100">\n          Include\n        </button>\n\n        <!-- Bulk Exclude -->\n        <button id="bulkExcludeBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100">\n          Exclude\n        </button>\n      </div>\n    </div>\n\n    <div class="flex justify-between items-center px-4 py-6 mt-6">\n      <!-- Back Button -->\n      <button id="backBtn"\n        class="px-5 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition">\n        \u2190 Back\n      </button>\n\n      <!-- Forward Button -->\n      <button id="importBtn"\n        class="px-6 py-3 bg-[#1993e5] text-white text-sm font-bold rounded-lg disabled:opacity-50 transition"\n        disabled>Import Accounts</button>\n    </div>\n\n  </div>\n</div>\n\n<div id="bulkRenameModal" class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 hidden">\n  <div class="bg-white rounded-lg shadow-lg w-[500px] p-6 relative">\n\n    <h2 class="text-xl font-bold mb-4">Bulk Rename Accounts</h2>\n\n    <label class="font-medium text-sm">Pattern:</label>\n    <input id="renamePattern" type="text" class="border rounded w-full px-3 py-2 mb-3" placeholder="e.g. {{YNAB}} - {{Index}}">\n\n    <!-- Token shortcuts -->\n    <div class="flex flex-col gap-2 mb-4">\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max" data-token="{{YNAB}}">YNAB Name</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max" data-token="{{Index}}">Index</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max" data-token="{{Upper}}">Uppercase YNAB</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max" data-token="{{Date}}">Today (YYYY-MM-DD)</button>\n    </div>\n\n    <!-- Index start -->\n    <div class="flex items-center gap-3 mb-4">\n      <label class="text-sm">Index Start:</label>\n      <input id="indexStart" type="number" class="border rounded px-3 py-1 w-24" value="1" />\n    </div>\n\n    <!-- Preview -->\n    <div class="border rounded p-3 bg-gray-50 mb-4">\n      <div class="font-medium text-sm mb-2">Preview:</div>\n      <div id="renamePreview" class="text-sm text-gray-700 space-y-1"></div>\n    </div>\n\n    <div class="flex justify-end gap-3">\n      <button id="renameCancel" class="bg-gray-300 text-sm px-4 py-2 rounded">Cancel</button>\n      <button id="renameApply" class="bg-blue-500 text-white text-sm px-4 py-2 rounded font-bold">Apply</button>\n    </div>\n\n  </div>\n</div>\n\n<div id="bulkTypeModal" class="fixed inset-0 bg-black bg-opacity-40 hidden z-50 flex items-center justify-center">\n  <div class="bg-white rounded-lg p-6 w-[400px]">\n    <h2 class="text-lg font-bold mb-4">Bulk Edit Account Type</h2>\n\n    <div class="mb-4">\n      <label class="block mb-1 font-medium">Account Type</label>\n      <select id="bulkTypeSelect" class="border rounded w-full px-3 py-2"></select>\n    </div>\n\n    <div class="mb-4">\n      <label class="block mb-1 font-medium">Subtype</label>\n      <select id="bulkSubtypeSelect" class="border rounded w-full px-3 py-2"></select>\n    </div>\n\n    <div class="flex justify-end gap-2">\n      <button id="bulkTypeCancel" class="px-4 py-2 bg-gray-300 rounded">Cancel</button>\n      <button id="bulkTypeApply" class="px-4 py-2 bg-blue-500 text-white rounded font-bold">Apply</button>\n    </div>\n  </div>\n</div>\n';
 
   // src/views/MethodSelect/method.js
   function initMethodSelectView() {
