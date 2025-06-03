@@ -107,3 +107,39 @@
 
   </div>
 </div>
+
+<div id="bulkRenameModal" class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 hidden">
+  <div class="bg-white rounded-lg shadow-lg w-[500px] p-6 relative">
+
+    <h2 class="text-xl font-bold mb-4">Bulk Rename Accounts</h2>
+
+    <label class="font-medium text-sm">Pattern:</label>
+    <input id="renamePattern" type="text" class="border rounded w-full px-3 py-2 mb-3" placeholder="e.g. {{YNAB}} - {{Index}}">
+
+    <!-- Token shortcuts -->
+    <div class="flex flex-col gap-2 mb-4">
+      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max" data-token="{{YNAB}}">YNAB Name</button>
+      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max" data-token="{{Index}}">Index</button>
+      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max" data-token="{{Upper}}">Uppercase YNAB</button>
+      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max" data-token="{{Date}}">Today (YYYY-MM-DD)</button>
+    </div>
+
+    <!-- Index start -->
+    <div class="flex items-center gap-3 mb-4">
+      <label class="text-sm">Index Start:</label>
+      <input id="indexStart" type="number" class="border rounded px-3 py-1 w-24" value="1" />
+    </div>
+
+    <!-- Preview -->
+    <div class="border rounded p-3 bg-gray-50 mb-4">
+      <div class="font-medium text-sm mb-2">Preview:</div>
+      <div id="renamePreview" class="text-sm text-gray-700 space-y-1"></div>
+    </div>
+
+    <div class="flex justify-end gap-3">
+      <button id="renameCancel" class="bg-gray-300 text-sm px-4 py-2 rounded">Cancel</button>
+      <button id="renameApply" class="bg-blue-500 text-white text-sm px-4 py-2 rounded font-bold">Apply</button>
+    </div>
+
+  </div>
+</div>

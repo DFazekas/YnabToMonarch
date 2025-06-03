@@ -5,7 +5,6 @@ import { navigate } from '../../router.js';
 let reviewTableBody, importBtn, searchInput;
 let currentFilter = 'all';
 let searchQuery = '';
-let selectedAccounts = new Set();
 let filteredData = [];
 
 export default function initAccountReviewView() {
@@ -37,26 +36,26 @@ export default function initAccountReviewView() {
 
   // Bulk action bar listeners
   document.getElementById('unselectAllBtn').addEventListener('click', () => {
-    selectedAccounts.clear();
+    state.selectedYnabAccounts.clear();
     renderTable();
   });
 
   document.getElementById('bulkIncludeBtn').addEventListener('click', () => {
     state.registerData.forEach(acc => {
-      if (selectedAccounts.has(acc.id)) acc.excluded = false;
+      if (state.selectedYnabAccounts.has(acc.id)) acc.excluded = false;
     });
     renderTable();
   });
 
   document.getElementById('bulkExcludeBtn').addEventListener('click', () => {
     state.registerData.forEach(acc => {
-      if (selectedAccounts.has(acc.id)) acc.excluded = true;
+      if (state.selectedYnabAccounts.has(acc.id)) acc.excluded = true;
     });
     renderTable();
   });
 
   document.getElementById('bulkRenameBtn').addEventListener('click', () => {
-    alert("Bulk Rename modal not yet implemented");
+    openBulkRenameModal();
   });
 
   document.getElementById('bulkTypeBtn').addEventListener('click', () => {
@@ -106,10 +105,11 @@ function renderTable() {
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.className = 'w-5 h-5';
-    checkbox.checked = selectedAccounts.has(account.id);
+    checkbox.checked = state.selectedYnabAccounts.has(account.id);
     checkbox.addEventListener('change', () => {
-      if (checkbox.checked) selectedAccounts.add(account.id);
-      else selectedAccounts.delete(account.id);
+      if (checkbox.checked) state.selectedYnabAccounts.add(account.id);
+      else state.selectedYnabAccounts.delete(account.id);
+      console.log("State.SelectedYnabAccount:", state.selectedYnabAccounts)
       updateBulkBar();
       updateMasterCheckbox();
     });
@@ -203,9 +203,9 @@ function renderTable() {
 function masterCheckboxChange(e) {
   const checked = e.target.checked;
   if (checked) {
-    filteredData.forEach(acc => selectedAccounts.add(acc.id));
+    filteredData.forEach(acc => state.selectedYnabAccounts.add(acc.id));
   } else {
-    filteredData.forEach(acc => selectedAccounts.delete(acc.id));
+    filteredData.forEach(acc => state.selectedYnabAccounts.delete(acc.id));
   }
   renderTable();
 }
@@ -213,8 +213,8 @@ function masterCheckboxChange(e) {
 function updateMasterCheckbox() {
   const masterCheckbox = document.getElementById('masterCheckbox');
   const visible = filteredData;
-  const allSelected = visible.every(acc => selectedAccounts.has(acc.id));
-  const anySelected = visible.some(acc => selectedAccounts.has(acc.id));
+  const allSelected = visible.every(acc => state.selectedYnabAccounts.has(acc.id));
+  const anySelected = visible.some(acc => state.selectedYnabAccounts.has(acc.id));
 
   masterCheckbox.checked = allSelected;
   masterCheckbox.indeterminate = !allSelected && anySelected;
@@ -223,7 +223,7 @@ function updateMasterCheckbox() {
 function updateBulkBar() {
   const bar = document.getElementById('bulkActionBar');
   const countSpan = document.getElementById('selectedCount');
-  const count = selectedAccounts.size;
+  const count = state.selectedYnabAccounts.size;
   countSpan.textContent = count;
   if (count > 0) bar.classList.remove('hidden');
   else bar.classList.add('hidden');
@@ -292,3 +292,73 @@ function openNameEditor(account, nameCell) {
 function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
+
+function openBulkRenameModal() {
+  const modal = document.getElementById('bulkRenameModal');
+  const renamePattern = document.getElementById('renamePattern');
+  const indexStartInput = document.getElementById('indexStart');
+  const previewDiv = document.getElementById('renamePreview');
+  const cancelBtn = document.getElementById('renameCancel');
+  const applyBtn = document.getElementById('renameApply');
+  const tokenButtons = modal.querySelectorAll('.token-btn');
+
+  modal.classList.remove('hidden');
+  renamePattern.focus();
+
+  const selectedAccounts = state.registerData.filter(acc => state.selectedYnabAccounts.has(acc.id));
+
+  // Token insert handlers
+  tokenButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const token = btn.dataset.token;
+      renamePattern.value += token;
+      updatePreview();
+    });
+  });
+
+  // Live preview
+  renamePattern.addEventListener('input', updatePreview);
+  indexStartInput.addEventListener('input', updatePreview);
+
+  updatePreview();
+
+  function updatePreview() {
+    previewDiv.innerHTML = '';
+
+    const pattern = renamePattern.value;
+    const indexStart = parseInt(indexStartInput.value, 10) || 1;
+
+    selectedAccounts.slice(0, 3).forEach((acc, i) => {
+      const previewName = applyPattern(pattern, acc, i + indexStart);
+      const div = document.createElement('div');
+      div.textContent = previewName;
+      previewDiv.appendChild(div);
+    });
+  }
+
+  cancelBtn.onclick = () => modal.classList.add('hidden');
+
+  applyBtn.onclick = () => {
+    const pattern = renamePattern.value;
+    const indexStart = parseInt(indexStartInput.value, 10) || 1;
+
+    selectedAccounts.forEach((acc, i) => {
+      if (!acc.originalYnabName) acc.originalYnabName = acc.name;  // preserve original on first rename
+      acc.modifiedName = applyPattern(pattern, acc, i + indexStart);
+      acc.name = acc.modifiedName;  // update displayed name
+    });
+
+    modal.classList.add('hidden');
+    renderTable();
+  };
+}
+
+function applyPattern(pattern, account, index) {
+  const today = new Date().toISOString().split('T')[0];
+  return pattern
+    .replace(/{{YNAB}}/g, account.originalYnabName || account.name)
+    .replace(/{{Index}}/g, index)
+    .replace(/{{Upper}}/g, (account.originalYnabName || account.name).toUpperCase())
+    .replace(/{{Date}}/g, today);
+}
+

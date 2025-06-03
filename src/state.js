@@ -4,10 +4,9 @@ export default {
   credentials: { email: '', password: '', otp: '' },
   apiToken: null,
 
-  // New structure for parsed data
-  registerData: [],  // This now holds enriched account objects (see parser below)
+  registerData: [], // Original data from the YNAB register file
 
   monarchAccounts: null,
-  filteredYnabAccounts: [],
-  selectedYnabAccounts: []
+  filteredYnabAccounts: [], // Accounts selected for export
+  selectedYnabAccounts: new Set() // Accounts locally selected for editing purposes
 };
