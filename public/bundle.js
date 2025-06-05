@@ -66167,7 +66167,7 @@
   }
 
   // src/views/Upload/upload.html
-  var upload_default = '<div class="flex flex-col items-center justify-center py-10 px-4">\n\n  <div class="text-center max-w-1xl w-full">\n    <h2 class="text-3xl font-bold mb-4">Migrate your YNAB data</h2>\n    <p class="text-gray-600 text-base max-w-md mx-auto leading-relaxed">\n      Upload your exported YNAB register file to begin the migration process into Monarch Money.\n    </p>\n\n    <a id="howItWorksBtn" href="#" class="mt-4 text-sm text-blue-600 font-semibold cursor-pointer hover:underline">\n      How does this work?\n    </a>\n  </div>\n\n  <!-- Upload Box -->\n  <div id="uploadBox" class="w-full max-w-md border-2 border-dashed border-gray-300 rounded-xl p-10 mt-10 flex flex-col items-center gap-3 transition-all">\n    <p class="text-lg font-semibold">Drag & Drop your Register CSV</p>\n    <p class="text-sm text-gray-500">or</p>\n    <input id="fileInput" type="file" accept=".csv" hidden>\n    <button id="browseButton" class="bg-[#1993e5] text-white text-sm font-semibold px-5 py-2 cursor-pointer rounded-lg hover:bg-blue-600 transition">\n      Browse Files\n    </button>\n    <p class="text-xs text-gray-400 mt-2">Your file stays local. We never store or transmit your data.</p>\n  </div>\n\n  <div id="errorMessage" class="hidden text-red-500 text-sm mt-4">Some error</div>\n\n</div>\n\n<!-- Modal -->\n<div id="howItWorksModal" class="fixed inset-0 z-50 flex items-center justify-center">\n  <!-- Overlay -->\n  <div class="absolute inset-0 bg-[rgba(0,0,0,0.3)]"></div>\n\n  <div class="relative z-10 bg-white rounded-lg p-8 max-w-lg w-full shadow-xl">\n    <button id="closeHowItWorksModal" class="absolute top-3 right-3 text-gray-400 text-xl font-bold cursor-pointer hover:text-black">&times;</button>\n    <h3 class="text-xl font-bold mb-4">How does this work?</h3>\n    <ol class="list-decimal pl-5 space-y-2 text-sm text-gray-700">\n      <li>Export your YNAB data.</li>\n      <li>Unzip the YNAB data on your computer.</li>\n      <li>Upload the Register CSV file here.</li>\n      <li>Choose between manual import or guided auto-import into Monarch Money.</li>\n    </ol>\n    <p class="mt-4 text-xs text-gray-500">Your files are never uploaded or stored externally.</p>\n  </div>\n</div>\n';
+  var upload_default = '<div class="flex flex-col items-center justify-center py-10 px-4">\n\n  <div class="text-center max-w-1xl w-full">\n    <h2 class="text-3xl font-bold mb-4">Migrate your YNAB data</h2>\n    <p class="text-gray-600 text-base max-w-md mx-auto leading-relaxed">\n      Upload your exported YNAB register file to begin the migration process into Monarch Money.\n    </p>\n\n    <ui-button type="text" id="howItWorksBtn2">(new) How does this work?</ui-button>\n\n    <a id="howItWorksBtn" href="#" class="mt-4 text-sm text-blue-600 font-semibold cursor-pointer hover:underline">\n      How does this work?\n    </a>\n  </div>\n\n  <!-- Upload Box -->\n  <div id="uploadBox" class="w-full max-w-md border-2 border-dashed border-gray-300 rounded-xl p-10 mt-10 flex flex-col items-center gap-3 transition-all">\n    <p class="text-lg font-semibold">Drag & Drop your Register CSV</p>\n    <p class="text-sm text-gray-500">or</p>\n    <input id="fileInput" type="file" accept=".csv" hidden>\n    <button id="browseButton" class="bg-[#1993e5] text-white text-sm font-semibold px-5 py-2 cursor-pointer rounded-lg hover:bg-blue-600 transition">\n      Browse Files\n    </button>\n\n    <ui-button type="primary">Browse Files</ui-button>\n    <p class="text-xs text-gray-400 mt-2">Your file stays local. We never store or transmit your data.</p>\n  </div>\n\n  <div id="errorMessage" class="hidden text-red-500 text-sm mt-4">Some error</div>\n\n</div>\n\n<!-- Modal -->\n<div id="howItWorksModal" class="fixed inset-0 z-50 flex items-center justify-center hidden">\n  <!-- Overlay -->\n  <div class="absolute inset-0 bg-[rgba(0,0,0,0.3)]"></div>\n\n  <div class="relative z-10 bg-white rounded-lg p-8 max-w-lg w-full shadow-xl">\n    <button id="closeHowItWorksModal" class="absolute top-3 right-3 text-gray-400 text-xl font-bold cursor-pointer hover:text-black">&times;</button>\n    <h3 class="text-xl font-bold mb-4">How does this work?</h3>\n    <ol class="list-decimal pl-5 space-y-2 text-sm text-gray-700">\n      <li>Export your YNAB data.</li>\n      <li>Unzip the YNAB data on your computer.</li>\n      <li>Upload the Register CSV file here.</li>\n      <li>Choose between manual import or guided auto-import into Monarch Money.</li>\n    </ol>\n    <p class="mt-4 text-xs text-gray-500">Your files are never uploaded or stored externally.</p>\n  </div>\n</div>\n';
 
   // public/static-data/monarchAccountTypes.json
   var monarchAccountTypes_default = {
@@ -67212,6 +67212,72 @@
     document.getElementById("app").innerHTML = route.template;
     route.init();
   }
+
+  // src/components/button.js
+  var UIButton = class extends HTMLElement {
+    static get observedAttributes() {
+      return ["type", "disabled"];
+    }
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" });
+    }
+    connectedCallback() {
+      this.render();
+    }
+    attributeChangedCallback() {
+      this.render();
+    }
+    render() {
+      const type = this.getAttribute("type") || "primary";
+      const disabled = this.hasAttribute("disabled");
+      let baseClasses = "inline-flex justify-center items-center font-semibold rounded-lg transition text-sm px-5 py-3";
+      let colorClasses = "";
+      let disabledClasses = disabled ? "opacity-50 cursor-not-allowed" : "";
+      let template = "";
+      switch (type) {
+        case "primary":
+          colorClasses = "bg-[#1993e5] text-white hover:bg-blue-600";
+          template = `
+          <button ${disabled ? "disabled" : ""} class="${baseClasses} ${colorClasses} ${disabledClasses}">
+            <slot></slot>
+          </button>`;
+          break;
+        case "secondary":
+          colorClasses = "bg-white text-[#111518] border border-gray-300 hover:bg-gray-100";
+          template = `
+          <button ${disabled ? "disabled" : ""} class="${baseClasses} ${colorClasses} ${disabledClasses}">
+            <slot></slot>
+          </button>`;
+          break;
+        case "danger":
+          colorClasses = "bg-red-500 text-white hover:bg-red-600";
+          template = `
+          <button ${disabled ? "disabled" : ""} class="${baseClasses} ${colorClasses} ${disabledClasses}">
+            <slot></slot>
+          </button>`;
+          break;
+        case "text":
+          template = `
+          <a href="javascript:void(0)" class="text-blue-600 hover:underline ${disabledClasses}">
+            <slot></slot>
+          </a>`;
+          break;
+        default:
+          template = `
+          <button class="${baseClasses} ${disabledClasses}">
+            <slot></slot>
+          </button>`;
+      }
+      this.shadowRoot.innerHTML = `
+      <style>
+        :host { display: inline-block; }
+      </style>
+      ${template}
+    `;
+    }
+  };
+  customElements.define("ui-button", UIButton);
 
   // src/main.js
   window.addEventListener("DOMContentLoaded", () => {
