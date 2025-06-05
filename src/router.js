@@ -10,11 +10,23 @@ import methodTemplate from './views/MethodSelect/method.html';
 import initManualInstructionsView from './views/ManualInstructions/manualInstructions.js';
 import manualInstructionsTemplate from './views/ManualInstructions/manualInstructions.html';
 
+import initMonarchCredentialsView from './views/MonarchCredentials/monarchCredentials.js';
+import monarchCredentialsTemplate from './views/MonarchCredentials/monarchCredentials.html';
+
+import initMonarchOtpView from './views/MonarchOtp/monarchOtp.js';
+import monarchOtpTemplate from './views/MonarchOtp/monarchOtp.html';
+
+import initMonarchCompleteView from './views/MonarchComplete/monarchComplete.js';
+import monarchCompleteTemplate from './views/MonarchComplete/monarchComplete.html';
+
 const routes = {
   upload: { template: uploadTemplate, init: initUploadView, scroll: false },
   review: { template: reviewTemplate, init: initAccountReviewView, scroll: true },
   method: { template: methodTemplate, init: initMethodSelectView, scroll: false },
   manualInstructions: { template: manualInstructionsTemplate, init: initManualInstructionsView, scroll: true },
+  monarchCredentials: { template: monarchCredentialsTemplate, init: initMonarchCredentialsView, scroll: false },
+  monarchOtp: { template: monarchOtpTemplate, init: initMonarchOtpView, scroll: false },
+  monarchComplete: { template: monarchCompleteTemplate, init: initMonarchCompleteView, scroll: false },
 };
 
 export async function navigate(view) {

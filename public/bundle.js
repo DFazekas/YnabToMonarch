@@ -67085,12 +67085,116 @@
 </div>
 `;
 
+  // src/views/MonarchCredentials/monarchCredentials.js
+  function initMonarchCredentialsView() {
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const connectBtn = document.getElementById("connectBtn");
+    const backBtn2 = document.getElementById("backBtn");
+    connectBtn.addEventListener("click", () => {
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
+      if (!email || !password) {
+        alert("Please enter your email and password");
+        return;
+      }
+      state_default.credentials.email = email;
+      state_default.credentials.password = password;
+      alert("\u{1F510} Authenticating (not yet implemented)");
+    });
+    backBtn2.addEventListener("click", () => {
+      navigate("method");
+    });
+  }
+
+  // src/views/MonarchCredentials/monarchCredentials.html
+  var monarchCredentials_default = '<div class="flex flex-col items-center justify-center py-3 px-6 space-y-7 max-w-lg mx-auto">\n\n  <div class="text-center">\n    <h2 class="text-3xl font-bold mb-2">Auto Import: Connect Your Monarch Account</h2>\n    <p class="text-gray-600 text-base max-w-md">\n      Authorize your Monarch account so we can directly import your accounts and transactions.\n    </p>\n  </div>\n\n  <div class="w-full bg-white border border-gray-200 rounded-xl shadow-sm p-8 space-y-6">\n\n    <div class="space-y-4">\n      <div>\n        <label class="block font-medium text-sm text-[#111518] mb-1 cursor-pointer" for="email">Email</label>\n        <input id="email" type="email" class="border rounded-lg w-full px-4 py-3 text-sm" placeholder="you@email.com">\n      </div>\n\n      <div>\n        <label class="block font-medium text-sm text-[#111518] mb-1 cursor-pointer" for="password">Password</label>\n        <input id="password" type="password" class="border rounded-lg w-full px-4 py-3 text-sm" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022">\n      </div>\n\n      <div class="flex items-center gap-2 mt-1">\n        <div class="w-5 h-5 text-green-600">\n          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1a11 11 0 100 22 11 11 0 000-22zm0 20a9 9 0 110-18 9 9 0 010 18zm-1-5h2v2h-2v-2zm0-10h2v8h-2V6z"/></svg>\n        </div>\n        <p class="text-xs text-gray-500">\n          Your credentials are never stored and used only for this import session.\n        </p>\n      </div>\n    </div>\n\n    <button id="connectBtn" \n      class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold cursor-pointer rounded-lg text-sm transition">\n      Connect & Start Import\n    </button>\n\n  </div>\n\n  <div class="flex justify-between w-full max-w-md">\n    <button id="backBtn"\n      class="px-5 py-3 border border-gray-300 text-gray-700 font-semibold cursor-pointer rounded-lg hover:bg-gray-100 transition">\n      \u2190 Back\n    </button>\n  </div>\n\n</div>\n';
+
+  // src/views/MonarchOtp/monarchOtp.js
+  function initMonarchOtpView() {
+    const otpInput = document.getElementById("otpInput");
+    const submitOtpBtn = document.getElementById("submitOtpBtn");
+    const resendOtpBtn = document.getElementById("resendOtpBtn");
+    const otpError = document.getElementById("otpError");
+    const backBtn2 = document.getElementById("backBtn");
+    otpInput.addEventListener("input", () => {
+      otpInput.value = otpInput.value.replace(/\D/g, "").slice(0, 6);
+      submitOtpBtn.disabled = otpInput.value.length !== 6;
+    });
+    submitOtpBtn.addEventListener("click", async () => {
+      otpError.classList.add("hidden");
+      state_default.credentials.otp = otpInput.value;
+      try {
+        await fakeOtpVerification(state_default.credentials.otp);
+        navigate("autoMapAccounts");
+      } catch (err) {
+        otpError.classList.remove("hidden");
+      }
+    });
+    resendOtpBtn.addEventListener("click", () => {
+      alert("OTP resent!");
+    });
+    backBtn2.addEventListener("click", () => {
+      navigate("monarchCredentials");
+    });
+  }
+  async function fakeOtpVerification(otp) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        if (otp === "123456") resolve();
+        else reject();
+      }, 500);
+    });
+  }
+
+  // src/views/MonarchOtp/monarchOtp.html
+  var monarchOtp_default = '<div class="flex flex-col items-center justify-center py-16 space-y-10">\n\n  <div class="text-center">\n    <h2 class="text-3xl font-bold mb-2">Enter Your Verification Code</h2>\n    <p class="text-gray-600 text-base max-w-md">\n      Monarch has sent a 6-digit verification code to your email address. Enter it below to continue.\n    </p>\n  </div>\n\n  <div class="flex flex-col items-center space-y-5 w-80">\n\n    <input id="otpInput" type="text" maxlength="6" pattern="[0-9]*" inputmode="numeric"\n      class="border rounded px-4 py-3 text-center text-2xl tracking-widest w-full focus:ring-2 focus:ring-blue-400"\n      placeholder="______">\n\n    <div id="otpError" class="text-red-500 text-sm hidden">Invalid code. Please try again.</div>\n\n    <button id="submitOtpBtn"\n      class="w-full py-3 bg-blue-500 text-white font-semibold rounded-lg cursor-pointer hover:bg-blue-600 transition disabled:opacity-50"\n      disabled>\n      Verify\n    </button>\n\n    <div class="flex justify-between items-center w-full text-sm text-gray-600">\n      <span>Didn\u2019t receive it?</span>\n      <button id="resendOtpBtn" class="text-blue-500 font-medium cursor-pointer hover:underline">Resend</button>\n    </div>\n\n  </div>\n\n  <div class="flex justify-between items-center px-4 py-6 mt-8 w-full max-w-lg">\n    <button id="backBtn"\n      class="px-5 py-3 border border-gray-300 text-gray-700 font-semibold cursor-pointer rounded-lg hover:bg-gray-100 transition">\n      \u2190 Back\n    </button>\n  </div>\n\n</div>\n';
+
+  // src/views/MonarchComplete/monarchComplete.js
+  function initAutoImportCompleteView() {
+    const restartBtn = document.getElementById("restartBtn");
+    restartBtn.addEventListener("click", () => {
+      navigate("upload");
+    });
+  }
+
+  // src/views/MonarchComplete/monarchComplete.html
+  var monarchComplete_default = `<div class="flex flex-col items-center justify-center py-24 space-y-10">
+
+  <div class="text-center">
+    <div class="w-20 h-20 mx-auto mb-6">
+      <!-- Success Checkmark Icon -->
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" class="w-full h-full text-green-500">
+        <path d="M20 6L9 17l-5-5"></path>
+      </svg>
+    </div>
+
+    <h2 class="text-3xl font-bold mb-4">Migration Started</h2>
+
+    <p class="text-gray-600 text-base max-w-md mx-auto">
+      Your accounts are being imported into Monarch Money. This process may take a few minutes depending on the size of your data.
+      <br /><br />
+      You can refresh Monarch periodically to see your accounts appear as they're processed.
+    </p>
+  </div>
+
+  <button id="restartBtn"
+    class="mt-6 px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg cursor-pointer hover:bg-blue-600 transition">
+    Restart
+  </button>
+</div>
+`;
+
   // src/router.js
   var routes = {
     upload: { template: upload_default, init: initUploadView, scroll: false },
     review: { template: review_default, init: initAccountReviewView, scroll: true },
     method: { template: method_default, init: initMethodSelectView, scroll: false },
-    manualInstructions: { template: manualInstructions_default, init: initManualInstructionsView, scroll: true }
+    manualInstructions: { template: manualInstructions_default, init: initManualInstructionsView, scroll: true },
+    monarchCredentials: { template: monarchCredentials_default, init: initMonarchCredentialsView, scroll: false },
+    monarchOtp: { template: monarchOtp_default, init: initMonarchOtpView, scroll: false },
+    monarchComplete: { template: monarchComplete_default, init: initAutoImportCompleteView, scroll: false }
   };
   async function navigate(view) {
     const app = document.getElementById("app");
@@ -67111,7 +67215,7 @@
 
   // src/main.js
   window.addEventListener("DOMContentLoaded", () => {
-    navigate("manualInstructions");
+    navigate("monarchComplete");
   });
 })();
 /*! Bundled license information:
