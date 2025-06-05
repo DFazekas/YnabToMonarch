@@ -67038,7 +67038,7 @@
       </p>
 
       <button id="downloadBtn"
-        class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg transition w-full">
+        class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg transition cursor-pointer w-full">
         Download CSV Bundle
       </button>
     </div>
@@ -67064,7 +67064,7 @@
     </p>
 
     <button id="switchToAuto"
-      class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold text-sm rounded-lg transition">
+      class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold text-sm rounded-lg cursor-pointer transition">
       Use Auto Import Instead
     </button>
   </div>
@@ -67072,12 +67072,12 @@
   <!-- Footer -->
   <div class="flex justify-between w-full max-w-lg">
     <button id="backBtn"
-      class="px-5 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition">
+      class="px-5 py-3 border border-gray-300 text-gray-700 font-semibold cursor-pointer rounded-lg hover:bg-gray-100 transition">
       \u2190 Back
     </button>
 
     <a href="https://app.monarchmoney.com" target="_blank"
-      class="px-6 py-3 bg-[#1993e5] hover:bg-[#1679c8] text-white font-bold rounded-lg transition text-sm">
+      class="px-6 py-3 bg-[#1993e5] hover:bg-[#1679c8] text-white font-bold rounded-lg transition">
       Open Monarch
     </a>
   </div>
