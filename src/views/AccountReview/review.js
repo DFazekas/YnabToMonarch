@@ -1,6 +1,7 @@
 import state from '../../state.js';
 import monarchAccountTypes from '../../../public/static-data/monarchAccountTypes.json';
 import { navigate } from '../../router.js';
+import { enhanceButtons } from '../../components/button.js';
 
 let reviewTableBody, importBtn, searchInput;
 let currentFilter = 'all';
@@ -11,6 +12,8 @@ export default function initAccountReviewView() {
   reviewTableBody = document.getElementById('reviewTableBody');
   importBtn = document.getElementById('importBtn');
   searchInput = document.getElementById('searchInput');
+
+  enhanceButtons();
 
   // Search listener
   searchInput.addEventListener('input', () => {
@@ -56,12 +59,12 @@ export default function initAccountReviewView() {
 
   // Handle back navigation
   backBtn.addEventListener('click', () => {
-    navigate('upload');
+    navigate('uploadView');
   });
 
   // Handle forward navigation
   importBtn.addEventListener('click', () => {
-    navigate('method');
+    navigate('methodView');
   });
 
   renderTable();
@@ -174,10 +177,14 @@ function renderTable() {
     // Include toggle button
     const includeTd = document.createElement('td');
     includeTd.className = 'px-2 py-2';
+
     const toggleBtn = document.createElement('button');
-    toggleBtn.className = 'px-2 py-2 rounded cursor-pointer font-bold text-sm';
+    toggleBtn.classList.add('ui-button');
+    toggleBtn.dataset.type = account.excluded ? 'secondary' : 'primary';
+    toggleBtn.dataset.size = 'small';
+    toggleBtn.dataset.fixedWidth = '100';
     toggleBtn.textContent = account.excluded ? 'Excluded' : 'Included';
-    toggleBtn.classList.add(account.excluded ? 'bg-gray-300' : 'bg-green-500', 'text-white');
+
     toggleBtn.addEventListener('click', () => {
       account.excluded = !account.excluded;
       renderTable();
@@ -193,6 +200,7 @@ function renderTable() {
 
   const anyIncluded = state.registerData.some(acc => !acc.excluded);
   importBtn.disabled = !anyIncluded;
+  enhanceButtons();
 }
 
 function masterCheckboxChange(e) {
@@ -220,8 +228,15 @@ function updateBulkBar() {
   const countSpan = document.getElementById('selectedCount');
   const count = state.selectedYnabAccounts.size;
   countSpan.textContent = count;
-  if (count > 0) bar.classList.remove('hidden');
-  else bar.classList.add('hidden');
+
+  if (count > 0) {
+    bar.classList.remove('hidden');
+    requestAnimationFrame(() => bar.classList.add('active'))
+  }
+  else {
+    bar.classList.remove('active');
+    setTimeout(() => bar.classList.add('hidden'), 300);
+  }
 }
 
 function openNameEditor(account, nameCell) {

@@ -1,77 +1,61 @@
-class UIButton extends HTMLElement {
-  static get observedAttributes() {
-    return ['type', 'disabled'];
-  }
+export function enhanceButtons() {
+  document.querySelectorAll('.ui-button').forEach(button => {
+    const type = button.dataset.type || 'primary';
+    const size = button.dataset.size || 'medium';
+    const fixedWidth = button.dataset.fixedWidth;
+    const disabled = button.hasAttribute('disabled');
 
-  constructor() {
-    super();
-    this.attachShadow({ mode: 'open' });  // ✅ use shadow DOM
-  }
+    button.className = 'ui-button';
+    button.type = 'button';
 
-  connectedCallback() {
-    this.render();
-  }
+    button.classList.add('font-semibold', 'rounded-lg', 'transition');
+    button.style.transform = 'none';
 
-  attributeChangedCallback() {
-    this.render();
-  }
+    // Apply base size classes
+    switch (size) {
+      case 'small':
+        button.classList.add('px-3', 'py-1.5', 'text-sm');
+        break;
+      case 'large':
+        button.classList.add('px-6', 'py-3', 'text-base');
+        break;
+      case 'medium':
+      default:
+        button.classList.add('px-5', 'py-2', 'text-sm');
+        break;
+    }
 
-  render() {
-    const type = this.getAttribute('type') || 'primary';
-    const disabled = this.hasAttribute('disabled');
-
-    let baseClasses = 'inline-flex justify-center items-center font-semibold rounded-lg transition text-sm px-5 py-3';
-    let colorClasses = '';
-    let disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : '';
-
-    let template = '';
+    if (disabled) {
+      button.classList.add('opacity-50', 'cursor-not-allowed');
+      button.style.boxShadow = 'none';
+    } else {
+      button.classList.add('cursor-pointer');
+    }
 
     switch (type) {
       case 'primary':
-        colorClasses = 'bg-[#1993e5] text-white hover:bg-blue-600';
-        template = `
-          <button ${disabled ? 'disabled' : ''} class="${baseClasses} ${colorClasses} ${disabledClasses}">
-            <slot></slot>
-          </button>`;
+        button.classList.add('bg-[#1993e5]', 'text-white', 'border', 'border-[#1993e5]');
+        if (!disabled) button.classList.add('hover:bg-blue-600');
         break;
-
       case 'secondary':
-        colorClasses = 'bg-white text-[#111518] border border-gray-300 hover:bg-gray-100';
-        template = `
-          <button ${disabled ? 'disabled' : ''} class="${baseClasses} ${colorClasses} ${disabledClasses}">
-            <slot></slot>
-          </button>`;
+        button.classList.add('bg-white', 'text-[#111518]', 'border', 'border-gray-300');
+        if (!disabled) button.classList.add('hover:bg-gray-100');
         break;
-
-      case 'danger':
-        colorClasses = 'bg-red-500 text-white hover:bg-red-600';
-        template = `
-          <button ${disabled ? 'disabled' : ''} class="${baseClasses} ${colorClasses} ${disabledClasses}">
-            <slot></slot>
-          </button>`;
-        break;
-
       case 'text':
-        template = `
-          <a href="javascript:void(0)" class="text-blue-600 hover:underline ${disabledClasses}">
-            <slot></slot>
-          </a>`;
+        button.classList.remove('px-3', 'px-5', 'px-6', 'py-1.5', 'py-2', 'py-3');
+        button.classList.add('bg-transparent', 'text-blue-600');
+        if (!disabled) button.classList.add('hover:underline');
         break;
-
+      case 'danger':
+        button.classList.add('bg-red-500', 'text-white');
+        if (!disabled) button.classList.add('hover:bg-red-600');
+        break;
       default:
-        template = `
-          <button class="${baseClasses} ${disabledClasses}">
-            <slot></slot>
-          </button>`;
+        break;
     }
 
-    this.shadowRoot.innerHTML = `
-      <style>
-        :host { display: inline-block; }
-      </style>
-      ${template}
-    `;
-  }
+    if (fixedWidth) {
+      button.style.width = `${fixedWidth}px`;
+    }
+  });
 }
-
-customElements.define('ui-button', UIButton);

@@ -6,11 +6,7 @@
       Upload your exported YNAB register file to begin the migration process into Monarch Money.
     </p>
 
-    <ui-button type="text" id="howItWorksBtn2">(new) How does this work?</ui-button>
-
-    <a id="howItWorksBtn" href="#" class="mt-4 text-sm text-blue-600 font-semibold cursor-pointer hover:underline">
-      How does this work?
-    </a>
+    <a id="howItWorksBtn" class="ui-button" data-type="text">How does this work?</a>
   </div>
 
   <!-- Upload Box -->
@@ -18,11 +14,8 @@
     <p class="text-lg font-semibold">Drag & Drop your Register CSV</p>
     <p class="text-sm text-gray-500">or</p>
     <input id="fileInput" type="file" accept=".csv" hidden>
-    <button id="browseButton" class="bg-[#1993e5] text-white text-sm font-semibold px-5 py-2 cursor-pointer rounded-lg hover:bg-blue-600 transition">
-      Browse Files
-    </button>
+    <button id="browseButton" class="ui-button" data-type="primary">Browse Files</button>
 
-    <ui-button type="primary">Browse Files</ui-button>
     <p class="text-xs text-gray-400 mt-2">Your file stays local. We never store or transmit your data.</p>
   </div>
 
@@ -31,12 +24,13 @@
 </div>
 
 <!-- Modal -->
-<div id="howItWorksModal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+<div id="howItWorksModal" class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300">
   <!-- Overlay -->
-  <div class="absolute inset-0 bg-[rgba(0,0,0,0.3)]"></div>
+  <div class="absolute inset-0 bg-[rgba(0,0,0,0.3)] transition-opacity duration-300"></div>
 
-  <div class="relative z-10 bg-white rounded-lg p-8 max-w-lg w-full shadow-xl">
-    <button id="closeHowItWorksModal" class="absolute top-3 right-3 text-gray-400 text-xl font-bold cursor-pointer hover:text-black">&times;</button>
+  <!-- Modal Content -->
+  <div class="relative z-10 bg-white rounded-lg p-8 max-w-lg w-full shadow-xl transform translate-y-full transition-transform duration-500">
+    <a href="#" id="closeHowItWorksModal" class="absolute top-3 right-3 text-gray-400 text-xl font-bold cursor-pointer hover:text-black">&times;</a>
     <h3 class="text-xl font-bold mb-4">How does this work?</h3>
     <ol class="list-decimal pl-5 space-y-2 text-sm text-gray-700">
       <li>Export your YNAB data.</li>
