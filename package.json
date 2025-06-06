@@ -32,7 +32,8 @@
     "form-data": "^4.0.1",
     "node-fetch": "^2.7.0",
     "papaparse": "^5.5.2",
-    "tailwindcss": "^4.1.8"
+    "tailwindcss": "^4.1.8",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.21",

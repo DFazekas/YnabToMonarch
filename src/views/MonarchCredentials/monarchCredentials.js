@@ -1,33 +1,87 @@
+import { v4 as uuidv4 } from 'uuid';
 import state from '../../state.js';
 import { navigate } from '../../router.js';
+import { enhanceButtons } from '../../components/button.js';
+import { monarchApi } from '../../api/monarchApi.js';
 
 export default function initMonarchCredentialsView() {
   const emailInput = document.getElementById('email');
   const passwordInput = document.getElementById('password');
   const connectBtn = document.getElementById('connectBtn');
   const backBtn = document.getElementById('backBtn');
+  const form = document.getElementById('credentialsForm');
+  const errorBox = document.getElementById('errorBox');
 
-  connectBtn.addEventListener('click', () => {
+  enhanceButtons();
+
+  // Generate device UUID once on view load
+  const deviceUuid = uuidv4();
+  state.deviceUuid = deviceUuid;
+
+  function validateForm() {
     const email = emailInput.value.trim();
     const password = passwordInput.value.trim();
+    const valid = email.length > 0 && password.length > 0;
+    connectBtn.disabled = !valid;
+    enhanceButtons();
+  }
 
-    if (!email || !password) {
-      alert("Please enter your email and password");
-      return;
-    }
+  emailInput.addEventListener('input', validateForm);
+  passwordInput.addEventListener('input', validateForm);
 
-    // Store credentials temporarily in state for backend flow
-    state.credentials.email = email;
-    state.credentials.password = password;
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    connectBtn.click();
+  })
+
+  connectBtn.addEventListener('click', async () => {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+    errorBox.classList.add('hidden');
+    connectBtn.disabled = true;
+    connectBtn.textContent = 'Connecting…';
 
     // Simulate backend API call here before moving forward
-    alert('🔐 Authenticating (not yet implemented)');
-    
+    try {
+      const response = await monarchApi.login(email, password, state.deviceUuid);
+      console.log("Login response:", response);
+
+      // Store creds and navigate to OTP view
+      if (response.otpRequired) {
+        state.credentials.email = email;
+        state.credentials.password = password;
+        state.awaitingOtp = true;
+        navigate("monarchOtpView")
+        return
+      }
+
+      // ✅ Successful login — store token
+      if (response.token) {
+        state.apiToken = response.token;
+        state.credentials.email = email;
+        state.credentials.password = password;
+        state.awaitingOtp = false;
+        navigate('monarchAccountMatch');
+        return;
+      }
+
+      throw new Error('Unknown login response.');
+    } catch (err) {
+      console.error("Login error", err);
+      errorBox.textContent = err?.message || 'An unexpected error occurred.';
+      errorBox.classList.remove('hidden');
+    } finally {
+      connectBtn.disabled = false;
+      connectBtn.textContent = 'Connect to Monarch';
+    }
+
     // Navigate to the next auto-import step (e.g. Account Matching View)
     // navigate('autoImportMatch');
   });
 
   backBtn.addEventListener('click', () => {
-    navigate('method');
+    navigate('methodView');
   });
+
+  validateForm();
 }

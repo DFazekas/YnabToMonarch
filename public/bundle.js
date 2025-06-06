@@ -66129,6 +66129,7 @@
       const type = button.dataset.type || "primary";
       const size = button.dataset.size || "medium";
       const fixedWidth = button.dataset.fixedWidth;
+      const fullWidth = button.hasAttribute("data-fullwidth");
       const disabled = button.hasAttribute("disabled");
       button.className = "ui-button";
       button.type = "button";
@@ -66175,6 +66176,9 @@
       }
       if (fixedWidth) {
         button.style.width = `${fixedWidth}px`;
+      }
+      if (fullWidth) {
+        button.classList.add("w-full");
       }
     });
   }
@@ -66992,6 +66996,7 @@
   // src/views/MethodSelect/method.js
   function initMethodSelectView() {
     console.log("State:", state_default);
+    enhanceButtons();
     const manualBtn = document.getElementById("manualImportBtn");
     const autoBtn = document.getElementById("autoImportBtn");
     const totalCount = state_default.registerData.length;
@@ -67001,14 +67006,14 @@
     document.getElementById("manualFileCount").textContent = selectedCount;
     manualBtn.addEventListener("click", () => {
       console.log("User selected Manual Import");
-      navigate("manualInstructions");
+      navigate("manualInstructionsView");
     });
     autoBtn.addEventListener("click", () => {
       console.log("User selected Auto Import");
-      navigate("autoImport");
+      navigate("monarchCredentialsView");
     });
     backBtn.addEventListener("click", () => {
-      navigate("review");
+      navigate("reviewView");
     });
   }
 
@@ -67026,7 +67031,7 @@
   <!-- Summary Counts -->
   <div
     class="flex flex-col sm:flex-row items-center justify-center gap-10 bg-gray-50 rounded-lg p-6 border border-gray-200">
-    
+
     <div class="text-center">
       <div class="text-4xl font-bold" id="totalCountDisplay">0</div>
       <div class="text-gray-500 text-sm">Total Accounts</div>
@@ -67043,9 +67048,11 @@
   <div class="flex flex-col sm:flex-row gap-8">
 
     <!-- Manual Import -->
-    <div class="w-80 p-6 border rounded-lg shadow-sm hover:shadow-md transition cursor-pointer bg-white" id="manualImportBtn">
+    <div class="w-80 p-6 border rounded-lg shadow-sm hover:shadow-md transition cursor-pointer bg-white"
+      id="manualImportBtn">
       <h3 class="text-xl font-semibold mb-2">Manual Import</h3>
-      <p class="text-gray-500 text-sm mb-4">Download <span id="manualFileCount">0</span> CSVs and upload them directly into Monarch yourself.</p>
+      <p class="text-gray-500 text-sm mb-4">Download <span id="manualFileCount">0</span> CSVs and upload them directly
+        into Monarch yourself.</p>
       <div class="mt-auto text-blue-600 font-semibold text-sm text-right">Select \u2192</div>
     </div>
 
@@ -67053,17 +67060,17 @@
     <div class="w-80 p-6 border rounded-lg shadow-sm hover:shadow-md transition cursor-pointer bg-white"
       id="autoImportBtn">
       <h3 class="text-xl font-semibold mb-2">Auto Import</h3>
-      <p class="text-gray-500 text-sm mb-4">We'll connect to Monarch and automatically import your selected accounts on your behalf.</p>
+      <p class="text-gray-500 text-sm mb-4">We'll connect to Monarch and automatically import your selected accounts on
+        your behalf.</p>
       <div class="mt-auto text-blue-600 font-semibold text-sm text-right">Select \u2192</div>
     </div>
 
   </div>
 
   <!-- Back Button -->
-  <div class="flex justify-between items-center px-4 py-6 mt-6 w-full max-w-4xl">
+  <div class="flex justify-between items-center px-4 py-2 w-full">
     <!-- Back Button -->
-    <button id="backBtn"
-      class="px-5 py-3 border border-gray-300 text-gray-700 font-semibold cursor-pointer rounded-lg hover:bg-gray-100 transition">
+    <button id="backBtn" class="ui-button" data-type="secondary" data-size="large">
       \u2190 Back
     </button>
   </div>
@@ -67077,16 +67084,17 @@
     const downloadBtn = document.getElementById("downloadBtn");
     const switchBtn = document.getElementById("switchToAuto");
     const backBtn2 = document.getElementById("backBtn");
+    enhanceButtons();
     const includedAccounts = state_default.registerData.filter((acc) => !acc.excluded);
     countSpan.textContent = `${includedAccounts.length} account${includedAccounts.length !== 1 ? "s" : ""}`;
     downloadBtn.addEventListener("click", () => {
       alert("Generating ZIP file (not yet implemented)");
     });
     switchBtn.addEventListener("click", () => {
-      alert("Generating ZIP file (not yet implemented)");
+      navigate("monarchCredentialsView");
     });
     backBtn2.addEventListener("click", () => {
-      navigate("method");
+      navigate("methodView");
     });
   }
 
@@ -67111,10 +67119,13 @@
         Download a ZIP containing one CSV per account.
       </p>
 
-      <button id="downloadBtn"
-        class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg transition cursor-pointer w-full">
-        Download CSV Bundle
-      </button>
+      <a id="downloadBtn" class="ui-button" data-type="primary" data-size="large" href="#">
+        <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 10l5 5 5-5M12 4v12" />
+        </svg>Download CSV Bundle
+      </a>
     </div>
 
     <!-- Upload Instructions -->
@@ -67137,27 +67148,109 @@
       Our Auto Import tool transfers your accounts directly into Monarch with zero file handling.
     </p>
 
-    <button id="switchToAuto"
-      class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold text-sm rounded-lg cursor-pointer transition">
-      Use Auto Import Instead
-    </button>
+    <button id="switchToAuto" class="ui-button">Use Auto Import Instead</button>
   </div>
 
   <!-- Footer -->
-  <div class="flex justify-between w-full max-w-lg">
-    <button id="backBtn"
-      class="px-5 py-3 border border-gray-300 text-gray-700 font-semibold cursor-pointer rounded-lg hover:bg-gray-100 transition">
+  <div class="flex justify-between items-center px-4 py-2 w-full">
+    <button id="backBtn" class="ui-button" data-type="secondary" data-size="large">
       \u2190 Back
     </button>
 
-    <a href="https://app.monarchmoney.com" target="_blank"
-      class="px-6 py-3 bg-[#1993e5] hover:bg-[#1679c8] text-white font-bold rounded-lg transition">
-      Open Monarch
+    <a href="https://app.monarchmoney.com" target="_blank" class="ui-button" data-type="secondary" data-size="large">
+      <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
+        stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M14 3h7m0 0v7m0-7L10 14M5 5h14v14H5V5z" />
+      </svg>Open Monarch
     </a>
   </div>
 
-</div>
-`;
+</div>`;
+
+  // node_modules/uuid/dist/esm-browser/stringify.js
+  var byteToHex = [];
+  for (let i = 0; i < 256; ++i) {
+    byteToHex.push((i + 256).toString(16).slice(1));
+  }
+  function unsafeStringify(arr, offset = 0) {
+    return (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + "-" + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + "-" + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + "-" + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + "-" + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase();
+  }
+
+  // node_modules/uuid/dist/esm-browser/rng.js
+  var getRandomValues;
+  var rnds8 = new Uint8Array(16);
+  function rng() {
+    if (!getRandomValues) {
+      if (typeof crypto === "undefined" || !crypto.getRandomValues) {
+        throw new Error("crypto.getRandomValues() not supported. See https://github.com/uuidjs/uuid#getrandomvalues-not-supported");
+      }
+      getRandomValues = crypto.getRandomValues.bind(crypto);
+    }
+    return getRandomValues(rnds8);
+  }
+
+  // node_modules/uuid/dist/esm-browser/native.js
+  var randomUUID = typeof crypto !== "undefined" && crypto.randomUUID && crypto.randomUUID.bind(crypto);
+  var native_default = { randomUUID };
+
+  // node_modules/uuid/dist/esm-browser/v4.js
+  function v4(options, buf, offset) {
+    if (native_default.randomUUID && !buf && !options) {
+      return native_default.randomUUID();
+    }
+    options = options || {};
+    const rnds = options.random ?? options.rng?.() ?? rng();
+    if (rnds.length < 16) {
+      throw new Error("Random bytes length must be >= 16");
+    }
+    rnds[6] = rnds[6] & 15 | 64;
+    rnds[8] = rnds[8] & 63 | 128;
+    if (buf) {
+      offset = offset || 0;
+      if (offset < 0 || offset + 16 > buf.length) {
+        throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`);
+      }
+      for (let i = 0; i < 16; ++i) {
+        buf[offset + i] = rnds[i];
+      }
+      return buf;
+    }
+    return unsafeStringify(rnds);
+  }
+  var v4_default = v4;
+
+  // src/api/config.js
+  var base = location.hostname === "localhost" ? "http://localhost:3000/dev/" : "/.netlify/functions/";
+  var API = {
+    login: base + "monarchLogin",
+    fetchAccounts: base + "fetchMonarchAccounts",
+    mapAccounts: base + "mapAccounts",
+    generateStatements: base + "generateStatements"
+  };
+
+  // src/api/utils.js
+  async function postJson(url, body) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error((await res.json()).error || "API error");
+    return res.json();
+  }
+
+  // src/api/monarchApi.js
+  var monarchApi = {
+    login: (email, password, deviceUuid, otp) => postJson(API.login, { email, password, deviceUuid, otp }),
+    fetchMonarchAccounts: (token) => postJson(API.fetchAccounts, { token }),
+    mapAccounts: (token, mappings) => postJson(API.mapAccounts, { token, mappings }),
+    generateAccounts: (accounts) => fetch(API.generateStatements, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accounts })
+    })
+  };
 
   // src/views/MonarchCredentials/monarchCredentials.js
   function initMonarchCredentialsView() {
@@ -67165,24 +67258,66 @@
     const passwordInput = document.getElementById("password");
     const connectBtn = document.getElementById("connectBtn");
     const backBtn2 = document.getElementById("backBtn");
-    connectBtn.addEventListener("click", () => {
+    const form = document.getElementById("credentialsForm");
+    const errorBox = document.getElementById("errorBox");
+    enhanceButtons();
+    const deviceUuid = v4_default();
+    state_default.deviceUuid = deviceUuid;
+    function validateForm() {
       const email = emailInput.value.trim();
       const password = passwordInput.value.trim();
-      if (!email || !password) {
-        alert("Please enter your email and password");
-        return;
+      const valid = email.length > 0 && password.length > 0;
+      connectBtn.disabled = !valid;
+      enhanceButtons();
+    }
+    emailInput.addEventListener("input", validateForm);
+    passwordInput.addEventListener("input", validateForm);
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      connectBtn.click();
+    });
+    connectBtn.addEventListener("click", async () => {
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
+      errorBox.classList.add("hidden");
+      connectBtn.disabled = true;
+      connectBtn.textContent = "Connecting\u2026";
+      try {
+        const response = await monarchApi.login(email, password, state_default.deviceUuid);
+        console.log("Login response:", response);
+        if (response.otpRequired) {
+          state_default.credentials.email = email;
+          state_default.credentials.password = password;
+          state_default.awaitingOtp = true;
+          navigate("monarchOtpView");
+          return;
+        }
+        if (response.token) {
+          state_default.apiToken = response.token;
+          state_default.credentials.email = email;
+          state_default.credentials.password = password;
+          state_default.awaitingOtp = false;
+          navigate("monarchAccountMatch");
+          return;
+        }
+        throw new Error("Unknown login response.");
+      } catch (err) {
+        console.error("Login error", err);
+        errorBox.textContent = err?.message || "An unexpected error occurred.";
+        errorBox.classList.remove("hidden");
+      } finally {
+        connectBtn.disabled = false;
+        connectBtn.textContent = "Connect to Monarch";
       }
-      state_default.credentials.email = email;
-      state_default.credentials.password = password;
-      alert("\u{1F510} Authenticating (not yet implemented)");
     });
     backBtn2.addEventListener("click", () => {
-      navigate("method");
+      navigate("methodView");
     });
+    validateForm();
   }
 
   // src/views/MonarchCredentials/monarchCredentials.html
-  var monarchCredentials_default = '<div class="flex flex-col items-center justify-center py-3 px-6 space-y-7 max-w-lg mx-auto">\n\n  <div class="text-center">\n    <h2 class="text-3xl font-bold mb-2">Auto Import: Connect Your Monarch Account</h2>\n    <p class="text-gray-600 text-base max-w-md">\n      Authorize your Monarch account so we can directly import your accounts and transactions.\n    </p>\n  </div>\n\n  <div class="w-full bg-white border border-gray-200 rounded-xl shadow-sm p-8 space-y-6">\n\n    <div class="space-y-4">\n      <div>\n        <label class="block font-medium text-sm text-[#111518] mb-1 cursor-pointer" for="email">Email</label>\n        <input id="email" type="email" class="border rounded-lg w-full px-4 py-3 text-sm" placeholder="you@email.com">\n      </div>\n\n      <div>\n        <label class="block font-medium text-sm text-[#111518] mb-1 cursor-pointer" for="password">Password</label>\n        <input id="password" type="password" class="border rounded-lg w-full px-4 py-3 text-sm" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022">\n      </div>\n\n      <div class="flex items-center gap-2 mt-1">\n        <div class="w-5 h-5 text-green-600">\n          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1a11 11 0 100 22 11 11 0 000-22zm0 20a9 9 0 110-18 9 9 0 010 18zm-1-5h2v2h-2v-2zm0-10h2v8h-2V6z"/></svg>\n        </div>\n        <p class="text-xs text-gray-500">\n          Your credentials are never stored and used only for this import session.\n        </p>\n      </div>\n    </div>\n\n    <button id="connectBtn" \n      class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold cursor-pointer rounded-lg text-sm transition">\n      Connect & Start Import\n    </button>\n\n  </div>\n\n  <div class="flex justify-between w-full max-w-md">\n    <button id="backBtn"\n      class="px-5 py-3 border border-gray-300 text-gray-700 font-semibold cursor-pointer rounded-lg hover:bg-gray-100 transition">\n      \u2190 Back\n    </button>\n  </div>\n\n</div>\n';
+  var monarchCredentials_default = '<div class="flex flex-col items-center justify-center py-3 px-6 space-y-7 max-w-lg mx-auto">\n\n  <div class="text-center">\n    <h2 class="text-3xl font-bold mb-2">Auto Import: Connect Your Monarch Account</h2>\n    <p class="text-gray-600 text-base max-w-md">\n      Authorize your Monarch account so we can directly import your accounts and transactions.\n    </p>\n  </div>\n\n  <div class="w-full bg-white border border-gray-200 rounded-xl shadow-sm p-8 space-y-6">\n\n    <form id="credentialsForm" class="space-y-4">\n      <div>\n        <label class="block font-medium text-sm text-[#111518] mb-1 cursor-pointer" for="email">Email</label>\n        <input id="email" type="email" class="border rounded-lg w-full px-4 py-3 text-sm" placeholder="you@email.com" autocomplete="username">\n      </div>\n\n      <div>\n        <label class="block font-medium text-sm text-[#111518] mb-1 cursor-pointer" for="password">Password</label>\n        <input id="password" type="password" class="border rounded-lg w-full px-4 py-3 text-sm" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" autocomplete="current-password">\n      </div>\n\n      <div class="flex items-center gap-2 mt-1">\n        <div class="w-5 h-5 text-green-600">\n          <svg viewBox="0 0 24 24" fill="currentColor">\n            <path\n              d="M12 1a11 11 0 100 22 11 11 0 000-22zm0 20a9 9 0 110-18 9 9 0 010 18zm-1-5h2v2h-2v-2zm0-10h2v8h-2V6z" />\n          </svg>\n        </div>\n        <p class="text-xs text-gray-500">\n          Your credentials are never stored and used only for this import session.\n        </p>\n      </div>\n\n      <div id="errorBox" class="hidden text-red-500 text-sm mt-4"></div>\n\n    </form>\n\n    <button id="connectBtn" class="ui-button" data-type="primary" data-size="large" data-fullWidth disabled>\n      Connect & Start Import\n    </button>\n\n  </div>\n\n  <div class="flex justify-between w-full max-w-md">\n    <button id="backBtn" class="ui-button" data-type="secondary" data-size="large">\u2190 Back</button>\n  </div>\n\n</div>';
 
   // src/views/MonarchOtp/monarchOtp.js
   function initMonarchOtpView() {
@@ -67289,7 +67424,7 @@
 
   // src/main.js
   window.addEventListener("DOMContentLoaded", () => {
-    navigate("reviewView");
+    navigate("monarchCredentialsView");
   });
 })();
 /*! Bundled license information:

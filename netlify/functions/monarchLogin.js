@@ -1,6 +1,6 @@
-const fetch = require('node-fetch')
+import fetch from 'node-fetch';
 
-module.exports.handler = async (event, context) => {
+export async function handler(event, context) {
   console.log("MonarchLogin start", {
     timestamp: new Date().toISOString(),
     requestId: context.awsRequestId,
@@ -48,7 +48,7 @@ module.exports.handler = async (event, context) => {
       body: JSON.stringify({
         username: email,
         password,
-        trusted_device: !!otp, // only trusted after OTP
+        trusted_device: true, // only trusted after OTP
         supports_mfa: true,
         supports_email_otp: true,
         supports_recaptcha: true,
@@ -56,24 +56,48 @@ module.exports.handler = async (event, context) => {
       })
     })
 
+    console.log("Response:", response)
     const data = await response.json().catch(() => ({}));
     console.log("Login response (after json)", data)
     console.log("Response status", response.status)
     console.log("Response 'error_code' contains 'EMAIL_OTP_REQUIRED'?", data.error_code == 'EMAIL_OTP_REQUIRED')
 
-    if (response.status === 403 && data.error_code == 'EMAIL_OTP_REQUIRED') {
+    // Failed: OTP Required
+    if (response.status === 403) {
+      console.log("data:", data)
+
+      // Invalid API request
+      if (data.detail && data.detail.toLowerCase().includes("version")) {
+        console.error("MonarchLogin ❌ Invalid API request", response, data);
+        return {
+          statusCode: 500,
+          body: JSON.stringify({ error: "Seems there's a bug in our code. Please let us know by reporting it here: <a href=\"https://github.com/DFazekas/YnabToMonarch/issues\">https://github.com/DFazekas/YnabToMonarch/issues</a>" })
+        }
+      }
+      
+      // TODO: OTP required
       return { statusCode: 200, body: JSON.stringify({ otpRequired: true, detail: data.detail }) };
     }
+
+    // Failed: CAPTCHA is required
+    if (response.status == 429) {
+      console.error("MonarchLogin ❌ CAPTCHA required", { status: response.status, error: data });
+      return {
+        statusCode: 429,
+        body: JSON.stringify({ error: 'CAPTCHA required. Please try again later.' })
+      }
+    }
+
     if (!response.ok) {
-      console.error("MonarchLogin ❌ login failed", { status: data.status, error: response })
+      console.error("MonarchLogin ❌ login failed", { status: response.status, response: response, data: data })
       return {
         statusCode: response.status,
-        body: JSON.stringify({ error: data.message || 'Login failed.' })
+        body: JSON.stringify({ error: data.detail || 'Login failed.' })
       }
     }
 
     if (!data.token) {
-      console.error("MonarchLogin ❌ token missing in response")
+      console.error("MonarchLogin ❌ token missing in response", {status: response.status, response: response, data: data})
       return {
         statusCode: 500,
         body: JSON.stringify({ error: 'Token not found in response.' })

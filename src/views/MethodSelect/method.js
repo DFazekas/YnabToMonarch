@@ -1,8 +1,10 @@
 import { navigate } from '../../router.js';
 import state from '../../state.js';
+import { enhanceButtons } from '../../components/button.js';
 
 export default function initMethodSelectView() {
   console.log("State:", state)
+  enhanceButtons();
   const manualBtn = document.getElementById('manualImportBtn');
   const autoBtn = document.getElementById('autoImportBtn');
 
@@ -16,17 +18,17 @@ export default function initMethodSelectView() {
 
   manualBtn.addEventListener('click', () => {
     console.log("User selected Manual Import");
-    navigate('manualInstructions');
+    navigate('manualInstructionsView');
   });
 
   autoBtn.addEventListener('click', () => {
     console.log("User selected Auto Import");
-    navigate('autoImport');
+    navigate('monarchCredentialsView');
   });
 
   // Handle back navigation
   backBtn.addEventListener('click', () => {
-    navigate('review');
+    navigate('reviewView');
   });
 
 }

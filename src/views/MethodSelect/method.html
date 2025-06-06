@@ -11,7 +11,7 @@
   <!-- Summary Counts -->
   <div
     class="flex flex-col sm:flex-row items-center justify-center gap-10 bg-gray-50 rounded-lg p-6 border border-gray-200">
-    
+
     <div class="text-center">
       <div class="text-4xl font-bold" id="totalCountDisplay">0</div>
       <div class="text-gray-500 text-sm">Total Accounts</div>
@@ -28,9 +28,11 @@
   <div class="flex flex-col sm:flex-row gap-8">
 
     <!-- Manual Import -->
-    <div class="w-80 p-6 border rounded-lg shadow-sm hover:shadow-md transition cursor-pointer bg-white" id="manualImportBtn">
+    <div class="w-80 p-6 border rounded-lg shadow-sm hover:shadow-md transition cursor-pointer bg-white"
+      id="manualImportBtn">
       <h3 class="text-xl font-semibold mb-2">Manual Import</h3>
-      <p class="text-gray-500 text-sm mb-4">Download <span id="manualFileCount">0</span> CSVs and upload them directly into Monarch yourself.</p>
+      <p class="text-gray-500 text-sm mb-4">Download <span id="manualFileCount">0</span> CSVs and upload them directly
+        into Monarch yourself.</p>
       <div class="mt-auto text-blue-600 font-semibold text-sm text-right">Select →</div>
     </div>
 
@@ -38,17 +40,17 @@
     <div class="w-80 p-6 border rounded-lg shadow-sm hover:shadow-md transition cursor-pointer bg-white"
       id="autoImportBtn">
       <h3 class="text-xl font-semibold mb-2">Auto Import</h3>
-      <p class="text-gray-500 text-sm mb-4">We'll connect to Monarch and automatically import your selected accounts on your behalf.</p>
+      <p class="text-gray-500 text-sm mb-4">We'll connect to Monarch and automatically import your selected accounts on
+        your behalf.</p>
       <div class="mt-auto text-blue-600 font-semibold text-sm text-right">Select →</div>
     </div>
 
   </div>
 
   <!-- Back Button -->
-  <div class="flex justify-between items-center px-4 py-6 mt-6 w-full max-w-4xl">
+  <div class="flex justify-between items-center px-4 py-2 w-full">
     <!-- Back Button -->
-    <button id="backBtn"
-      class="px-5 py-3 border border-gray-300 text-gray-700 font-semibold cursor-pointer rounded-lg hover:bg-gray-100 transition">
+    <button id="backBtn" class="ui-button" data-type="secondary" data-size="large">
       ← Back
     </button>
   </div>

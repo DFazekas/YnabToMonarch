@@ -3,6 +3,7 @@ export function enhanceButtons() {
     const type = button.dataset.type || 'primary';
     const size = button.dataset.size || 'medium';
     const fixedWidth = button.dataset.fixedWidth;
+    const fullWidth = button.hasAttribute('data-fullwidth');
     const disabled = button.hasAttribute('disabled');
 
     button.className = 'ui-button';
@@ -56,6 +57,10 @@ export function enhanceButtons() {
 
     if (fixedWidth) {
       button.style.width = `${fixedWidth}px`;
+    }
+
+    if (fullWidth) {
+      button.classList.add('w-full');
     }
   });
 }
