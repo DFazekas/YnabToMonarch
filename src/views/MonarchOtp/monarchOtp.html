@@ -16,21 +16,16 @@
     <div id="otpError" class="text-red-500 text-sm hidden">Invalid code. Please try again.</div>
 
     <button id="submitOtpBtn"
-      class="w-full py-3 bg-blue-500 text-white font-semibold rounded-lg cursor-pointer hover:bg-blue-600 transition disabled:opacity-50"
+      class="ui-button" data-type="primary" data-size="large" data-fullWidth
       disabled>
-      Verify
+      Verify & Start Import
     </button>
-
-    <div class="flex justify-between items-center w-full text-sm text-gray-600">
-      <span>Didn’t receive it?</span>
-      <button id="resendOtpBtn" class="text-blue-500 font-medium cursor-pointer hover:underline">Resend</button>
-    </div>
 
   </div>
 
-  <div class="flex justify-between items-center px-4 py-6 mt-8 w-full max-w-lg">
+  <div class="flex justify-between items-center px-4 py-4 w-full max-w-lg">
     <button id="backBtn"
-      class="px-5 py-3 border border-gray-300 text-gray-700 font-semibold cursor-pointer rounded-lg hover:bg-gray-100 transition">
+      class="ui-button" data-type="secondary" data-size="large">
       ← Back
     </button>
   </div>

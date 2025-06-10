@@ -3,5 +3,5 @@ import './components/button.js';
 
 // Initial app load
 window.addEventListener('DOMContentLoaded', () => {
-  navigate('monarchCredentialsView');
+  navigate('monarchCompleteView');
 });

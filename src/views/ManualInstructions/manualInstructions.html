@@ -28,14 +28,20 @@
     </div>
 
     <!-- Upload Instructions -->
-    <div>
+    <div class="mt-12">
       <h3 class="text-xl font-semibold mb-2">Step 2 — Import into Monarch</h3>
       <p class="text-gray-500 mb-2">In Monarch:</p>
 
       <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
-        <li>Go to <strong>Settings → Data Import</strong></li>
-        <li>Choose <strong>YNAB/Other CSV Import</strong></li>
-        <li>Upload your downloaded CSV files</li>
+        <li>Go to <strong>Accounts → Add account</strong></li>
+        <li>Choose <strong>Add manual account</strong></li>
+        <li>Select your desire <strong>account type</strong></li>
+        <li>Give it a name and starting balance of <strong>$0.00</strong></li>
+        <li>Go to <strong>Edit → Upload transactions</strong></li>
+        <li>Upload your account CSV file</li>
+        <li>Enable <strong>Adjust account's balances based on these transactions</strong></li>
+        <li>Click <strong>Add to account</strong></li>
+        <li>Repeat for all your accounts</li>
       </ul>
     </div>
   </div>
@@ -47,7 +53,7 @@
       Our Auto Import tool transfers your accounts directly into Monarch with zero file handling.
     </p>
 
-    <button id="switchToAuto" class="ui-button">Use Auto Import Instead</button>
+    <button id="switchToAuto" class="ui-button" data-size="large">Use Auto Import Instead</button>
   </div>
 
   <!-- Footer -->

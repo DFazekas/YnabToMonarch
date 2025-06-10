@@ -17,10 +17,15 @@
       <div class="flex items-center gap-6">
 
         <!-- Filters -->
-        <div class="flex border rounded overflow-hidden">
-          <button id="filterAll" class="filter-btn px-4 py-2 text-sm cursor-pointer font-medium">All</button>
-          <button id="filterIncluded" class="filter-btn px-4 py-2 text-sm cursor-pointer font-medium">Included</button>
-          <button id="filterExcluded" class="filter-btn px-4 py-2 text-sm cursor-pointer font-medium">Excluded</button>
+        <div class="flex bg-gray-100 rounded-lg p-1 space-x-1">
+          <button id="filterAll" class="filter-btn px-4 py-2 text-sm font-medium rounded-md transition"
+            data-filter="all">All</button>
+
+          <button id="filterIncluded" class="filter-btn px-4 py-2 text-sm font-medium rounded-md transition"
+            data-filter="included">Included</button>
+
+          <button id="filterExcluded" class="filter-btn px-4 py-2 text-sm font-medium rounded-md transition"
+            data-filter="excluded">Excluded</button>
         </div>
 
       </div>
@@ -90,7 +95,7 @@
       <button id="backBtn" class="ui-button" data-type="secondary" data-size="large">← Back</button>
 
       <!-- Forward Button -->
-       <button id="importBtn" class="ui-button" data-type="primary" data-size="large" disabled>Import Accounts</button>
+      <button id="importBtn" class="ui-button" data-type="primary" data-size="large" disabled>Import Accounts</button>
     </div>
   </div>
 </div>
@@ -106,7 +111,8 @@
 
     <!-- Token shortcuts -->
     <div class="flex flex-col gap-2 mb-4">
-      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer" data-token="{{YNAB}}">YNAB
+      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"
+        data-token="{{YNAB}}">YNAB
         Name</button>
       <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"
         data-token="{{Index}}">Index</button>

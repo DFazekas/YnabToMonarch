@@ -24,12 +24,12 @@ functions:
       - http:
           path: fetchMonarchAccounts
           method: post
-  mapAccounts:
-    handler: netlify/functions/mapMonarchAccounts.handler
+  createAccounts:
+    handler: netlify/functions/createMonarchAccounts.handler
     timeout: 30
     events:
       - http:
-          path: mapMonarchAccounts
+          path: createMonarchAccounts
           method: post
   generateStatements:
     handler: netlify/functions/generateStatements.handler

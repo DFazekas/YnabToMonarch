@@ -15,15 +15,29 @@ export default function initMonarchCredentialsView() {
   enhanceButtons();
 
   // Generate device UUID once on view load
-  const deviceUuid = uuidv4();
-  state.deviceUuid = deviceUuid;
+  if (!state.deviceUuid) {
+    state.deviceUuid = uuidv4();
+  }
+
+  // Pre-populate fields if credentials already exist in state
+  if (state.credentials.email) {
+    emailInput.value = state.credentials.email;
+  }
+  if (state.credentials.password) {
+    passwordInput.value = state.credentials.password;
+  }
+
+  validateForm();
 
   function validateForm() {
     const email = emailInput.value.trim();
     const password = passwordInput.value.trim();
     const valid = email.length > 0 && password.length > 0;
     connectBtn.disabled = !valid;
+
     enhanceButtons();
+
+    console.log("State:", state, "email:", email, "password:", password)
   }
 
   emailInput.addEventListener('input', validateForm);
@@ -41,12 +55,11 @@ export default function initMonarchCredentialsView() {
     connectBtn.disabled = true;
     connectBtn.textContent = 'Connecting…';
 
-    // Simulate backend API call here before moving forward
     try {
       const response = await monarchApi.login(email, password, state.deviceUuid);
       console.log("Login response:", response);
 
-      // Store creds and navigate to OTP view
+      // OTP required
       if (response.otpRequired) {
         state.credentials.email = email;
         state.credentials.password = password;
@@ -61,7 +74,7 @@ export default function initMonarchCredentialsView() {
         state.credentials.email = email;
         state.credentials.password = password;
         state.awaitingOtp = false;
-        navigate('monarchAccountMatch');
+        navigate('monarchCompleteView');
         return;
       }
 
@@ -74,14 +87,9 @@ export default function initMonarchCredentialsView() {
       connectBtn.disabled = false;
       connectBtn.textContent = 'Connect to Monarch';
     }
-
-    // Navigate to the next auto-import step (e.g. Account Matching View)
-    // navigate('autoImportMatch');
   });
 
   backBtn.addEventListener('click', () => {
     navigate('methodView');
   });
-
-  validateForm();
 }

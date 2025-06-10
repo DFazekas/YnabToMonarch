@@ -5,6 +5,6 @@ const base = location.hostname === 'localhost'
 export const API = {
   login: base + 'monarchLogin',
   fetchAccounts: base + 'fetchMonarchAccounts',
-  mapAccounts: base + 'mapAccounts',
+  createAccounts: base + 'createMonarchAccounts',
   generateStatements: base + 'generateStatements'
 };

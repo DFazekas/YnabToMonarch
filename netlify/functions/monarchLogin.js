@@ -14,9 +14,13 @@ export async function handler(event, context) {
       body: JSON.stringify({ error: 'Method not allowed. Use POST.' })
     }
   }
+
   try {
     console.log("MonarchLogin parsing request body");
     const { email, password, deviceUuid, otp } = JSON.parse(event.body)
+
+    console.log("API arguments:", { email, password, deviceUuid, otp });
+
     if (!email || !password) {
       console.error("MonarchLogin ❌ missing credentials");
       return {
@@ -25,46 +29,43 @@ export async function handler(event, context) {
       }
     }
 
-    console.log("MonarchLogin login request body", {
+    const body = {
       username: email,
       password,
-      trusted_device: !!otp, // only trusted after OTP
+      trusted_device: true,
       supports_mfa: true,
       supports_email_otp: true,
       supports_recaptcha: true,
       ...(otp && { email_otp: otp }) // include OTP if present
-    });
+    };
+
+    console.log("MonarchLogin request body:", body);
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'client-platform': 'web',
+      'device-uuid': deviceUuid,
+    }
+
+    console.log("MonarchLogin request headers:", headers);
 
     // Forward credentials to Monarch Money API
     console.log("MonarchLogin forwarding credentials to API");
     const response = await fetch('https://api.monarchmoney.com/auth/login/', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'client-platform': 'web',
-        'device-uuid': deviceUuid,
-      },
-      body: JSON.stringify({
-        username: email,
-        password,
-        trusted_device: true, // only trusted after OTP
-        supports_mfa: true,
-        supports_email_otp: true,
-        supports_recaptcha: true,
-        ...(otp && { email_otp: otp }) // include OTP if present
-      })
+      headers: headers,
+      body: JSON.stringify(body)
     })
 
     console.log("Response:", response)
     const data = await response.json().catch(() => ({}));
-    console.log("Login response (after json)", data)
     console.log("Response status", response.status)
+    console.log("Response data:", data)
     console.log("Response 'error_code' contains 'EMAIL_OTP_REQUIRED'?", data.error_code == 'EMAIL_OTP_REQUIRED')
 
-    // Failed: OTP Required
+    // Forbidden: OTP required or invalid credentials
     if (response.status === 403) {
-      console.log("data:", data)
 
       // Invalid API request
       if (data.detail && data.detail.toLowerCase().includes("version")) {
@@ -74,9 +75,18 @@ export async function handler(event, context) {
           body: JSON.stringify({ error: "Seems there's a bug in our code. Please let us know by reporting it here: <a href=\"https://github.com/DFazekas/YnabToMonarch/issues\">https://github.com/DFazekas/YnabToMonarch/issues</a>" })
         }
       }
-      
-      // TODO: OTP required
-      return { statusCode: 200, body: JSON.stringify({ otpRequired: true, detail: data.detail }) };
+
+      if (data.error_code == 'EMAIL_OTP_REQUIRED') {
+        // Response:
+        // {
+        //   "detail": "Retrieve the code from your email to continue login.",
+        //   "error_code": "EMAIL_OTP_REQUIRED"
+        // }
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ otpRequired: true, detail: data.detail })
+        };
+      }
     }
 
     // Failed: CAPTCHA is required
@@ -88,6 +98,7 @@ export async function handler(event, context) {
       }
     }
 
+    // Unexpected failure response
     if (!response.ok) {
       console.error("MonarchLogin ❌ login failed", { status: response.status, response: response, data: data })
       return {
@@ -96,15 +107,16 @@ export async function handler(event, context) {
       }
     }
 
+    // Response success but strangely missing token in response
     if (!data.token) {
-      console.error("MonarchLogin ❌ token missing in response", {status: response.status, response: response, data: data})
+      console.error("MonarchLogin ❌ token missing in response", { status: response.status, response: response, data: data })
       return {
         statusCode: 500,
         body: JSON.stringify({ error: 'Token not found in response.' })
       }
     }
 
-    // Return the access token to the frontend
+    // Successful login
     console.log("MonarchLogin ✅ login successful", { tokenPreview: data.token.slice(0, 8) + '…' })
     return {
       statusCode: 200,

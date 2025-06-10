@@ -15,6 +15,9 @@ export default function initAccountReviewView() {
 
   enhanceButtons();
 
+
+  document.getElementById('filterAll').classList.add('bg-blue-500', 'text-white');
+
   // Search listener
   searchInput.addEventListener('input', () => {
     searchQuery = searchInput.value.toLowerCase();
@@ -72,11 +75,14 @@ export default function initAccountReviewView() {
 
 function updateFilters() {
   document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.classList.remove('bg-blue-500', 'text-white', 'bg-gray-100', 'text-gray-800');
-    btn.classList.add('bg-gray-100', 'text-gray-800');
+    btn.classList.remove('bg-blue-500', 'text-white', 'hover:bg-blue-100');
+    btn.classList.add('bg-transparent', 'text-gray-700', 'hover:bg-blue-100');
   });
 
-  document.getElementById(`filter${capitalize(currentFilter)}`).classList.add('bg-blue-500', 'text-white');
+  const activeBtn = document.getElementById(`filter${capitalize(currentFilter)}`);
+  activeBtn.classList.remove('bg-transparent', 'text-gray-700', 'hover:bg-blue-100');
+  activeBtn.classList.add('bg-blue-500', 'text-white');
+
   renderTable();
 }
 
