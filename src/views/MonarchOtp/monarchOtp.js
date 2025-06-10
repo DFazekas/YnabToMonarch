@@ -1,7 +1,7 @@
 import { navigate } from '../../router.js';
 import state from '../../state.js';
 import { monarchApi } from '../../api/monarchApi.js';
-import { enhanceButtons } from '../../components/button.js';
+import { renderButtons } from '../../components/button.js';
 
 export default function initMonarchOtpView() {
   const otpInput = document.getElementById('otpInput');
@@ -9,13 +9,13 @@ export default function initMonarchOtpView() {
   const otpError = document.getElementById('otpError');
   const backBtn = document.getElementById('backBtn');
 
-  enhanceButtons();
+  renderButtons();
 
   // Allow only 6 digits
   otpInput.addEventListener('input', () => {
     otpInput.value = otpInput.value.replace(/\D/g, '').slice(0, 6);
     submitOtpBtn.disabled = otpInput.value.length !== 6;
-    enhanceButtons();
+    renderButtons();
   });
 
   submitOtpBtn.addEventListener('click', async () => {

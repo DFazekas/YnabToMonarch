@@ -1,10 +1,10 @@
 import { navigate } from '../../router.js';
 import state from '../../state.js';
-import { enhanceButtons } from '../../components/button.js';
+import { renderButtons } from '../../components/button.js';
 
 export default function initMethodSelectView() {
   console.log("State:", state)
-  enhanceButtons();
+  renderButtons();
   const manualBtn = document.getElementById('manualImportBtn');
   const autoBtn = document.getElementById('autoImportBtn');
 

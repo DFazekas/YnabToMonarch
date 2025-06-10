@@ -1,4 +1,4 @@
-export function enhanceButtons() {
+export function renderButtons() {
   document.querySelectorAll('.ui-button').forEach(button => {
     const type = button.dataset.type || 'primary';
     const size = button.dataset.size || 'medium';

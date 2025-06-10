@@ -1,7 +1,7 @@
 import state from '../../state.js';
 import { monarchApi } from '../../api/monarchApi.js';
 import { navigate } from '../../router.js';
-import { enhanceButtons } from '../../components/button.js';
+import { renderButtons } from '../../components/button.js';
 
 export default function initAutoImportCompleteView() {
   const restartBtn = document.getElementById('restartBtn');
@@ -13,7 +13,7 @@ export default function initAutoImportCompleteView() {
   successContainer.classList.add('hidden');
   errorContainer.classList.add('hidden');
 
-  enhanceButtons();
+  renderButtons();
 
   // Call the mapAccounts API
   createAccounts();

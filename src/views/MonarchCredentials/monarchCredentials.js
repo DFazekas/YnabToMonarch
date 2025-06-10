@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import state from '../../state.js';
 import { navigate } from '../../router.js';
-import { enhanceButtons } from '../../components/button.js';
+import { renderButtons } from '../../components/button.js';
 import { monarchApi } from '../../api/monarchApi.js';
 
 export default function initMonarchCredentialsView() {
@@ -12,7 +12,7 @@ export default function initMonarchCredentialsView() {
   const form = document.getElementById('credentialsForm');
   const errorBox = document.getElementById('errorBox');
 
-  enhanceButtons();
+  renderButtons();
 
   // Generate device UUID once on view load
   if (!state.deviceUuid) {
@@ -35,7 +35,7 @@ export default function initMonarchCredentialsView() {
     const valid = email.length > 0 && password.length > 0;
     connectBtn.disabled = !valid;
 
-    enhanceButtons();
+    renderButtons();
 
     console.log("State:", state, "email:", email, "password:", password)
   }

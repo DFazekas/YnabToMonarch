@@ -3,7 +3,7 @@ import state from '../../state.js';
 import { navigate } from '../../router.js';
 import parseYNABCSV from '../../services/ynabParser.js';
 import { openModal, closeModal } from '../../components/modal.js';
-import { enhanceButtons } from '../../components/button.js';
+import { renderButtons } from '../../components/button.js';
 
 export default function initUploadView() {
   const browseButton = document.getElementById('browseButton');
@@ -13,7 +13,7 @@ export default function initUploadView() {
   const howItWorksBtn = document.getElementById('howItWorksBtn');
   const closeModalBtn = document.getElementById('closeHowItWorksModal');
 
-  enhanceButtons();
+  renderButtons();
 
   howItWorksBtn.addEventListener('click', () => {
     openModal('howItWorksModal');

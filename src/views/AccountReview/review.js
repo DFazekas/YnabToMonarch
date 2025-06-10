@@ -1,7 +1,7 @@
 import state from '../../state.js';
 import monarchAccountTypes from '../../../public/static-data/monarchAccountTypes.json';
 import { navigate } from '../../router.js';
-import { enhanceButtons } from '../../components/button.js';
+import { renderButtons } from '../../components/button.js';
 
 let reviewTableBody, importBtn, searchInput;
 let currentFilter = 'all';
@@ -13,8 +13,7 @@ export default function initAccountReviewView() {
   importBtn = document.getElementById('importBtn');
   searchInput = document.getElementById('searchInput');
 
-  enhanceButtons();
-
+  renderButtons();
 
   document.getElementById('filterAll').classList.add('bg-blue-500', 'text-white');
 
@@ -206,7 +205,7 @@ function renderTable() {
 
   const anyIncluded = state.registerData.some(acc => !acc.excluded);
   importBtn.disabled = !anyIncluded;
-  enhanceButtons();
+  renderButtons();
 }
 
 function masterCheckboxChange(e) {
