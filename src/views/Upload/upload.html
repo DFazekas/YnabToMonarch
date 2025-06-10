@@ -3,7 +3,7 @@
   <div class="text-center max-w-1xl w-full">
     <h2 class="text-3xl font-bold mb-4">Migrate your YNAB data</h2>
     <p class="text-gray-600 text-base max-w-md mx-auto leading-relaxed">
-      Upload your exported YNAB register file to begin the migration process into Monarch Money.
+      Upload a YNAB ZIP file to begin the migration process into Monarch Money.
     </p>
 
     <a id="howItWorksBtn" class="ui-button" data-type="text">How does this work?</a>
@@ -11,9 +11,9 @@
 
   <!-- Upload Box -->
   <div id="uploadBox" class="w-full max-w-md border-2 border-dashed border-gray-300 rounded-xl p-10 mt-10 flex flex-col items-center gap-3 transition-all">
-    <p class="text-lg font-semibold">Drag & Drop your Register CSV</p>
+    <p class="text-lg font-semibold">Drag & Drop your Register ZIP file</p>
     <p class="text-sm text-gray-500">or</p>
-    <input id="fileInput" type="file" accept=".csv" hidden>
+    <input id="fileInput" type="file" accept=".csv,.zip" hidden>
     <button id="browseButton" class="ui-button" data-type="primary">Browse Files</button>
 
     <p class="text-xs text-gray-400 mt-2">Your file stays local. We never store or transmit your data.</p>

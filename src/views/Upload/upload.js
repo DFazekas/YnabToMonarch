@@ -1,3 +1,4 @@
+import JSZip from 'jszip';
 import state from '../../state.js';
 import { navigate } from '../../router.js';
 import parseYNABCSV from '../../services/ynabParser.js';
@@ -47,20 +48,41 @@ export default function initUploadView() {
   });
 
   async function handleFile(file) {
-    if (!file.name.endsWith('.csv')) {
-      errorMessage.textContent = 'Please upload a valid CSV file.';
+    const isCSV = file.name.endsWith('.csv');
+    const isZIP = file.name.endsWith('.zip');
+
+    if (!isCSV && !isZIP) {
+      errorMessage.textContent = 'Please upload a CSV or ZIP file.';
       errorMessage.classList.remove('hidden');
       return;
     }
 
     try {
-      const parsedData = await parseYNABCSV(file);
-      state.registerData = parsedData;
-      console.log("State:", state)
+      let csvFile;
 
+      if (isZIP) {
+        const zip = await JSZip.loadAsync(file);
+        const registerEntry = Object.values(zip.files).find(f => f.name.toLowerCase().includes('register') && f.name.endsWith('.csv'));
+
+        if (!registerEntry) {
+          errorMessage.textContent = 'ZIP file does not contain a register CSV file.';
+          errorMessage.classList.remove('hidden');
+          return;
+        }
+
+        const csvContent = await registerEntry.async('blob');
+        csvFile = new File([csvContent], registerEntry.name, { type: 'text/csv' });
+      } else {
+        csvFile = file;
+      }
+
+      const parsedData = await parseYNABCSV(csvFile);
+      state.registerData = parsedData;
+
+      console.log("Parsed register data:", state.registerData);
       navigate('reviewView');
     } catch (err) {
-      errorMessage.textContent = 'Failed to parse file. Please ensure it is a valid YNAB register export.';
+      errorMessage.textContent = 'Failed to parse file. Please ensure it is a valid YNAB register CSV or ZIP export.';
       errorMessage.classList.remove('hidden');
       console.error(err);
     }
