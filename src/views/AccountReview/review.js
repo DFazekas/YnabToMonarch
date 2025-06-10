@@ -6,7 +6,6 @@ import { renderButtons } from '../../components/button.js';
 let reviewTableBody, importBtn, searchInput;
 let currentFilter = 'all';
 let searchQuery = '';
-let filteredData = [];
 
 export default function initAccountReviewView() {
   reviewTableBody = document.getElementById('reviewTableBody');
@@ -30,21 +29,17 @@ export default function initAccountReviewView() {
 
   // Bulk action bar listeners
   document.getElementById('unselectAllBtn').addEventListener('click', () => {
-    state.selectedYnabAccounts.clear();
+    Object.values(state.accounts).forEach(acc => acc.selected = false);
     renderTable();
   });
 
   document.getElementById('bulkIncludeBtn').addEventListener('click', () => {
-    state.registerData.forEach(acc => {
-      if (state.selectedYnabAccounts.has(acc.id)) acc.excluded = false;
-    });
+    Object.values(state.accounts).filter(acc => acc.selected).forEach(acc => acc.included = true);
     renderTable();
   });
 
   document.getElementById('bulkExcludeBtn').addEventListener('click', () => {
-    state.registerData.forEach(acc => {
-      if (state.selectedYnabAccounts.has(acc.id)) acc.excluded = true;
-    });
+    Object.values(state.accounts).filter(acc => acc.selected).forEach(acc => acc.included = false);
     renderTable();
   });
 
@@ -88,16 +83,11 @@ function updateFilters() {
 function renderTable() {
   reviewTableBody.innerHTML = '';
 
-  // Filter data
-  filteredData = state.registerData.filter(acc => {
-    if (acc.transactionCount === 0) acc.excluded = true;
-    if (currentFilter === 'included' && acc.excluded) return false;
-    if (currentFilter === 'excluded' && !acc.excluded) return false;
-    if (searchQuery && !acc.name.toLowerCase().includes(searchQuery)) return false;
-    return true;
-  });
+  for (const [_, account] of Object.entries(state.accounts)) {
+    if (currentFilter === 'included' && !account.included) continue;
+    if (currentFilter === 'excluded' && account.included) continue;
+    if (searchQuery && !account.modifiedName.toLowerCase().includes(searchQuery)) continue;
 
-  filteredData.forEach(account => {
     const row = document.createElement('tr');
     row.classList.add('border-t', 'border-[#dce1e5]');
 
@@ -107,11 +97,16 @@ function renderTable() {
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.className = 'w-5 h-5 cursor-pointer';
-    checkbox.checked = state.selectedYnabAccounts.has(account.id);
+    checkbox.checked = account.selected;
+
     checkbox.addEventListener('change', () => {
-      if (checkbox.checked) state.selectedYnabAccounts.add(account.id);
-      else state.selectedYnabAccounts.delete(account.id);
-      console.log("State.SelectedYnabAccount:", state.selectedYnabAccounts)
+      account.selected = checkbox.checked;
+      console.log('Checkbox clicked:', account.modifiedName, '->', account.selected);
+
+      // Debug full selected list
+      const selectedAccounts = Object.values(state.accounts).filter(acc => acc.selected);
+      console.log('Currently selected:', selectedAccounts.map(acc => acc.modifiedName));
+
       updateBulkBar();
       updateMasterCheckbox();
     });
@@ -185,53 +180,59 @@ function renderTable() {
 
     const toggleBtn = document.createElement('button');
     toggleBtn.classList.add('ui-button');
-    toggleBtn.dataset.type = account.excluded ? 'secondary' : 'primary';
+    toggleBtn.dataset.type = account.included ? 'primary' : 'secondary';
     toggleBtn.dataset.size = 'small';
     toggleBtn.dataset.fixedWidth = '100';
-    toggleBtn.textContent = account.excluded ? 'Excluded' : 'Included';
+    toggleBtn.textContent = account.included ? 'Included' : 'Excluded';
+    toggleBtn.title = account.included ? 'Click to exclude this account' : 'Click to include this account';
 
     toggleBtn.addEventListener('click', () => {
-      account.excluded = !account.excluded;
+      account.included = !account.included;
       renderTable();
     });
     includeTd.appendChild(toggleBtn);
     row.appendChild(includeTd);
 
     reviewTableBody.appendChild(row);
-  });
+  }
 
   updateMasterCheckbox();
   updateBulkBar();
 
-  const anyIncluded = state.registerData.some(acc => !acc.excluded);
+  console.log("State accounts:", state.accounts);
+  const anyIncluded = Object.values(state.accounts).some(acc => acc.included);
+  console.log("Any included accounts:", anyIncluded);
   importBtn.disabled = !anyIncluded;
+  importBtn.title = anyIncluded ? '' : 'At least one account must be included to proceed';
+
   renderButtons();
 }
 
 function masterCheckboxChange(e) {
   const checked = e.target.checked;
-  if (checked) {
-    filteredData.forEach(acc => state.selectedYnabAccounts.add(acc.id));
-  } else {
-    filteredData.forEach(acc => state.selectedYnabAccounts.delete(acc.id));
-  }
+  Object.values(state.accounts).forEach(acc => {
+    acc.selected = checked;
+  });
   renderTable();
 }
 
 function updateMasterCheckbox() {
   const masterCheckbox = document.getElementById('masterCheckbox');
-  const visible = filteredData;
-  const allSelected = visible.every(acc => state.selectedYnabAccounts.has(acc.id));
-  const anySelected = visible.some(acc => state.selectedYnabAccounts.has(acc.id));
+  const numberOfAccounts = Object.keys(state.accounts).length;
+  const numberOfSelectedAccounts = Object.entries(state.accounts).filter(([_, acc]) => acc.selected).length;
+  const anySelected = numberOfSelectedAccounts > 0
+  const allSelected = anySelected && numberOfSelectedAccounts === numberOfAccounts
+
+  console.log("Any Selected:", anySelected, "\nAll Selected:", allSelected, "\nTotal Accounts:", numberOfAccounts, "\nSelected Count:", numberOfSelectedAccounts);
 
   masterCheckbox.checked = allSelected;
-  masterCheckbox.indeterminate = !allSelected && anySelected;
+  masterCheckbox.indeterminate = anySelected;
 }
 
 function updateBulkBar() {
   const bar = document.getElementById('bulkActionBar');
   const countSpan = document.getElementById('selectedCount');
-  const count = state.selectedYnabAccounts.size;
+  const count = Object.values(state.accounts).filter(acc => acc.selected).length;
   countSpan.textContent = count;
 
   if (count > 0) {
@@ -320,7 +321,7 @@ function openBulkRenameModal() {
   modal.classList.remove('hidden');
   renamePattern.focus();
 
-  const selectedAccounts = state.registerData.filter(acc => state.selectedYnabAccounts.has(acc.id));
+  const selectedAccounts = Object.values(state.accounts).filter(acc => acc.selected);
 
   // Token insert handlers
   tokenButtons.forEach(btn => {
@@ -423,7 +424,7 @@ function openBulkTypeModal() {
     const typeValue = typeSelect.value;
     const subtypeValue = subtypeSelect.value;
 
-    const selectedAccounts = state.registerData.filter(acc => state.selectedYnabAccounts.has(acc.id));
+    const selectedAccounts = Object.values(state.accounts).filter(acc => acc.selected);
     selectedAccounts.forEach(acc => {
       acc.type = typeValue;
       acc.subtype = subtypeValue || null;
