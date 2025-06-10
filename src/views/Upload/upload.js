@@ -1,7 +1,6 @@
-import JSZip from 'jszip';
 import state from '../../state.js';
 import { navigate } from '../../router.js';
-import parseYNABCSV from '../../services/ynabParser.js';
+import parseYNABZip from '../../services/ynabParser.js';
 import { openModal, closeModal } from '../../components/modal.js';
 import { renderButtons } from '../../components/button.js';
 
@@ -47,42 +46,24 @@ export default function initUploadView() {
     if (file) await handleFile(file);
   });
 
-  async function handleFile(file) {
-    const isCSV = file.name.endsWith('.csv');
-    const isZIP = file.name.endsWith('.zip');
+  async function handleFile(csvFile) {
+    const isZIP = csvFile.name.endsWith('.zip');
 
-    if (!isCSV && !isZIP) {
-      errorMessage.textContent = 'Please upload a CSV or ZIP file.';
+    if (!isZIP) {
+      errorMessage.textContent = 'Please upload a ZIP export from YNAB.';
       errorMessage.classList.remove('hidden');
       return;
     }
 
     try {
-      let csvFile;
+      const accounts = await parseYNABZip(csvFile);
+      
+      state.accounts = accounts;
+      console.log("State:", state);
 
-      if (isZIP) {
-        const zip = await JSZip.loadAsync(file);
-        const registerEntry = Object.values(zip.files).find(f => f.name.toLowerCase().includes('register') && f.name.endsWith('.csv'));
-
-        if (!registerEntry) {
-          errorMessage.textContent = 'ZIP file does not contain a register CSV file.';
-          errorMessage.classList.remove('hidden');
-          return;
-        }
-
-        const csvContent = await registerEntry.async('blob');
-        csvFile = new File([csvContent], registerEntry.name, { type: 'text/csv' });
-      } else {
-        csvFile = file;
-      }
-
-      const parsedData = await parseYNABCSV(csvFile);
-      state.registerData = parsedData;
-
-      console.log("Parsed register data:", state.registerData);
       navigate('reviewView');
     } catch (err) {
-      errorMessage.textContent = 'Failed to parse file. Please ensure it is a valid YNAB register CSV or ZIP export.';
+      errorMessage.textContent = 'Failed to parse ZIP file. Please ensure it includes a valid register.csv and plan.csv.';
       errorMessage.classList.remove('hidden');
       console.error(err);
     }
