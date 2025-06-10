@@ -4,7 +4,7 @@ export function enhanceButtons() {
     const size = button.dataset.size || 'medium';
     const fixedWidth = button.dataset.fixedWidth;
     const fullWidth = button.hasAttribute('data-fullwidth');
-    const disabled = button.hasAttribute('disabled');
+    const isDisabled = button.hasAttribute('disabled') || button.disabled;
 
     button.className = 'ui-button';
     button.type = 'button';
@@ -26,32 +26,32 @@ export function enhanceButtons() {
         break;
     }
 
-    if (disabled) {
+    if (isDisabled) {
+      button.setAttribute('disabled', '');
       button.classList.add('opacity-50', 'cursor-not-allowed');
       button.style.boxShadow = 'none';
     } else {
+      button.removeAttribute('disabled');
       button.classList.add('cursor-pointer');
     }
 
     switch (type) {
       case 'primary':
         button.classList.add('bg-[#1993e5]', 'text-white', 'border', 'border-[#1993e5]');
-        if (!disabled) button.classList.add('hover:bg-blue-600');
+        if (!isDisabled) button.classList.add('hover:bg-blue-600');
         break;
       case 'secondary':
         button.classList.add('bg-white', 'text-[#111518]', 'border', 'border-gray-300');
-        if (!disabled) button.classList.add('hover:bg-gray-100');
+        if (!isDisabled) button.classList.add('hover:bg-gray-100');
         break;
       case 'text':
         button.classList.remove('px-3', 'px-5', 'px-6', 'py-1.5', 'py-2', 'py-3');
         button.classList.add('bg-transparent', 'text-blue-600');
-        if (!disabled) button.classList.add('hover:underline');
+        if (!isDisabled) button.classList.add('hover:underline');
         break;
       case 'danger':
         button.classList.add('bg-red-500', 'text-white');
-        if (!disabled) button.classList.add('hover:bg-red-600');
-        break;
-      default:
+        if (!isDisabled) button.classList.add('hover:bg-red-600');
         break;
     }
 
