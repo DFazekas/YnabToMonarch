@@ -116,7 +116,7 @@ function renderTable() {
     // Account Name (clickable)
     const nameTd = document.createElement('td');
     nameTd.className = 'px-2 py-2 max-w-[300px] truncate cursor-pointer';
-    nameTd.title = account.modifiedName;
+    nameTd.title = `Click to rename '${account.modifiedName}'`;
     nameTd.textContent = account.modifiedName;
     nameTd.addEventListener('click', () => openNameEditor(account, nameTd));
     row.appendChild(nameTd);
@@ -133,6 +133,8 @@ function renderTable() {
       if (type.typeName === account.type) opt.selected = true;
       typeSelect.appendChild(opt);
     });
+    // Tooltip showing the currently selected account type
+    typeSelect.title = typeSelect.options[typeSelect.selectedIndex].textContent;
     typeSelect.addEventListener('change', () => {
       account.type = typeSelect.value;
       const selectedType = monarchAccountTypes.data.find(t => t.typeName === account.type);
@@ -155,8 +157,10 @@ function renderTable() {
       if (sub.name === account.subtype) opt.selected = true;
       subtypeSelect.appendChild(opt);
     });
+    subtypeSelect.title = subtypeSelect.options[subtypeSelect.selectedIndex].textContent;
     subtypeSelect.addEventListener('change', () => {
       account.subtype = subtypeSelect.value;
+      renderTable();
     });
     subtypeTd.appendChild(subtypeSelect);
     row.appendChild(subtypeTd);
@@ -165,13 +169,16 @@ function renderTable() {
     const txTd = document.createElement('td');
     txTd.className = 'px-2 py-2 text-center';
     txTd.textContent = account.transactionCount;
+    txTd.title = `${account.transactionCount} transaction${account.transactionCount !== 1 ? 's' : ''}`;
     row.appendChild(txTd);
 
     // Balance
+    const formattedBalance = Math.abs(account.balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const prettyBalance = (account.balance < 0 ? '-$' : '$') + formattedBalance;
     const balanceTd = document.createElement('td');
     balanceTd.className = 'px-2 py-2 text-[#637988]';
-    const formattedBalance = Math.abs(account.balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    balanceTd.textContent = (account.balance < 0 ? '-$' : '$') + formattedBalance;
+    balanceTd.textContent = prettyBalance
+    balanceTd.title = `Balance: ${prettyBalance}`;
     row.appendChild(balanceTd);
 
     // Include toggle button
