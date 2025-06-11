@@ -233,7 +233,7 @@ function updateMasterCheckbox() {
   console.log("Any Selected:", anySelected, "\nAll Selected:", allSelected, "\nTotal Accounts:", numberOfAccounts, "\nSelected Count:", numberOfSelectedAccounts);
 
   masterCheckbox.checked = allSelected;
-  masterCheckbox.indeterminate = anySelected;
+  masterCheckbox.indeterminate = !allSelected && anySelected;
 }
 
 function updateBulkBar() {
