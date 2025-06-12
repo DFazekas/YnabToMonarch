@@ -71,9 +71,26 @@ function parseCSV(csvContent, monarchAccountTypes) {
             continue;
           }
 
+          // 🔁 Convert date: MM/DD/YYYY → YYYY-MM-DD
+          if (row['Date']) {
+            const [mm, dd, yyyy] = row['Date'].split('/');
+            if (mm && dd && yyyy) {
+              row['Date'] = `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+            }
+          }
+
           const inflowCents = parseCurrencyToCents(row['Inflow']);
           const outflowCents = parseCurrencyToCents(row['Outflow']);
           const netCents = inflowCents - outflowCents;
+
+          // ✅ Add MonarchDollars column
+          if (inflowCents > 0) {
+            row.Amount = (inflowCents / 100).toFixed(2);
+          } else if (outflowCents > 0) {
+            row.Amount = (-outflowCents / 100).toFixed(2);
+          } else {
+            row.Amount = '0.00';
+          }
 
           if (!accounts.has(accountName)) {
             const { type, subtype } = inferMonarchType(accountName, monarchAccountTypes);
@@ -93,7 +110,15 @@ function parseCSV(csvContent, monarchAccountTypes) {
           }
 
           const account = accounts.get(accountName);
-          account.transactions.push(row);
+          account.transactions.push({
+            Date: row.Date,
+            Merchant: row.Payee || '',
+            Category: row.Category || '',
+            'Category Group': row['Category Group'] || '',
+            Notes: row.Memo || '',
+            Amount: row.Amount,
+            Tags: row.Flag || '',
+          });
           account.transactionCount += 1;
           account.balanceCents += netCents;
         };
