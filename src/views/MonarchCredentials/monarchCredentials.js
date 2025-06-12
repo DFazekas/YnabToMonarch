@@ -5,6 +5,12 @@ import { renderButtons } from '../../components/button.js';
 import { monarchApi } from '../../api/monarchApi.js';
 
 export default function initMonarchCredentialsView() {
+  // ✅ Immediately redirect if already authenticated
+  if (state.apiToken) {
+    navigate('monarchCompleteView');
+    return;
+  }
+
   const emailInput = document.getElementById('email');
   const passwordInput = document.getElementById('password');
   const connectBtn = document.getElementById('connectBtn');
