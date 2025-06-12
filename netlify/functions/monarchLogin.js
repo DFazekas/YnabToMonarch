@@ -9,10 +9,7 @@ export async function handler(event, context) {
 
   if (event.httpMethod !== 'POST') {
     console.warn("MonarchLogin ❌ wrong method", { method: event.httpMethod });
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: 'Method not allowed. Use POST.' })
-    }
+    return createResponse(405, { error: 'Method not allowed. Use POST.' })
   }
 
   try {
@@ -23,10 +20,7 @@ export async function handler(event, context) {
 
     if (!email || !password) {
       console.error("MonarchLogin ❌ missing credentials");
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Email and password are required.' })
-      }
+      return createResponse(400, { error: 'Email and password are required.' })
     }
 
     const body = {
@@ -70,10 +64,7 @@ export async function handler(event, context) {
       // Invalid API request
       if (data.detail && data.detail.toLowerCase().includes("version")) {
         console.error("MonarchLogin ❌ Invalid API request", response, data);
-        return {
-          statusCode: 500,
-          body: JSON.stringify({ error: "Seems there's a bug in our code. Please let us know by reporting it here: <a href=\"https://github.com/DFazekas/YnabToMonarch/issues\">https://github.com/DFazekas/YnabToMonarch/issues</a>" })
-        }
+        return createResponse(500, { error: `Seems there's a bug in our code. Please let us know by reporting it here: <a href=\"https://github.com/DFazekas/YnabToMonarch/issues\">https://github.com/DFazekas/YnabToMonarch/issues</a>` })
       }
 
       if (data.error_code == 'EMAIL_OTP_REQUIRED') {
@@ -82,51 +73,44 @@ export async function handler(event, context) {
         //   "detail": "Retrieve the code from your email to continue login.",
         //   "error_code": "EMAIL_OTP_REQUIRED"
         // }
-        return {
-          statusCode: 200,
-          body: JSON.stringify({ otpRequired: true, detail: data.detail })
-        };
+        return createResponse(200, { otpRequired: true, detail: data.detail });
       }
     }
 
     // Failed: CAPTCHA is required
     if (response.status == 429) {
       console.error("MonarchLogin ❌ CAPTCHA required", { status: response.status, error: data });
-      return {
-        statusCode: 429,
-        body: JSON.stringify({ error: 'CAPTCHA required. Please try again later.' })
-      }
+      return createResponse(429, { error: "CAPTCHA required. Please try again later." });
     }
 
     // Unexpected failure response
     if (!response.ok) {
       console.error("MonarchLogin ❌ login failed", { status: response.status, response: response, data: data })
-      return {
-        statusCode: response.status,
-        body: JSON.stringify({ error: data.detail || 'Login failed.' })
-      }
+      return createResponse(response.status, { error: data.detail || 'Login failed.' });
     }
 
     // Response success but strangely missing token in response
     if (!data.token) {
       console.error("MonarchLogin ❌ token missing in response", { status: response.status, response: response, data: data })
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: 'Token not found in response.' })
-      }
+      return createResponse(500, { error: "Token not found in response." });
     }
 
     // Successful login
     console.log("MonarchLogin ✅ login successful", { tokenPreview: data.token.slice(0, 8) + '…' })
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ token: data.token })
-    }
+    return createResponse(200, { token: data.token });
   } catch (error) {
     console.error("MonarchLogin ❌ unexpected error", error)
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Internal Server Error' })
-    }
+    return createResponse(500, { error: 'Internal Server Error' });
+  }
+}
+
+function createResponse(statusCode, payload = null) {
+  const isObject = typeof payload === 'object' && payload !== null;
+  const responseBody = isObject ? payload : {message: payload};
+  
+  return {
+    statusCode,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(responseBody)
   }
 }

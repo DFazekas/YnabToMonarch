@@ -2818,8 +2818,8 @@
     deviceUuid: "550e8400-e29b-51d4-a716-446655440000",
     //null,
     awaitingOtp: false,
-    credentials: { email: "fazekas.devon+monarch3@gmail.com", password: "n90WJLg1Eotii*", otp: "" },
-    apiToken: "67af1cb416aefd7cf83bd206e3e29e40b9f3727386d6756efefad800ab8486a9",
+    credentials: { email: "fazekas.devon+monarch4@gmail.com", password: "O%s4NiR8Q1dUHq", otp: "" },
+    apiToken: "d9385c8e239d7cc3bd9cdb998c02187acf2b683d5da062e2d1edb64bfe716dac",
     monarchAccounts: null,
     accounts: {}
   };
@@ -2878,9 +2878,22 @@
               console.warn("Skipping row with missing account name:", row);
               continue;
             }
+            if (row["Date"]) {
+              const [mm, dd, yyyy] = row["Date"].split("/");
+              if (mm && dd && yyyy) {
+                row["Date"] = `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+              }
+            }
             const inflowCents = parseCurrencyToCents(row["Inflow"]);
             const outflowCents = parseCurrencyToCents(row["Outflow"]);
             const netCents = inflowCents - outflowCents;
+            if (inflowCents > 0) {
+              row.Amount = (inflowCents / 100).toFixed(2);
+            } else if (outflowCents > 0) {
+              row.Amount = (-outflowCents / 100).toFixed(2);
+            } else {
+              row.Amount = "0.00";
+            }
             if (!accounts.has(accountName)) {
               const { type, subtype } = inferMonarchType(accountName, monarchAccountTypes);
               accounts.set(accountName, {
@@ -2899,7 +2912,15 @@
               });
             }
             const account = accounts.get(accountName);
-            account.transactions.push(row);
+            account.transactions.push({
+              Date: row.Date,
+              Merchant: row.Payee || "",
+              Category: row.Category || "",
+              "Category Group": row["Category Group"] || "",
+              Notes: row.Memo || "",
+              Amount: row.Amount,
+              Tags: row.Flag || ""
+            });
             account.transactionCount += 1;
             account.balanceCents += netCents;
           }
@@ -3821,8 +3842,8 @@
     renderButtons();
     const manualBtn = document.getElementById("manualImportBtn");
     const autoBtn = document.getElementById("autoImportBtn");
-    const totalCount = state_default.registerData.length;
-    const selectedCount = state_default.registerData.filter((acc) => !acc.excluded).length;
+    const totalCount = Object.keys(state_default.accounts).length;
+    const selectedCount = Object.values(state_default.accounts).filter((acc) => acc.included).length;
     document.getElementById("totalCountDisplay").textContent = totalCount;
     document.getElementById("filesCountDisplay").textContent = selectedCount;
     document.getElementById("manualFileCount").textContent = selectedCount;
@@ -3861,7 +3882,7 @@
 
     <div class="text-center">
       <div class="text-4xl font-bold text-green-600" id="filesCountDisplay">0</div>
-      <div class="text-gray-500 text-sm">Files To Export</div>
+      <div class="text-gray-500 text-sm">Accounts To Migrate</div>
     </div>
   </div>
 
@@ -3901,16 +3922,47 @@
 </div>`;
 
   // src/views/ManualInstructions/manualInstructions.js
+  var import_jszip2 = __toESM(require_jszip_min(), 1);
+  var import_papaparse2 = __toESM(require_papaparse_min(), 1);
   function initManualInstructionsView() {
     const countSpan = document.getElementById("accountCount");
     const downloadBtn = document.getElementById("downloadBtn");
     const switchBtn = document.getElementById("switchToAuto");
     const backBtn2 = document.getElementById("backBtn");
     renderButtons();
-    const includedAccounts = state_default.registerData.filter((acc) => !acc.excluded);
+    const includedAccounts = Object.values(state_default.accounts).filter((acc) => acc.included);
     countSpan.textContent = `${includedAccounts.length} account${includedAccounts.length !== 1 ? "s" : ""}`;
-    downloadBtn.addEventListener("click", () => {
-      alert("Generating ZIP file (not yet implemented)");
+    downloadBtn.addEventListener("click", async () => {
+      const zip = new import_jszip2.default();
+      const MAX_ROWS_PER_FILE = 1e3;
+      includedAccounts.forEach((account) => {
+        const safeName = account.name.replace(/[\\/:*?"<>|]/g, "_");
+        const transactions = account.transactions;
+        const total = transactions.length;
+        if (total <= MAX_ROWS_PER_FILE) {
+          const csv = import_papaparse2.default.unparse(transactions);
+          zip.file(`${safeName}.csv`, csv);
+        } else {
+          const chunks = Math.ceil(total / MAX_ROWS_PER_FILE);
+          for (let i = 0; i < chunks; i++) {
+            const start = i * MAX_ROWS_PER_FILE;
+            const end = start + MAX_ROWS_PER_FILE;
+            const chunk = transactions.slice(start, end);
+            const chunkCsv = import_papaparse2.default.unparse(chunk);
+            zip.file(`${safeName}_part${i + 1}.csv`, chunkCsv);
+          }
+        }
+      });
+      try {
+        const content = await zip.generateAsync({ type: "blob" });
+        const downloadLink = document.createElement("a");
+        downloadLink.href = URL.createObjectURL(content);
+        downloadLink.download = "accounts_export.zip";
+        downloadLink.click();
+      } catch (e) {
+        console.error("ZIP generation failed", e);
+        alert("Failed to generate ZIP file.");
+      }
     });
     switchBtn.addEventListener("click", () => {
       navigate("monarchCredentialsView");
@@ -4064,9 +4116,9 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
     });
-    const errorRes = await res.json();
-    if (!res.ok) throw new Error(errorRes.error || errorRes.message || "API error");
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || data.message || "API error");
+    return data;
   }
 
   // src/api/monarchApi.js
@@ -4083,6 +4135,10 @@
 
   // src/views/MonarchCredentials/monarchCredentials.js
   function initMonarchCredentialsView() {
+    if (state_default.apiToken) {
+      navigate("monarchCompleteView");
+      return;
+    }
     const emailInput = document.getElementById("email");
     const passwordInput = document.getElementById("password");
     const connectBtn = document.getElementById("connectBtn");
@@ -4138,7 +4194,7 @@
           navigate("monarchCompleteView");
           return;
         }
-        throw new Error("Unknown login response.");
+        throw new Error("Unexpected login response.");
       } catch (err) {
         console.error("Login error", err);
         errorBox.textContent = err?.message || "An unexpected error occurred.";
@@ -4209,7 +4265,7 @@
     async function createAccounts() {
       try {
         console.log("State:", state_default);
-        const accounts = state_default.registerData.filter((account) => !account.excluded);
+        const accounts = Object.values(state_default.accounts).filter((account) => account.included);
         console.log("Importing filtered accounts:", accounts);
         const response = await monarchApi.createAccounts(state_default.apiToken, accounts);
         console.log("CreateAccounts response:", response);

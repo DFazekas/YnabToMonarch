@@ -22,7 +22,7 @@ export default function initAutoImportCompleteView() {
     try {
       console.log("State:", state)
 
-      const accounts = state.registerData.filter(account => !account.excluded);
+      const accounts = Object.values(state.accounts).filter(account => account.included);
       console.log("Importing filtered accounts:", accounts);
 
       const response = await monarchApi.createAccounts(state.apiToken, accounts);

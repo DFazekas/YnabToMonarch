@@ -78,7 +78,7 @@ export default function initMonarchCredentialsView() {
         return;
       }
 
-      throw new Error('Unknown login response.');
+      throw new Error('Unexpected login response.');
     } catch (err) {
       console.error("Login error", err);
       errorBox.textContent = err?.message || 'An unexpected error occurred.';

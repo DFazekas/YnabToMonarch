@@ -8,8 +8,8 @@ export default function initMethodSelectView() {
   const manualBtn = document.getElementById('manualImportBtn');
   const autoBtn = document.getElementById('autoImportBtn');
 
-  const totalCount = state.registerData.length;
-  const selectedCount = state.registerData.filter(acc => !acc.excluded).length;
+  const totalCount = Object.keys(state.accounts).length;
+  const selectedCount = Object.values(state.accounts).filter(acc => acc.included).length;
 
   // Set text content
   document.getElementById('totalCountDisplay').textContent = totalCount;

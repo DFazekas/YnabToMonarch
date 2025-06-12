@@ -4,7 +4,10 @@ export async function postJson(url, body) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  const errorRes = await res.json();
-  if (!res.ok) throw new Error(errorRes.error || errorRes.message || 'API error');
-  return res.json();
+  
+  const data = await res.json();
+  
+  if (!res.ok) throw new Error(data.error || data.message || 'API error');
+  
+  return data
 }

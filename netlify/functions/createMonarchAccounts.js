@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 import FormData from 'form-data';
-import Readable from 'stream';
+import { Readable } from 'stream';
 
 // Constants for configuration
 const GRAPHQL_ENDPOINT = 'https://api.monarchmoney.com/graphql'
@@ -17,7 +17,7 @@ export async function handler(event, context) {
   // Validate HTTP method
   if (event.httpMethod !== 'POST') {
     console.warn("❌ wrong method", { method: event.httpMethod });
-    return createResponse(405, 'Method not allowed. Use POST.')
+    return createResponse(405, { error: 'Method not allowed. Use POST.' })
   }
 
   try {
@@ -28,22 +28,18 @@ export async function handler(event, context) {
     // Validate token
     if (!token) {
       console.error("❌ missing token")
-      return createResponse(400, 'API token is required.')
+      return createResponse(400, { error: 'API token is required.' })
     }
 
     // Validate mappings
     if (!accounts || !Array.isArray(accounts)) {
       console.error("❌ invalid accounts format")
-      return createResponse(400, 'Accounts must be an array.')
+      return createResponse(400, { error: 'Accounts must be an array.' })
     }
 
     // Process all accounts concurrently with controlled concurrency
     for (const account of accounts) {
-      const response = await processAccount(token, account)
-      if (response.error) {
-        console.error("❌ error processing account", { account: account.modifiedName, error: response.error })
-        return createResponse(500, `Error processing account "${account.modifiedName}": ${response.error}`)
-      }
+      await processAccount(token, account)
       console.log("✅ processed account", { account: account })
     }
 
@@ -53,7 +49,7 @@ export async function handler(event, context) {
   } catch (error) {
     console.error("❌ unexpected error", error)
     console.groupEnd("CreateMonarchAccounts Lambda Handler")
-    return createResponse(500, error.message)
+    return createResponse(500, { error: error.message })
   }
 }
 
@@ -80,6 +76,7 @@ async function createManualAccount(token, accountInput) {
 
     if (result.error) return { error: result.error }
 
+    const data = result.data
     const apiErrors = data.createManualAccount.errors;
     console.log("API Errors:", apiErrors);
     if (apiErrors) {
@@ -98,11 +95,11 @@ async function createManualAccount(token, accountInput) {
   }
 }
 
-async function uploadStatementsFile(token, transactions) {
+async function uploadStatementsFile(token, transactions, accountName) {
   console.group("Uploading Statements File")
 
   // Generate CSV content
-  const csvContent = generateCSV(transactions)
+  const csvContent = generateCSV(accountName, transactions)
 
   // Create a readable stream from the CSV string
   const csvStream = Readable.from([csvContent])
@@ -127,9 +124,11 @@ async function uploadStatementsFile(token, transactions) {
     const result = await response.json()
 
     if (!response.ok) {
+      console.error("❌ Statement file upload failed", { status: response.status, result: result });
       throw new Error(`Statement file upload failed: ${JSON.stringify(result)}`)
     }
 
+    console.log("✅ Statement file uploaded successfully:", result);
     console.groupEnd("Uploading Statements File")
     return { sessionKey: result.session_key }
   } catch (error) {
@@ -185,8 +184,10 @@ async function importTransactions(token, accountId, sessionKey) {
   return { status: uploadSession }
 }
 
-function createResponse(statusCode, message = null) {
-  const responseBody = { message }
+function createResponse(statusCode, payload = null) {
+  const isObject = typeof payload === 'object' && payload !== null;
+  const responseBody = isObject ? payload : { message: payload };
+
   return {
     statusCode,
     headers: { 'Content-Type': 'application/json' },
@@ -234,18 +235,22 @@ async function performGraphQLRequest(token, query, variables, operationName = nu
   }
 }
 
-async function handleUploadAndImport(token, accountId, transactions) {
+async function handleUploadAndImport(token, accountId, transactions, accountName) {
   console.group("Handling Upload and Import")
   try {
+    console.log("Handle uploading and importing for account:", accountName);
+
     // Upload statement file
-    const { sessionKey } = await uploadStatementsFile(token, transactions)
+    const { sessionKey } = await uploadStatementsFile(token, transactions, accountName)
+
+    console.log("✅ Statement file uploaded successfully. Session Key:", sessionKey);
 
     // Wait 1.5 seconds to ensure Monarch finishes uploading statement file
     await new Promise((resolve) => setTimeout(resolve, 1500))
 
     // Import transactions into the account
     await importTransactions(token, accountId, sessionKey)
-    console.log("✅ Transactions imported successfully for account:", accountId)
+    console.log("✅ Transactions imported successfully for account:", accountName)
     console.groupEnd("Handling Upload and Import")
   } catch (error) {
     console.error(`❌ Failed Upload/Import: ${error}`)
@@ -254,13 +259,15 @@ async function handleUploadAndImport(token, accountId, transactions) {
   }
 }
 
-function generateCSV(transactions) {
+function generateCSV(accountName, transactions) {
   console.group("Generating CSV")
   const headers = `"Date","Merchant","Category","Account","Original Statement","Notes","Amount","Tags"`
   const rows = transactions.map(
     (tx) =>
-      `"${tx.Date}","${tx.Merchant}","${tx.Category}","${tx.Account}","${tx['Original Statement']}","${tx.Notes}","${tx.Amount}","${tx.Tags}"`
+      `"${tx.Date}","${tx.Merchant}","${tx.Category}","${accountName}","","${tx.Notes}","${tx.Amount}","${tx.Tags}"`
   )
+  console.log({ headers, rows })
+  console.dir({ headers, rows })
   console.groupEnd("Generating CSV")
   return [headers, ...rows].join('\n')
 }
@@ -268,7 +275,9 @@ function generateCSV(transactions) {
 async function processAccount(token, account) {
   console.group("Process account")
 
-  if (account.excluded) {
+  console.log("Processing account:", account.modifiedName);
+
+  if (!account.included) {
     console.warn(`Skipping excluded account: ${account.modifiedName}`);
     return;
   }
@@ -285,10 +294,11 @@ async function processAccount(token, account) {
     // Create new account in Monarch
     const { account: newAccount, error } = await createManualAccount(token, accountInput)
 
+    console.log("New account created:", newAccount, error);
     if (error) return { error }
 
     // Handle statement file upload and importing into account
-    await handleUploadAndImport(token, newAccount.id, account.transactions)
+    await handleUploadAndImport(token, newAccount.id, account.transactions, account.modifiedName)
     console.groupEnd("Process account")
   } catch (error) {
     console.groupEnd("Process account")
