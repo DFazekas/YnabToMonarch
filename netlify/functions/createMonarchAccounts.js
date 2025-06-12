@@ -28,22 +28,32 @@ export async function handler(event, context) {
     const success = [];
     const failed = [];
 
-    for (const account of accounts) {
-      try {
-        const result = await processAccount(token, account);
-        if (result?.error) throw new Error(result.error);
-        success.push(account.modifiedName);
-      } catch (err) {
-        failed.push({ name: account.modifiedName, error: err.message });
+    const results = await Promise.allSettled(accounts.map(account =>
+      processAccount(token, account).then(() => ({
+        name: account.modifiedName,
+        success: true
+      })).catch(err => ({
+        name: account.modifiedName,
+        success: false,
+        error: err.message
+      }))
+    ));
+
+    for (const result of results) {
+      if (result.status === 'fulfilled' && result.value.success) {
+        success.push(result.value.name);
+      } else {
+        const failedResult = result.status === 'fulfilled' ? result.value : result.reason;
+        failed.push({ name: failedResult.name, error: failedResult.error || 'Unknown error' });
       }
     }
 
-    console.groupEnd("CreateMonarchAccounts Lambda Handler")
     return createResponse(200, { success, failed });
   } catch (err) {
     console.error("❌ unexpected error", error)
-    console.groupEnd("CreateMonarchAccounts Lambda Handler")
     return createResponse(500, { error: err.message });
+  } finally {
+    console.groupEnd("CreateMonarchAccounts Lambda Handler")
   }
 }
 
@@ -54,7 +64,7 @@ async function processAccount(token, account) {
 
   if (!account.included) {
     console.warn(`Skipping excluded account: ${account.modifiedName}`);
-    return;
+    return { skipped: true };
   }
 
   const accountInput = {
@@ -72,10 +82,13 @@ async function processAccount(token, account) {
   if (error) return { error }
 
   const txChunks = chunkArray(account.transactions, 3000);
-  for (const chunk of txChunks) {
-    const { sessionKey } = await uploadStatementsFile(token, chunk, account.modifiedName);
-    await importTransactions(token, newAccount.id, sessionKey);
+  if (txChunks.length > 1) {
+    console.warn(`Account ${account.modifiedName} has ${txChunks.length} chunks of transactions, which may take longer to process.`);
   }
+  await Promise.all(txChunks.map(async (chunk) => {
+    const { sessionKey } = await uploadStatementsFile(token, chunk, account.modifiedName);
+    return importTransactions(token, newAccount.id, sessionKey);
+  }));
 }
 
 function chunkArray(arr, size) {
