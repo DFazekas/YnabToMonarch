@@ -4254,83 +4254,54 @@
 
   // src/views/MonarchComplete/monarchComplete.js
   function initAutoImportCompleteView() {
+    const list = document.getElementById("accountList");
     const restartBtn = document.getElementById("restartBtn");
     const successContainer = document.getElementById("successContainer");
     const errorContainer = document.getElementById("errorContainer");
-    const errorMessageBox = document.getElementById("errorMessage");
-    successContainer.classList.add("hidden");
+    successContainer.classList.remove("hidden");
     errorContainer.classList.add("hidden");
     renderButtons();
-    createAccounts();
-    async function createAccounts() {
-      try {
-        console.log("State:", state_default);
-        const accounts = Object.values(state_default.accounts).filter((account) => account.included);
-        console.log("Importing filtered accounts:", accounts);
-        const response = await monarchApi.createAccounts(state_default.apiToken, accounts);
-        console.log("CreateAccounts response:", response);
-        if (response.error) {
-          errorMessageBox.textContent = response.error || "An unexpected error occurred while migrating your accounts.";
-          errorContainer.classList.remove("hidden");
-          return;
-        }
-        successContainer.classList.remove("hidden");
-      } catch (err) {
-        console.error("Mapping error", err);
-        errorMessageBox.textContent = err?.message || "An unexpected error occurred while migrating your accounts.";
-        errorContainer.classList.remove("hidden");
+    const accounts = Object.values(state_default.accounts).filter((a) => a.included);
+    const CHUNK_SIZE = 5;
+    const chunks = [];
+    for (let i = 0; i < accounts.length; i += CHUNK_SIZE) {
+      chunks.push(accounts.slice(i, i + CHUNK_SIZE));
+    }
+    accounts.forEach((account) => {
+      const row = document.createElement("div");
+      row.id = `status-${account.modifiedName}`;
+      row.innerHTML = `<span>${account.modifiedName}</span> <span class="text-gray-400">\u25CF Queued</span>`;
+      list.appendChild(row);
+    });
+    (async () => {
+      for (const chunk of chunks) {
+        chunk.forEach((acc) => updateStatus(acc.modifiedName, "processing"));
+        const response = await monarchApi.createAccounts(state_default.apiToken, chunk);
+        response.success.forEach((name) => updateStatus(name, "success"));
+        response.failed.forEach((entry) => updateStatus(entry.name, "error", entry.error));
+      }
+    })();
+    function updateStatus(name, status, error = null) {
+      const row = document.getElementById(`status-${name}`);
+      if (!row) return;
+      const icons = {
+        queued: "\u25CF",
+        processing: '<span class="animate-spin">\u23F3</span>',
+        success: "\u2714\uFE0F",
+        error: "\u274C"
+      };
+      row.innerHTML = `<span>${name}</span> <span>${icons[status]}</span>`;
+      if (error) {
+        row.innerHTML += `<br><small class='text-red-500'>${error}</small>`;
       }
     }
-    backBtn.addEventListener("click", () => {
-      navigate("monarchCredentialsView");
-    });
     restartBtn.addEventListener("click", () => {
       navigate("uploadView");
     });
   }
 
   // src/views/MonarchComplete/monarchComplete.html
-  var monarchComplete_default = `<div class="flex flex-col items-center justify-center py-24 space-y-10">
-
-  <!-- \u2705 Success State -->
-  <div id="successContainer" class="text-center">
-    <div class="w-20 h-20 mx-auto mb-6">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-        stroke-linejoin="round" class="w-full h-full text-green-500">
-        <path d="M20 6L9 17l-5-5"></path>
-      </svg>
-    </div>
-
-    <h2 class="text-3xl font-bold mb-4">Migration Started</h2>
-
-    <p class="text-gray-600 text-base max-w-md mx-auto">
-      Your accounts are being imported into Monarch Money. This process may take a few minutes depending on the size of
-      your data.
-      <br /><br />
-      You can refresh Monarch periodically to see your accounts appear as they're processed.
-    </p>
-  </div>
-
-  <!-- \u274C Error State -->
-  <div id="errorContainer" class="text-center hidden">
-    <div class="w-20 h-20 mx-auto mb-6">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-        stroke-linejoin="round" class="w-full h-full text-red-500">
-        <path d="M12 9v2m0 4h.01M12 5a7 7 0 100 14 7 7 0 000-14z"></path>
-      </svg>
-    </div>
-
-    <h2 class="text-3xl font-bold mb-4">Migration Failed</h2>
-
-    <p id="errorMessage" class="text-gray-600 text-base max-w-md mx-auto mb-6"></p>
-
-    <div class="flex justify-between w-full max-w-md">
-      <button id="backBtn" class="ui-button" data-type="secondary" data-size="large">\u2190 Back</button>
-      <button id="restartBtn" class="ui-button" data-type="primary" data-size="large">Restart</button>
-    </div>
-
-  </div>
-</div>`;
+  var monarchComplete_default = '<div class="flex flex-col items-center justify-center py-24 space-y-10">\n\n  <!-- \u2705 Progress Container -->\n  <div id="successContainer" class="text-center hidden transition-opacity duration-500 ease-in-out">\n    <div class="w-20 h-20 mx-auto mb-6">\n      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"\n        stroke-linejoin="round" class="w-full h-full text-green-500">\n        <path d="M20 6L9 17l-5-5"></path>\n      </svg>\n    </div>\n\n    <h2 class="text-3xl font-bold mb-4">Migration in Progress</h2>\n    <p class="text-gray-600 text-base max-w-md mx-auto mb-6">\n      Your accounts are being processed in batches. This page will update as each account is imported.\n    </p>\n\n    <!-- Account status list with transition-friendly container -->\n    <div id="accountList" class="text-left max-w-xl w-full mx-auto space-y-3 transition-all duration-300">\n      <!-- Account rows inserted by JavaScript -->\n    </div>\n\n    <button id="restartBtn" class="mt-8 ui-button" data-type="primary" data-size="large">\n      Restart\n    </button>\n  </div>\n\n  <!-- \u274C Error State -->\n  <div id="errorContainer" class="text-center hidden transition-opacity duration-500 ease-in-out">\n    <div class="w-20 h-20 mx-auto mb-6">\n      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"\n        stroke-linejoin="round" class="w-full h-full text-red-500">\n        <path d="M12 9v2m0 4h.01M12 5a7 7 0 100 14 7 7 0 000-14z"></path>\n      </svg>\n    </div>\n\n    <h2 class="text-3xl font-bold mb-4">Migration Failed</h2>\n    <p id="errorMessage" class="text-gray-600 text-base max-w-md mx-auto mb-6"></p>\n\n    <div class="flex justify-between w-full max-w-md">\n      <button id="backBtn" class="ui-button" data-type="secondary" data-size="large">\u2190 Back</button>\n      <button id="restartBtn" class="ui-button" data-type="primary" data-size="large">Restart</button>\n    </div>\n  </div>\n\n</div>';
 
   // src/router.js
   var routes = {
