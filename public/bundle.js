@@ -3923,7 +3923,17 @@
 
   // src/views/ManualInstructions/manualInstructions.js
   var import_jszip2 = __toESM(require_jszip_min(), 1);
-  var import_papaparse2 = __toESM(require_papaparse_min(), 1);
+
+  // shared/generateCsv.js
+  function generateCSV(accountName, transactions) {
+    const headers = `"Date","Merchant","Category","Account","Original Statement","Notes","Amount","Tags"`;
+    const rows = transactions.map(
+      (tx) => `"${tx.Date}","${tx.Merchant}","${tx.Category}","${accountName}","","${tx.Notes}","${tx.Amount}","${tx.Tags}"`
+    );
+    return [headers, ...rows].join("\n");
+  }
+
+  // src/views/ManualInstructions/manualInstructions.js
   function initManualInstructionsView() {
     const countSpan = document.getElementById("accountCount");
     const downloadBtn = document.getElementById("downloadBtn");
@@ -3940,7 +3950,7 @@
         const transactions = account.transactions;
         const total = transactions.length;
         if (total <= MAX_ROWS_PER_FILE) {
-          const csv = import_papaparse2.default.unparse(transactions);
+          const csv = generateCSV(account.name, transactions);
           zip.file(`${safeName}.csv`, csv);
         } else {
           const chunks = Math.ceil(total / MAX_ROWS_PER_FILE);
@@ -3948,7 +3958,7 @@
             const start = i * MAX_ROWS_PER_FILE;
             const end = start + MAX_ROWS_PER_FILE;
             const chunk = transactions.slice(start, end);
-            const chunkCsv = import_papaparse2.default.unparse(chunk);
+            const chunkCsv = generateCSV(account.name, chunk);
             zip.file(`${safeName}_part${i + 1}.csv`, chunkCsv);
           }
         }

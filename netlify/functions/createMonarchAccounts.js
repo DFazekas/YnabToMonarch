@@ -1,6 +1,7 @@
 import fetch from 'node-fetch';
 import FormData from 'form-data';
 import { Readable } from 'stream';
+import generateCSV from '../../shared/generateCsv.js';
 
 // Constants for configuration
 const GRAPHQL_ENDPOINT = 'https://api.monarchmoney.com/graphql'
@@ -203,16 +204,6 @@ async function importTransactions(token, accountId, sessionKey) {
 
   const res = await performGraphQLRequest(token, query, variables)
   if (res.error) throw new Error(res.error);
-}
-
-function generateCSV(accountName, transactions) {
-  console.group("Generating CSV")
-  const headers = `"Date","Merchant","Category","Account","Original Statement","Notes","Amount","Tags"`
-  const rows = transactions.map((tx) =>
-    `"${tx.Date}","${tx.Merchant}","${tx.Category}","${accountName}","","${tx.Notes}","${tx.Amount}","${tx.Tags}"`
-  )
-  console.groupEnd("Generating CSV")
-  return [headers, ...rows].join('\n')
 }
 
 async function performGraphQLRequest(token, query, variables) {

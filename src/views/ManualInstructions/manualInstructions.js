@@ -1,5 +1,5 @@
 import JSZip from 'jszip';
-import Papa from 'papaparse';
+import generateCSV from '../../../shared/generateCsv.js';
 import state from '../../state.js';
 import { navigate } from '../../router.js';
 import { renderButtons } from '../../components/button.js';
@@ -24,7 +24,7 @@ export default function initManualInstructionsView() {
       const total = transactions.length;
 
       if (total <= MAX_ROWS_PER_FILE) {
-        const csv = Papa.unparse(transactions);
+        const csv = generateCSV(account.name, transactions);
         zip.file(`${safeName}.csv`, csv);
       } else {
         const chunks = Math.ceil(total / MAX_ROWS_PER_FILE);
@@ -32,7 +32,7 @@ export default function initManualInstructionsView() {
           const start = i * MAX_ROWS_PER_FILE;
           const end = start + MAX_ROWS_PER_FILE;
           const chunk = transactions.slice(start, end);
-          const chunkCsv = Papa.unparse(chunk);
+          const chunkCsv = generateCSV(account.name, chunk);
           zip.file(`${safeName}_part${i + 1}.csv`, chunkCsv);
         }
       }
