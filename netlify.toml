@@ -6,6 +6,10 @@
 [dev]
   publish = "public"
 
+[functions]
+  node_bundler = "esbuild"
+  included_files = ["shared/**"]
+
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
