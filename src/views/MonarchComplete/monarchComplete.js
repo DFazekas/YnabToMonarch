@@ -45,12 +45,12 @@ export default function initAutoImportCompleteView() {
     container.setAttribute('aria-label', `Status for ${account.modifiedName}`);
 
     const nameSpan = document.createElement('span');
-    nameSpan.className = 'font-medium truncate text-gray-900 max-w-[70%]';
+    nameSpan.className = 'font-medium truncate text-gray-900 max-w-[70%] cursor-default';
     nameSpan.textContent = account.modifiedName;
     nameSpan.title = account.modifiedName;
 
     const statusSpan = document.createElement('span');
-    statusSpan.className = `status-indicator text-sm font-medium rounded-full px-3 py-1 ${STATUS_PILLS.queued.color}`;
+    statusSpan.className = `status-indicator text-sm font-medium rounded-full px-3 py-1 ${STATUS_PILLS.queued.color} cursor-default`;
     statusSpan.textContent = STATUS_PILLS.queued.text;
 
     container.appendChild(nameSpan);
