@@ -49453,6 +49453,56 @@
     ]
   };
 
+  // src/utils/string.js
+  function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  // src/utils/format.js
+  var currencyFormatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+
+  // src/utils/accountTypeUtils.js
+  function getAccountTypeByName(typeName) {
+    return monarchAccountTypes_default.data.find((t) => t.typeName === typeName);
+  }
+  function getSubtypeByName(typeName, subtypeName) {
+    const type = getAccountTypeByName(typeName);
+    return type?.subtypes.find((s) => s.name === subtypeName);
+  }
+
+  // src/utils/dom.js
+  function toggleButtonActive(button, isActive) {
+    const activeClasses = ["bg-blue-500", "text-white"];
+    const inactiveClasses = ["bg-transparent", "text-gray-700", "hover:bg-blue-100"];
+    if (isActive) {
+      button.classList.add(...activeClasses);
+      button.classList.remove(...inactiveClasses);
+    } else {
+      button.classList.remove(...activeClasses);
+      button.classList.add(...inactiveClasses);
+    }
+  }
+  function toggleElementVisible(el, show) {
+    if (show) {
+      el.classList.remove("hidden");
+      requestAnimationFrame(() => el.classList.add("active"));
+    } else {
+      el.classList.remove("active");
+      setTimeout(() => el.classList.add("hidden"), 300);
+    }
+  }
+  function toggleDisabled(el, disabled) {
+    el.disabled = disabled;
+    el.classList.toggle("cursor-default", disabled);
+    el.classList.toggle("cursor-pointer", !disabled);
+    el.classList.toggle("opacity-50", disabled);
+  }
+
   // src/views/AccountReview/review.js
   var reviewTableBody;
   var importBtn;
@@ -49465,246 +49515,218 @@
     searchInput = document.getElementById("searchInput");
     renderButtons();
     document.getElementById("filterAll").classList.add("bg-blue-500", "text-white");
+    let debounceTimer;
     searchInput.addEventListener("input", () => {
-      searchQuery = searchInput.value.toLowerCase();
-      renderTable();
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        searchQuery = searchInput.value.toLowerCase();
+        renderAccountTable();
+      }, 200);
     });
-    document.getElementById("filterAll").addEventListener("click", () => {
-      currentFilter = "all";
-      updateFilters();
+    ["all", "included", "excluded"].forEach((filter) => {
+      document.getElementById(`filter${capitalize(filter)}`).addEventListener("click", () => setFilter(filter));
     });
-    document.getElementById("filterIncluded").addEventListener("click", () => {
-      currentFilter = "included";
-      updateFilters();
-    });
-    document.getElementById("filterExcluded").addEventListener("click", () => {
-      currentFilter = "excluded";
-      updateFilters();
-    });
-    document.getElementById("unselectAllBtn").addEventListener("click", () => {
-      Object.values(state_default.accounts).forEach((acc) => acc.selected = false);
-      renderTable();
-    });
-    document.getElementById("bulkIncludeBtn").addEventListener("click", () => {
-      Object.values(state_default.accounts).filter((acc) => acc.selected).forEach((acc) => acc.included = true);
-      renderTable();
-    });
-    document.getElementById("bulkExcludeBtn").addEventListener("click", () => {
-      Object.values(state_default.accounts).filter((acc) => acc.selected).forEach((acc) => acc.included = false);
-      renderTable();
-    });
-    document.getElementById("bulkRenameBtn").addEventListener("click", () => {
-      openBulkRenameModal();
-    });
-    document.getElementById("bulkTypeBtn").addEventListener("click", () => {
-      openBulkTypeModal();
-    });
+    document.getElementById("unselectAllBtn").addEventListener("click", () => updateSelection(false));
+    document.getElementById("bulkIncludeBtn").addEventListener("click", () => updateInclusion(true));
+    document.getElementById("bulkExcludeBtn").addEventListener("click", () => updateInclusion(false));
+    document.getElementById("bulkRenameBtn").addEventListener("click", openBulkRenameModal);
+    document.getElementById("bulkTypeBtn").addEventListener("click", openBulkTypeModal);
     document.getElementById("masterCheckbox").addEventListener("change", masterCheckboxChange);
-    backBtn.addEventListener("click", () => {
-      navigate("uploadView");
-    });
-    importBtn.addEventListener("click", () => {
-      navigate("methodView");
-    });
-    renderTable();
+    document.getElementById("backBtn").addEventListener("click", () => navigate("uploadView"));
+    importBtn.addEventListener("click", () => navigate("methodView"));
+    renderAccountTable();
   }
-  function updateFilters() {
+  function setFilter(filter) {
+    currentFilter = filter;
     document.querySelectorAll(".filter-btn").forEach((btn) => {
-      btn.classList.remove("bg-blue-500", "text-white", "hover:bg-blue-100");
-      btn.classList.add("bg-transparent", "text-gray-700", "hover:bg-blue-100");
+      const isActive = btn.id === `filter${capitalize(currentFilter)}`;
+      toggleButtonActive(btn, isActive);
     });
-    const activeBtn = document.getElementById(`filter${capitalize(currentFilter)}`);
-    activeBtn.classList.remove("bg-transparent", "text-gray-700", "hover:bg-blue-100");
-    activeBtn.classList.add("bg-blue-500", "text-white");
-    renderTable();
+    renderAccountTable();
   }
-  function renderTable() {
+  function updateSelection(shouldSelect) {
+    Object.values(state_default.accounts).forEach((acc) => {
+      if (acc.status !== "processed") acc.selected = shouldSelect;
+    });
+    renderAccountTable();
+  }
+  function updateInclusion(include) {
+    Object.values(state_default.accounts).forEach((acc) => {
+      if (acc.selected) acc.included = include;
+    });
+    renderAccountTable();
+  }
+  function renderAccountTable() {
+    const fragment = document.createDocumentFragment();
+    const accounts = Object.values(state_default.accounts);
     reviewTableBody.innerHTML = "";
-    for (const [_, account] of Object.entries(state_default.accounts)) {
+    for (const account of accounts) {
       if (currentFilter === "included" && !account.included) continue;
       if (currentFilter === "excluded" && account.included) continue;
       if (searchQuery && !account.modifiedName.toLowerCase().includes(searchQuery)) continue;
-      const row = document.createElement("tr");
-      row.classList.add("border-t", "border-[#dce1e5]");
-      const isProcessed = account.status === "processed";
-      const isFailed = account.status === "failed";
-      const checkboxTd = document.createElement("td");
-      checkboxTd.className = "px-2 py-2 text-center";
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.className = "w-5 h-5";
-      if (!isProcessed) {
-        checkbox.classList.add("cursor-pointer");
-      }
-      checkbox.checked = account.selected;
-      checkbox.disabled = isProcessed;
-      checkbox.addEventListener("change", () => {
-        account.selected = checkbox.checked;
-        console.log("Checkbox clicked:", account.modifiedName, "->", account.selected);
-        const selectedAccounts = Object.values(state_default.accounts).filter((acc) => acc.selected);
-        console.log("Currently selected:", selectedAccounts.map((acc) => acc.modifiedName));
-        updateBulkBar();
-        updateMasterCheckbox();
-      });
-      checkboxTd.appendChild(checkbox);
-      row.appendChild(checkboxTd);
-      const nameTd = document.createElement("td");
-      nameTd.className = "px-2 py-2 max-w-[300px] truncate";
-      if (!isProcessed) {
-        nameTd.classList.add("cursor-pointer");
-      } else {
-        nameTd.classList.add("text-gray-400");
-      }
-      nameTd.textContent = account.modifiedName;
-      if (!isProcessed) {
-        nameTd.classList.add("cursor-pointer");
-        nameTd.title = `Click to rename '${account.modifiedName}'`;
-        nameTd.addEventListener("click", () => openNameEditor(account, nameTd));
-      }
-      row.appendChild(nameTd);
-      const typeTd = document.createElement("td");
-      typeTd.className = "px-2 py-2";
-      const typeSelect = document.createElement("select");
-      typeSelect.disabled = isProcessed;
-      typeSelect.className = "border rounded px-2 py-1 w-full";
-      if (isProcessed) {
-        typeSelect.classList.add("text-gray-300");
-      } else {
-        typeSelect.classList.add("cursor-pointer");
-      }
-      monarchAccountTypes_default.data.forEach((type) => {
-        const opt = document.createElement("option");
-        opt.value = type.typeName;
-        opt.textContent = type.typeDisplay;
-        if (type.typeName === account.type) opt.selected = true;
-        typeSelect.appendChild(opt);
-      });
-      !isProcessed && (typeSelect.title = typeSelect.options[typeSelect.selectedIndex].textContent);
-      typeSelect.addEventListener("change", () => {
-        account.type = typeSelect.value;
-        const selectedType2 = monarchAccountTypes_default.data.find((t) => t.typeName === account.type);
-        account.subtype = selectedType2?.subtypes[0]?.name || null;
-        renderTable();
-      });
-      typeTd.appendChild(typeSelect);
-      row.appendChild(typeTd);
-      const subtypeTd = document.createElement("td");
-      subtypeTd.className = "px-2 py-2";
-      const subtypeSelect = document.createElement("select");
-      subtypeSelect.className = "border rounded px-2 py-1 w-full";
-      subtypeSelect.disabled = isProcessed;
-      if (isProcessed) {
-        subtypeSelect.classList.add("text-gray-300");
-      } else {
-        subtypeSelect.classList.add("cursor-pointer");
-      }
-      const selectedType = monarchAccountTypes_default.data.find((t) => t.typeName === account.type);
-      (selectedType?.subtypes || []).forEach((sub) => {
-        const opt = document.createElement("option");
-        opt.value = sub.name;
-        opt.textContent = sub.display;
-        if (sub.name === account.subtype) opt.selected = true;
-        subtypeSelect.appendChild(opt);
-      });
-      if (account.status !== "processed") {
-        subtypeSelect.title = subtypeSelect.options[subtypeSelect.selectedIndex].textContent;
-      }
-      subtypeSelect.addEventListener("change", () => {
-        account.subtype = subtypeSelect.value;
-        renderTable();
-      });
-      subtypeTd.appendChild(subtypeSelect);
-      row.appendChild(subtypeTd);
-      const txTd = document.createElement("td");
-      txTd.className = "px-2 py-2 text-center";
-      txTd.textContent = account.transactionCount;
-      if (!isProcessed) {
-        txTd.title = `${account.transactionCount} transaction${account.transactionCount !== 1 ? "s" : ""}`;
-      } else {
-        txTd.classList.add("text-gray-400");
-      }
-      row.appendChild(txTd);
-      const formattedBalance = Math.abs(account.balance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      const prettyBalance = (account.balance < 0 ? "-$" : "$") + formattedBalance;
-      const balanceTd = document.createElement("td");
-      balanceTd.className = "px-2 py-2 text-[#637988]";
-      balanceTd.textContent = prettyBalance;
-      if (!isProcessed) {
-        balanceTd.title = `Balance: ${prettyBalance}`;
-      } else {
-        balanceTd.classList.add("text-gray-400");
-      }
-      row.appendChild(balanceTd);
-      const includeTd = document.createElement("td");
-      includeTd.className = "px-2 py-2 flex items-center gap-2";
-      const toggleBtn = document.createElement("button");
-      toggleBtn.classList.add("ui-button");
-      toggleBtn.dataset.type = account.included ? "primary" : "secondary";
-      toggleBtn.dataset.size = "small";
-      toggleBtn.dataset.fixedWidth = "100";
-      if (isProcessed) {
-        toggleBtn.textContent = "Processed";
-        toggleBtn.title = "This account has already been processed";
-        toggleBtn.disabled = true;
-      } else {
-        toggleBtn.textContent = account.included ? "Included" : "Excluded";
-        toggleBtn.title = account.included ? "Click to exclude this account" : "Click to include this account";
-        toggleBtn.addEventListener("click", () => {
-          account.included = !account.included;
-          renderTable();
-        });
-      }
-      includeTd.appendChild(toggleBtn);
-      if (isFailed) {
-        const errorIcon = document.createElement("span");
-        errorIcon.className = "text-red-600 text-xl";
-        errorIcon.innerHTML = "\u26A0\uFE0F";
-        errorIcon.title = "Previously failed to process";
-        includeTd.appendChild(errorIcon);
-      }
-      row.appendChild(includeTd);
-      reviewTableBody.appendChild(row);
+      fragment.appendChild(createAccountRowElement(account));
     }
-    updateMasterCheckbox();
-    updateBulkBar();
-    console.log("State accounts:", state_default.accounts);
-    const anyIncluded = Object.values(state_default.accounts).some((acc) => acc.included);
-    console.log("Any included accounts:", anyIncluded);
-    importBtn.disabled = !anyIncluded;
-    importBtn.title = anyIncluded ? "" : "At least one account must be included to proceed";
+    reviewTableBody.appendChild(fragment);
+    updateMasterCheckbox(getVisibleAccounts());
+    refreshBulkActionBar();
+    toggleDisabled(importBtn, !accounts.some(isIncludedAndUnprocessed));
+    importBtn.title = importBtn.disabled ? "At least one account must be included to proceed" : "";
     renderButtons();
+  }
+  function isIncludedAndUnprocessed(account) {
+    return account.included && account.status !== "processed";
+  }
+  function createAccountRowElement(account) {
+    const row = document.createElement("tr");
+    row.className = "border-t border-[#dce1e5]";
+    const isProcessed = account.status === "processed";
+    const isFailed = account.status === "failed";
+    const checkboxTd = document.createElement("td");
+    checkboxTd.className = "px-2 py-2 text-center";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    const checkboxId = `account-checkbox-${account.id || account.modifiedName.replace(/\s+/g, "-")}`;
+    checkbox.id = checkboxId;
+    checkbox.name = checkboxId;
+    checkbox.setAttribute("aria-label", `Select account: ${account.modifiedName}`);
+    checkbox.className = "w-5 h-5";
+    toggleDisabled(checkbox, isProcessed);
+    checkbox.checked = account.selected;
+    checkbox.addEventListener("change", () => {
+      account.selected = checkbox.checked;
+      refreshBulkActionBar();
+      updateMasterCheckbox(getVisibleAccounts());
+    });
+    checkboxTd.appendChild(checkbox);
+    row.appendChild(checkboxTd);
+    const nameTd = document.createElement("td");
+    nameTd.className = "px-2 py-2 max-w-[300px] truncate";
+    nameTd.textContent = account.modifiedName;
+    if (!isProcessed) {
+      nameTd.classList.add("cursor-pointer");
+      nameTd.title = `Click to rename '${account.modifiedName}'`;
+      nameTd.addEventListener("click", () => openNameEditor(account, nameTd));
+    } else {
+      nameTd.classList.add("text-gray-400", "cursor-default");
+    }
+    row.appendChild(nameTd);
+    const typeTd = document.createElement("td");
+    typeTd.className = "px-2 py-2";
+    const typeSelect = document.createElement("select");
+    const typeId = `type-select-${account.id || account.modifiedName.replace(/\s+/g, "-")}`;
+    typeSelect.id = typeId;
+    typeSelect.name = typeId;
+    typeSelect.title = getAccountTypeByName(account.type)?.typeDisplay || "";
+    typeSelect.className = "border rounded px-2 py-1 w-full";
+    typeSelect.disabled = isProcessed;
+    if (isProcessed) typeSelect.classList.add("text-gray-300", "cursor-default");
+    else typeSelect.classList.add("cursor-pointer");
+    monarchAccountTypes_default.data.forEach((type) => {
+      const opt = document.createElement("option");
+      opt.value = type.typeName;
+      opt.textContent = type.typeDisplay;
+      if (type.typeName === account.type) opt.selected = true;
+      typeSelect.appendChild(opt);
+    });
+    typeSelect.addEventListener("change", () => {
+      account.type = typeSelect.value;
+      const selectedType2 = getAccountTypeByName(account.type);
+      account.subtype = selectedType2?.subtypes[0]?.name || null;
+      renderAccountTable();
+    });
+    typeTd.appendChild(typeSelect);
+    row.appendChild(typeTd);
+    const subtypeTd = document.createElement("td");
+    subtypeTd.className = "px-2 py-2";
+    const subtypeSelect = document.createElement("select");
+    const subtypeId = `subtype-select-${account.id || account.modifiedName.replace(/\s+/g, "-")}`;
+    subtypeSelect.id = subtypeId;
+    subtypeSelect.name = subtypeId;
+    subtypeSelect.className = "border rounded px-2 py-1 w-full";
+    subtypeSelect.disabled = isProcessed;
+    if (isProcessed) subtypeSelect.classList.add("text-gray-300", "cursor-default");
+    else subtypeSelect.classList.add("cursor-pointer");
+    const selectedType = getAccountTypeByName(account.type);
+    subtypeSelect.title = getSubtypeByName(account.type, account.subtype)?.display || "";
+    (selectedType?.subtypes || []).forEach((sub) => {
+      const opt = document.createElement("option");
+      opt.value = sub.name;
+      opt.textContent = sub.display;
+      if (sub.name === account.subtype) opt.selected = true;
+      subtypeSelect.appendChild(opt);
+    });
+    subtypeSelect.addEventListener("change", () => {
+      account.subtype = subtypeSelect.value;
+      renderAccountTable();
+    });
+    subtypeTd.appendChild(subtypeSelect);
+    row.appendChild(subtypeTd);
+    const txTd = document.createElement("td");
+    txTd.className = "px-2 py-2 text-center cursor-default";
+    txTd.textContent = account.transactionCount;
+    txTd.title = `${account.transactionCount} transaction${account.transactionCount !== 1 ? "s" : ""}`;
+    if (isProcessed) txTd.classList.add("text-gray-400");
+    row.appendChild(txTd);
+    const balanceTd = document.createElement("td");
+    balanceTd.className = "px-2 py-2 text-[#637988] cursor-default";
+    balanceTd.textContent = currencyFormatter.format(account.balance);
+    balanceTd.title = `Balance: ${currencyFormatter.format(account.balance)}`;
+    if (isProcessed) balanceTd.classList.add("text-gray-400");
+    row.appendChild(balanceTd);
+    const includeTd = document.createElement("td");
+    includeTd.className = "px-2 py-2 flex items-center gap-2";
+    const toggleBtn = document.createElement("button");
+    toggleBtn.classList.add("ui-button");
+    toggleBtn.dataset.type = account.included ? "primary" : "secondary";
+    toggleBtn.dataset.size = "small";
+    toggleBtn.textContent = isProcessed ? "Processed" : account.included ? "Included" : "Excluded";
+    toggleBtn.disabled = isProcessed;
+    toggleBtn.title = isProcessed ? "This account has already been processed" : account.included ? "Click to exclude this account" : "Click to include this account";
+    if (!isProcessed) {
+      toggleBtn.addEventListener("click", () => {
+        account.included = !account.included;
+        renderAccountTable();
+      });
+    }
+    includeTd.appendChild(toggleBtn);
+    if (isFailed) {
+      const errorIcon = document.createElement("span");
+      errorIcon.className = "text-red-600 text-xl cursor-default";
+      errorIcon.innerHTML = "\u26A0\uFE0F";
+      errorIcon.title = "Previously failed to process";
+      includeTd.appendChild(errorIcon);
+    }
+    row.appendChild(includeTd);
+    return row;
+  }
+  function updateMasterCheckbox(visibleAccounts) {
+    const masterCheckbox = document.getElementById("masterCheckbox");
+    const selectedCount = visibleAccounts.filter((acc) => acc.selected).length;
+    masterCheckbox.checked = selectedCount > 0 && selectedCount === visibleAccounts.length;
+    masterCheckbox.indeterminate = selectedCount > 0 && selectedCount < visibleAccounts.length;
+  }
+  function getVisibleAccounts() {
+    return Object.values(state_default.accounts).filter((account) => {
+      if (account.status === "processed") return false;
+      if (currentFilter === "included" && !account.included) return false;
+      if (currentFilter === "excluded" && account.included) return false;
+      if (searchQuery && !account.modifiedName.toLowerCase().includes(searchQuery)) return false;
+      return true;
+    });
   }
   function masterCheckboxChange(e) {
     const checked = e.target.checked;
-    Object.values(state_default.accounts).forEach((acc) => {
-      if (acc.status !== "processed") {
-        acc.selected = checked;
-      }
+    getVisibleAccounts().forEach((acc) => {
+      acc.selected = checked;
     });
-    renderTable();
+    renderAccountTable();
   }
-  function updateMasterCheckbox() {
-    const masterCheckbox = document.getElementById("masterCheckbox");
-    const numberOfAccounts = Object.values(state_default.accounts).filter((acc) => acc.status !== "processed").length;
-    const numberOfSelectedAccounts = Object.entries(state_default.accounts).filter(([_, acc]) => acc.selected).length;
-    const anySelected = numberOfSelectedAccounts > 0;
-    const allSelected = anySelected && numberOfSelectedAccounts === numberOfAccounts;
-    console.log("Any Selected:", anySelected, "\nAll Selected:", allSelected, "\nTotal Accounts:", numberOfAccounts, "\nSelected Count:", numberOfSelectedAccounts);
-    masterCheckbox.checked = allSelected;
-    masterCheckbox.indeterminate = !allSelected && anySelected;
-  }
-  function updateBulkBar() {
+  function refreshBulkActionBar() {
     const bar = document.getElementById("bulkActionBar");
     const countSpan = document.getElementById("selectedCount");
-    const count = Object.values(state_default.accounts).filter((acc) => acc.selected).length;
-    countSpan.textContent = count;
-    if (count > 0) {
-      bar.classList.remove("hidden");
-      requestAnimationFrame(() => bar.classList.add("active"));
-    } else {
-      bar.classList.remove("active");
-      setTimeout(() => bar.classList.add("hidden"), 300);
-    }
+    const selectedCount = Object.values(state_default.accounts).filter((acc) => acc.selected).length;
+    countSpan.textContent = selectedCount;
+    toggleElementVisible(bar, selectedCount > 0);
   }
   function openNameEditor(account, nameCell) {
     const overlay = document.createElement("div");
@@ -49720,6 +49742,7 @@
     const input = document.createElement("input");
     input.type = "text";
     input.value = account.modifiedName;
+    input.setAttribute("aria-label", "Account name input");
     input.className = "border rounded w-full px-3 py-2 mb-4";
     popup.appendChild(input);
     const buttonRow = document.createElement("div");
@@ -49753,9 +49776,6 @@
       nameCell.title = `Click to rename '${account.modifiedName}'`;
       closeEditor();
     }
-  }
-  function capitalize(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
   }
   function openBulkRenameModal() {
     const modal = document.getElementById("bulkRenameModal");
@@ -49797,12 +49817,12 @@
         acc.modifiedName = applyPattern(pattern, acc, i + indexStart);
       });
       modal.classList.add("hidden");
-      renderTable();
+      renderAccountTable();
     };
   }
   function applyPattern(pattern, account, index) {
     const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
-    return pattern.replace(/{{YNAB}}/g, account.originalYnabName || account.name).replace(/{{Index}}/g, index).replace(/{{Upper}}/g, (account.originalYnabName || account.name).toUpperCase()).replace(/{{Date}}/g, today);
+    return pattern.replace(/{{YNAB}}/g, account.originalYnabName?.trim() || account.name || "Account").replace(/{{Index}}/g, index).replace(/{{Upper}}/g, (account.originalYnabName?.trim() || account.name || "Account").toUpperCase()).replace(/{{Date}}/g, today);
   }
   function openBulkTypeModal() {
     const modal = document.getElementById("bulkTypeModal");
@@ -49819,7 +49839,7 @@
       typeSelect.appendChild(opt);
     });
     function updateSubtypeOptions() {
-      const selectedType = monarchAccountTypes_default.data.find((t) => t.typeName === typeSelect.value);
+      const selectedType = getAccountTypeByName(typeSelect.value);
       subtypeSelect.innerHTML = "";
       (selectedType?.subtypes || []).forEach((sub) => {
         const opt = document.createElement("option");
@@ -49846,12 +49866,12 @@
         acc.subtype = subtypeValue || null;
       });
       modal.classList.add("hidden");
-      renderTable();
+      renderAccountTable();
     };
   }
 
   // src/views/AccountReview/review.html
-  var review_default = '<div class="px-40 flex flex-1 justify-center py-5">\n  <div class="layout-content-container flex flex-col max-w-[960px] flex-1">\n    <div class="flex justify-between items-center p-4">\n      <h2 class="text-[#111518] text-[32px] font-bold">Review Accounts</h2>\n    </div>\n\n    <p class="text-[#111518] text-base px-4">\n      Review detected accounts and adjust their Monarch types before importing.\n    </p>\n\n    <!-- Control bar -->\n    <div class="flex items-center justify-between px-4 py-2">\n      <!-- Search -->\n      <input id="searchInput" type="text" placeholder="Search accounts..." class="border rounded px-3 py-2 w-1/3">\n\n      <!-- Filters & Bulk -->\n      <div class="flex items-center gap-6">\n\n        <!-- Filters -->\n        <div class="flex bg-gray-100 rounded-lg p-1 space-x-1">\n          <button id="filterAll" \n            class="filter-btn px-4 py-2 text-sm font-medium rounded-md transition"\n            title="Show all accounts"\n            data-filter="all">All</button>\n\n          <button id="filterIncluded" class="filter-btn px-4 py-2 text-sm font-medium rounded-md transition"\n            title="Show only included accounts" data-filter="included">Included</button>\n\n          <button id="filterExcluded" class="filter-btn px-4 py-2 text-sm font-medium rounded-md transition"\n            title="Show only excluded accounts" data-filter="excluded">Excluded</button>\n        </div>\n\n      </div>\n    </div>\n\n    <div class="px-4 py-3 @container">\n      <div class="flex overflow-hidden rounded-lg border border-[#dce1e5] bg-white">\n        <table class="flex-1">\n          <thead>\n            <tr class="bg-white">\n              <th class="px-2 py-3 text-left text-sm font-medium w-[50px]">\n                <input type="checkbox" id="masterCheckbox" class="w-5 h-5 cursor-pointer">\n              </th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[230px]">Account Name</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[250px]">Type</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[250px]">Subtype</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[140px]">Transactions</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[200px]">Balance</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[150px]">Include</th>\n            </tr>\n          </thead>\n          <tbody id="reviewTableBody">\n            <!-- populated dynamically -->\n          </tbody>\n        </table>\n      </div>\n\n      <div id="bulkActionBar"\n        class="hidden bulk-bar fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-white shadow-lg rounded-lg flex items-center px-6 py-3 gap-4 border border-gray-300 transition-all duration-300">\n\n        <!-- Unselect -->\n        <button id="unselectAllBtn"\n          class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"\n          title="Unselect all accounts">\n          <span id="selectedCount">0</span> selected\n        </button>\n\n        <!-- Separator -->\n        <div class="h-5 border-l border-gray-300"></div>\n\n        <!-- Bulk Rename -->\n        <button id="bulkRenameBtn"\n          class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"\n          title="Bulk rename accounts">\n          Rename\n        </button>\n\n        <!-- Bulk Edit Type -->\n        <button id="bulkTypeBtn"\n          class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"\n          title="Bulk edit account types">\n          Edit Type\n        </button>\n\n        <!-- Bulk Include -->\n        <button id="bulkIncludeBtn"\n          class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"\n          title="Include selected accounts">\n          Include\n        </button>\n\n        <!-- Bulk Exclude -->\n        <button id="bulkExcludeBtn"\n          class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"\n          title="Exclude selected accounts">\n          Exclude\n        </button>\n      </div>\n    </div>\n\n    <div class="flex justify-between items-center px-4 py-6 mt-6">\n      <!-- Back Button -->\n      <button id="backBtn" class="ui-button" data-type="secondary" data-size="large">\u2190 Back</button>\n\n      <!-- Forward Button -->\n      <button id="importBtn" class="ui-button" data-type="primary" data-size="large" disabled>Import Accounts</button>\n    </div>\n  </div>\n</div>\n\n<div id="bulkRenameModal" class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 hidden">\n  <div class="bg-white rounded-lg shadow-lg w-[500px] p-6 relative">\n\n    <h2 class="text-xl font-bold mb-4">Bulk Rename Accounts</h2>\n\n    <label class="font-medium text-sm">Pattern:</label>\n    <input id="renamePattern" type="text" class="border rounded w-full px-3 py-2 mb-3"\n      placeholder="e.g. {{YNAB}} - {{Index}}">\n\n    <!-- Token shortcuts -->\n    <div class="flex flex-col gap-2 mb-4">\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"\n        data-token="{{YNAB}}">YNAB\n        Name</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"\n        data-token="{{Index}}">Index</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"\n        data-token="{{Upper}}">Uppercase YNAB</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"\n        data-token="{{Date}}">Today (YYYY-MM-DD)</button>\n    </div>\n\n    <!-- Index start -->\n    <div class="flex items-center gap-3 mb-4">\n      <label class="text-sm">Index Start:</label>\n      <input id="indexStart" type="number" class="border rounded px-3 py-1 w-24" value="1" />\n    </div>\n\n    <!-- Preview -->\n    <div class="border rounded p-3 bg-gray-50 mb-4">\n      <div class="font-medium text-sm mb-2">Preview:</div>\n      <div id="renamePreview" class="text-sm text-gray-700 space-y-1"></div>\n    </div>\n\n    <div class="flex justify-end gap-3">\n      <button id="renameCancel" class="ui-button" data-type="secondary">Cancel</button>\n      <button id="renameApply" class="ui-button">Apply</button>\n    </div>\n\n  </div>\n</div>\n\n<div id="bulkTypeModal" class="fixed inset-0 bg-black bg-opacity-40 hidden z-50 flex items-center justify-center">\n  <div class="bg-white rounded-lg p-6 w-[400px]">\n    <h2 class="text-lg font-bold mb-4">Bulk Edit Account Type</h2>\n\n    <div class="mb-4">\n      <label class="block mb-1 font-medium">Account Type</label>\n      <select id="bulkTypeSelect" class="border rounded w-full px-3 py-2 cursor-pointer"></select>\n    </div>\n\n    <div class="mb-4">\n      <label class="block mb-1 font-medium">Subtype</label>\n      <select id="bulkSubtypeSelect" class="border rounded w-full px-3 py-2 cursor-pointer"></select>\n    </div>\n\n    <div class="flex justify-end gap-2">\n      <button id="bulkTypeCancel" class="ui-button" data-type="secondary">Cancel</button>\n      <button id="bulkTypeApply" class="ui-button">Apply</button>\n    </div>\n  </div>\n</div>\n\n<style>\n  /* Scoped only for this view */\n\n  .bulk-bar {\n    opacity: 1;\n    transform: translateY(75px);\n    pointer-events: none;\n    transition: opacity 0.3s ease, transform 0.3s ease;\n  }\n\n  .bulk-bar.active {\n    opacity: 1;\n    transform: translateY(0);\n    pointer-events: auto;\n  }\n</style>';
+  var review_default = '<div class="px-40 flex flex-1 justify-center py-5">\n  <div class="layout-content-container flex flex-col max-w-[960px] flex-1">\n    <div class="flex justify-between items-center p-4">\n      <h2 class="text-[#111518] text-[32px] font-bold">Review Accounts</h2>\n    </div>\n\n    <p class="text-[#111518] text-base px-4">\n      Review detected accounts and adjust their Monarch types before importing.\n    </p>\n\n    <!-- Control bar -->\n    <div class="flex items-center justify-between px-4 py-2">\n      <!-- Search -->\n      <input id="searchInput" type="text" placeholder="Search accounts..." class="border rounded px-3 py-2 w-1/3">\n\n      <!-- Filters & Bulk -->\n      <div class="flex items-center gap-6">\n\n        <!-- Filters -->\n        <div class="flex bg-gray-100 rounded-lg p-1 space-x-1">\n          <button id="filterAll" \n            class="filter-btn px-4 py-2 text-sm font-medium rounded-md transition cursor-pointer"\n            title="Show all accounts"\n            data-filter="all">All</button>\n\n          <button id="filterIncluded" class="filter-btn px-4 py-2 text-sm font-medium rounded-md transition cursor-pointer"\n            title="Show only included accounts" data-filter="included">Included</button>\n\n          <button id="filterExcluded" class="filter-btn px-4 py-2 text-sm font-medium rounded-md transition cursor-pointer"\n            title="Show only excluded accounts" data-filter="excluded">Excluded</button>\n        </div>\n\n      </div>\n    </div>\n\n    <div class="px-4 py-3 @container">\n      <div class="flex overflow-hidden rounded-lg border border-[#dce1e5] bg-white">\n        <table class="flex-1">\n          <thead>\n            <tr class="bg-white">\n              <th class="px-2 py-3 text-left text-sm font-medium w-[50px]">\n                <input type="checkbox" id="masterCheckbox" class="w-5 h-5 cursor-pointer">\n              </th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[230px]">Account Name</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[250px]">Type</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[250px]">Subtype</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[140px]">Transactions</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[200px]">Balance</th>\n              <th class="px-2 py-3 text-left text-sm font-medium w-[150px]">Include</th>\n            </tr>\n          </thead>\n          <tbody id="reviewTableBody">\n            <!-- populated dynamically -->\n          </tbody>\n        </table>\n      </div>\n\n      <div id="bulkActionBar"\n        class="hidden bulk-bar fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-white shadow-lg rounded-lg flex items-center px-6 py-3 gap-4 border border-gray-300 transition-all duration-300">\n\n        <!-- Unselect -->\n        <button id="unselectAllBtn"\n          class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"\n          title="Unselect all accounts">\n          <span id="selectedCount">0</span> selected\n        </button>\n\n        <!-- Separator -->\n        <div class="h-5 border-l border-gray-300"></div>\n\n        <!-- Bulk Rename -->\n        <button id="bulkRenameBtn"\n          class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"\n          title="Bulk rename accounts">\n          Rename\n        </button>\n\n        <!-- Bulk Edit Type -->\n        <button id="bulkTypeBtn"\n          class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"\n          title="Bulk edit account types">\n          Edit Type\n        </button>\n\n        <!-- Bulk Include -->\n        <button id="bulkIncludeBtn"\n          class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"\n          title="Include selected accounts">\n          Include\n        </button>\n\n        <!-- Bulk Exclude -->\n        <button id="bulkExcludeBtn"\n          class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"\n          title="Exclude selected accounts">\n          Exclude\n        </button>\n      </div>\n    </div>\n\n    <div class="flex justify-between items-center px-4 py-6 mt-6">\n      <!-- Back Button -->\n      <button id="backBtn" class="ui-button" data-type="secondary" data-size="large">\u2190 Back</button>\n\n      <!-- Forward Button -->\n      <button id="importBtn" class="ui-button" data-type="primary" data-size="large" disabled>Import Accounts</button>\n    </div>\n  </div>\n</div>\n\n<div id="bulkRenameModal" class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 hidden">\n  <div class="bg-white rounded-lg shadow-lg w-[500px] p-6 relative">\n\n    <h2 class="text-xl font-bold mb-4">Bulk Rename Accounts</h2>\n\n    <label for="renamePattern" class="font-medium text-sm">Pattern:</label>\n    <input id="renamePattern" name="renamePattern" type="text" class="border rounded w-full px-3 py-2 mb-3"\n      placeholder="e.g. {{YNAB}} - {{Index}}">\n\n    <!-- Token shortcuts -->\n    <div class="flex flex-col gap-2 mb-4">\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"\n        data-token="{{YNAB}}">YNAB\n        Name</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"\n        data-token="{{Index}}">Index</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"\n        data-token="{{Upper}}">Uppercase YNAB</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"\n        data-token="{{Date}}">Today (YYYY-MM-DD)</button>\n    </div>\n\n    <!-- Index start -->\n    <div class="flex items-center gap-3 mb-4">\n      <label for="indexStart" class="text-sm">Index Start:</label>\n      <input id="indexStart" type="number" class="border rounded px-3 py-1 w-24" value="1" />\n    </div>\n\n    <!-- Preview -->\n    <div class="border rounded p-3 bg-gray-50 mb-4">\n      <div class="font-medium text-sm mb-2">Preview:</div>\n      <div id="renamePreview" class="text-sm text-gray-700 space-y-1"></div>\n    </div>\n\n    <div class="flex justify-end gap-3">\n      <button id="renameCancel" class="ui-button" data-type="secondary">Cancel</button>\n      <button id="renameApply" class="ui-button">Apply</button>\n    </div>\n\n  </div>\n</div>\n\n<div id="bulkTypeModal" class="fixed inset-0 bg-black bg-opacity-40 hidden z-50 flex items-center justify-center">\n  <div class="bg-white rounded-lg p-6 w-[400px]">\n    <h2 class="text-lg font-bold mb-4">Bulk Edit Account Type</h2>\n\n    <div class="mb-4">\n      <label for="bulkTypeSelect" class="block mb-1 font-medium">Account Type</label>\n      <select id="bulkTypeSelect" name="bulkSubtypeSelect" class="border rounded w-full px-3 py-2 cursor-pointer"></select>\n    </div>\n\n    <div class="mb-4">\n      <label for="bulkSubtypeSelect" class="block mb-1 font-medium">Subtype</label>\n      <select id="bulkSubtypeSelect" class="border rounded w-full px-3 py-2 cursor-pointer"></select>\n    </div>\n\n    <div class="flex justify-end gap-2">\n      <button id="bulkTypeCancel" class="ui-button" data-type="secondary">Cancel</button>\n      <button id="bulkTypeApply" class="ui-button">Apply</button>\n    </div>\n  </div>\n</div>\n\n<style>\n  /* Scoped only for this view */\n\n  .bulk-bar {\n    opacity: 1;\n    transform: translateY(75px);\n    pointer-events: none;\n    transition: opacity 0.3s ease, transform 0.3s ease;\n  }\n\n  .bulk-bar.active {\n    opacity: 1;\n    transform: translateY(0);\n    pointer-events: auto;\n  }\n</style>';
 
   // src/views/MethodSelect/method.js
   function initMethodSelectView() {
