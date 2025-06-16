@@ -1,0 +1,45 @@
+service: ynabtomonarch
+provider:
+  name: aws
+  runtime: nodejs14.x
+  timeout: 30
+plugins:
+  - serverless-offline
+functions:
+  parseCsv:
+    handler: netlify/functions/parseCsv.handler
+    events:
+      - http:
+          path: parseCsv
+          method: post
+  login:
+    handler: netlify/functions/monarchLogin.handler
+    events:
+      - http:
+          path: monarchLogin
+          method: post
+  fetchAccounts:
+    handler: netlify/functions/fetchMonarchAccounts.handler
+    events:
+      - http:
+          path: fetchMonarchAccounts
+          method: post
+  createAccounts:
+    handler: netlify/functions/createMonarchAccounts.handler
+    timeout: 30
+    events:
+      - http:
+          path: createMonarchAccounts
+          method: post
+  generateStatements:
+    handler: netlify/functions/generateStatements.handler
+    events:
+      - http:
+          path: generateStatements
+          method: post
+  getUploadStatus:
+    handler: netlify/functions/getUploadStatus.handler
+    events:
+      - http:
+          path: getUploadStatus
+          method: post

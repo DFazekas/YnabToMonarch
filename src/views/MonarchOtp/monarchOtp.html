@@ -1,0 +1,33 @@
+<div class="flex flex-col items-center justify-center py-16 space-y-10">
+
+  <div class="text-center">
+    <h2 class="text-3xl font-bold mb-2">Enter Your Verification Code</h2>
+    <p class="text-gray-600 text-base max-w-md">
+      Monarch has sent a 6-digit verification code to your email address. Enter it below to continue.
+    </p>
+  </div>
+
+  <div class="flex flex-col items-center space-y-5 w-80">
+
+    <input id="otpInput" type="text" maxlength="6" pattern="[0-9]*" inputmode="numeric"
+      class="border rounded px-4 py-3 text-center text-2xl tracking-widest w-full focus:ring-2 focus:ring-blue-400"
+      placeholder="______">
+
+    <div id="otpError" class="text-red-500 text-sm hidden">Invalid code. Please try again.</div>
+
+    <button id="submitOtpBtn"
+      class="ui-button" data-type="primary" data-size="large" data-fullWidth
+      disabled>
+      Verify & Start Import
+    </button>
+
+  </div>
+
+  <div class="flex justify-between items-center px-4 py-4 w-full max-w-lg">
+    <button id="backBtn"
+      class="ui-button" data-type="secondary" data-size="large">
+      ← Back
+    </button>
+  </div>
+
+</div>

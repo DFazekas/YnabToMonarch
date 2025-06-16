@@ -1,0 +1,42 @@
+<div class="flex flex-col items-center justify-center py-10 px-4">
+
+  <div class="text-center max-w-1xl w-full">
+    <h2 class="text-3xl font-bold mb-4">Migrate your YNAB data</h2>
+    <p class="text-gray-600 text-base max-w-md mx-auto leading-relaxed">
+      Upload a YNAB ZIP file to begin the migration process into Monarch Money.
+    </p>
+
+    <a id="howItWorksBtn" class="ui-button" data-type="text">How does this work?</a>
+  </div>
+
+  <!-- Upload Box -->
+  <div id="uploadBox" class="w-full max-w-md border-2 border-dashed border-gray-300 rounded-xl p-10 mt-10 flex flex-col items-center gap-3 transition-all">
+    <p class="text-lg font-semibold">Drag & Drop your Register ZIP file</p>
+    <p class="text-sm text-gray-500">or</p>
+    <input id="fileInput" type="file" accept=".csv,.zip" hidden>
+    <button id="browseButton" class="ui-button" data-type="primary">Browse Files</button>
+
+    <p class="text-xs text-gray-400 mt-2">Your file stays local. We never store or transmit your data.</p>
+  </div>
+
+  <div id="errorMessage" class="hidden text-red-500 text-sm mt-4">Some error</div>
+
+</div>
+
+<!-- Modal -->
+<div id="howItWorksModal" class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300">
+  <!-- Overlay -->
+  <div class="absolute inset-0 bg-[rgba(0,0,0,0.3)] transition-opacity duration-300"></div>
+
+  <!-- Modal Content -->
+  <div class="relative z-10 bg-white rounded-lg p-8 max-w-lg w-full shadow-xl transform translate-y-full transition-transform duration-500">
+    <a href="#" id="closeHowItWorksModal" class="absolute top-3 right-3 text-gray-400 text-xl font-bold cursor-pointer hover:text-black">&times;</a>
+    <h3 class="text-xl font-bold mb-4">How does this work?</h3>
+    <ol class="list-decimal pl-5 space-y-2 text-sm text-gray-700">
+      <li>Export your YNAB data.</li>
+      <li>Upload the YNAB ZIP file here.</li>
+      <li>Choose between manual import or guided auto-import into Monarch Money.</li>
+    </ol>
+    <p class="mt-4 text-xs text-gray-500">Your files are never uploaded or stored externally.</p>
+  </div>
+</div>

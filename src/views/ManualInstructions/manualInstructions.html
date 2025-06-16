@@ -1,0 +1,74 @@
+<div class="flex flex-col items-center justify-center py-16 px-6 space-y-12 max-w-2xl mx-auto">
+
+  <!-- Progress -->
+  <div class="text-center space-y-2">
+    <h2 class="text-3xl font-bold text-[#111518]">You're Ready to Import</h2>
+    <p class="text-gray-600 text-base">
+      <span id="accountCount"></span> prepared for migration.
+    </p>
+  </div>
+
+  <!-- Manual Import Card -->
+  <div class="w-full bg-white border border-gray-200 rounded-xl shadow-sm p-8 space-y-6">
+
+    <!-- Download -->
+    <div>
+      <h3 class="text-xl font-semibold mb-2">Step 1 — Download Files</h3>
+      <p class="text-gray-500 mb-4">
+        Download a ZIP containing one CSV per account.
+      </p>
+
+      <a id="downloadBtn" class="ui-button" data-type="primary" data-size="large" href="#">
+        <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 10l5 5 5-5M12 4v12" />
+        </svg>Download CSV Bundle
+      </a>
+    </div>
+
+    <!-- Upload Instructions -->
+    <div class="mt-12">
+      <h3 class="text-xl font-semibold mb-2">Step 2 — Import into Monarch</h3>
+      <p class="text-gray-500 mb-2">In Monarch:</p>
+
+      <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
+        <li>Go to <strong>Accounts → Add account</strong></li>
+        <li>Choose <strong>Add manual account</strong></li>
+        <li>Select your desire <strong>account type</strong></li>
+        <li>Give it a name and starting balance of <strong>$0.00</strong></li>
+        <li>Go to <strong>Edit → Upload transactions</strong></li>
+        <li>Upload your account CSV file</li>
+        <li>Enable <strong>Adjust account's balances based on these transactions</strong></li>
+        <li>Click <strong>Add to account</strong></li>
+        <li>Repeat for all your accounts</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Auto Import Promo -->
+  <div class="flex flex-col items-center text-center gap-3 bg-[#f9fafb] rounded-lg p-6 border border-gray-200">
+    <h4 class="text-lg font-semibold text-[#111518]">Looking for the easiest way?</h4>
+    <p class="text-sm text-gray-600">
+      Our Auto Import tool transfers your accounts directly into Monarch with zero file handling.
+    </p>
+
+    <button id="switchToAuto" class="ui-button" data-size="large">Use Auto Import Instead</button>
+  </div>
+
+  <!-- Footer -->
+  <div class="flex justify-between items-center px-4 py-2 w-full">
+    <button id="backBtn" class="ui-button" data-type="secondary" data-size="large">
+      ← Back
+    </button>
+
+    <a href="https://app.monarchmoney.com" target="_blank" class="ui-button" data-type="secondary" data-size="large">
+      <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
+        stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M14 3h7m0 0v7m0-7L10 14M5 5h14v14H5V5z" />
+      </svg>Open Monarch
+    </a>
+  </div>
+
+</div>

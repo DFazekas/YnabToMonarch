@@ -32,11 +32,8 @@ A tool to migrate YNAB transaction records into Monarch Money.
    npm install
    ```
 
-3. Start the development server:
-
-   ```sh
-   npm start
-   ```
+3. Run the cloud functions locally: `npm run functions`.
+4. Run the website locally: `npm run website`.
 
 ## Usage
 
