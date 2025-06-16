@@ -45494,7 +45494,7 @@
         "balanceCents": -580038,
         "included": true,
         "selected": false,
-        "status": "processed",
+        "status": "failed",
         "balance": -5800.38
       },
       "\u{1F4B3} Line of Credit (6th)": {
@@ -46013,7 +46013,7 @@
         "balanceCents": 0,
         "included": true,
         "selected": false,
-        "status": "processed",
+        "status": "unprocessed",
         "balance": 0
       },
       "\u{1F33F} RBC Business Debit": {
@@ -50304,15 +50304,22 @@
       warning: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full text-orange-500"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`,
       loading: `<svg class="w-full h-full animate-spin text-blue-500" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>`
     };
+    const STATUS_PILLS = {
+      queued: { text: "Queued", color: "bg-gray-200 text-gray-800" },
+      processing: { text: "Processing", color: "bg-blue-100 text-blue-700 animate-pulse" },
+      pending: { text: "Pending", color: "bg-yellow-100 text-yellow-700" },
+      success: { text: "\u2714 Complete", color: "bg-green-100 text-green-700" },
+      error: { text: "\u2716 Failed", color: "bg-red-100 text-red-700" }
+    };
     accounts.forEach((account) => {
       const container = document.createElement("div");
       container.id = `status-${account.modifiedName}`;
+      container.className = "flex justify-between items-center py-2 border-b border-gray-100 text-base gap-3";
+      container.setAttribute("aria-label", `Status for ${account.modifiedName}`);
       container.innerHTML = `
-      <div class="flex justify-between items-center">
-        <span class="font-medium truncate">${account.modifiedName}</span>
-        <span class="text-sm status-indicator text-gray-400">\u25CF Queued</span>
-      </div>
-      <div class="text-xs text-red-500 error-message hidden mb-1"></div>
+      <span class="font-medium truncate text-gray-900">${account.modifiedName}</span>
+      <span class="status-indicator text-sm font-medium rounded-full px-3 py-1 ${STATUS_PILLS.queued.color}">${STATUS_PILLS.queued.text}</span>
+      <div class="text-xs text-red-500 error-message hidden mt-1"></div>
     `;
       list.appendChild(container);
       updateStatus(account, STATUS_MAP[account.status] || "queued");
@@ -50323,7 +50330,7 @@
     if (allUnprocessed && !hasInitiatedProcessing) {
       hasInitiatedProcessing = true;
       header.textContent = "Migration In Progress...";
-      subheader.innerHTML = "<strong>Please do not refresh the page...</strong>";
+      subheader.innerHTML = "We are importing your accounts now. Please do not refresh the page.";
       overallStatus.innerHTML = ICONS.loading;
       retryAllBtn.setAttribute("hidden", "");
       backBtn2.setAttribute("hidden", "");
@@ -50342,12 +50349,10 @@
       }, []);
     }
     async function processChunks(chunks) {
-      console.log("State:", state_default);
-      console.log("Chunks:", chunks);
       for (const chunk of chunks) {
         chunk.forEach((acc) => updateStatus(acc, "processing"));
-        const response = await monarchApi.createAccounts(state_default.apiToken, chunk);
         const pollingPromises = [];
+        const response = await monarchApi.createAccounts(state_default.apiToken, chunk);
         for (const account of response.success) {
           const original = accounts.find((a) => a.modifiedName === account.name);
           updateStatus(original, "pending");
@@ -50379,10 +50384,10 @@
         success: { text: "\u2714\uFE0F Complete", color: "text-green-500" },
         error: { text: "\u274C Error", color: "text-red-500" }
       };
-      const state = states[status];
+      const state = STATUS_PILLS[status];
       if (state) {
-        indicator.innerHTML = state.text;
-        indicator.className = `text-sm status-indicator ${state.color}`;
+        indicator.textContent = state.text;
+        indicator.className = `status-indicator text-sm font-medium rounded-full px-3 py-1 ${state.color}`;
       }
       if (error) {
         errorBox.classList.remove("hidden");
@@ -50402,13 +50407,12 @@
       const someFailed = accounts.some((a) => a.status === "failed");
       if (someProcessing) {
         header.textContent = "Migration In Progress...";
-        subheader.innerHTML = "<strong>Please do not refresh the page...</strong>";
+        subheader.innerHTML = "We are importing your accounts now. Please do not refresh the page.";
         overallStatus.innerHTML = ICONS.loading;
         retryAllBtn.setAttribute("hidden", "");
         backBtn2.setAttribute("hidden", "");
         restartBtn.setAttribute("hidden", "");
         openMonarchBtn.setAttribute("hidden", "");
-        return;
       } else if (allProcessed) {
         header.textContent = "Migration Complete!";
         subheader.textContent = "All accounts were successfully imported.";
@@ -50419,7 +50423,7 @@
         openMonarchBtn.removeAttribute("hidden");
       } else if (someFailed) {
         header.textContent = "Migration Incomplete";
-        subheader.textContent = "Some accounts failed to import. Please retry them.";
+        subheader.textContent = "Some accounts failed to import. You can retry them below.";
         overallStatus.innerHTML = ICONS.warning;
         retryAllBtn.removeAttribute("hidden");
         backBtn2.removeAttribute("hidden");
@@ -50436,7 +50440,6 @@
         try {
           const res = await monarchApi.queryUploadStatus(state_default.apiToken, sessionKey);
           const session = res.data.uploadStatementSession;
-          console.log(`Polling status for ${account.modifiedName} (attempt ${attempt + 1}):`, session);
           if (session.status === "completed") {
             updateStatus(account, "success");
             return;
@@ -50501,7 +50504,7 @@
 
   // src/main.js
   window.addEventListener("DOMContentLoaded", () => {
-    navigate("monarchCompleteView");
+    navigate("reviewView");
   });
 })();
 /*! Bundled license information:

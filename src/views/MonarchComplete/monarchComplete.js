@@ -30,15 +30,23 @@ export default function initAutoImportCompleteView() {
     loading: `<svg class="w-full h-full animate-spin text-blue-500" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>`,
   };
 
+  const STATUS_PILLS = {
+    queued: { text: 'Queued', color: 'bg-gray-200 text-gray-800' },
+    processing: { text: 'Processing', color: 'bg-blue-100 text-blue-700 animate-pulse' },
+    pending: { text: 'Pending', color: 'bg-yellow-100 text-yellow-700' },
+    success: { text: '✔ Complete', color: 'bg-green-100 text-green-700' },
+    error: { text: '✖ Failed', color: 'bg-red-100 text-red-700' }
+  };
+
   accounts.forEach(account => {
     const container = document.createElement('div');
     container.id = `status-${account.modifiedName}`;
+    container.className = 'flex justify-between items-center py-2 border-b border-gray-100 text-base gap-3';
+    container.setAttribute('aria-label', `Status for ${account.modifiedName}`);
     container.innerHTML = `
-      <div class="flex justify-between items-center">
-        <span class="font-medium truncate">${account.modifiedName}</span>
-        <span class="text-sm status-indicator text-gray-400">● Queued</span>
-      </div>
-      <div class="text-xs text-red-500 error-message hidden mb-1"></div>
+      <span class="font-medium truncate text-gray-900">${account.modifiedName}</span>
+      <span class="status-indicator text-sm font-medium rounded-full px-3 py-1 ${STATUS_PILLS.queued.color}">${STATUS_PILLS.queued.text}</span>
+      <div class="text-xs text-red-500 error-message hidden mt-1"></div>
     `;
     list.appendChild(container);
     updateStatus(account, STATUS_MAP[account.status] || 'queued');
@@ -55,13 +63,12 @@ export default function initAutoImportCompleteView() {
     hasInitiatedProcessing = true;
 
     header.textContent = 'Migration In Progress...';
-    subheader.innerHTML = '<strong>Please do not refresh the page...</strong>';
+    subheader.innerHTML = 'We are importing your accounts now. Please do not refresh the page.';
     overallStatus.innerHTML = ICONS.loading;
     retryAllBtn.setAttribute('hidden', '');
     backBtn.setAttribute('hidden', '');
     restartBtn.setAttribute('hidden', '');
     openMonarchBtn.setAttribute('hidden', '');
-
     (async () => {
       await processChunks(batchAccounts(accounts));
       updateOverallStatus();
@@ -77,15 +84,11 @@ export default function initAutoImportCompleteView() {
   }
 
   async function processChunks(chunks) {
-    console.log("State:", state)
-    console.log("Chunks:", chunks);
     for (const chunk of chunks) {
       chunk.forEach(acc => updateStatus(acc, 'processing'));
 
-      const response = await monarchApi.createAccounts(state.apiToken, chunk);
-
       const pollingPromises = [];
-
+      const response = await monarchApi.createAccounts(state.apiToken, chunk);
       for (const account of response.success) {
         const original = accounts.find(a => a.modifiedName === account.name);
         updateStatus(original, 'pending');
@@ -124,10 +127,10 @@ export default function initAutoImportCompleteView() {
       error: { text: '❌ Error', color: 'text-red-500' }
     };
 
-    const state = states[status];
+    const state = STATUS_PILLS[status];
     if (state) {
-      indicator.innerHTML = state.text;
-      indicator.className = `text-sm status-indicator ${state.color}`;
+      indicator.textContent = state.text;
+      indicator.className = `status-indicator text-sm font-medium rounded-full px-3 py-1 ${state.color}`;
     }
 
     if (error) {
@@ -150,13 +153,12 @@ export default function initAutoImportCompleteView() {
 
     if (someProcessing) {
       header.textContent = 'Migration In Progress...';
-      subheader.innerHTML = '<strong>Please do not refresh the page...</strong>';
+      subheader.innerHTML = 'We are importing your accounts now. Please do not refresh the page.';
       overallStatus.innerHTML = ICONS.loading;
       retryAllBtn.setAttribute('hidden', '');
       backBtn.setAttribute('hidden', '');
       restartBtn.setAttribute('hidden', '');
       openMonarchBtn.setAttribute('hidden', '');
-      return;
     } else if (allProcessed) {
       header.textContent = 'Migration Complete!';
       subheader.textContent = 'All accounts were successfully imported.';
@@ -167,7 +169,7 @@ export default function initAutoImportCompleteView() {
       openMonarchBtn.removeAttribute('hidden');
     } else if (someFailed) {
       header.textContent = 'Migration Incomplete';
-      subheader.textContent = 'Some accounts failed to import. Please retry them.';
+      subheader.textContent = 'Some accounts failed to import. You can retry them below.';
       overallStatus.innerHTML = ICONS.warning
       retryAllBtn.removeAttribute('hidden');
       backBtn.removeAttribute('hidden');
@@ -187,8 +189,6 @@ export default function initAutoImportCompleteView() {
       try {
         const res = await monarchApi.queryUploadStatus(state.apiToken, sessionKey);
         const session = res.data.uploadStatementSession;
-
-        console.log(`Polling status for ${account.modifiedName} (attempt ${attempt + 1}):`, session);
 
         if (session.status === 'completed') {
           updateStatus(account, 'success');
