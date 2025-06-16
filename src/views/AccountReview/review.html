@@ -1,4 +1,4 @@
-<div class="px-40 flex flex-1 justify-center py-5">
+<div class="px-10 sm:px-16 lg:px-20 xl:px-40 flex flex-1 justify-center py-5">
   <div class="layout-content-container flex flex-col max-w-[960px] flex-1">
     <div class="flex justify-between items-center p-4">
       <h2 class="text-[#111518] text-[32px] font-bold">Review Accounts</h2>
@@ -35,18 +35,18 @@
 
     <div class="px-4 py-3 @container">
       <div class="flex overflow-hidden rounded-lg border border-[#dce1e5] bg-white">
-        <table class="flex-1">
+        <table class="flex-1" role="grid">
           <thead>
-            <tr class="bg-white">
+            <tr class="bg-white" role="row">
               <th class="px-2 py-3 text-left text-sm font-medium w-[50px]">
                 <input type="checkbox" id="masterCheckbox" class="w-5 h-5 cursor-pointer">
               </th>
-              <th class="px-2 py-3 text-left text-sm font-medium w-[230px]">Account Name</th>
-              <th class="px-2 py-3 text-left text-sm font-medium w-[250px]">Type</th>
-              <th class="px-2 py-3 text-left text-sm font-medium w-[250px]">Subtype</th>
-              <th class="px-2 py-3 text-left text-sm font-medium w-[140px]">Transactions</th>
-              <th class="px-2 py-3 text-left text-sm font-medium w-[200px]">Balance</th>
-              <th class="px-2 py-3 text-left text-sm font-medium w-[150px]">Include</th>
+              <th scope="col" class="px-2 py-3 text-left text-sm font-medium w-[230px]">Account Name</th>
+              <th scope="col" class="px-2 py-3 text-left text-sm font-medium w-[250px]">Type</th>
+              <th scope="col" class="px-2 py-3 text-left text-sm font-medium w-[250px]">Subtype</th>
+              <th scope="col" class="px-2 py-3 text-left text-sm font-medium w-[140px] @sm:w-[100px]">Transactions</th>
+              <th scope="col" class="px-2 py-3 text-left text-sm font-medium w-[200px]">Balance</th>
+              <th scope="col" class="px-2 py-3 text-left text-sm font-medium w-[150px]">Include</th>
             </tr>
           </thead>
           <tbody id="reviewTableBody">
@@ -109,7 +109,7 @@
 </div>
 
 <div id="bulkRenameModal" class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 hidden">
-  <div class="bg-white rounded-lg shadow-lg w-[500px] p-6 relative">
+  <div class="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 relative">
 
     <h2 class="text-xl font-bold mb-4">Bulk Rename Accounts</h2>
 
@@ -139,7 +139,7 @@
     <!-- Preview -->
     <div class="border rounded p-3 bg-gray-50 mb-4">
       <div class="font-medium text-sm mb-2">Preview:</div>
-      <div id="renamePreview" class="text-sm text-gray-700 space-y-1"></div>
+      <div id="renamePreview" class="text-sm text-gray-700 space-y-1" aria-live="polite"></div>
     </div>
 
     <div class="flex justify-end gap-3">
@@ -172,8 +172,6 @@
 </div>
 
 <style>
-  /* Scoped only for this view */
-
   .bulk-bar {
     opacity: 1;
     transform: translateY(75px);

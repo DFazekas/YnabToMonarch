@@ -103,6 +103,7 @@ function isIncludedAndUnprocessed(account) {
 
 function createAccountRowElement(account) {
   const row = document.createElement('tr');
+  row.setAttribute('role', 'row');
   row.className = 'border-t border-[#dce1e5]';
 
   const isProcessed = account.status === 'processed';
