@@ -10,4 +10,5 @@ export const monarchApi = {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ accounts }),
   }),
+  queryUploadStatus: (token, sessionKey) => postJson(API.getUploadStatus, { token, sessionKey }),
 };

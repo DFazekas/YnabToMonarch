@@ -37,3 +37,9 @@ functions:
       - http:
           path: generateStatements
           method: post
+  getUploadStatus:
+    handler: netlify/functions/getUploadStatus.handler
+    events:
+      - http:
+          path: getUploadStatus
+          method: post
