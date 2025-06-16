@@ -50337,11 +50337,15 @@
       container.id = `status-${account.modifiedName}`;
       container.className = "flex justify-between items-center py-2 border-b border-gray-100 text-base gap-3";
       container.setAttribute("aria-label", `Status for ${account.modifiedName}`);
-      container.innerHTML = `
-      <span class="font-medium truncate text-gray-900">${account.modifiedName}</span>
-      <span class="status-indicator text-sm font-medium rounded-full px-3 py-1 ${STATUS_PILLS.queued.color}">${STATUS_PILLS.queued.text}</span>
-      <div class="text-xs text-red-500 error-message hidden mt-1"></div>
-    `;
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "font-medium truncate text-gray-900 max-w-[70%]";
+      nameSpan.textContent = account.modifiedName;
+      nameSpan.title = account.modifiedName;
+      const statusSpan = document.createElement("span");
+      statusSpan.className = `status-indicator text-sm font-medium rounded-full px-3 py-1 ${STATUS_PILLS.queued.color}`;
+      statusSpan.textContent = STATUS_PILLS.queued.text;
+      container.appendChild(nameSpan);
+      container.appendChild(statusSpan);
       list.appendChild(container);
       updateStatus(account, STATUS_MAP[account.status] || "queued");
     });
@@ -50397,25 +50401,14 @@
       const row = document.getElementById(`status-${account.modifiedName}`);
       if (!row) return;
       const indicator = row.querySelector(".status-indicator");
-      const errorBox = row.querySelector(".error-message");
-      const states = {
-        queued: { text: "\u25CF Queued", color: "text-gray-400" },
-        processing: { text: '<span class="animate-pulse">\u25CF Processing</span>', color: "text-blue-500" },
-        pending: { text: '<span class="animate-spin">\u23F3 Pending</span>', color: "text-yellow-500" },
-        success: { text: "\u2714\uFE0F Complete", color: "text-green-500" },
-        error: { text: "\u274C Error", color: "text-red-500" }
-      };
       const state = STATUS_PILLS[status];
       if (state) {
         indicator.textContent = state.text;
         indicator.className = `status-indicator text-sm font-medium rounded-full px-3 py-1 ${state.color}`;
       }
       if (error) {
-        errorBox.classList.remove("hidden");
-        errorBox.textContent = error;
         account.status = "failed";
       } else {
-        errorBox.classList.add("hidden");
         if (status === "success") {
           account.status = "processed";
           account.selected = false;
@@ -50525,7 +50518,7 @@
 
   // src/main.js
   window.addEventListener("DOMContentLoaded", () => {
-    navigate("reviewView");
+    navigate("uploadView");
   });
 })();
 /*! Bundled license information:

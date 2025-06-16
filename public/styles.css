@@ -432,6 +432,9 @@
   .max-w-2xl {
     max-width: var(--container-2xl);
   }
+  .max-w-\[70\%\] {
+    max-width: 70%;
+  }
   .max-w-\[300px\] {
     max-width: 300px;
   }
