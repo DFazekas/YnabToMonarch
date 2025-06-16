@@ -53,6 +53,10 @@ export function renderButtons() {
         button.classList.add('bg-red-500', 'text-white');
         if (!isDisabled) button.classList.add('hover:bg-red-600');
         break;
+      case 'warning':
+        button.classList.add('bg-orange-500', 'text-white');
+        if (!isDisabled) button.classList.add('hover:bg-orange-600');
+        break;
     }
 
     if (fixedWidth) {

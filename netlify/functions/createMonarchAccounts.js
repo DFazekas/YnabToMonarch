@@ -26,13 +26,11 @@ export async function handler(event, context) {
     const { accounts, token } = JSON.parse(event.body)
     console.log("Accounts:", accounts);
 
-    const success = [];
-    const failed = [];
-
     const results = await Promise.allSettled(accounts.map(account =>
-      processAccount(token, account).then(() => ({
+      processAccount(token, account).then((result) => ({
         name: account.modifiedName,
-        success: true
+        success: true,
+        sessionKeys: result.sessionKeys || []
       })).catch(err => ({
         name: account.modifiedName,
         success: false,
@@ -40,9 +38,12 @@ export async function handler(event, context) {
       }))
     ));
 
+    const success = [];
+    const failed = [];
+
     for (const result of results) {
       if (result.status === 'fulfilled' && result.value.success) {
-        success.push(result.value.name);
+        success.push({ name: result.value.name, sessionKeys: result.value.sessionKeys });
       } else {
         const failedResult = result.status === 'fulfilled' ? result.value : result.reason;
         failed.push({ name: failedResult.name, error: failedResult.error || 'Unknown error' });
@@ -60,7 +61,6 @@ export async function handler(event, context) {
 
 async function processAccount(token, account) {
   console.group("Process account")
-
   console.log("Processing account:", account.modifiedName);
 
   if (!account.included) {
@@ -86,10 +86,17 @@ async function processAccount(token, account) {
   if (txChunks.length > 1) {
     console.warn(`Account ${account.modifiedName} has ${txChunks.length} chunks of transactions, which may take longer to process.`);
   }
+
+  const sessionKeys = [];
+
   await Promise.all(txChunks.map(async (chunk) => {
     const { sessionKey } = await uploadStatementsFile(token, chunk, account.modifiedName);
-    return importTransactions(token, newAccount.id, sessionKey);
+    await importTransactions(token, newAccount.id, sessionKey);
+    sessionKeys.push(sessionKey);
   }));
+
+  console.groupEnd("Process account");
+  return { sessionKeys };
 }
 
 function chunkArray(arr, size) {

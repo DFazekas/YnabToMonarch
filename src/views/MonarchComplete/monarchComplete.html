@@ -1,44 +1,45 @@
 <div class="flex flex-col items-center justify-center py-24 space-y-10">
 
-  <!-- ✅ Progress Container -->
-  <div id="successContainer" class="text-center hidden transition-opacity duration-500 ease-in-out">
-    <div class="w-20 h-20 mx-auto mb-6">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-        stroke-linejoin="round" class="w-full h-full text-green-500">
-        <path d="M20 6L9 17l-5-5"></path>
-      </svg>
+  <!-- Progress Container -->
+  <div id="resultsContainer" class="text-center transition-opacity duration-500 ease-in-out">
+    <div id="overallStatus" class="w-20 h-20 mx-auto mb-6">
+      <!-- Updated dynamically -->
     </div>
 
-    <h2 class="text-3xl font-bold mb-4">Migration in Progress</h2>
-    <p class="text-gray-600 text-base max-w-md mx-auto mb-6">
-      Your accounts are being processed in batches. This page will update as each account is imported.
+    <h2 id="header" class="text-3xl font-bold mb-4">
+      <!-- Updated dynamically -->
+    </h2>
+    <p id="subheader" class="text-gray-600 text-base max-w-md mx-auto mb-6">
+      <!-- Updated dynamically -->
     </p>
 
-    <!-- Account status list with transition-friendly container -->
+    <!-- Account status list -->
     <div id="accountList" class="text-left max-w-xl w-full mx-auto space-y-3 transition-all duration-300">
       <!-- Account rows inserted by JavaScript -->
     </div>
 
-    <button id="restartBtn" class="mt-8 ui-button" data-type="primary" data-size="large">
-      Restart
-    </button>
-  </div>
+    <!-- Action buttons Container -->
+    <div class="flex justify-between items-center gap-4 px-4 py-6 mt-6">
+      <button id="backBtn" class="ui-button" data-type="secondary" data-size="large" hidden>
+        ← Back
+      </button>
 
-  <!-- ❌ Error State -->
-  <div id="errorContainer" class="text-center hidden transition-opacity duration-500 ease-in-out">
-    <div class="w-20 h-20 mx-auto mb-6">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-        stroke-linejoin="round" class="w-full h-full text-red-500">
-        <path d="M12 9v2m0 4h.01M12 5a7 7 0 100 14 7 7 0 000-14z"></path>
-      </svg>
-    </div>
+      <button id="retryAllBtn" class="ui-button" data-type="warning" data-size="large" hidden>
+        Retry All Failed Accounts
+      </button>
 
-    <h2 class="text-3xl font-bold mb-4">Migration Failed</h2>
-    <p id="errorMessage" class="text-gray-600 text-base max-w-md mx-auto mb-6"></p>
+      <button id="restartBtn" class="ui-button" data-type="secondary" data-size="large" hidden>
+        Upload More Accounts
+      </button>
 
-    <div class="flex justify-between w-full max-w-md">
-      <button id="backBtn" class="ui-button" data-type="secondary" data-size="large">← Back</button>
-      <button id="restartBtn" class="ui-button" data-type="primary" data-size="large">Restart</button>
+      <a id="openMonarchBtn" href="https://app.monarchmoney.com" target="_blank" class="ui-button" data-type="primary"
+        data-size="large" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M14 3h7m0 0v7m0-7L10 14M5 5h14v14H5V5z" />
+        </svg>Open Monarch
+      </a>
     </div>
   </div>
 

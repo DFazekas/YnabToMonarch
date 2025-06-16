@@ -91,14 +91,20 @@ function renderTable() {
     const row = document.createElement('tr');
     row.classList.add('border-t', 'border-[#dce1e5]');
 
+    const isProcessed = account.status === 'processed';
+    const isFailed = account.status === 'failed';
+
     // Selection checkbox column
     const checkboxTd = document.createElement('td');
     checkboxTd.className = 'px-2 py-2 text-center';
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
-    checkbox.className = 'w-5 h-5 cursor-pointer';
+    checkbox.className = 'w-5 h-5';
+    if (!isProcessed) {
+      checkbox.classList.add('cursor-pointer');
+    }
     checkbox.checked = account.selected;
-
+    checkbox.disabled = isProcessed;
     checkbox.addEventListener('change', () => {
       account.selected = checkbox.checked;
       console.log('Checkbox clicked:', account.modifiedName, '->', account.selected);
@@ -115,17 +121,31 @@ function renderTable() {
 
     // Account Name (clickable)
     const nameTd = document.createElement('td');
-    nameTd.className = 'px-2 py-2 max-w-[300px] truncate cursor-pointer';
-    nameTd.title = `Click to rename '${account.modifiedName}'`;
+    nameTd.className = 'px-2 py-2 max-w-[300px] truncate';
+    if (!isProcessed) {
+      nameTd.classList.add('cursor-pointer');
+    } else {
+      nameTd.classList.add('text-gray-400');
+    }
     nameTd.textContent = account.modifiedName;
-    nameTd.addEventListener('click', () => openNameEditor(account, nameTd));
+    if (!isProcessed) {
+      nameTd.classList.add('cursor-pointer');
+      nameTd.title = `Click to rename '${account.modifiedName}'`;
+      nameTd.addEventListener('click', () => openNameEditor(account, nameTd));
+    }
     row.appendChild(nameTd);
 
     // Account Type dropdown
     const typeTd = document.createElement('td');
     typeTd.className = 'px-2 py-2';
     const typeSelect = document.createElement('select');
-    typeSelect.className = 'border rounded px-2 py-1 w-full cursor-pointer';
+    typeSelect.disabled = isProcessed;
+    typeSelect.className = 'border rounded px-2 py-1 w-full';
+    if (isProcessed) {
+      typeSelect.classList.add('text-gray-300');
+    } else {
+      typeSelect.classList.add('cursor-pointer');
+    }
     monarchAccountTypes.data.forEach(type => {
       const opt = document.createElement('option');
       opt.value = type.typeName;
@@ -134,7 +154,7 @@ function renderTable() {
       typeSelect.appendChild(opt);
     });
     // Tooltip showing the currently selected account type
-    typeSelect.title = typeSelect.options[typeSelect.selectedIndex].textContent;
+    !isProcessed && (typeSelect.title = typeSelect.options[typeSelect.selectedIndex].textContent);
     typeSelect.addEventListener('change', () => {
       account.type = typeSelect.value;
       const selectedType = monarchAccountTypes.data.find(t => t.typeName === account.type);
@@ -148,7 +168,13 @@ function renderTable() {
     const subtypeTd = document.createElement('td');
     subtypeTd.className = 'px-2 py-2';
     const subtypeSelect = document.createElement('select');
-    subtypeSelect.className = 'border rounded px-2 py-1 w-full cursor-pointer';
+    subtypeSelect.className = 'border rounded px-2 py-1 w-full';
+    subtypeSelect.disabled = isProcessed;
+    if (isProcessed) {
+      subtypeSelect.classList.add('text-gray-300');
+    } else {
+      subtypeSelect.classList.add('cursor-pointer');
+    }
     const selectedType = monarchAccountTypes.data.find(t => t.typeName === account.type);
     (selectedType?.subtypes || []).forEach(sub => {
       const opt = document.createElement('option');
@@ -157,7 +183,9 @@ function renderTable() {
       if (sub.name === account.subtype) opt.selected = true;
       subtypeSelect.appendChild(opt);
     });
-    subtypeSelect.title = subtypeSelect.options[subtypeSelect.selectedIndex].textContent;
+    if (account.status !== 'processed') {
+      subtypeSelect.title = subtypeSelect.options[subtypeSelect.selectedIndex].textContent;
+    }
     subtypeSelect.addEventListener('change', () => {
       account.subtype = subtypeSelect.value;
       renderTable();
@@ -169,7 +197,11 @@ function renderTable() {
     const txTd = document.createElement('td');
     txTd.className = 'px-2 py-2 text-center';
     txTd.textContent = account.transactionCount;
-    txTd.title = `${account.transactionCount} transaction${account.transactionCount !== 1 ? 's' : ''}`;
+    if (!isProcessed) {
+      txTd.title = `${account.transactionCount} transaction${account.transactionCount !== 1 ? 's' : ''}`;
+    } else {
+      txTd.classList.add('text-gray-400');
+    }
     row.appendChild(txTd);
 
     // Balance
@@ -178,28 +210,45 @@ function renderTable() {
     const balanceTd = document.createElement('td');
     balanceTd.className = 'px-2 py-2 text-[#637988]';
     balanceTd.textContent = prettyBalance
-    balanceTd.title = `Balance: ${prettyBalance}`;
+    if (!isProcessed) {
+      balanceTd.title = `Balance: ${prettyBalance}`;
+    } else {
+      balanceTd.classList.add('text-gray-400');
+    }
     row.appendChild(balanceTd);
 
     // Include toggle button
     const includeTd = document.createElement('td');
-    includeTd.className = 'px-2 py-2';
+    includeTd.className = 'px-2 py-2 flex items-center gap-2';
 
     const toggleBtn = document.createElement('button');
     toggleBtn.classList.add('ui-button');
     toggleBtn.dataset.type = account.included ? 'primary' : 'secondary';
     toggleBtn.dataset.size = 'small';
     toggleBtn.dataset.fixedWidth = '100';
-    toggleBtn.textContent = account.included ? 'Included' : 'Excluded';
-    toggleBtn.title = account.included ? 'Click to exclude this account' : 'Click to include this account';
-
-    toggleBtn.addEventListener('click', () => {
-      account.included = !account.included;
-      renderTable();
-    });
+    if (isProcessed) {
+      toggleBtn.textContent = 'Processed';
+      toggleBtn.title = 'This account has already been processed';
+      toggleBtn.disabled = true;
+    } else {
+      toggleBtn.textContent = account.included ? 'Included' : 'Excluded';
+      toggleBtn.title = account.included ? 'Click to exclude this account' : 'Click to include this account';
+      toggleBtn.addEventListener('click', () => {
+        account.included = !account.included;
+        renderTable();
+      });
+    }
     includeTd.appendChild(toggleBtn);
-    row.appendChild(includeTd);
 
+    if (isFailed) {
+      const errorIcon = document.createElement('span');
+      errorIcon.className = 'text-red-600 text-xl';
+      errorIcon.innerHTML = '⚠️';
+      errorIcon.title = 'Previously failed to process';
+      includeTd.appendChild(errorIcon);
+    }
+
+    row.appendChild(includeTd);
     reviewTableBody.appendChild(row);
   }
 
@@ -218,14 +267,16 @@ function renderTable() {
 function masterCheckboxChange(e) {
   const checked = e.target.checked;
   Object.values(state.accounts).forEach(acc => {
-    acc.selected = checked;
+    if (acc.status !== 'processed') {
+      acc.selected = checked;
+    }
   });
   renderTable();
 }
 
 function updateMasterCheckbox() {
   const masterCheckbox = document.getElementById('masterCheckbox');
-  const numberOfAccounts = Object.keys(state.accounts).length;
+  const numberOfAccounts = Object.values(state.accounts).filter(acc => acc.status !== 'processed').length;
   const numberOfSelectedAccounts = Object.entries(state.accounts).filter(([_, acc]) => acc.selected).length;
   const anySelected = numberOfSelectedAccounts > 0
   const allSelected = anySelected && numberOfSelectedAccounts === numberOfAccounts
@@ -268,7 +319,7 @@ function openNameEditor(account, nameCell) {
 
   const input = document.createElement('input');
   input.type = 'text';
-  input.value = account.name;
+  input.value = account.modifiedName;
   input.className = 'border rounded w-full px-3 py-2 mb-4';
   popup.appendChild(input);
 
@@ -305,9 +356,9 @@ function openNameEditor(account, nameCell) {
   }
 
   function save() {
-    account.name = input.value.trim();
-    nameCell.textContent = account.name;
-    nameCell.title = account.name;
+    account.modifiedName = input.value.trim();
+    nameCell.textContent = account.modifiedName;
+    nameCell.title = `Click to rename '${account.modifiedName}'`;
     closeEditor();
   }
 }

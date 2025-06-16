@@ -105,7 +105,8 @@ function parseCSV(csvContent, monarchAccountTypes) {
               transactionCount: 0,
               balanceCents: 0,
               included: true,
-              selected: false
+              selected: false,
+              status: 'unprocessed',
             });
           }
 
