@@ -2,6 +2,11 @@ import { navigate } from '../../router.js';
 import state from '../../state.js';
 import { monarchApi } from '../../api/monarchApi.js';
 import { renderButtons } from '../../components/button.js';
+import {
+  saveCredentialsToStorage,
+  saveTokenToStorage, loadCredentialsFromStorage
+} from '../../utils/storage.js';
+import { toggleDisabled, toggleElementVisibility } from '../../utils/dom.js';
 
 export default function initMonarchOtpView() {
   const otpInput = document.getElementById('otpInput');
@@ -14,23 +19,31 @@ export default function initMonarchOtpView() {
   // Allow only 6 digits
   otpInput.addEventListener('input', () => {
     otpInput.value = otpInput.value.replace(/\D/g, '').slice(0, 6);
-    submitOtpBtn.disabled = otpInput.value.length !== 6;
+    toggleDisabled(submitOtpBtn, otpInput.value.length !== 6)
     renderButtons();
   });
 
-  submitOtpBtn.addEventListener('click', async () => {
-    otpError.classList.add('hidden');
+  submitOtpBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
 
+    toggleElementVisibility(otpError, false)
     state.credentials.otp = otpInput.value;
 
     try {
-      const response = await monarchApi.login(state.credentials.email, state.credentials.password, state.deviceUuid, state.credentials.otp);
-      console.log("Login response:", response);
+      const { email, password, otp, deviceUuid, remember } = state.credentials;
+      const response = await monarchApi.login(email, password, deviceUuid, otp);
 
       // ✅ Successful login — store token
-      if (response.token) {
-        state.apiToken = response.token;
-        state.awaitingOtp = false;
+      if (response?.token) {
+        state.credentials.apiToken = response.token;
+        state.credentials.awaitingOtp = false;
+
+        // Store credentials if "Remember me" is checked
+        if (remember) {
+          saveCredentialsToStorage(email, password);
+          saveTokenToStorage(response.token);
+        }
+
         navigate('monarchCompleteView');
         return;
       }
@@ -40,23 +53,11 @@ export default function initMonarchOtpView() {
       throw new Error('Unknown login response.');
 
     } catch (err) {
-      otpError.classList.remove('hidden');
+      toggleElementVisibility(otpError, true)
       otpError.textContent = 'Invalid OTP. Please try again.';
       console.error("OTP verification error", err);
     }
   });
 
-  backBtn.addEventListener('click', () => {
-    navigate('monarchCredentialsView');
-  });
-}
-
-// Mock verification (replace with your real call)
-async function fakeOtpVerification(otp) {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (otp === '123456') resolve();
-      else reject();
-    }, 500);
-  });
+  backBtn.addEventListener('click', () => navigate('monarchCredentialsView'));
 }

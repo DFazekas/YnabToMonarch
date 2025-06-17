@@ -1,8 +1,5 @@
 export default {
-  deviceUuid: null,
-  awaitingOtp: false,
-  credentials: { email: '', password: '', otp: '', remember: false },
-  apiToken: "",
+  credentials: { email: '', password: '', otp: '', remember: false, apiToken: '', awaitingOtp: false, deviceUuid: '' },
   monarchAccounts: null,
   accounts: {}
 };

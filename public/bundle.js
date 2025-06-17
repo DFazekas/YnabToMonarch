@@ -3192,10 +3192,7 @@
 
   // src/state.js
   var state_default = {
-    deviceUuid: null,
-    awaitingOtp: false,
-    credentials: { email: "", password: "", otp: "", remember: false },
-    apiToken: "",
+    credentials: { email: "", password: "", otp: "", remember: false, apiToken: "", awaitingOtp: false, deviceUuid: "" },
     monarchAccounts: null,
     accounts: {}
   };
@@ -4636,87 +4633,138 @@
     queryUploadStatus: (token, sessionKey) => postJson(API.getUploadStatus, { token, sessionKey })
   };
 
+  // src/utils/storage.js
+  function loadCredentialsFromStorage() {
+    return {
+      token: localStorage.getItem("monarchToken") || "",
+      email: localStorage.getItem("monarchEmail") || "",
+      password: localStorage.getItem("monarchPassword") || "",
+      uuid: localStorage.getItem("deviceUuid") || ""
+    };
+  }
+  function saveCredentialsToStorage(email, password) {
+    localStorage.setItem("monarchEmail", email);
+    localStorage.setItem("monarchPassword", password);
+  }
+  function saveTokenToStorage(token) {
+    localStorage.setItem("monarchToken", token);
+  }
+  function saveDeviceUuid(uuid) {
+    localStorage.setItem("deviceUuid", uuid);
+  }
+  function clearStorage() {
+    localStorage.removeItem("deviceUuid");
+    localStorage.removeItem("monarchEmail");
+    localStorage.removeItem("monarchPassword");
+    localStorage.removeItem("monarchToken");
+  }
+
   // src/views/MonarchCredentials/monarchCredentials.js
-  var COLOR = {
-    GREEN: "#006400",
-    BLUE: "#1993e5",
-    ORANGE: "#ff8c00"
-  };
   function initMonarchCredentialsView() {
-    if (state_default.apiToken) {
-      navigate("monarchCompleteView");
-      return;
-    }
     const emailInput = document.getElementById("email");
     const connectBtn = document.getElementById("connectBtn");
     const backBtn2 = document.getElementById("backBtn");
     const form = document.getElementById("credentialsForm");
     const errorBox = document.getElementById("errorBox");
     const rememberCheckbox = document.getElementById("rememberCredentials");
-    const rememberedUserBox = document.getElementById("rememberedUserBox");
+    const rememberMeContainer = document.getElementById("rememberMe");
+    const notYouContainer = document.getElementById("notYouContainer");
     const rememberedEmail = document.getElementById("rememberedEmail");
     const clearCredentialsBtn = document.getElementById("clearCredentialsBtn");
     const toggleBtn = document.getElementById("togglePassword");
     const passwordInput = document.getElementById("password");
     const eyeShow = document.getElementById("eyeShow");
     const eyeHide = document.getElementById("eyeHide");
+    const securityNoteMsg = document.getElementById("securityNote");
+    const securityNoteIcon = document.getElementById("securityNoteIcon");
     renderButtons();
-    if (!state_default.deviceUuid) {
+    const { credentials: creds } = state_default;
+    const { token, email, password, uuid } = loadCredentialsFromStorage();
+    Object.assign(creds, {
+      email,
+      password,
+      apiToken: creds.apiToken || token,
+      deviceUuid: creds.deviceUuid || uuid || v4_default()
+    });
+    if (!uuid) {
       state_default.deviceUuid = v4_default();
+      saveDeviceUuid(state_default.deviceUuid);
     }
-    if (state_default.credentials.email !== "" && state_default.credentials.password !== "") {
-      emailInput.value = state_default.credentials.email;
-      passwordInput.value = state_default.credentials.password;
-      rememberedEmail.textContent = `Signed in as ${state_default.credentials.email}`;
-      rememberCheckbox.checked = state_default.credentials.remember || false;
+    if (email && password) {
+      emailInput.value = email;
+      passwordInput.value = password;
+      rememberedEmail.textContent = `Signed in as ${email}`;
+      rememberCheckbox.checked = creds.remember;
       toggleDisabled(emailInput, true);
       toggleDisabled(passwordInput, true);
-      toggleElementVisibility(document.getElementById("rememberMe"), false);
-      toggleElementVisibility(rememberedUserBox, true);
-      document.getElementById("securityNote").textContent = 'You are signed in. To use different credentials, click "Not you?".';
-      document.getElementById("securityNoteIcon").setAttribute("fill", COLOR.BLUE);
+      toggleElementVisibility(rememberMeContainer, false);
+      toggleElementVisibility(notYouContainer, true);
+      toggleElementVisibility(toggleBtn, false);
+      updateSecurityNote("signed-in");
     } else {
-      toggleElementVisibility(rememberedUserBox, false);
-      document.getElementById("securityNote").textContent = "Your credentials will not be stored.";
-      document.getElementById("securityNoteIcon").setAttribute("fill", COLOR.GREEN);
+      toggleElementVisibility(notYouContainer, false);
+      updateSecurityNote();
     }
-    validateForm();
     function validateForm() {
-      const email = emailInput.value.trim();
-      const password = passwordInput.value.trim();
-      const valid = email.length > 0 && password.length > 0;
-      toggleDisabled(connectBtn, !valid);
+      const isValid = emailInput.value.trim() && passwordInput.value.trim();
+      toggleDisabled(connectBtn, !isValid);
       toggleElementVisibility(errorBox, false);
       renderButtons();
     }
-    emailInput.addEventListener("input", validateForm);
-    passwordInput.addEventListener("input", validateForm);
+    function updateSecurityNote(status) {
+      const COLOR = {
+        GREEN: "#006400",
+        BLUE: "#1993e5",
+        ORANGE: "#ff8c00"
+      };
+      switch (status) {
+        case "remembered":
+          securityNoteMsg.textContent = "Your credentials will be stored securely on this device.";
+          securityNoteIcon.setAttribute("fill", COLOR.ORANGE);
+          break;
+        case "signed-in":
+          securityNoteMsg.textContent = 'You are signed in. To use different credentials, click "Not you?".';
+          securityNoteIcon.setAttribute("fill", COLOR.BLUE);
+          break;
+        default:
+          securityNoteMsg.textContent = "Your credentials will not be stored.";
+          securityNoteIcon.setAttribute("fill", COLOR.GREEN);
+      }
+    }
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       connectBtn.click();
     });
-    connectBtn.addEventListener("click", async () => {
-      const email = emailInput.value.trim();
-      const password = passwordInput.value.trim();
-      errorBox.classList.add("hidden");
-      connectBtn.disabled = true;
+    connectBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      const localStorage2 = loadCredentialsFromStorage();
+      const email2 = localStorage2.monarchEmail || emailInput.value.trim();
+      const password2 = localStorage2.monarchPassword || passwordInput.value.trim();
+      const uuid2 = localStorage2.deviceUuid || state_default.credentials.deviceUuid;
+      toggleDisabled(connectBtn, true);
       connectBtn.textContent = "Connecting\u2026";
+      toggleElementVisibility(errorBox, false);
       try {
-        const response = await monarchApi.login(email, password, state_default.deviceUuid);
-        state_default.credentials.email = email;
-        state_default.credentials.password = password;
-        state_default.credentials.remember = rememberCheckbox.checked;
+        const response = await monarchApi.login(email2, password2, uuid2);
+        Object.assign(creds, {
+          email: email2,
+          password: password2,
+          otp: "",
+          remember: rememberCheckbox.checked
+        });
+        if (creds.remember) {
+          saveCredentialsToStorage(email2, password2);
+        }
         if (response.otpRequired) {
-          state_default.awaitingOtp = true;
+          creds.awaitingOtp = true;
           navigate("monarchOtpView");
           return;
         }
         if (response.token) {
-          state_default.apiToken = response.token;
-          state_default.awaitingOtp = false;
-          if (state_default.credentials.remember) {
-            localStorage.setItem("monarchToken", response.token);
-          }
+          creds.apiToken = response.token;
+          creds.awaitingOtp = false;
+          if (creds.remember)
+            saveTokenToStorage(response.token);
           navigate("monarchCompleteView");
           return;
         }
@@ -4726,56 +4774,40 @@
         errorBox.textContent = err?.message || "An unexpected error occurred.";
         toggleElementVisibility(errorBox, true);
       } finally {
-        connectBtn.disabled = false;
+        toggleDisabled(connectBtn, false);
         connectBtn.textContent = "Connect to Monarch";
       }
     });
-    [emailInput, passwordInput].forEach((input) => {
-      input.addEventListener("focus", () => {
-        input.classList.add("ring-2", "ring-blue-500", "outline-none");
-      });
-      input.addEventListener("blur", () => {
-        input.classList.remove("ring-2", "ring-blue-500", "outline-none");
-      });
-    });
-    backBtn2.addEventListener("click", () => {
-      navigate("methodView");
-    });
     clearCredentialsBtn.addEventListener("click", (e) => {
       e.preventDefault();
-      state_default.credentials = {};
-      state_default.apiToken = null;
-      localStorage.removeItem("monarchToken");
+      clearStorage();
+      Object.assign(creds, {
+        email: "",
+        password: "",
+        otp: "",
+        remember: false,
+        apiToken: "",
+        awaitingOtp: false,
+        deviceUuid: ""
+      });
       emailInput.value = "";
       passwordInput.value = "";
       rememberCheckbox.checked = false;
-      toggleElementVisibility(rememberedUserBox, false);
-      toggleElementVisibility(document.getElementById("rememberMe"), true);
       toggleDisabled(emailInput, false);
       toggleDisabled(passwordInput, false);
-      emailInput.focus();
       toggleDisabled(connectBtn, true);
-      document.getElementById("securityNote").textContent = "Your credentials will not be stored.";
-      document.getElementById("securityNoteIcon").setAttribute("fill", COLOR.GREEN);
+      toggleElementVisibility(toggleBtn, true);
+      toggleElementVisibility(notYouContainer, false);
+      toggleElementVisibility(rememberMeContainer, true);
+      updateSecurityNote();
       renderButtons();
+      emailInput.focus();
     });
     rememberCheckbox.addEventListener("change", () => {
-      if (rememberCheckbox.checked) {
-        state_default.credentials.remember = true;
-        document.getElementById("securityNote").textContent = "Your credentials will be stored securely on this device.";
-        document.getElementById("securityNoteIcon").setAttribute("fill", COLOR.ORANGE);
-      } else {
-        state_default.credentials.remember = false;
-        document.getElementById("securityNote").textContent = "Your credentials will not be stored.";
-        document.getElementById("securityNoteIcon").setAttribute("fill", COLOR.GREEN);
-      }
-      if (emailInput.value.trim() === "") {
-        emailInput.focus();
-      } else if (passwordInput.value.trim() === "") {
-        passwordInput.focus();
-      } else {
-        connectBtn.focus();
-      }
+      creds.remember = rememberCheckbox.checked;
+      updateSecurityNote(creds.remember ? "remembered" : "not-remembered");
+      const target = emailInput.value.trim() === "" ? emailInput : passwordInput.value.trim() === "" ? passwordInput : connectBtn;
+      target.focus();
     });
     toggleBtn.addEventListener("click", () => {
       const isHidden = passwordInput.type === "password";
@@ -4784,10 +4816,17 @@
       toggleElementVisibility(eyeShow, !isHidden);
       toggleElementVisibility(eyeHide, isHidden);
     });
+    [emailInput, passwordInput].forEach((input) => {
+      input.addEventListener("input", validateForm);
+      input.addEventListener("focus", () => input.classList.add("ring-2", "ring-blue-500", "outline-none"));
+      input.addEventListener("blur", () => input.classList.remove("ring-2", "ring-blue-500", "outline-none"));
+    });
+    backBtn2.addEventListener("click", () => navigate("methodView"));
+    validateForm();
   }
 
   // src/views/MonarchCredentials/monarchCredentials.html
-  var monarchCredentials_default = '<div class="flex flex-col items-center justify-center py-3 px-6 space-y-7 max-w-lg mx-auto">\n\n  <div class="text-center">\n    <h2 class="text-3xl font-bold mb-2">Auto Import: Connect Your Monarch Account</h2>\n    <p class="text-gray-600 text-base max-w-md">\n      Authorize your Monarch account so we can directly import your accounts and transactions.\n    </p>\n  </div>\n\n  <div class="w-full bg-white border border-gray-200 rounded-xl shadow-sm p-8 space-y-6">\n\n    <form id="credentialsForm" class="space-y-4">\n      <!-- Email -->\n      <div>\n        <label class="block font-medium text-sm text-[#111518] mb-1 cursor-pointer" for="email">Email</label>\n        <input id="email" type="email" class="border rounded-lg w-full px-4 py-3 text-sm placeholder-gray-300" placeholder="you@email.com"\n          autocomplete="username">\n      </div>\n\n      <!-- Password -->\n      <div>\n        <label class="block font-medium text-sm text-[#111518] mb-1 cursor-pointer" for="password">Password</label>\n        <div class="relative">\n          <input id="password" type="password" class="border rounded-lg w-full px-4 py-3 text-sm pr-12 placeholder-gray-300"\n            placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" autocomplete="current-password">\n\n          <button type="button" id="togglePassword" aria-label="Toggle password visibility"\n            class="absolute p-2 right-1 top-1/2 transform -translate-y-1/2 focus:outline-none bg-transparent border-none shadow-none hover:shadow-none transform-none hover:transform-none transition-none cursor-pointer">\n            <!-- Show Icon -->\n            <svg id="eyeShow" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"\n              stroke="currentColor" stroke-width="2">\n              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />\n              <path stroke-linecap="round" stroke-linejoin="round"\n                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />\n            </svg>\n\n            <!-- Hide Icon -->\n            <svg id="eyeHide" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 24 24" fill="none"\n              stroke="currentColor" stroke-width="2">\n              <path stroke-linecap="round" stroke-linejoin="round"\n                d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.27-2.945-9.543-7a9.966 9.966 0 012.398-4.442M9.88 9.88a3 3 0 104.24 4.24M6.1 6.1L17.9 17.9" />\n            </svg>\n          </button>\n        </div>\n      </div>\n\n      <!-- Remember Me -->\n      <div id="rememberMe" class="flex items-center gap-2">\n        <input id="rememberCredentials" type="checkbox" class="w-4 h-4 cursor-pointer">\n        <label for="rememberCredentials" class="text-sm text-gray-600 cursor-pointer">Remember me for this\n          session</label>\n      </div>\n\n      <!-- Not You? -->\n      <div id="rememberedUserBox" class="mt-2 text-sm text-gray-500 hidden">\n        <span id="rememberedEmail">"some@thing.com"</span>\n        <button id="clearCredentialsBtn" class="ml-2 text-blue-600 cursor-pointer hover:underline">Not You?</button>\n      </div>\n\n      <div id="errorBox" class="hidden text-red-500 text-sm mt-4"></div>\n\n    </form>\n\n    <button id="connectBtn" class="ui-button" data-type="primary" data-size="large" data-fullWidth disabled>\n      Connect & Start Import\n    </button>\n\n    <!-- Security Note -->\n    <div class="flex items-center gap-2 mt-1">\n      <div class="w-5 h-5 text-green-600 flex-shrink-0">\n        <svg id="securityNoteIcon" viewBox="0 0 24 24" fill="green">\n          <path\n            d="M12 1a11 11 0 100 22 11 11 0 000-22zm0 20a9 9 0 110-18 9 9 0 010 18zm-1-5h2v2h-2v-2zm0-10h2v8h-2V6z" />\n        </svg>\n      </div>\n      <p id="securityNote" class="text-xs text-gray-500">\n        <!-- Rendered dynamically -->\n      </p>\n    </div>\n\n  </div>\n\n  <div class="flex justify-between w-full max-w-md">\n    <button id="backBtn" class="ui-button" data-type="secondary" data-size="large">\u2190 Back</button>\n  </div>\n\n</div>\n<style>\n  input[type="password"]::-ms-reveal,\n  input[type="password"]::-ms-clear,\n  input[type="password"]::-webkit-credentials-auto-fill-button,\n  input[type="password"]::-webkit-inner-spin-button,\n  input[type="password"]::-webkit-clear-button {\n    display: none !important;\n    appearance: none;\n  }\n\n  input[type="password"]::-webkit-credentials-auto-fill-button {\n    display: none !important;\n    visibility: hidden;\n  }\n\n  #togglePassword, #clearCredentialsBtn {\n    transition: none !important;\n    box-shadow: none !important;\n    transform: none !important;\n  }\n</style>';
+  var monarchCredentials_default = '<div class="flex flex-col items-center justify-center py-3 px-6 space-y-7 max-w-lg mx-auto">\n\n  <div class="text-center">\n    <h2 class="text-3xl font-bold mb-2">Auto Import: Connect Your Monarch Account</h2>\n    <p class="text-gray-600 text-base max-w-md">\n      Authorize your Monarch account so we can directly import your accounts and transactions.\n    </p>\n  </div>\n\n  <div class="w-full bg-white border border-gray-200 rounded-xl shadow-sm p-8 space-y-6">\n\n    <form id="credentialsForm" class="space-y-4">\n      <!-- Email -->\n      <div>\n        <label class="block font-medium text-sm text-[#111518] mb-1 cursor-pointer" for="email">Email</label>\n        <input id="email" type="email" class="border rounded-lg w-full px-4 py-3 text-sm placeholder-gray-300" placeholder="you@email.com"\n          autocomplete="username">\n      </div>\n\n      <!-- Password -->\n      <div>\n        <label class="block font-medium text-sm text-[#111518] mb-1 cursor-pointer" for="password">Password</label>\n        <div class="relative">\n          <input id="password" type="password" class="border rounded-lg w-full px-4 py-3 text-sm pr-12 placeholder-gray-300"\n            placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" autocomplete="current-password">\n\n          <button type="button" id="togglePassword" aria-label="Toggle password visibility"\n            class="absolute p-2 right-1 top-1/2 transform -translate-y-1/2 focus:outline-none bg-transparent border-none shadow-none hover:shadow-none transform-none hover:transform-none transition-none cursor-pointer">\n            <!-- Show Icon -->\n            <svg id="eyeShow" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"\n              stroke="currentColor" stroke-width="2">\n              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />\n              <path stroke-linecap="round" stroke-linejoin="round"\n                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />\n            </svg>\n\n            <!-- Hide Icon -->\n            <svg id="eyeHide" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 24 24" fill="none"\n              stroke="currentColor" stroke-width="2">\n              <path stroke-linecap="round" stroke-linejoin="round"\n                d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.27-2.945-9.543-7a9.966 9.966 0 012.398-4.442M9.88 9.88a3 3 0 104.24 4.24M6.1 6.1L17.9 17.9" />\n            </svg>\n          </button>\n        </div>\n      </div>\n\n      <!-- Remember Me -->\n      <div id="rememberMe" class="flex items-center gap-2">\n        <input id="rememberCredentials" type="checkbox" class="w-4 h-4 cursor-pointer">\n        <label for="rememberCredentials" class="text-sm text-gray-600 cursor-pointer">Remember me for this\n          session</label>\n      </div>\n\n      <!-- Not You? -->\n      <div id="notYouContainer" class="mt-2 text-sm text-gray-500 hidden">\n        <span id="rememberedEmail">"some@thing.com"</span>\n        <button id="clearCredentialsBtn" class="ml-2 text-blue-600 cursor-pointer hover:underline">Not You?</button>\n      </div>\n\n      <div id="errorBox" class="hidden text-red-500 text-sm mt-4"></div>\n\n    </form>\n\n    <button id="connectBtn" class="ui-button" data-type="primary" data-size="large" data-fullWidth disabled>\n      Connect & Start Import\n    </button>\n\n    <!-- Security Note -->\n    <div class="flex items-center gap-2 mt-1">\n      <div class="w-5 h-5 text-green-600 flex-shrink-0">\n        <svg id="securityNoteIcon" viewBox="0 0 24 24" fill="green">\n          <path\n            d="M12 1a11 11 0 100 22 11 11 0 000-22zm0 20a9 9 0 110-18 9 9 0 010 18zm-1-5h2v2h-2v-2zm0-10h2v8h-2V6z" />\n        </svg>\n      </div>\n      <p id="securityNote" class="text-xs text-gray-500">\n        <!-- Rendered dynamically -->\n      </p>\n    </div>\n\n  </div>\n\n  <div class="flex justify-between w-full max-w-md">\n    <button id="backBtn" class="ui-button" data-type="secondary" data-size="large">\u2190 Back</button>\n  </div>\n\n</div>\n<style>\n  input[type="password"]::-ms-reveal,\n  input[type="password"]::-ms-clear,\n  input[type="password"]::-webkit-credentials-auto-fill-button,\n  input[type="password"]::-webkit-inner-spin-button,\n  input[type="password"]::-webkit-clear-button {\n    display: none !important;\n    appearance: none;\n  }\n\n  input[type="password"]::-webkit-credentials-auto-fill-button {\n    display: none !important;\n    visibility: hidden;\n  }\n\n  #togglePassword, #clearCredentialsBtn {\n    transition: none !important;\n    box-shadow: none !important;\n    transform: none !important;\n  }\n</style>';
 
   // src/views/MonarchOtp/monarchOtp.js
   function initMonarchOtpView() {
@@ -4798,32 +4837,35 @@
     renderButtons();
     otpInput.addEventListener("input", () => {
       otpInput.value = otpInput.value.replace(/\D/g, "").slice(0, 6);
-      submitOtpBtn.disabled = otpInput.value.length !== 6;
+      toggleDisabled(submitOtpBtn, otpInput.value.length !== 6);
       renderButtons();
     });
-    submitOtpBtn.addEventListener("click", async () => {
-      otpError.classList.add("hidden");
+    submitOtpBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      toggleElementVisibility(otpError, false);
       state_default.credentials.otp = otpInput.value;
       try {
-        const response = await monarchApi.login(state_default.credentials.email, state_default.credentials.password, state_default.deviceUuid, state_default.credentials.otp);
-        console.log("Login response:", response);
-        if (response.token) {
-          state_default.apiToken = response.token;
-          state_default.awaitingOtp = false;
+        const { email, password, otp, deviceUuid, remember } = state_default.credentials;
+        const response = await monarchApi.login(email, password, deviceUuid, otp);
+        if (response?.token) {
+          state_default.credentials.apiToken = response.token;
+          state_default.credentials.awaitingOtp = false;
+          if (remember) {
+            saveCredentialsToStorage(email, password);
+            saveTokenToStorage(response.token);
+          }
           navigate("monarchCompleteView");
           return;
         }
         console.error("Login failed:", response);
         throw new Error("Unknown login response.");
       } catch (err) {
-        otpError.classList.remove("hidden");
+        toggleElementVisibility(otpError, true);
         otpError.textContent = "Invalid OTP. Please try again.";
         console.error("OTP verification error", err);
       }
     });
-    backBtn2.addEventListener("click", () => {
-      navigate("monarchCredentialsView");
-    });
+    backBtn2.addEventListener("click", () => navigate("monarchCredentialsView"));
   }
 
   // src/views/MonarchOtp/monarchOtp.html
@@ -5046,7 +5088,7 @@
 
   // src/main.js
   window.addEventListener("DOMContentLoaded", () => {
-    navigate("monarchCredentialsView");
+    navigate("uploadView");
   });
 })();
 /* @license
