@@ -57,9 +57,7 @@ export default function initUploadView() {
 
     try {
       const accounts = await parseYNABZip(csvFile);
-      
       state.accounts = accounts;
-      console.log("State:", state);
 
       navigate('reviewView');
     } catch (err) {

@@ -9,11 +9,6 @@ const STATEMENTS_UPLOAD_URL = 'https://api.monarchmoney.com/statements/upload-as
 
 export async function handler(event, context) {
   console.group("CreateMonarchAccounts Lambda Handler")
-  console.log("CreateMonarchAccounts start", {
-    timestamp: new Date().toISOString(),
-    requestId: context.awsRequestId,
-    method: event.httpMethod
-  });
 
   // Validate HTTP method
   if (event.httpMethod !== 'POST') {
@@ -22,10 +17,7 @@ export async function handler(event, context) {
   }
 
   try {
-    console.log("Parsing request body");
     const { accounts, token } = JSON.parse(event.body)
-    console.log("Accounts:", accounts);
-
     const results = await Promise.allSettled(accounts.map(account =>
       processAccount(token, account).then((result) => ({
         name: account.modifiedName,
@@ -52,7 +44,7 @@ export async function handler(event, context) {
 
     return createResponse(200, { success, failed });
   } catch (err) {
-    console.error("❌ unexpected error", error)
+    console.error("❌ unexpected error", err)
     return createResponse(500, { error: err.message });
   } finally {
     console.groupEnd("CreateMonarchAccounts Lambda Handler")
@@ -61,7 +53,6 @@ export async function handler(event, context) {
 
 async function processAccount(token, account) {
   console.group("Process account")
-  console.log("Processing account:", account.modifiedName);
 
   if (!account.included) {
     console.warn(`Skipping excluded account: ${account.modifiedName}`);
@@ -78,8 +69,6 @@ async function processAccount(token, account) {
 
   // Create new account in Monarch
   const { account: newAccount, error } = await createManualAccount(token, accountInput)
-
-  console.log("New account created:", newAccount, error);
   if (error) return { error }
 
   const txChunks = chunkArray(account.transactions, 3000);
@@ -95,7 +84,7 @@ async function processAccount(token, account) {
     sessionKeys.push(sessionKey);
   }));
 
-  console.groupEnd("Process account");
+  console.groupEnd()
   return { sessionKeys };
 }
 
@@ -110,7 +99,6 @@ function chunkArray(arr, size) {
 async function createManualAccount(token, input) {
   console.group("Creating Manual Account")
 
-  console.log("Input:", input);
   const query = `
     mutation Web_CreateManualAccount($input: CreateManualAccountMutationInput!) {
       createManualAccount(input: $input) {
@@ -128,11 +116,11 @@ async function createManualAccount(token, input) {
 
   if (res.error) return { error: res.error };
   if (res.data.createManualAccount.errors?.length) {
-    console.groupEnd("Creating Manual Account")
+    console.groupEnd()
     return { error: res.data.createManualAccount.errors.map(e => e.message).join('; ') };
   }
 
-  console.groupEnd("Creating Manual Account")
+  console.groupEnd()
   return { account: res.data.createManualAccount.account };
 }
 
@@ -163,12 +151,11 @@ async function uploadStatementsFile(token, transactions, accountName) {
 
   if (!res.ok) {
     console.error("❌ Upload failed", { status: res.status, result: result });
-    console.groupEnd("Uploading Statements File")
+    console.groupEnd()
     throw new Error(`Upload failed: ${JSON.stringify(result)}`)
   }
 
-  console.log("✅ Statement file uploaded successfully:", result);
-  console.groupEnd("Uploading Statements File")
+  console.groupEnd()
   return { sessionKey: result.session_key }
 }
 
@@ -211,11 +198,11 @@ async function importTransactions(token, accountId, sessionKey) {
 
   const res = await performGraphQLRequest(token, query, variables)
   if (res.error) throw new Error(res.error);
+  console.groupEnd()
 }
 
 async function performGraphQLRequest(token, query, variables) {
   console.group("Performing GraphQL Request")
-  console.log("token:", token, "query:", query, "variables:", variables);
 
   const res = await fetch(GRAPHQL_ENDPOINT, {
     method: 'POST',
@@ -231,7 +218,7 @@ async function performGraphQLRequest(token, query, variables) {
   if (!res.ok || result.errors) {
 
     // Check if subscription has ended
-    if (result.errors.some(err => err.message.includes("SUBSCRIPTION_ENDED"))) {
+    if (result?.errors?.some(err => err.message.includes("SUBSCRIPTION_ENDED"))) {
       console.error("❌ Subscription has ended. Please renew your subscription or use a different account.");
       console.groupEnd("Performing GraphQL Request")
       throw new Error("Monarch subscription has ended. Please renew your subscription or use different account.")

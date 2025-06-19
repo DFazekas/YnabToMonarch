@@ -45,7 +45,7 @@ export default function initManualInstructionsView() {
       downloadLink.download = 'accounts_export.zip';
       downloadLink.click();
     } catch (e) {
-      console.error('ZIP generation failed', e);
+      console.error('❌ ZIP generation failed', e);
       alert('Failed to generate ZIP file.');
     }
   });

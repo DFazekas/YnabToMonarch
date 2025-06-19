@@ -42,3 +42,20 @@ export function toggleDisabled(el, disabled) {
   el.classList.toggle('cursor-pointer', !disabled);
   el.classList.toggle('opacity-50', disabled);
 }
+
+/**
+ * Toggles visibility.
+ * @param {HTMLElement} el - The element to show or hide
+ * @param {boolean} show - Whether to show or hide the element
+ */
+export function toggleElementVisibility(el, show) {
+  if (show) {
+    el.classList.remove('hidden');
+    el.removeAttribute('aria-hidden');
+    el.removeAttribute('hidden');
+  } else {
+    el.classList.add('hidden');
+    el.setAttribute('aria-hidden', 'true');
+    el.setAttribute('hidden', 'true');
+  }
+}

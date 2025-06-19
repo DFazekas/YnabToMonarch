@@ -96,7 +96,7 @@ export default function initAutoImportCompleteView() {
       chunk.forEach(acc => updateStatus(acc, 'processing'));
 
       const pollingPromises = [];
-      const response = await monarchApi.createAccounts(state.apiToken, chunk);
+      const response = await monarchApi.createAccounts(state.credentials.apiToken, chunk);
       for (const account of response.success) {
         const original = accounts.find(a => a.modifiedName === account.name);
         updateStatus(original, 'pending');
@@ -126,10 +126,10 @@ export default function initAutoImportCompleteView() {
 
     const indicator = row.querySelector('.status-indicator');
 
-    const state = STATUS_PILLS[status];
-    if (state) {
-      indicator.textContent = state.text;
-      indicator.className = `status-indicator text-sm font-medium rounded-full px-3 py-1 ${state.color}`;
+    const statusProps = STATUS_PILLS[status];
+    if (statusProps) {
+      indicator.textContent = statusProps.text;
+      indicator.className = `status-indicator text-sm font-medium rounded-full px-3 py-1 ${statusProps.color}`;
     }
 
     if (error) {
@@ -183,7 +183,7 @@ export default function initAutoImportCompleteView() {
   async function pollUntilComplete(account, sessionKey, maxRetries = 30, interval = 3500) {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        const res = await monarchApi.queryUploadStatus(state.apiToken, sessionKey);
+        const res = await monarchApi.queryUploadStatus(state.credentials.apiToken, sessionKey);
         const session = res.data.uploadStatementSession;
 
         if (session.status === 'completed') {
