@@ -44,7 +44,7 @@ export async function handler(event, context) {
 
     return createResponse(200, { success, failed });
   } catch (err) {
-    console.error("❌ unexpected error", error)
+    console.error("❌ unexpected error", err)
     return createResponse(500, { error: err.message });
   } finally {
     console.groupEnd("CreateMonarchAccounts Lambda Handler")
@@ -84,7 +84,7 @@ async function processAccount(token, account) {
     sessionKeys.push(sessionKey);
   }));
 
-  console.groupEnd("Process account");
+  console.groupEnd()
   return { sessionKeys };
 }
 
@@ -116,11 +116,11 @@ async function createManualAccount(token, input) {
 
   if (res.error) return { error: res.error };
   if (res.data.createManualAccount.errors?.length) {
-    console.groupEnd("Creating Manual Account")
+    console.groupEnd()
     return { error: res.data.createManualAccount.errors.map(e => e.message).join('; ') };
   }
 
-  console.groupEnd("Creating Manual Account")
+  console.groupEnd()
   return { account: res.data.createManualAccount.account };
 }
 
@@ -151,11 +151,11 @@ async function uploadStatementsFile(token, transactions, accountName) {
 
   if (!res.ok) {
     console.error("❌ Upload failed", { status: res.status, result: result });
-    console.groupEnd("Uploading Statements File")
+    console.groupEnd()
     throw new Error(`Upload failed: ${JSON.stringify(result)}`)
   }
 
-  console.groupEnd("Uploading Statements File")
+  console.groupEnd()
   return { sessionKey: result.session_key }
 }
 
@@ -198,6 +198,7 @@ async function importTransactions(token, accountId, sessionKey) {
 
   const res = await performGraphQLRequest(token, query, variables)
   if (res.error) throw new Error(res.error);
+  console.groupEnd()
 }
 
 async function performGraphQLRequest(token, query, variables) {
