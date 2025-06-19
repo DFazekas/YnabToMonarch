@@ -3,61 +3,90 @@ import state from '../../state.js';
 import { monarchApi } from '../../api/monarchApi.js';
 import { renderButtons } from '../../components/button.js';
 import {
-  saveCredentialsToStorage,
-  saveTokenToStorage, loadCredentialsFromStorage
+  saveToLocalStorage, getLocalStorage
 } from '../../utils/storage.js';
 import { toggleDisabled, toggleElementVisibility } from '../../utils/dom.js';
+import { patchState } from '../../utils/state.js';
 
 export default function initMonarchOtpView() {
-  const otpInput = document.getElementById('otpInput');
-  const submitOtpBtn = document.getElementById('submitOtpBtn');
-  const otpError = document.getElementById('otpError');
-  const backBtn = document.getElementById('backBtn');
+  const $ = (id) => document.getElementById(id);
+  const UI = {
+    otpInput: $('otpInput'),
+    submitOtpBtn: $('submitOtpBtn'),
+    otpError: $('otpError'),
+    backBtn: $('backBtn')
+  };
 
   renderButtons();
 
-  // Allow only 6 digits
-  otpInput.addEventListener('input', () => {
-    otpInput.value = otpInput.value.replace(/\D/g, '').slice(0, 6);
-    toggleDisabled(submitOtpBtn, otpInput.value.length !== 6)
-    renderButtons();
+  const { credentials } = state;
+  const { email, encryptedPassword, uuid, remember } = getLocalStorage();
+  patchState(credentials, {
+    email: credentials.email || email,
+    encryptedPassword: credentials.encryptedPassword || encryptedPassword,
+    deviceUuid: credentials.deviceUuid || uuid,
+    remember: remember,
   });
 
-  submitOtpBtn.addEventListener('click', async (e) => {
+  async function onClickSubmitOtp(e) {
+    console.group("MonarchOtpView");
     e.preventDefault();
 
-    toggleElementVisibility(otpError, false)
-    state.credentials.otp = otpInput.value;
+    toggleElementVisibility(UI.otpError, false);
+    credentials.otp = UI.otpInput.value;
 
     try {
-      const { email, password, otp, deviceUuid, remember } = state.credentials;
-      const response = await monarchApi.login(email, password, deviceUuid, otp);
+      const response = await monarchApi.login(
+        credentials.email,
+        credentials.encryptedPassword,
+        credentials.deviceUuid,
+        credentials.otp
+      );
 
-      // ✅ Successful login — store token
       if (response?.token) {
-        state.credentials.apiToken = response.token;
-        state.credentials.awaitingOtp = false;
+        patchState(credentials, {
+          apiToken: response.token,
+          awaitingOtp: false
+        });
 
-        // Store credentials if "Remember me" is checked
-        if (remember) {
-          saveCredentialsToStorage(email, password);
-          saveTokenToStorage(response.token);
+        if (credentials.remember) {
+          saveToLocalStorage({ token: response.token });
         }
 
-        navigate('monarchCompleteView');
-        return;
+        console.groupEnd("MonarchOtpView");
+        return navigate('monarchCompleteView');
       }
 
-      // ❌ Something went wrong
-      console.error("Login failed:", response);
       throw new Error('Unknown login response.');
-
     } catch (err) {
-      toggleElementVisibility(otpError, true)
-      otpError.textContent = 'Invalid OTP. Please try again.';
-      console.error("OTP verification error", err);
+      toggleElementVisibility(UI.otpError, true);
+      UI.otpError.textContent = 'Invalid OTP. Please try again.';
+      console.error("❌ OTP verification error", err);
+      console.groupEnd("MonarchOtpView");
     }
-  });
+  }
 
-  backBtn.addEventListener('click', () => navigate('monarchCredentialsView'));
+  function onClickBack() {
+    navigate('monarchCredentialsView');
+  }
+
+  function onOtpInput() {
+    UI.otpInput.value = UI.otpInput.value.replace(/\D/g, '').slice(0, 6);
+    toggleDisabled(UI.submitOtpBtn, UI.otpInput.value.length !== 6);
+    renderButtons();
+  }
+
+  function onOtpKeyDown(e) {
+    if (e.key === 'Enter' && UI.otpInput.value.length === 6) {
+      UI.submitOtpBtn.click();
+    }
+  }
+
+  UI.otpInput.addEventListener('input', onOtpInput);
+  UI.otpInput.addEventListener('keydown', onOtpKeyDown);
+  UI.submitOtpBtn.addEventListener('click', onClickSubmitOtp);
+  UI.backBtn.addEventListener('click', onClickBack);
+
+  // Initialize state
+  toggleDisabled(UI.submitOtpBtn, true);
 }

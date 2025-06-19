@@ -3192,7 +3192,7 @@
 
   // src/state.js
   var state_default = {
-    credentials: { email: "", password: "", otp: "", remember: false, apiToken: "", awaitingOtp: false, deviceUuid: "" },
+    credentials: { email: "", encryptedPassword: "", otp: "", remember: false, apiToken: "", awaitingOtp: false, deviceUuid: "" },
     monarchAccounts: null,
     accounts: {}
   };
@@ -3227,29 +3227,34 @@
     return { type: "depository", subtype: "checking" };
   }
   async function parseYNABCSV(zipFile, monarchAccountTypes) {
+    console.group("parseYNABCSV");
     const zip = await import_jszip.default.loadAsync(zipFile);
     const targetFile = Object.keys(zip.files).find((name) => name.toLowerCase().includes("register") && name.toLowerCase().endsWith(".csv"));
     if (!targetFile) {
-      console.error("No register CSV found in the ZIP file");
+      console.error("\u274C No register CSV found in the ZIP file");
+      console.groupEnd("parseYNABCSV");
       throw new Error("No register CSV found in the ZIP file");
     }
     const csvContent = await zip.files[targetFile].async("string");
+    console.groupEnd("parseYNABCSV");
     return parseCSV(csvContent, monarchAccountTypes);
   }
   function parseCSV(csvContent, monarchAccountTypes) {
+    console.group("parseCSV");
     return new Promise((resolve, reject) => {
       import_papaparse.default.parse(csvContent, {
         header: true,
         skipEmptyLines: true,
         complete: ({ data: data2 }) => {
           if (!data2 || data2.length === 0) {
-            return reject(new Error("CSV file appears to be empty or invalid."));
+            console.groupEnd("parseCSV");
+            return reject(new Error("\u274C CSV file appears to be empty or invalid."));
           }
           const accounts = /* @__PURE__ */ new Map();
           for (const row of data2) {
             const accountName = row["Account"]?.trim();
             if (!accountName) {
-              console.warn("Skipping row with missing account name:", row);
+              console.warn("\u274C Skipping row with missing account name:", row);
               continue;
             }
             if (row["Date"]) {
@@ -3303,7 +3308,7 @@
             account.included = account.transactionCount > 0;
           }
           ;
-          console.log("Parsed accounts:", accounts);
+          console.groupEnd("parseCSV");
           resolve(Object.fromEntries(accounts));
         },
         error: (err) => reject(err)
@@ -3447,7 +3452,6 @@
       try {
         const accounts = await parseYNABCSV(csvFile);
         state_default.accounts = accounts;
-        console.log("State:", state_default);
         navigate("reviewView");
       } catch (err) {
         errorMessage.textContent = "Failed to parse ZIP file. Please ensure it includes a valid register.csv and plan.csv.";
@@ -4327,7 +4331,6 @@
 
   // src/views/MethodSelect/method.js
   function initMethodSelectView() {
-    console.log("State:", state_default);
     renderButtons();
     const manualBtn = document.getElementById("manualImportBtn");
     const autoBtn = document.getElementById("autoImportBtn");
@@ -4337,11 +4340,9 @@
     document.getElementById("filesCountDisplay").textContent = selectedCount;
     document.getElementById("manualFileCount").textContent = selectedCount;
     manualBtn.addEventListener("click", () => {
-      console.log("User selected Manual Import");
       navigate("manualInstructionsView");
     });
     autoBtn.addEventListener("click", () => {
-      console.log("User selected Auto Import");
       navigate("monarchCredentialsView");
     });
     backBtn.addEventListener("click", () => {
@@ -4457,7 +4458,7 @@
         downloadLink.download = "accounts_export.zip";
         downloadLink.click();
       } catch (e) {
-        console.error("ZIP generation failed", e);
+        console.error("\u274C ZIP generation failed", e);
         alert("Failed to generate ZIP file.");
       }
     });
@@ -4615,14 +4616,15 @@
       body: JSON.stringify(body)
     });
     const data2 = await res.json();
-    if (!res.ok)
+    if (!res.ok) {
       throw new Error(data2.error || data2.message || "API error");
+    }
     return data2;
   }
 
   // src/api/monarchApi.js
   var monarchApi = {
-    login: (email, password, deviceUuid, otp) => postJson(API.login, { email, password, deviceUuid, otp }),
+    login: (email, encryptedPassword, deviceUuid, otp) => postJson(API.login, { email, encryptedPassword, deviceUuid, otp }),
     fetchMonarchAccounts: (token) => postJson(API.fetchAccounts, { token }),
     createAccounts: (token, accounts) => postJson(API.createAccounts, { token, accounts }),
     generateAccounts: (accounts) => fetch(API.generateStatements, {
@@ -4634,81 +4636,171 @@
   };
 
   // src/utils/storage.js
-  function loadCredentialsFromStorage() {
+  var STORAGE_KEYS = {
+    EMAIL: "monarchEmail",
+    ENCRYPTED_PASSWORD: "monarchPasswordBase64",
+    TOKEN: "monarchApiToken",
+    UUID: "monarchDeviceUuid",
+    REMEMBER: "monarchRememberMe"
+  };
+  function getLocalStorage() {
     return {
-      token: localStorage.getItem("monarchToken") || "",
-      email: localStorage.getItem("monarchEmail") || "",
-      password: localStorage.getItem("monarchPassword") || "",
-      uuid: localStorage.getItem("deviceUuid") || ""
+      email: get(STORAGE_KEYS.EMAIL),
+      encryptedPassword: get(STORAGE_KEYS.ENCRYPTED_PASSWORD),
+      token: get(STORAGE_KEYS.TOKEN),
+      uuid: get(STORAGE_KEYS.UUID),
+      remember: get(STORAGE_KEYS.REMEMBER) === "true"
     };
   }
-  function saveCredentialsToStorage(email, password) {
-    localStorage.setItem("monarchEmail", email);
-    localStorage.setItem("monarchPassword", password);
-  }
-  function saveTokenToStorage(token) {
-    localStorage.setItem("monarchToken", token);
-  }
-  function saveDeviceUuid(uuid) {
-    localStorage.setItem("deviceUuid", uuid);
+  function saveToLocalStorage({ email, encryptedPassword, token, uuid, remember }) {
+    if (email)
+      set(STORAGE_KEYS.EMAIL, email);
+    if (encryptedPassword)
+      set(STORAGE_KEYS.ENCRYPTED_PASSWORD, encryptedPassword);
+    if (token)
+      set(STORAGE_KEYS.TOKEN, token);
+    if (uuid)
+      set(STORAGE_KEYS.UUID, uuid);
+    if (typeof remember === "boolean")
+      set(STORAGE_KEYS.REMEMBER, remember ? "true" : "false");
   }
   function clearStorage() {
-    localStorage.removeItem("deviceUuid");
-    localStorage.removeItem("monarchEmail");
-    localStorage.removeItem("monarchPassword");
-    localStorage.removeItem("monarchToken");
+    Object.values(STORAGE_KEYS).forEach(remove);
+  }
+  function get(key) {
+    return localStorage.getItem(key);
+  }
+  function set(key, value) {
+    localStorage.setItem(key, value);
+  }
+  function remove(key) {
+    localStorage.removeItem(key);
+  }
+
+  // shared/cryptoSpec.js
+  var SALT = "monarch-app-salt";
+  var PBKDF2_ITERATIONS = 1e5;
+  var ALGORITHM_WEB = "AES-GCM";
+  var AUTH_TAG_LENGTH = 16;
+  var IV_LENGTH = 12;
+  var DIGEST = "SHA-256";
+
+  // shared/crypto.js
+  function concatBuffers(...buffers) {
+    let totalLength = buffers.reduce((sum, b) => sum + b.length, 0);
+    let combined = new Uint8Array(totalLength);
+    let offset = 0;
+    for (let b of buffers) {
+      combined.set(b, offset);
+      offset += b.length;
+    }
+    return combined;
+  }
+  async function encryptPassword(email, plaintextPassword) {
+    console.group("encryptPassword");
+    try {
+      const encoder = new TextEncoder();
+      const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
+      const keyMaterial = await crypto.subtle.importKey("raw", encoder.encode(email), { name: "PBKDF2" }, false, ["deriveKey"]);
+      const key = await crypto.subtle.deriveKey({
+        name: "PBKDF2",
+        salt: encoder.encode(SALT),
+        iterations: PBKDF2_ITERATIONS,
+        hash: DIGEST
+      }, keyMaterial, { name: ALGORITHM_WEB, length: 256 }, true, ["encrypt"]);
+      const encoded = encoder.encode(plaintextPassword);
+      const encrypted = await crypto.subtle.encrypt({ name: ALGORITHM_WEB, iv }, key, encoded);
+      const bytes = new Uint8Array(encrypted);
+      const tag = bytes.slice(-AUTH_TAG_LENGTH);
+      const ciphertext = bytes.slice(0, -AUTH_TAG_LENGTH);
+      const full = concatBuffers(iv, ciphertext, tag);
+      return btoa(String.fromCharCode(...full));
+    } catch (err) {
+      console.error("\u274C Error encrypting password:", err);
+      console.groupEnd("encryptPassword");
+      throw new Error("Failed to encrypt password. Please try again.");
+    }
+  }
+
+  // src/utils/state.js
+  function patchState(target, updates) {
+    if (!target || typeof target !== "object")
+      throw new Error("Target must be an object");
+    Object.entries(updates).forEach(([key, value]) => {
+      target[key] = value;
+    });
+  }
+  function clearState(target) {
+    if (!target || typeof target !== "object")
+      throw new Error("Target must be an object");
+    Object.keys(target).forEach((key) => {
+      const value = target[key];
+      if (Array.isArray(value))
+        target[key] = [];
+      else if (typeof value === "object" && value !== null)
+        target[key] = {};
+      else if (typeof value === "boolean")
+        target[key] = false;
+      else
+        target[key] = "";
+    });
   }
 
   // src/views/MonarchCredentials/monarchCredentials.js
-  function initMonarchCredentialsView() {
-    const emailInput = document.getElementById("email");
-    const connectBtn = document.getElementById("connectBtn");
-    const backBtn2 = document.getElementById("backBtn");
-    const form = document.getElementById("credentialsForm");
-    const errorBox = document.getElementById("errorBox");
-    const rememberCheckbox = document.getElementById("rememberCredentials");
-    const rememberMeContainer = document.getElementById("rememberMe");
-    const notYouContainer = document.getElementById("notYouContainer");
-    const rememberedEmail = document.getElementById("rememberedEmail");
-    const clearCredentialsBtn = document.getElementById("clearCredentialsBtn");
-    const toggleBtn = document.getElementById("togglePassword");
-    const passwordInput = document.getElementById("password");
-    const eyeShow = document.getElementById("eyeShow");
-    const eyeHide = document.getElementById("eyeHide");
-    const securityNoteMsg = document.getElementById("securityNote");
-    const securityNoteIcon = document.getElementById("securityNoteIcon");
+  async function initMonarchCredentialsView() {
+    const $ = (id) => document.getElementById(id);
+    const UI = {
+      emailInput: $("email"),
+      passwordInput: $("password"),
+      connectBtn: $("connectBtn"),
+      backBtn: $("backBtn"),
+      form: $("credentialsForm"),
+      errorBox: $("errorBox"),
+      rememberCheckbox: $("rememberCredentials"),
+      rememberMeContainer: $("rememberMe"),
+      notYouContainer: $("notYouContainer"),
+      rememberedEmail: $("rememberedEmail"),
+      clearCredentialsBtn: $("clearCredentialsBtn"),
+      toggleBtn: $("togglePassword"),
+      eyeShow: $("eyeShow"),
+      eyeHide: $("eyeHide"),
+      securityNoteMsg: $("securityNote"),
+      securityNoteIcon: $("securityNoteIcon")
+    };
     renderButtons();
     const { credentials: creds } = state_default;
-    const { token, email, password, uuid } = loadCredentialsFromStorage();
-    Object.assign(creds, {
+    const { token, email, encryptedPassword, uuid, remember } = getLocalStorage();
+    patchState(creds, {
       email,
-      password,
+      encryptedPassword,
       apiToken: creds.apiToken || token,
-      deviceUuid: creds.deviceUuid || uuid || v4_default()
+      deviceUuid: creds.deviceUuid || uuid,
+      remember
     });
-    if (!uuid) {
-      state_default.deviceUuid = v4_default();
-      saveDeviceUuid(state_default.deviceUuid);
+    if (!creds.deviceUuid) {
+      creds.deviceUuid = v4_default();
+      saveToLocalStorage({ uuid: creds.deviceUuid });
     }
-    if (email && password) {
-      emailInput.value = email;
-      passwordInput.value = password;
-      rememberedEmail.textContent = `Signed in as ${email}`;
-      rememberCheckbox.checked = creds.remember;
-      toggleDisabled(emailInput, true);
-      toggleDisabled(passwordInput, true);
-      toggleElementVisibility(rememberMeContainer, false);
-      toggleElementVisibility(notYouContainer, true);
-      toggleElementVisibility(toggleBtn, false);
+    if (email && encryptedPassword) {
+      UI.emailInput.value = email;
+      UI.passwordInput.value = "";
+      UI.rememberedEmail.textContent = `Signed in as ${email}`;
+      UI.rememberCheckbox.checked = creds.remember;
+      toggleDisabled(UI.emailInput, true);
+      toggleDisabled(UI.passwordInput, true);
+      toggleElementVisibility(UI.rememberMeContainer, false);
+      toggleElementVisibility(UI.notYouContainer, true);
+      toggleElementVisibility(UI.toggleBtn, false);
       updateSecurityNote("signed-in");
     } else {
-      toggleElementVisibility(notYouContainer, false);
+      toggleElementVisibility(UI.notYouContainer, false);
       updateSecurityNote();
     }
     function validateForm() {
-      const isValid = emailInput.value.trim() && passwordInput.value.trim();
-      toggleDisabled(connectBtn, !isValid);
-      toggleElementVisibility(errorBox, false);
+      const hasEmail = UI.emailInput.value.trim();
+      const hasPassword = UI.passwordInput.value.trim() || creds.encryptedPassword;
+      toggleDisabled(UI.connectBtn, !(hasEmail && hasPassword));
+      toggleElementVisibility(UI.errorBox, false);
       renderButtons();
     }
     function updateSecurityNote(status) {
@@ -4719,109 +4811,123 @@
       };
       switch (status) {
         case "remembered":
-          securityNoteMsg.textContent = "Your credentials will be stored securely on this device.";
-          securityNoteIcon.setAttribute("fill", COLOR.ORANGE);
+          UI.securityNoteMsg.textContent = "Your credentials will be stored securely on this device.";
+          UI.securityNoteIcon.setAttribute("fill", COLOR.ORANGE);
           break;
         case "signed-in":
-          securityNoteMsg.textContent = 'You are signed in. To use different credentials, click "Not you?".';
-          securityNoteIcon.setAttribute("fill", COLOR.BLUE);
+          UI.securityNoteMsg.textContent = 'You are signed in. To use different credentials, click "Not you?".';
+          UI.securityNoteIcon.setAttribute("fill", COLOR.BLUE);
           break;
         default:
-          securityNoteMsg.textContent = "Your credentials will not be stored.";
-          securityNoteIcon.setAttribute("fill", COLOR.GREEN);
+          UI.securityNoteMsg.textContent = "Your credentials will not be stored.";
+          UI.securityNoteIcon.setAttribute("fill", COLOR.GREEN);
       }
     }
-    form.addEventListener("submit", (e) => {
+    function onSubmitForm(e) {
       e.preventDefault();
-      connectBtn.click();
-    });
-    connectBtn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      const localStorage2 = loadCredentialsFromStorage();
-      const email2 = localStorage2.monarchEmail || emailInput.value.trim();
-      const password2 = localStorage2.monarchPassword || passwordInput.value.trim();
-      const uuid2 = localStorage2.deviceUuid || state_default.credentials.deviceUuid;
-      toggleDisabled(connectBtn, true);
-      connectBtn.textContent = "Connecting\u2026";
-      toggleElementVisibility(errorBox, false);
-      try {
-        const response = await monarchApi.login(email2, password2, uuid2);
-        Object.assign(creds, {
-          email: email2,
-          password: password2,
-          otp: "",
-          remember: rememberCheckbox.checked
-        });
-        if (creds.remember) {
-          saveCredentialsToStorage(email2, password2);
-        }
-        if (response.otpRequired) {
-          creds.awaitingOtp = true;
-          navigate("monarchOtpView");
+      UI.connectBtn.click();
+    }
+    async function handleLoginAttempt() {
+      const storage = getLocalStorage();
+      const email2 = UI.emailInput.value.trim() || storage.email;
+      const plaintextPassword = UI.passwordInput.value.trim();
+      let encryptedPassword2 = creds.encryptedPassword || storage.encryptedPassword;
+      const uuid2 = creds.deviceUuid || storage.uuid;
+      if (!encryptedPassword2 && plaintextPassword) {
+        try {
+          encryptedPassword2 = await encryptPassword(email2, plaintextPassword);
+        } catch (err) {
+          showError("Failed to encrypt password.");
           return;
         }
-        if (response.token) {
-          creds.apiToken = response.token;
-          creds.awaitingOtp = false;
-          if (creds.remember)
-            saveTokenToStorage(response.token);
-          navigate("monarchCompleteView");
-          return;
-        }
-        throw new Error("Unexpected login response.");
-      } catch (err) {
-        console.error("Login error", err);
-        errorBox.textContent = err?.message || "An unexpected error occurred.";
-        toggleElementVisibility(errorBox, true);
-      } finally {
-        toggleDisabled(connectBtn, false);
-        connectBtn.textContent = "Connect to Monarch";
       }
-    });
-    clearCredentialsBtn.addEventListener("click", (e) => {
+      toggleDisabled(UI.connectBtn, true);
+      UI.connectBtn.textContent = "Connecting\u2026";
+      toggleElementVisibility(UI.errorBox, false);
+      try {
+        const response = await monarchApi.login(email2, encryptedPassword2, uuid2);
+        if (response?.otpRequired) {
+          if (creds.remember) {
+            saveToLocalStorage({ email: email2, encryptedPassword: encryptedPassword2, remember: true });
+          }
+          creds.awaitingOtp = true;
+          return navigate("monarchOtpView");
+        }
+        if (response?.token) {
+          patchState(creds, {
+            email: email2,
+            encryptedPassword: encryptedPassword2,
+            otp: "",
+            remember: UI.rememberCheckbox.checked,
+            apiToken: response.token,
+            awaitingOtp: false
+          });
+          if (creds.remember) {
+            saveToLocalStorage({ email: email2, encryptedPassword: encryptedPassword2, token: response.token, remember: true });
+          }
+          return navigate("monarchCompleteView");
+        }
+        const apiError = response?.detail || response?.error || "Unexpected login response.";
+        throw new Error(apiError);
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        toggleDisabled(UI.connectBtn, false);
+        UI.connectBtn.textContent = "Connect to Monarch";
+      }
+    }
+    async function onClickConnect(e) {
+      e.preventDefault();
+      await handleLoginAttempt();
+    }
+    function onClickClearCredentials(e) {
       e.preventDefault();
       clearStorage();
-      Object.assign(creds, {
-        email: "",
-        password: "",
-        otp: "",
-        remember: false,
-        apiToken: "",
-        awaitingOtp: false,
-        deviceUuid: ""
-      });
-      emailInput.value = "";
-      passwordInput.value = "";
-      rememberCheckbox.checked = false;
-      toggleDisabled(emailInput, false);
-      toggleDisabled(passwordInput, false);
-      toggleDisabled(connectBtn, true);
-      toggleElementVisibility(toggleBtn, true);
-      toggleElementVisibility(notYouContainer, false);
-      toggleElementVisibility(rememberMeContainer, true);
+      clearState(creds);
+      UI.emailInput.value = "";
+      UI.passwordInput.value = "";
+      UI.rememberCheckbox.checked = false;
+      toggleDisabled(UI.emailInput, false);
+      toggleDisabled(UI.passwordInput, false);
+      toggleDisabled(UI.connectBtn, true);
+      toggleElementVisibility(UI.toggleBtn, true);
+      toggleElementVisibility(UI.notYouContainer, false);
+      toggleElementVisibility(UI.rememberMeContainer, true);
       updateSecurityNote();
       renderButtons();
-      emailInput.focus();
-    });
-    rememberCheckbox.addEventListener("change", () => {
-      creds.remember = rememberCheckbox.checked;
+      UI.emailInput.focus();
+    }
+    function onChangeRemember() {
+      creds.remember = UI.rememberCheckbox.checked;
       updateSecurityNote(creds.remember ? "remembered" : "not-remembered");
-      const target = emailInput.value.trim() === "" ? emailInput : passwordInput.value.trim() === "" ? passwordInput : connectBtn;
+      const target = UI.emailInput.value.trim() === "" ? UI.emailInput : UI.passwordInput.value.trim() === "" ? UI.passwordInput : UI.connectBtn;
       target.focus();
-    });
-    toggleBtn.addEventListener("click", () => {
-      const isHidden = passwordInput.type === "password";
-      passwordInput.type = isHidden ? "text" : "password";
-      toggleBtn.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
-      toggleElementVisibility(eyeShow, !isHidden);
-      toggleElementVisibility(eyeHide, isHidden);
-    });
-    [emailInput, passwordInput].forEach((input) => {
+    }
+    function onTogglePassword() {
+      const isHidden = UI.passwordInput.type === "password";
+      UI.passwordInput.type = isHidden ? "text" : "password";
+      UI.toggleBtn.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
+      toggleElementVisibility(UI.eyeShow, !isHidden);
+      toggleElementVisibility(UI.eyeHide, isHidden);
+    }
+    function onClickBack() {
+      navigate("methodView");
+    }
+    function showError(message) {
+      UI.errorBox.textContent = message;
+      toggleElementVisibility(UI.errorBox, true);
+    }
+    UI.form.addEventListener("submit", onSubmitForm);
+    UI.connectBtn.addEventListener("click", onClickConnect);
+    UI.clearCredentialsBtn.addEventListener("click", onClickClearCredentials);
+    UI.rememberCheckbox.addEventListener("change", onChangeRemember);
+    UI.toggleBtn.addEventListener("click", onTogglePassword);
+    UI.backBtn.addEventListener("click", onClickBack);
+    [UI.emailInput, UI.passwordInput].forEach((input) => {
       input.addEventListener("input", validateForm);
       input.addEventListener("focus", () => input.classList.add("ring-2", "ring-blue-500", "outline-none"));
       input.addEventListener("blur", () => input.classList.remove("ring-2", "ring-blue-500", "outline-none"));
     });
-    backBtn2.addEventListener("click", () => navigate("methodView"));
     validateForm();
   }
 
@@ -4830,42 +4936,66 @@
 
   // src/views/MonarchOtp/monarchOtp.js
   function initMonarchOtpView() {
-    const otpInput = document.getElementById("otpInput");
-    const submitOtpBtn = document.getElementById("submitOtpBtn");
-    const otpError = document.getElementById("otpError");
-    const backBtn2 = document.getElementById("backBtn");
+    const $ = (id) => document.getElementById(id);
+    const UI = {
+      otpInput: $("otpInput"),
+      submitOtpBtn: $("submitOtpBtn"),
+      otpError: $("otpError"),
+      backBtn: $("backBtn")
+    };
     renderButtons();
-    otpInput.addEventListener("input", () => {
-      otpInput.value = otpInput.value.replace(/\D/g, "").slice(0, 6);
-      toggleDisabled(submitOtpBtn, otpInput.value.length !== 6);
-      renderButtons();
+    const { credentials } = state_default;
+    const { email, encryptedPassword, uuid, remember } = getLocalStorage();
+    patchState(credentials, {
+      email: credentials.email || email,
+      encryptedPassword: credentials.encryptedPassword || encryptedPassword,
+      deviceUuid: credentials.deviceUuid || uuid,
+      remember
     });
-    submitOtpBtn.addEventListener("click", async (e) => {
+    async function onClickSubmitOtp(e) {
+      console.group("MonarchOtpView");
       e.preventDefault();
-      toggleElementVisibility(otpError, false);
-      state_default.credentials.otp = otpInput.value;
+      toggleElementVisibility(UI.otpError, false);
+      credentials.otp = UI.otpInput.value;
       try {
-        const { email, password, otp, deviceUuid, remember } = state_default.credentials;
-        const response = await monarchApi.login(email, password, deviceUuid, otp);
+        const response = await monarchApi.login(credentials.email, credentials.encryptedPassword, credentials.deviceUuid, credentials.otp);
         if (response?.token) {
-          state_default.credentials.apiToken = response.token;
-          state_default.credentials.awaitingOtp = false;
-          if (remember) {
-            saveCredentialsToStorage(email, password);
-            saveTokenToStorage(response.token);
+          patchState(credentials, {
+            apiToken: response.token,
+            awaitingOtp: false
+          });
+          if (credentials.remember) {
+            saveToLocalStorage({ token: response.token });
           }
-          navigate("monarchCompleteView");
-          return;
+          console.groupEnd("MonarchOtpView");
+          return navigate("monarchCompleteView");
         }
-        console.error("Login failed:", response);
         throw new Error("Unknown login response.");
       } catch (err) {
-        toggleElementVisibility(otpError, true);
-        otpError.textContent = "Invalid OTP. Please try again.";
-        console.error("OTP verification error", err);
+        toggleElementVisibility(UI.otpError, true);
+        UI.otpError.textContent = "Invalid OTP. Please try again.";
+        console.error("\u274C OTP verification error", err);
+        console.groupEnd("MonarchOtpView");
       }
-    });
-    backBtn2.addEventListener("click", () => navigate("monarchCredentialsView"));
+    }
+    function onClickBack() {
+      navigate("monarchCredentialsView");
+    }
+    function onOtpInput() {
+      UI.otpInput.value = UI.otpInput.value.replace(/\D/g, "").slice(0, 6);
+      toggleDisabled(UI.submitOtpBtn, UI.otpInput.value.length !== 6);
+      renderButtons();
+    }
+    function onOtpKeyDown(e) {
+      if (e.key === "Enter" && UI.otpInput.value.length === 6) {
+        UI.submitOtpBtn.click();
+      }
+    }
+    UI.otpInput.addEventListener("input", onOtpInput);
+    UI.otpInput.addEventListener("keydown", onOtpKeyDown);
+    UI.submitOtpBtn.addEventListener("click", onClickSubmitOtp);
+    UI.backBtn.addEventListener("click", onClickBack);
+    toggleDisabled(UI.submitOtpBtn, true);
   }
 
   // src/views/MonarchOtp/monarchOtp.html
@@ -4946,7 +5076,7 @@
       for (const chunk of chunks) {
         chunk.forEach((acc) => updateStatus(acc, "processing"));
         const pollingPromises = [];
-        const response = await monarchApi.createAccounts(state_default.apiToken, chunk);
+        const response = await monarchApi.createAccounts(state_default.credentials.apiToken, chunk);
         for (const account of response.success) {
           const original = accounts.find((a) => a.modifiedName === account.name);
           updateStatus(original, "pending");
@@ -4971,10 +5101,10 @@
       if (!row)
         return;
       const indicator = row.querySelector(".status-indicator");
-      const state = STATUS_PILLS[status];
-      if (state) {
-        indicator.textContent = state.text;
-        indicator.className = `status-indicator text-sm font-medium rounded-full px-3 py-1 ${state.color}`;
+      const statusProps = STATUS_PILLS[status];
+      if (statusProps) {
+        indicator.textContent = statusProps.text;
+        indicator.className = `status-indicator text-sm font-medium rounded-full px-3 py-1 ${statusProps.color}`;
       }
       if (error) {
         account.status = "failed";
@@ -5022,7 +5152,7 @@
     async function pollUntilComplete(account, sessionKey, maxRetries = 30, interval = 3500) {
       for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
-          const res = await monarchApi.queryUploadStatus(state_default.apiToken, sessionKey);
+          const res = await monarchApi.queryUploadStatus(state_default.credentials.apiToken, sessionKey);
           const session = res.data.uploadStatementSession;
           if (session.status === "completed") {
             updateStatus(account, "success");

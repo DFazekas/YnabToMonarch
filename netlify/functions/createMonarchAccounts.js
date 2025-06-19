@@ -217,7 +217,7 @@ async function performGraphQLRequest(token, query, variables) {
   if (!res.ok || result.errors) {
 
     // Check if subscription has ended
-    if (result.errors.some(err => err.message.includes("SUBSCRIPTION_ENDED"))) {
+    if (result?.errors?.some(err => err.message.includes("SUBSCRIPTION_ENDED"))) {
       console.error("❌ Subscription has ended. Please renew your subscription or use a different account.");
       console.groupEnd("Performing GraphQL Request")
       throw new Error("Monarch subscription has ended. Please renew your subscription or use different account.")

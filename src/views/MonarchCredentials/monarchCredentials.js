@@ -5,74 +5,76 @@ import { renderButtons } from '../../components/button.js';
 import { monarchApi } from '../../api/monarchApi.js';
 import { toggleElementVisibility, toggleDisabled } from '../../utils/dom.js';
 import {
-  loadCredentialsFromStorage,
-  saveCredentialsToStorage,
-  saveTokenToStorage,
-  saveDeviceUuid,
-  clearStorage
+  saveToLocalStorage, getLocalStorage, clearStorage
 } from '../../utils/storage.js';
+import { encryptPassword } from '../../../shared/crypto.js';
+import { patchState, clearState } from '../../utils/state.js';
 
 
-export default function initMonarchCredentialsView() {
-  const emailInput = document.getElementById('email');
-  const connectBtn = document.getElementById('connectBtn');
-  const backBtn = document.getElementById('backBtn');
-  const form = document.getElementById('credentialsForm');
-  const errorBox = document.getElementById('errorBox');
-  const rememberCheckbox = document.getElementById('rememberCredentials');
-  const rememberMeContainer = document.getElementById('rememberMe')
-  const notYouContainer = document.getElementById('notYouContainer');
-  const rememberedEmail = document.getElementById('rememberedEmail');
-  const clearCredentialsBtn = document.getElementById('clearCredentialsBtn');
-  const toggleBtn = document.getElementById('togglePassword');
-  const passwordInput = document.getElementById('password');
-  const eyeShow = document.getElementById('eyeShow');
-  const eyeHide = document.getElementById('eyeHide');
-  const securityNoteMsg = document.getElementById('securityNote');
-  const securityNoteIcon = document.getElementById('securityNoteIcon');
-
+export default async function initMonarchCredentialsView() {
+  const $ = (id) => document.getElementById(id);
+  const UI = {
+    emailInput: $('email'),
+    passwordInput: $('password'),
+    connectBtn: $('connectBtn'),
+    backBtn: $('backBtn'),
+    form: $('credentialsForm'),
+    errorBox: $('errorBox'),
+    rememberCheckbox: $('rememberCredentials'),
+    rememberMeContainer: $('rememberMe'),
+    notYouContainer: $('notYouContainer'),
+    rememberedEmail: $('rememberedEmail'),
+    clearCredentialsBtn: $('clearCredentialsBtn'),
+    toggleBtn: $('togglePassword'),
+    eyeShow: $('eyeShow'),
+    eyeHide: $('eyeHide'),
+    securityNoteMsg: $('securityNote'),
+    securityNoteIcon: $('securityNoteIcon')
+  };
 
   renderButtons();
 
   const { credentials: creds } = state;
 
   // Load from localStorage into state
-  const { token, email, password, uuid } = loadCredentialsFromStorage();
-  Object.assign(creds, {
+  const { token, email, encryptedPassword, uuid, remember } = getLocalStorage();
+  patchState(creds, {
     email,
-    password,
+    encryptedPassword,
     apiToken: creds.apiToken || token,
-    deviceUuid: creds.deviceUuid || uuid || uuidv4()
+    deviceUuid: creds.deviceUuid || uuid,
+    remember
   });
 
   // Generate device UUID once on view load
-  if (!uuid) {
-    state.deviceUuid = uuidv4();
-    saveDeviceUuid(state.deviceUuid);
+  if (!creds.deviceUuid) {
+    creds.deviceUuid = uuidv4();
+    saveToLocalStorage({ uuid: creds.deviceUuid });
   }
 
-  // Pre-populate fields if credentials already exist in state
-  if (email && password) {
-    emailInput.value = email;
-    passwordInput.value = password;
-    rememberedEmail.textContent = `Signed in as ${email}`;
-    rememberCheckbox.checked = creds.remember;
+  // Pre-populate fields if credentials already exist
+  if (email && encryptedPassword) {
+    UI.emailInput.value = email;
+    UI.passwordInput.value = ''
+    UI.rememberedEmail.textContent = `Signed in as ${email}`;
+    UI.rememberCheckbox.checked = creds.remember;
 
-    toggleDisabled(emailInput, true);
-    toggleDisabled(passwordInput, true);
-    toggleElementVisibility(rememberMeContainer, false);
-    toggleElementVisibility(notYouContainer, true);
-    toggleElementVisibility(toggleBtn, false);
+    toggleDisabled(UI.emailInput, true);
+    toggleDisabled(UI.passwordInput, true);
+    toggleElementVisibility(UI.rememberMeContainer, false);
+    toggleElementVisibility(UI.notYouContainer, true);
+    toggleElementVisibility(UI.toggleBtn, false);
     updateSecurityNote('signed-in')
   } else {
-    toggleElementVisibility(notYouContainer, false);
+    toggleElementVisibility(UI.notYouContainer, false);
     updateSecurityNote()
   }
 
   function validateForm() {
-    const isValid = emailInput.value.trim() && passwordInput.value.trim();
-    toggleDisabled(connectBtn, !isValid)
-    toggleElementVisibility(errorBox, false);
+    const hasEmail = UI.emailInput.value.trim();
+    const hasPassword = UI.passwordInput.value.trim() || creds.encryptedPassword;
+    toggleDisabled(UI.connectBtn, !(hasEmail && hasPassword));
+    toggleElementVisibility(UI.errorBox, false);
     renderButtons();
   }
 
@@ -85,131 +87,148 @@ export default function initMonarchCredentialsView() {
 
     switch (status) {
       case 'remembered':
-        securityNoteMsg.textContent = 'Your credentials will be stored securely on this device.';
-        securityNoteIcon.setAttribute('fill', COLOR.ORANGE);
+        UI.securityNoteMsg.textContent = 'Your credentials will be stored securely on this device.';
+        UI.securityNoteIcon.setAttribute('fill', COLOR.ORANGE);
         break;
       case 'signed-in':
-        securityNoteMsg.textContent = 'You are signed in. To use different credentials, click "Not you?".';
-        securityNoteIcon.setAttribute('fill', COLOR.BLUE);
+        UI.securityNoteMsg.textContent = 'You are signed in. To use different credentials, click "Not you?".';
+        UI.securityNoteIcon.setAttribute('fill', COLOR.BLUE);
         break;
       default:
-        securityNoteMsg.textContent = 'Your credentials will not be stored.';
-        securityNoteIcon.setAttribute('fill', COLOR.GREEN);
+        UI.securityNoteMsg.textContent = 'Your credentials will not be stored.';
+        UI.securityNoteIcon.setAttribute('fill', COLOR.GREEN);
     }
   }
 
-  form.addEventListener('submit', (e) => {
+  function onSubmitForm(e) {
     e.preventDefault();
-    connectBtn.click();
-  })
+    UI.connectBtn.click();
+  }
 
-  connectBtn.addEventListener('click', async (e) => {
-    e.preventDefault();
-    const localStorage = loadCredentialsFromStorage();
-    const email = localStorage.monarchEmail || emailInput.value.trim();
-    const password = localStorage.monarchPassword || passwordInput.value.trim();
-    const uuid = localStorage.deviceUuid || state.credentials.deviceUuid;
+  async function handleLoginAttempt() {
+    const storage = getLocalStorage();
+    const email = UI.emailInput.value.trim() || storage.email;
+    const plaintextPassword = UI.passwordInput.value.trim();
+    let encryptedPassword = creds.encryptedPassword || storage.encryptedPassword;
+    const uuid = creds.deviceUuid || storage.uuid;
 
-    toggleDisabled(connectBtn, true);
-    connectBtn.textContent = 'Connecting…';
-    toggleElementVisibility(errorBox, false);
-
-    try {
-      const response = await monarchApi.login(email, password, uuid);
-
-      Object.assign(creds, {
-        email,
-        password,
-        otp: '',
-        remember: rememberCheckbox.checked
-      });
-
-      if (creds.remember) {
-        saveCredentialsToStorage(email, password);
-      }
-
-      // OTP required
-      if (response.otpRequired) {
-        creds.awaitingOtp = true;
-        navigate("monarchOtpView")
-        return
-      }
-
-      // ✅ Successful login — store token
-      if (response.token) {
-        creds.apiToken = response.token;
-        creds.awaitingOtp = false;
-
-        // Store Monarch API token if "Remember me" is checked
-        if (creds.remember) saveTokenToStorage(response.token);
-
-        navigate('monarchCompleteView');
+    if (!encryptedPassword && plaintextPassword) {
+      try {
+        encryptedPassword = await encryptPassword(email, plaintextPassword);
+      } catch (err) {
+        showError('Failed to encrypt password.');
         return;
       }
-
-      throw new Error('Unexpected login response.');
-    } catch (err) {
-      console.error("Login error", err);
-      errorBox.textContent = err?.message || 'An unexpected error occurred.';
-      toggleElementVisibility(errorBox, true)
-    } finally {
-      toggleDisabled(connectBtn, false);
-      connectBtn.textContent = 'Connect to Monarch';
     }
-  });
 
-  clearCredentialsBtn.addEventListener('click', e => {
+    toggleDisabled(UI.connectBtn, true);
+    UI.connectBtn.textContent = 'Connecting…';
+    toggleElementVisibility(UI.errorBox, false);
+
+    try {
+      const response = await monarchApi.login(email, encryptedPassword, uuid);
+ 
+      if (response?.otpRequired) {
+        if (creds.remember) {
+          saveToLocalStorage({ email, encryptedPassword, remember: true });
+        }
+        creds.awaitingOtp = true;
+        return navigate("monarchOtpView");
+      }
+      
+      if (response?.token) {
+        patchState(creds, {
+          email,
+          encryptedPassword,
+          otp: '',
+          remember: UI.rememberCheckbox.checked,
+          apiToken: response.token,
+          awaitingOtp: false
+        });
+        
+        if (creds.remember) {
+          saveToLocalStorage({ email, encryptedPassword, token: response.token, remember: true });
+        }
+
+        return navigate('monarchCompleteView');
+      }
+      
+      const apiError = response?.detail || response?.error || "Unexpected login response."
+      throw new Error(apiError);
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      toggleDisabled(UI.connectBtn, false);
+      UI.connectBtn.textContent = 'Connect to Monarch';
+    }
+  }
+
+  async function onClickConnect(e) {
     e.preventDefault();
+    await handleLoginAttempt();
+  }
 
+  function onClickClearCredentials(e) {
+    e.preventDefault();
     clearStorage();
-    Object.assign(creds, {
-      email: '',
-      password: '',
-      otp: '',
-      remember: false,
-      apiToken: '',
-      awaitingOtp: false,
-      deviceUuid: ''
-    });
+    clearState(creds);
 
-    emailInput.value = '';
-    passwordInput.value = '';
-    rememberCheckbox.checked = false;
+    UI.emailInput.value = '';
+    UI.passwordInput.value = '';
+    UI.rememberCheckbox.checked = false;
 
-    toggleDisabled(emailInput, false);
-    toggleDisabled(passwordInput, false);
-    toggleDisabled(connectBtn, true)
-    toggleElementVisibility(toggleBtn, true);
-    toggleElementVisibility(notYouContainer, false);
-    toggleElementVisibility(rememberMeContainer, true);
-    updateSecurityNote()
+    toggleDisabled(UI.emailInput, false);
+    toggleDisabled(UI.passwordInput, false);
+    toggleDisabled(UI.connectBtn, true);
+    toggleElementVisibility(UI.toggleBtn, true);
+    toggleElementVisibility(UI.notYouContainer, false);
+    toggleElementVisibility(UI.rememberMeContainer, true);
+    updateSecurityNote();
     renderButtons();
-    emailInput.focus();
-  });
+    UI.emailInput.focus();
+  }
 
-  rememberCheckbox.addEventListener('change', () => {
-    creds.remember = rememberCheckbox.checked;
+  function onChangeRemember() {
+    creds.remember = UI.rememberCheckbox.checked;
     updateSecurityNote(creds.remember ? 'remembered' : 'not-remembered');
 
-    const target = emailInput.value.trim() === '' ? emailInput : passwordInput.value.trim() === '' ? passwordInput : connectBtn;
+    const target = UI.emailInput.value.trim() === ''
+      ? UI.emailInput
+      : UI.passwordInput.value.trim() === ''
+        ? UI.passwordInput
+        : UI.connectBtn;
     target.focus();
-  });
+  }
 
-  toggleBtn.addEventListener('click', () => {
-    const isHidden = passwordInput.type === 'password';
-    passwordInput.type = isHidden ? 'text' : 'password';
-    toggleBtn.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
-    toggleElementVisibility(eyeShow, !isHidden);
-    toggleElementVisibility(eyeHide, isHidden);
-  });
+  function onTogglePassword() {
+    const isHidden = UI.passwordInput.type === 'password';
+    UI.passwordInput.type = isHidden ? 'text' : 'password';
+    UI.toggleBtn.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+    toggleElementVisibility(UI.eyeShow, !isHidden);
+    toggleElementVisibility(UI.eyeHide, isHidden);
+  }
 
-  [emailInput, passwordInput].forEach(input => {
+  function onClickBack() {
+    navigate('methodView');
+  }
+
+  function showError(message) {
+    UI.errorBox.textContent = message;
+    toggleElementVisibility(UI.errorBox, true);
+  }
+
+  UI.form.addEventListener('submit', onSubmitForm);
+  UI.connectBtn.addEventListener('click', onClickConnect);
+  UI.clearCredentialsBtn.addEventListener('click', onClickClearCredentials);
+  UI.rememberCheckbox.addEventListener('change', onChangeRemember);
+  UI.toggleBtn.addEventListener('click', onTogglePassword);
+  UI.backBtn.addEventListener('click', onClickBack);
+
+  [UI.emailInput, UI.passwordInput].forEach(input => {
     input.addEventListener('input', validateForm);
     input.addEventListener('focus', () => input.classList.add('ring-2', 'ring-blue-500', 'outline-none'));
     input.addEventListener('blur', () => input.classList.remove('ring-2', 'ring-blue-500', 'outline-none'));
   });
-
-  backBtn.addEventListener('click', () => navigate('methodView'));
 
   validateForm();
 }

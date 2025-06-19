@@ -1,0 +1,9 @@
+export const SALT = 'monarch-app-salt';
+export const PBKDF2_ITERATIONS = 100000;
+export const ALGORITHM_NODE = 'aes-256-gcm';
+export const ALGORITHM_WEB = 'AES-GCM'; 
+export const AUTH_TAG_LENGTH = 16;
+export const IV_LENGTH = 12;
+export const DIGEST = 'SHA-256';
+export const KEY_LENGTH = 32;         // AES-256
+export const ENCODING = 'utf8';       // Use for encoding/decoding text consistently

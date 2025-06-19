@@ -11,19 +11,17 @@ export async function handler(event, context) {
   }
 
   try {
-    console.log("MonarchLogin parsing request body");
-    const { email, password, deviceUuid, otp } = JSON.parse(event.body)
-
-    console.log("API arguments:", { email, password, deviceUuid, otp });
-
-    if (!email || !password) {
+    let { email, encryptedPassword, deviceUuid, otp } = JSON.parse(event.body)
+    if (!email || !encryptedPassword || !deviceUuid) {
       console.error("MonarchLogin ❌ missing credentials");
-      return createResponse(400, { error: 'Email and password are required.' })
+      console.groupEnd("monarchLogin");
+      return createResponse(400, { error: 'Email, password, and device UUID are required.' })
     }
 
+    const decryptedPassword = decryptPassword(email, encryptedPassword);
     const body = {
       username: email,
-      password,
+      password: decryptedPassword,
       trusted_device: true,
       supports_mfa: true,
       supports_email_otp: true,
