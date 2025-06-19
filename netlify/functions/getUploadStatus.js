@@ -3,7 +3,9 @@ import fetch from 'node-fetch';
 const MONARCH_GRAPHQL_ENDPOINT = 'https://api.monarchmoney.com/graphql';
 
 export async function handler(event) {
+  console.group("getUploadStatus")
   if (event.httpMethod !== 'POST') {
+    console.groupEnd("getUploadStatus")
     return {
       statusCode: 405,
       body: JSON.stringify({ error: 'Method Not Allowed' }),
@@ -39,14 +41,14 @@ export async function handler(event) {
     });
 
     const result = await res.json();
-    console.log('Upload status response:', result);
-
+    console.groupEnd("getUploadStatus")
     return {
       statusCode: 200,
       body: JSON.stringify(result)
     };
   } catch (error) {
-    console.error('Error fetching upload status:', error);
+    console.error('❌ Error fetching upload status:', error);
+    console.groupEnd("getUploadStatus")
     return {
       statusCode: 500,
       body: JSON.stringify({ error: error.message }),

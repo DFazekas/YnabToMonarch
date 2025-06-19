@@ -10,6 +10,7 @@ const API_URL = 'https://api.monarchmoney.com/graphql';
 const OUTPUT_FILE_PATH = './public/static-data/monarchAccountTypes.json';
 
 async function fetchAccountTypeOptions() {
+  console.group("fetchAccountTypeOptions");
   const requestBody = {
     supports_email_otp: true,
     trusted_device: true,
@@ -62,15 +63,18 @@ async function fetchAccountTypeOptions() {
   if (json.errors) {
     console.error("❌ GraphQL returned errors:");
     console.error(JSON.stringify(json.errors, null, 2));
+    console.groupEnd("fetchAccountTypeOptions");
     throw new Error("GraphQL returned errors");
   }
 
   if (!json.data?.accountTypeOptions) {
     console.error("❌ No data returned:");
     console.error(json);
+    console.groupEnd("fetchAccountTypeOptions");
     throw new Error("No data returned");
   }
 
+  console.groupEnd("fetchAccountTypeOptions");
   return json.data.accountTypeOptions;
 }
 
@@ -96,7 +100,6 @@ async function writeStaticFile(transformedData) {
   };
 
   await fs.writeFile(OUTPUT_FILE_PATH, JSON.stringify(payload, null, 2));
-  console.log(`✅ Static file written: ${OUTPUT_FILE_PATH}`);
 }
 
 async function generateStaticFile() {

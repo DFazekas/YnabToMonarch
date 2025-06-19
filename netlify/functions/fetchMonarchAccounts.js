@@ -1,32 +1,27 @@
 const fetch = require('node-fetch')
 
 module.exports.handler = async (event, context) => {
-  console.log("MonarchAccount start", {
-    timestamp: new Date().toISOString(),
-    requestId: context.awsRequestId,
-    method: event.httpMethod
-  })
+  console.group("fetchMonarchAccounts")
 
   if (event.httpMethod !== 'POST') {
     console.warn("MonarchAccount ❌ wrong method", { method: event.httpMethod });
+    console.groupEnd("fetchMonarchAccounts")
     return {
       statusCode: 405,
       body: JSON.stringify({ error: 'Method not allowed. Use POST.' })
     }
   }
   try {
-    console.log("MonarchAccount parsing request body");
     const { token } = JSON.parse(event.body)
     if (!token) {
       console.error("MonarchAccount ❌ missing token");
+      console.groupEnd("fetchMonarchAccounts")
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'Token is required.' })
       }
     }
 
-    // Fetch accounts from Monarch Money API
-    console.log("MonarchAccount calling GraphQL API");
     const response = await fetch('https://api.monarchmoney.com/graphql', {
       method: 'POST',
       headers: {
@@ -37,24 +32,22 @@ module.exports.handler = async (event, context) => {
     })
 
     const result = await response.json();
-    console.log("ℹ️ MonarchAccount GraphQL response:")
-    console.log(result)
     if (!response.ok) {
       console.error("MonarchAccount ❌ API responded with error", { status: response.status, error: error })
+      console.groupEnd("fetchMonarchAccounts")
       return {
         statusCode: response.status,
         body: JSON.stringify({ error: error.message || 'Account fetch failed.' })
       }
     }
-
-    // Return accounts to the frontend
-    console.log("MonarchAccount ✅ fetched accounts", { count: result.data.accounts.length })
+    console.groupEnd("fetchMonarchAccounts")
     return {
       statusCode: 200,
       body: JSON.stringify({ accounts: result.data.accounts })
     }
   } catch (error) {
     console.error("MonarchAccount ❌ unexpected error", error)
+    console.groupEnd("fetchMonarchAccounts")
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Internal Server Error' })

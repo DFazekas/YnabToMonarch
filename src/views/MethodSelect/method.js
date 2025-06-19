@@ -3,7 +3,6 @@ import state from '../../state.js';
 import { renderButtons } from '../../components/button.js';
 
 export default function initMethodSelectView() {
-  console.log("State:", state)
   renderButtons();
   const manualBtn = document.getElementById('manualImportBtn');
   const autoBtn = document.getElementById('autoImportBtn');
@@ -17,12 +16,10 @@ export default function initMethodSelectView() {
   document.getElementById('manualFileCount').textContent = selectedCount;
 
   manualBtn.addEventListener('click', () => {
-    console.log("User selected Manual Import");
     navigate('manualInstructionsView');
   });
 
   autoBtn.addEventListener('click', () => {
-    console.log("User selected Auto Import");
     navigate('monarchCredentialsView');
   });
 

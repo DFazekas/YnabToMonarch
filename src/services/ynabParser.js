@@ -40,26 +40,31 @@ function inferMonarchType(accountName) {
 
 // The main parsing function now accepts monarchAccountTypes argument
 export default async function parseYNABCSV(zipFile, monarchAccountTypes) {
+  console.group("parseYNABCSV");
   const zip = await JSZip.loadAsync(zipFile);
   const targetFile = Object.keys(zip.files).find(name => name.toLowerCase().includes('register') && name.toLowerCase().endsWith('.csv'));
 
   if (!targetFile) {
-    console.error("No register CSV found in the ZIP file");
+    console.error("❌ No register CSV found in the ZIP file");
+    console.groupEnd("parseYNABCSV");
     throw new Error("No register CSV found in the ZIP file");
   }
 
   const csvContent = await zip.files[targetFile].async('string');
+  console.groupEnd("parseYNABCSV");
   return parseCSV(csvContent, monarchAccountTypes)
 }
 
 function parseCSV(csvContent, monarchAccountTypes) {
+  console.group("parseCSV");
   return new Promise((resolve, reject) => {
     Papa.parse(csvContent, {
       header: true,
       skipEmptyLines: true,
       complete: ({ data }) => {
         if (!data || data.length === 0) {
-          return reject(new Error("CSV file appears to be empty or invalid."));
+          console.groupEnd("parseCSV");
+          return reject(new Error("❌ CSV file appears to be empty or invalid."));
         }
 
         const accounts = new Map();
@@ -67,11 +72,11 @@ function parseCSV(csvContent, monarchAccountTypes) {
         for (const row of data) {
           const accountName = row['Account']?.trim();
           if (!accountName) {
-            console.warn("Skipping row with missing account name:", row);
+            console.warn("❌ Skipping row with missing account name:", row);
             continue;
           }
 
-          // 🔁 Convert date: MM/DD/YYYY → YYYY-MM-DD
+          // Convert date: MM/DD/YYYY → YYYY-MM-DD
           if (row['Date']) {
             const [mm, dd, yyyy] = row['Date'].split('/');
             if (mm && dd && yyyy) {
@@ -83,7 +88,6 @@ function parseCSV(csvContent, monarchAccountTypes) {
           const outflowCents = parseCurrencyToCents(row['Outflow']);
           const netCents = inflowCents - outflowCents;
 
-          // ✅ Add MonarchDollars column
           if (inflowCents > 0) {
             row.Amount = (inflowCents / 100).toFixed(2);
           } else if (outflowCents > 0) {
@@ -129,8 +133,7 @@ function parseCSV(csvContent, monarchAccountTypes) {
           account.included = account.transactionCount > 0;
         };
 
-        console.log("Parsed accounts:", accounts);
-
+        console.groupEnd("parseCSV");
         resolve(Object.fromEntries(accounts));
       },
       error: (err) => reject(err)
