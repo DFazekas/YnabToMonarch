@@ -18,6 +18,20 @@ function concatBuffers(...buffers) {
   return combined;
 }
 
+/**
+ * Encrypts a plaintext password using AES-GCM in the browser.
+ *
+ * The encryption uses a key derived via PBKDF2 from the user's email and a static salt.
+ * The output is a base64-encoded string composed of:
+ *   [ IV (12 bytes) | Ciphertext | Auth Tag (16 bytes) ]
+ *
+ * This format ensures compatibility with the corresponding Node.js decryption logic.
+ *
+ * @param {string} email - The email used as input to the PBKDF2 key derivation function.
+ * @param {string} plaintextPassword - The password to encrypt.
+ * @returns {Promise<string>} - A base64-encoded string containing the encrypted payload.
+ * @throws {Error} - Throws if encryption fails for any reason (e.g., unsupported algorithm).
+ */
 export async function encryptPassword(email, plaintextPassword) {
   console.group("encryptPassword");
   try {

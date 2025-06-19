@@ -10,6 +10,18 @@ import {
   ENCODING
 } from './cryptoSpec.js';
 
+/**
+ * Decrypts a base64-encoded password using AES-GCM and PBKDF2.
+ *
+ * The function expects a base64-encoded string that was previously encrypted with:
+ * - a derived key using the user's email and a fixed salt
+ * - AES-GCM mode, with the IV prepended and auth tag appended to the ciphertext
+ *
+ * @param {string} email - The email used as the key derivation input.
+ * @param {string} base64Encrypted - The base64-encoded encrypted password string.
+ * @returns {string} - The decrypted plaintext password.
+ * @throws {Error} - Throws an error if decryption fails (e.g., invalid auth tag, bad input).
+ */
 export function decryptPassword(email, base64Encrypted) {
   console.group("decryptPassword");
   try {

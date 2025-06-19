@@ -1,3 +1,23 @@
+/**
+ * Applies consistent styling and interaction behavior to all elements
+ * with the `.ui-button` class based on their data attributes.
+ *
+ * Supported data attributes:
+ * - `data-type`: Defines the button style (`primary`, `secondary`, `text`, `danger`, `warning`).
+ * - `data-size`: Sets padding and font size (`small`, `medium`, `large`).
+ * - `data-fixed-width`: Explicitly sets a fixed pixel width.
+ * - `data-fullwidth`: Makes the button span the full width of its container.
+ *
+ * Automatically adds `disabled`, `hover`, and `cursor` states where appropriate.
+ * Overwrites existing className but preserves consistent styling and behavior.
+ *
+ * Example:
+ * ```html
+ * <button class="ui-button" data-type="primary" data-size="large" data-fullwidth>
+ *   Submit
+ * </button>
+ * ```
+ */
 export function renderButtons() {
   document.querySelectorAll('.ui-button').forEach(button => {
     const type = button.dataset.type || 'primary';

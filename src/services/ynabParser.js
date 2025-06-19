@@ -1,12 +1,22 @@
 import Papa from 'papaparse';
 import JSZip from 'jszip';
 
-// Generate unique IDs for each account
+/**
+ * Generate a short, pseudo-random unique ID.
+ * Used to assign unique identifiers to account objects.
+ * 
+ * @returns {string} A unique ID string prefixed with "id-".
+ */
 function generateId() {
   return 'id-' + Math.random().toString(36).slice(2, 11);
 }
 
-// Clean string like "$1,234.56" into integer cents: 123456
+/**
+ * Convert a currency-formatted string (e.g., "$1,234.56") into an integer value in cents.
+ *
+ * @param {string} str - The currency string to parse.
+ * @returns {number} Amount in cents (e.g., 123456) or 0 if invalid.
+ */
 function parseCurrencyToCents(str) {
   if (!str) return 0;
   const normalized = str.replace(/[^0-9.-]+/g, '').trim();
@@ -14,6 +24,12 @@ function parseCurrencyToCents(str) {
   return isNaN(floatVal) ? 0 : Math.round(floatVal * 100);
 }
 
+/**
+ * Attempt to infer Monarch-compatible account type and subtype based on account name.
+ * 
+ * @param {string} accountName - The name of the account (e.g., "My Checking Account").
+ * @returns {{ type: string, subtype: string }} The inferred type and subtype.
+ */
 function inferMonarchType(accountName) {
   const lowered = accountName.toLowerCase();
 
@@ -38,7 +54,14 @@ function inferMonarchType(accountName) {
   return { type: 'depository', subtype: 'checking' };
 }
 
-// The main parsing function now accepts monarchAccountTypes argument
+/**
+ * Parses a YNAB CSV file embedded inside a ZIP archive and transforms it into a structure
+ * compatible with Monarch Money account import. Automatically detects and extracts the CSV.
+ * 
+ * @param {File|Blob} zipFile - A ZIP file uploaded by the user (exported from YNAB).
+ * @param {Object} monarchAccountTypes - Optional pre-supplied account type hints.
+ * @returns {Promise<Object>} Parsed and structured account data with transaction lists.
+ */
 export default async function parseYNABCSV(zipFile, monarchAccountTypes) {
   console.group("parseYNABCSV");
   const zip = await JSZip.loadAsync(zipFile);
@@ -55,6 +78,13 @@ export default async function parseYNABCSV(zipFile, monarchAccountTypes) {
   return parseCSV(csvContent, monarchAccountTypes)
 }
 
+/**
+ * Parses a raw CSV string and transforms it into structured account and transaction data.
+ * 
+ * @param {string} csvContent - The content of the YNAB register CSV.
+ * @param {Object} monarchAccountTypes - Optional mapping to assist with type inference.
+ * @returns {Promise<Object>} A mapping of account names to account metadata and transactions.
+ */
 function parseCSV(csvContent, monarchAccountTypes) {
   console.group("parseCSV");
   return new Promise((resolve, reject) => {
