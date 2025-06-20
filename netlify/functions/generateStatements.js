@@ -1,4 +1,5 @@
 const Papa = require('papaparse');
+const { createResponse } = require('./response');
 
 module.exports.handler = async (event) => {
   try {
@@ -7,8 +8,8 @@ module.exports.handler = async (event) => {
       fileName: `${acc}_transactions.csv`,
       csv: Papa.unparse(accounts[acc])
     }));
-    return { statusCode: 200, body: JSON.stringify({ files }) };
+    return createResponse(200, { files });
   } catch (err) {
-    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+    return createResponse(500, { error: err.message });
   }
 };

@@ -1,8 +1,9 @@
 const { csvParse } = require('d3-dsv');
+const { createResponse } = require('./response');
 
 module.exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+    return createResponse(405, { error: 'Method Not Allowed' });
   }
 
   try {
@@ -27,14 +28,9 @@ module.exports.handler = async (event) => {
       });
     });
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify(accounts),
-    };
+    // TODO: Code smell - should this be wrapped in curly braces?
+    return createResponse(200, accounts);
   } catch (err) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message }),
-    };
+    return createResponse(500, { error: err.message });
   }
 }

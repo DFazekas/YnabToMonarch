@@ -1,5 +1,6 @@
 import fetch from 'node-fetch';
 import { decryptPassword } from '../../shared/crypto-node.js';
+import { createResponse } from './response.js';
 
 export async function handler(event, context) {
   console.group("monarchLogin");
@@ -7,7 +8,7 @@ export async function handler(event, context) {
   if (event.httpMethod !== 'POST') {
     console.warn("MonarchLogin ❌ wrong method", { method: event.httpMethod });
     console.groupEnd("monarchLogin");
-    return createResponse(405, { error: 'Method not allowed. Use POST.' })
+    return createResponse(405, { error: 'Method not allowed. Use POST.' });
   }
 
   try {
@@ -51,7 +52,7 @@ export async function handler(event, context) {
       if (data.detail && data.detail.toLowerCase().includes("version")) {
         console.error("MonarchLogin ❌ Invalid API request", response, data);
         console.groupEnd("monarchLogin");
-        return createResponse(500, { error: `Seems there's a bug in our code. Please let us know by reporting it here: <a href=\"https://github.com/DFazekas/YnabToMonarch/issues\">https://github.com/DFazekas/YnabToMonarch/issues</a>` })
+        return createResponse(500, { error: `Seems there's a bug in our code. Please let us know by reporting it here: <a href=\"https://github.com/DFazekas/YnabToMonarch/issues\">https://github.com/DFazekas/YnabToMonarch/issues</a>` });
       }
 
       if (data.error_code == 'EMAIL_OTP_REQUIRED') {
@@ -91,19 +92,8 @@ export async function handler(event, context) {
     console.groupEnd("monarchLogin");
     return createResponse(200, { token: data.token });
   } catch (error) {
-    console.error("MonarchLogin ❌ unexpected error", error)
+    console.error("MonarchLogin ❌ unexpected error", error);
     console.groupEnd("monarchLogin");
     return createResponse(500, { error: 'Internal Server Error' });
-  }
-}
-
-function createResponse(statusCode, payload = null) {
-  const isObject = typeof payload === 'object' && payload !== null;
-  const responseBody = isObject ? payload : { message: payload };
-
-  return {
-    statusCode,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(responseBody)
   }
 }

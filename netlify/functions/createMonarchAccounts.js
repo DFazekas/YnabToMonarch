@@ -2,6 +2,7 @@ import fetch from 'node-fetch';
 import FormData from 'form-data';
 import { Readable } from 'stream';
 import generateCSV from '../../shared/generateCsv.js';
+import { createResponse } from './response.js';
 
 // Constants for configuration
 const GRAPHQL_ENDPOINT = 'https://api.monarchmoney.com/graphql'
@@ -230,12 +231,4 @@ async function performGraphQLRequest(token, query, variables) {
 
   console.groupEnd("Performing GraphQL Request")
   return { data: result.data }
-}
-
-function createResponse(statusCode, payload) {
-  return {
-    statusCode,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  }
 }

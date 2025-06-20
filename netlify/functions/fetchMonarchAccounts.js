@@ -1,25 +1,20 @@
-const fetch = require('node-fetch')
+import fetch from 'node-fetch';
+import { createResponse } from './response';
 
-module.exports.handler = async (event, context) => {
+export async function handler(event, context) {
   console.group("fetchMonarchAccounts")
 
   if (event.httpMethod !== 'POST') {
     console.warn("MonarchAccount ❌ wrong method", { method: event.httpMethod });
     console.groupEnd("fetchMonarchAccounts")
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: 'Method not allowed. Use POST.' })
-    }
+    return createResponse(405, { error: 'Method not allowed. Use POST.' })
   }
   try {
     const { token } = JSON.parse(event.body)
     if (!token) {
       console.error("MonarchAccount ❌ missing token");
       console.groupEnd("fetchMonarchAccounts")
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Token is required.' })
-      }
+      return createResponse(400, { error: 'Token is required.' })
     }
 
     const response = await fetch('https://api.monarchmoney.com/graphql', {
@@ -35,22 +30,13 @@ module.exports.handler = async (event, context) => {
     if (!response.ok) {
       console.error("MonarchAccount ❌ API responded with error", { status: response.status, error: error })
       console.groupEnd("fetchMonarchAccounts")
-      return {
-        statusCode: response.status,
-        body: JSON.stringify({ error: error.message || 'Account fetch failed.' })
-      }
+      return createResponse(response.status, { error: error.message || 'Account fetch failed.' })
     }
     console.groupEnd("fetchMonarchAccounts")
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ accounts: result.data.accounts })
-    }
+    return createResponse(200, { accounts: result.data.accounts })
   } catch (error) {
     console.error("MonarchAccount ❌ unexpected error", error)
     console.groupEnd("fetchMonarchAccounts")
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Internal Server Error' })
-    }
+    return createResponse(500, { error: 'Internal Server Error' })
   }
 }
