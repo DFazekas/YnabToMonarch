@@ -1,15 +1,14 @@
-import fetch from 'node-fetch';
 import { createResponse } from './response.js';
-
-const GRAPHQL_ENDPOINT = 'https://api.monarchmoney.com/graphql';
+import { requireMethod, graphqlRequest } from './lib/api.js';
 
 export async function handler(event) {
   console.groupCollapsed("deleteMonarchAccounts");
 
-  if (event.httpMethod !== 'POST') {
+  const methodError = requireMethod(event, 'POST');
+  if (methodError) {
     console.warn("❌ wrong method", { method: event.httpMethod });
     console.groupEnd();
-    return createResponse(405, { error: 'Method not allowed. Use POST.' });
+    return methodError;
   }
 
   try {
@@ -29,16 +28,9 @@ export async function handler(event) {
         }
       }
     `;
-    const resp = await fetch(GRAPHQL_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Token ${token}`
-      },
-      body: JSON.stringify({ query: mutation, variables: { id: accountId } })
-    });
-    const json = await resp.json();
-    if (!resp.ok || json.errors || (json.data.deleteAccount.errors || []).length) {
+    const { data, errors } = await graphqlRequest(token, mutation, { id: accountId });
+    const json = { data: { deleteAccount: data.deleteAccount }, errors };
+    if (!json.data.deleteAccount || (json.data.deleteAccount.errors || []).length) {
       const errMsgs = json.errors
         ? JSON.stringify(json.errors)
         : json.data.deleteAccount.errors.map(e => e.message).join('; ');

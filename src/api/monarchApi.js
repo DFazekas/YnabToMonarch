@@ -3,7 +3,7 @@ import { postJson } from './utils.js';
 
 export const monarchApi = {
   login: (email, encryptedPassword, deviceUuid, otp) => postJson(API.login, { email, encryptedPassword, deviceUuid, otp }),
-  fetchMonarchAccounts: token => postJson(API.fetchAccounts, { token }),
+  fetchAccounts: token => postJson(API.fetchAccounts, { token }),
   createAccounts: (token, accounts) => postJson(API.createAccounts, { token, accounts }),
   generateAccounts: accounts => fetch(API.generateStatements, {
     method: 'POST',

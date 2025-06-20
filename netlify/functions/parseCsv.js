@@ -1,10 +1,10 @@
 const { csvParse } = require('d3-dsv');
 const { createResponse } = require('./response');
+const { requireMethod } = require('./lib/api.js');
 
 module.exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return createResponse(405, { error: 'Method Not Allowed' });
-  }
+  const methodError = requireMethod(event, 'POST');
+  if (methodError) return methodError;
 
   try {
     const { csvText } = JSON.parse(event.body);

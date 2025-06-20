@@ -1,14 +1,15 @@
 import fetch from 'node-fetch';
 import { decryptPassword } from '../../shared/crypto-node.js';
 import { createResponse } from './response.js';
+import { requireMethod } from './lib/api.js';
 
 export async function handler(event, context) {
   console.group("monarchLogin");
-
-  if (event.httpMethod !== 'POST') {
+  const methodError = requireMethod(event, 'POST');
+  if (methodError) {
     console.warn("MonarchLogin ❌ wrong method", { method: event.httpMethod });
     console.groupEnd("monarchLogin");
-    return createResponse(405, { error: 'Method not allowed. Use POST.' });
+    return methodError;
   }
 
   try {

@@ -1,20 +1,16 @@
-import fetch from 'node-fetch';
-import FormData from 'form-data';
-import { Readable } from 'stream';
-import generateCSV from '../../shared/generateCsv.js';
+import { requireMethod, graphqlRequest, uploadStatementsFile } from './lib/api.js';
 import { createResponse } from './response.js';
 
-// Constants for configuration
-const GRAPHQL_ENDPOINT = 'https://api.monarchmoney.com/graphql'
-const STATEMENTS_UPLOAD_URL = 'https://api.monarchmoney.com/statements/upload-async/'
+// ...shared helpers from lib/api.js...
 
 export async function handler(event, context) {
-  console.group("CreateMonarchAccounts Lambda Handler")
+  console.group("CreateMonarchAccounts Lambda Handler");
 
-  // Validate HTTP method
-  if (event.httpMethod !== 'POST') {
+  const methodError = requireMethod(event, 'POST');
+  if (methodError) {
     console.warn("❌ wrong method", { method: event.httpMethod });
-    return createResponse(405, { error: 'Method not allowed. Use POST.' })
+    console.groupEnd();
+    return methodError;
   }
 
   try {
@@ -48,7 +44,7 @@ export async function handler(event, context) {
     console.error("❌ unexpected error", err)
     return createResponse(500, { error: err.message });
   } finally {
-    console.groupEnd("CreateMonarchAccounts Lambda Handler")
+    console.groupEnd("CreateMonarchAccounts Lambda Handler");
   }
 }
 
@@ -69,7 +65,7 @@ async function processAccount(token, account) {
   }
 
   // Create new account in Monarch
-  const { account: newAccount, error } = await createManualAccount(token, accountInput)
+  const { account: newAccount, error } = await createManualAccount(token, accountInput);
   if (error) return { error }
 
   const txChunks = chunkArray(account.transactions, 3000);
@@ -98,7 +94,7 @@ function chunkArray(arr, size) {
 }
 
 async function createManualAccount(token, input) {
-  console.group("Creating Manual Account")
+  console.group("Creating Manual Account");
 
   const query = `
     mutation Web_CreateManualAccount($input: CreateManualAccountMutationInput!) {
@@ -113,56 +109,18 @@ async function createManualAccount(token, input) {
     }
   `;
 
-  const res = await performGraphQLRequest(token, query, { input });
-
-  if (res.error) return { error: res.error };
-  if (res.data.createManualAccount.errors?.length) {
-    console.groupEnd()
-    return { error: res.data.createManualAccount.errors.map(e => e.message).join('; ') };
+  const { data } = await graphqlRequest(token, query, { input });
+  if (data.createManualAccount.errors?.length) {
+    console.groupEnd();
+    return { error: data.createManualAccount.errors.map(e => e.message).join('; ') };
   }
 
-  console.groupEnd()
-  return { account: res.data.createManualAccount.account };
-}
-
-async function uploadStatementsFile(token, transactions, accountName) {
-  console.group("Uploading Statements File")
-
-  // Generate CSV content
-  const csv = generateCSV(accountName, transactions)
-  const csvStream = Readable.from([csv])
-
-  // Prepare FormData
-  const form = new FormData()
-  form.append('file', csvStream, {
-    filename: 'transactions.csv',
-    contentType: 'text/csv'
-  })
-
-  const res = await fetch(STATEMENTS_UPLOAD_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Token ${token}`,
-      ...form.getHeaders()
-    },
-    body: form
-  })
-
-  const result = await res.json()
-
-  if (!res.ok) {
-    console.error("❌ Upload failed", { status: res.status, result: result });
-    console.groupEnd()
-    throw new Error(`Upload failed: ${JSON.stringify(result)}`)
-  }
-
-  console.groupEnd()
-  return { sessionKey: result.session_key }
+  console.groupEnd();
+  return { account: data.createManualAccount.account };
 }
 
 async function importTransactions(token, accountId, sessionKey) {
-  console.group("Importing Transactions")
-
+  console.group("Importing Transactions");
   const query = `
       mutation Web_ParseUploadStatementSession($input: ParseStatementInput!) {
           parseUploadStatementSession(input: $input) {
@@ -185,8 +143,7 @@ async function importTransactions(token, accountId, sessionKey) {
           }
           __typename
       }
-  `
-
+  `;
   const variables = {
     input: {
       parserName: 'monarch_csv',
@@ -195,40 +152,7 @@ async function importTransactions(token, accountId, sessionKey) {
       skipCheckForDuplicates: false,
       shouldUpdateBalance: true
     }
-  }
-
-  const res = await performGraphQLRequest(token, query, variables)
-  if (res.error) throw new Error(res.error);
-  console.groupEnd()
-}
-
-async function performGraphQLRequest(token, query, variables) {
-  console.group("Performing GraphQL Request")
-
-  const res = await fetch(GRAPHQL_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Token ${token}`
-    },
-    body: JSON.stringify({ query, variables })
-  })
-
-  const result = await res.json()
-
-  if (!res.ok || result.errors) {
-
-    // Check if subscription has ended
-    if (result?.errors?.some(err => err.message.includes("SUBSCRIPTION_ENDED"))) {
-      console.error("❌ Subscription has ended. Please renew your subscription or use a different account.");
-      console.groupEnd("Performing GraphQL Request")
-      throw new Error("Monarch subscription has ended. Please renew your subscription or use different account.")
-    }
-
-    console.groupEnd("Performing GraphQL Request")
-    throw new Error(`GraphQL request failed: ${JSON.stringify(result.errors)}`);
-  }
-
-  console.groupEnd("Performing GraphQL Request")
-  return { data: result.data }
+  };
+  await graphqlRequest(token, query, variables);
+  console.groupEnd();
 }
