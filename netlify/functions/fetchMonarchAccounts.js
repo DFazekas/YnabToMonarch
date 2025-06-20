@@ -18,7 +18,7 @@ export async function handler(event) {
       return createResponse(400, { error: 'Token is required.' })
     }
 
-    const { data } = await graphqlRequest(token, 'query { accounts { id displayName } }');
+    const { data } = await graphqlRequest(token, 'query { accounts { id displayName displayBalance type { display name } subtype { name display } } }');
 
     console.groupEnd();
     return createResponse(200, { accounts: data.accounts });
