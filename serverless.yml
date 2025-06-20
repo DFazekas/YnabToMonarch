@@ -43,3 +43,9 @@ functions:
       - http:
           path: getUploadStatus
           method: post
+  deleteAccounts:
+    handler: netlify/functions/deleteMonarchAccounts.handler
+    events:
+      - http:
+          path: deleteMonarchAccounts
+          method: post

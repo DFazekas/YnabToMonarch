@@ -11,4 +11,5 @@ export const monarchApi = {
     body: JSON.stringify({ accounts }),
   }),
   queryUploadStatus: (token, sessionKey) => postJson(API.getUploadStatus, { token, sessionKey }),
+  deleteAccount: (token, accountId) => postJson(API.deleteAccounts, { token, accountId }),
 };
