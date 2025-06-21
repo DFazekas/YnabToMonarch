@@ -19,8 +19,8 @@ import monarchOtpTemplate from './views/MonarchOtp/monarchOtp.html';
 import initMonarchCompleteView from './views/MonarchComplete/monarchComplete.js';
 import monarchCompleteTemplate from './views/MonarchComplete/monarchComplete.html';
 
-import initBulkDeleteView from './views/BulkDeleteAccounts/bulkDelete.js';
-import bulkDeleteTemplate from './views/BulkDeleteAccounts/bulkDelete.html';
+import initManageAccountsView from './views/ManageMonarchAccounts/manageMonarchAccounts.js';
+import bulkManageAccountsTemplate from './views/ManageMonarchAccounts/manageMonarchAccounts.html';
 
 const routes = {
   uploadView: { template: uploadTemplate, init: initUploadView, scroll: false },
@@ -30,7 +30,7 @@ const routes = {
   monarchCredentialsView: { template: monarchCredentialsTemplate, init: initMonarchCredentialsView, scroll: false },
   monarchOtpView: { template: monarchOtpTemplate, init: initMonarchOtpView, scroll: false },
   monarchCompleteView: { template: monarchCompleteTemplate, init: initMonarchCompleteView, scroll: false },
-  bulkDeleteView: { template: bulkDeleteTemplate, init: initBulkDeleteView, scroll: true },
+  bulkDeleteView: { template: bulkManageAccountsTemplate, init: initManageAccountsView, scroll: true },
 };
 
 export async function navigate(view) {

@@ -3,7 +3,9 @@ const STORAGE_KEYS = {
   ENCRYPTED_PASSWORD: 'monarchPasswordBase64',
   TOKEN: 'monarchApiToken',
   UUID: 'monarchDeviceUuid',
-  REMEMBER: 'monarchRememberMe'
+  REMEMBER: 'monarchRememberMe',
+  ACCOUNTS: 'monarchAccounts',
+  ACCOUNTS_TS: 'monarchAccountsTimestamp'
 };
 
 /**
@@ -53,6 +55,38 @@ export function saveToLocalStorage({ email, encryptedPassword, token, uuid, reme
  */
 export function clearStorage() {
   Object.values(STORAGE_KEYS).forEach(remove);
+}
+
+/**
+ * Get cached accounts list from localStorage, returns parsed array or empty array.
+ */
+export function getCachedAccounts() {
+  try {
+    const json = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
+    return json ? JSON.parse(json) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Save accounts to localStorage with timestamp.
+ */
+export function saveAccountsToCache(accounts) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
+    localStorage.setItem(STORAGE_KEYS.ACCOUNTS_TS, Date.now().toString());
+  } catch {
+    // ignore quota errors
+  }
+}
+
+/**
+ * Clear cached accounts and timestamp.
+ */
+export function clearAccountsCache() {
+  localStorage.removeItem(STORAGE_KEYS.ACCOUNTS);
+  localStorage.removeItem(STORAGE_KEYS.ACCOUNTS_TS);
 }
 
 function get(key) {

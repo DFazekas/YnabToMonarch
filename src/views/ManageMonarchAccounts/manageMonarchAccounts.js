@@ -1,7 +1,7 @@
 import { monarchApi } from '../../api/monarchApi.js';
 import state from '../../state.js';
 import { toggleDisabled } from '../../utils/dom.js';
-import { getLocalStorage } from '../../utils/storage.js';
+import { getLocalStorage, getCachedAccounts, saveAccountsToCache } from '../../utils/storage.js';
 import { navigate } from '../../router.js';
 
 export default function initBulkDeleteView() {
@@ -21,6 +21,16 @@ export default function initBulkDeleteView() {
     refreshBtn: $('refreshBtn'),
     deleteBtn: $('deleteBtn'),
     statusMsg: $('statusMsg'),
+  }
+
+  // Load cached accounts if available, else fetch
+  const initialCache = getCachedAccounts();
+  if (initialCache.length) {
+    cachedAccounts = initialCache;
+    renderAccounts(cachedAccounts);
+    UI.statusMsg.textContent = `Loaded ${cachedAccounts.length} accounts from cache.`;
+  } else {
+    refreshAccounts();
   }
 
   function renderAccounts(accounts) {
@@ -52,9 +62,9 @@ export default function initBulkDeleteView() {
     toggleDisabled(UI.refreshBtn, true);
     try {
       const data = await monarchApi.fetchAccounts(token);
-      console.log("Fetched accounts:", data);
       cachedAccounts = data.accounts || [];
       renderAccounts(cachedAccounts);
+      saveAccountsToCache(cachedAccounts);
       UI.statusMsg.textContent = `Loaded ${cachedAccounts.length} accounts.`;
     } catch (err) {
       UI.statusMsg.textContent = `Error fetching accounts: ${err.message}`;
@@ -113,6 +123,7 @@ export default function initBulkDeleteView() {
     successes.forEach(id => {
       cachedAccounts = cachedAccounts.filter(acc => acc.id !== id);
     });
+    saveAccountsToCache(cachedAccounts);
     
     // Summary and re-render
     UI.statusMsg.textContent = `Deletion complete: ${successes.length} succeeded, ${failures.length} failed.`;
@@ -124,7 +135,4 @@ export default function initBulkDeleteView() {
 
   UI.refreshBtn.addEventListener('click', e => { e.preventDefault(); refreshAccounts(); });
   UI.deleteBtn.addEventListener('click', e => { e.preventDefault(); deleteSelected(); });
-
-  // Initial load
-  refreshAccounts();
 }
