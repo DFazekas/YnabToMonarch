@@ -17,7 +17,7 @@ export default function initBulkDeleteView() {
 
   const $ = id => document.getElementById(id);
   const UI = {
-    accountListEl: $('accountList'),
+    accountsTbody: $('accountsTbody'),
     refreshBtn: $('refreshBtn'),
     deleteBtn: $('deleteBtn'),
     statusMsg: $('statusMsg'),
@@ -34,26 +34,26 @@ export default function initBulkDeleteView() {
   }
 
   function renderAccounts(accounts) {
-    UI.accountListEl.innerHTML = '';
+    UI.accountsTbody.innerHTML = '';
     accounts.forEach(acc => {
-      const container = document.createElement('div');
-      container.className = 'flex items-center mb-1';
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.value = acc.id;
-      checkbox.className = 'mr-2';
-      checkbox.addEventListener('change', onSelectionChange);
-      const label = document.createElement('label');
-      label.textContent = acc.displayName;
-      container.appendChild(checkbox);
-      container.appendChild(label);
-      UI.accountListEl.appendChild(container);
+      const tr = document.createElement('tr');
+      tr.className = 'border-b';
+      tr.innerHTML = `
+        <td class="py-2 px-4 text-center"><input type="checkbox" value="${acc.id}" class="mr-2" /></td>
+        <td class="py-2 px-4">${acc.displayName}</td>
+        <td class="py-2 px-4">${acc.displayBalance}</td>
+        <td class="py-2 px-4">${acc.type.display}</td>
+        <td class="py-2 px-4">${acc.subtype.display}</td>
+      `;
+      UI.accountsTbody.appendChild(tr);
     });
+    // attach change handlers and reset delete button
+    UI.accountsTbody.querySelectorAll('input[type=checkbox]').forEach(cb => cb.addEventListener('change', onSelectionChange));
     toggleDisabled(UI.deleteBtn, true);
   }
 
   function onSelectionChange() {
-    const anyChecked = Array.from(UI.accountListEl.querySelectorAll('input[type=checkbox]')).some(cb => cb.checked);
+    const anyChecked = Array.from(UI.accountsTbody.querySelectorAll('input[type=checkbox]')).some(cb => cb.checked);
     toggleDisabled(UI.deleteBtn, !anyChecked);
   }
 
@@ -74,7 +74,7 @@ export default function initBulkDeleteView() {
   }
 
   async function deleteSelected() {
-    const checked = Array.from(UI.accountListEl.querySelectorAll('input[type=checkbox]:checked'));
+    const checked = Array.from(UI.accountsTbody.querySelectorAll('input[type=checkbox]:checked'));
     const ids = checked.map(cb => cb.value);
     if (ids.length === 0) return;
 

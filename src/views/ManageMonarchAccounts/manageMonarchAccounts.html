@@ -1,6 +1,17 @@
 <div class="p-4">
   <h2 class="text-xl font-bold mb-4">Bulk Delete Monarch Accounts</h2>
-  <div id="accountList" class="overflow-auto max-h-64 mb-4 border rounded p-2"></div>
+  <table class="min-w-full bg-white shadow rounded mb-4">
+    <thead class="bg-gray-200 text-gray-600 uppercase text-sm">
+      <tr>
+        <th class="py-2 px-4"></th>
+        <th class="py-2 px-4">Account Name</th>
+        <th class="py-2 px-4">Balance</th>
+        <th class="py-2 px-4">Type</th>
+        <th class="py-2 px-4">Subtype</th>
+      </tr>
+    </thead>
+    <tbody id="accountsTbody"></tbody>
+  </table>
   <button id="refreshBtn" class="px-4 py-2 bg-blue-500 text-white rounded mr-2">Refresh Accounts</button>
   <button id="deleteBtn" class="px-4 py-2 bg-red-500 text-white rounded disabled:opacity-50" disabled>Delete Selected</button>
   <div id="statusMsg" class="mt-4 text-sm"></div>
