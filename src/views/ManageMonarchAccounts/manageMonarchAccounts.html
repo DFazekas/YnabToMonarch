@@ -29,8 +29,7 @@
             title="Show only excluded accounts" data-filter="excluded">Excluded</button>
         </div>
 
-        <button id="refreshBtn"
-          class="ui-button" data-type="secondary" data-size="small">Sync Accounts</button>
+        <button id="refreshBtn" class="ui-button" data-type="secondary" data-size="small">Sync Accounts</button>
 
       </div>
     </div>
@@ -96,8 +95,7 @@
         </button>
 
         <!-- Bulk delete -->
-        <button id="bulkDeleteBtn"
-          class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"
+        <button id="bulkDeleteBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"
           title="Delete selected accounts">
           Delete
         </button>
@@ -106,7 +104,7 @@
 
     <!-- Navigation controls -->
     <div class="flex justify-between items-center px-4 py-6 mt-6">
-    
+
       <!-- Forward Button -->
       <button id="importBtn" class="ui-button" data-type="primary" data-size="large" disabled>Apply Changes</button>
     </div>
@@ -120,25 +118,18 @@
 
     <label for="renamePattern" class="font-medium text-sm">Pattern:</label>
     <input id="renamePattern" name="renamePattern" type="text" class="border rounded w-full px-3 py-2 mb-3"
-      placeholder="e.g. {{YNAB}} - {{Index}}">
+      placeholder="e.g. {{name}}" value="{{name}}">
 
     <!-- Token shortcuts -->
-    <div class="flex flex-col gap-2 mb-4">
-      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"
-        data-token="{{YNAB}}">YNAB
-        Name</button>
-      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"
-        data-token="{{Index}}">Index</button>
-      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"
-        data-token="{{Upper}}">Uppercase YNAB</button>
-      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"
-        data-token="{{Date}}">Today (YYYY-MM-DD)</button>
-    </div>
-
-    <!-- Index start -->
-    <div class="flex items-center gap-3 mb-4">
-      <label for="indexStart" class="text-sm">Index Start:</label>
-      <input id="indexStart" type="number" class="border rounded px-3 py-1 w-24" value="1" />
+    <div class="flex flex-wrap gap-2 mb-4">
+      <button class="func-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"
+        data-snippet="'{{name}}'">{{name}}</button>
+      <button class="func-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"
+        data-snippet="replace('value','v','V')">replace('value','a','b')</button>
+      <button class="func-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"
+        data-snippet="replaceAll('value','\\d','')">replaceAll('value','\\d','')</button>
+      <button class="func-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"
+        data-snippet="substring('value',0,3)">substring('value',0,3)</button>
     </div>
 
     <!-- Preview -->

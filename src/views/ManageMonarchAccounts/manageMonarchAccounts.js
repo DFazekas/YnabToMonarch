@@ -45,7 +45,6 @@ export default function initManageMonarchAccountsView() {
     importBtn: $('importBtn'),
     bulkRenameModal: $('bulkRenameModal'),
     renamePattern: $('renamePattern'),
-    indexStartInput: $('indexStart'),
     renamePreview: $('renamePreview'),
     renameCancel: $('renameCancel'),
     renameApply: $('renameApply'),
@@ -182,12 +181,9 @@ function updateSelection(shouldSelect) {
 
 function updatePreview(accounts) {
   UI.renamePreview.innerHTML = '';
-
   const pattern = UI.renamePattern.value;
-  const indexStart = parseInt(UI.indexStartInput.value, 10) || 1;
-
-  Object.values(accounts).filter(acc => acc.isSelected).slice(0, 3).forEach((acc, i) => {
-    const previewName = applyPattern(pattern, acc, i + indexStart);
+  Object.values(accounts).filter(account => account.isSelected).slice(0, 3).forEach((account) => {
+    const previewName = applyPattern(pattern, account);
     const div = document.createElement('div');
     div.textContent = previewName;
     UI.renamePreview.appendChild(div);
@@ -334,30 +330,55 @@ function openBulkRenameModal() {
     });
   });
 
-  // Live preview
-  UI.renamePattern.addEventListener('input', (accounts) => updatePreview(accounts));
-  UI.indexStartInput.addEventListener('input', (accounts) => updatePreview(accounts));
-  updatePreview(accounts);
+  // live preview
+  UI.renamePattern.addEventListener('input', () => updatePreview(selectedAccounts));
+  updatePreview(selectedAccounts);
 
   UI.renameCancel.onclick = () => UI.bulkRenameModal.classList.add('hidden');
   UI.renameApply.onclick = () => {
     const pattern = UI.renamePattern.value;
-    const indexStart = parseInt(UI.indexStartInput.value, 10) || 1;
-    selectedAccounts.forEach((acc, i) => {
-      acc.modifiedName = applyPattern(pattern, acc, i + indexStart);
+    selectedAccounts.forEach((account) => {
+      account.modifiedName = applyPattern(pattern, account);
     });
     UI.bulkRenameModal.classList.add('hidden');
     renderAccountTable(accounts);
   };
 }
 
-function applyPattern(pattern, account, index) {
-  const today = new Date().toISOString().split('T')[0];
-  return pattern
-    .replace(/{{YNAB}}/g, account.modifiedName)
-    .replace(/{{Index}}/g, index)
-    .replace(/{{Upper}}/g, account.modifiedName.toUpperCase())
-    .replace(/{{Date}}/g, today);
+function applyPattern(pattern, account) {
+  // resolve tokens first
+  let input = pattern.replace(/{{name}}/g, account.modifiedName);
+
+  // find all function calls
+  const calls = input.match(/(replaceAll?|replace?|substring)\([^)]*\)/g) || [];
+  let result = '';
+
+  calls.forEach(call => {
+    if (call.startsWith('replaceAll(')) {
+      const args = call.match(/replaceAll\('([^']*)','([^']*)','([^']*)'\)/);
+      if (args) {
+        const [, src, search, repl] = args;
+        result = src.replace(new RegExp(search, 'g'), repl);
+      }
+    }
+    else if (call.startsWith('replace(')) {
+      const args = call.match(/replace\('([^']*)','([^']*)','([^']*)'\)/);
+      if (args) {
+        const [, src, search, repl] = args;
+        result = src.replace(new RegExp(search), repl);
+      }
+    }
+    else if (call.startsWith('substring(')) {
+      const args = call.match(/substring\('([^']*)',(\d+),(\d+)\)/);
+      if (args) {
+        const [, src, start, end] = args;
+        result = src.substring(Number(start), Number(end));
+      }
+    }
+  });
+
+  // if no calls, just return resolved pattern
+  return calls.length ? result : input;
 }
 
 function openBulkTypeModal() {
