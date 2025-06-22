@@ -52,7 +52,7 @@ function renderCheckboxCell(account, onCheckboxClick) {
   checkbox.checked = account.isSelected;
   checkbox.addEventListener('change', () => {
     if (typeof onCheckboxClick === 'function') {
-      onCheckboxClick(account.id, checkbox.checked);
+      onCheckboxClick(account, checkbox);
     }
   });
   tdCheck.appendChild(checkbox);
