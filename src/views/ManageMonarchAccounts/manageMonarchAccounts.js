@@ -2,13 +2,13 @@ import { monarchApi } from '../../api/monarchApi.js';
 import state from '../../state.js';
 import { getLocalStorage, getCachedAccounts, saveAccountsToCache } from '../../utils/storage.js';
 import { navigate } from '../../router.js';
-import { currencyFormatter } from '../../utils/format.js';
 import { getAccountTypeByDisplayName, getSubtypeByDisplayName } from '../../utils/accountTypeUtils.js';
 import { renderButtons } from '../../components/button.js';
 import monarchAccountTypes from '../../../public/static-data/monarchAccountTypes.json';
 import { capitalize } from '../../utils/string.js';
 import { updateBulkActionBar } from '../../utils/bulkActionBar.js';
 import { toggleButtonActive, toggleDisabled, toggleElementVisible } from '../../utils/dom.js';
+import { createAccountRowElement } from '../../components/accountTable.js';
 
 let currentFilter = 'all';
 let searchQuery = '';
@@ -29,7 +29,7 @@ export default function initManageMonarchAccountsView() {
   // bind queries
   $ = id => document.getElementById(id);
   UI = {
-    reviewTableBody: $('reviewTableBody'),
+    dataTableBody: $('dataTableBody'),
     statusMsg: $('statusMsg'),
     lastSynced: $('lastSynced'),
     refreshBtn: $('refreshBtn'),
@@ -72,7 +72,7 @@ export default function initManageMonarchAccountsView() {
 
   // Navigation listeners
   UI.importBtn.addEventListener('click', () => navigate('methodView'));
-  UI.refreshBtn.addEventListener('click', e => { e.preventDefault(); refreshAccounts(); });
+  UI.refreshBtn.addEventListener('click', () => syncAccounts(token));
 
   // Search listener
   let debounceTimer;
@@ -88,8 +88,6 @@ export default function initManageMonarchAccountsView() {
   ['all', 'included', 'excluded'].forEach(filter => {
     document.getElementById(`filter${capitalize(filter)}`).addEventListener('click', () => setFilter(filter));
   });
-
-
 
   // Load cached accounts if available, else fetch
   const initialCache = getCachedAccounts();
@@ -139,16 +137,25 @@ async function syncAccounts(token) {
 
 function renderAccountTable(accounts) {
   const fragment = document.createDocumentFragment();
-  UI.reviewTableBody.innerHTML = '';
+  UI.dataTableBody.innerHTML = '';
 
   for (const account of accounts) {
     if (currentFilter === 'included' && !account.isIncluded) continue;
     if (currentFilter === 'excluded' && account.isIncluded) continue;
     if (searchQuery && !account.modifiedName.toLowerCase().includes(searchQuery)) continue;
-    fragment.appendChild(createAccountRowElement(account));
+
+    const rowElement = createAccountRowElement(account, {
+      showCheckbox: true,
+      onCheckboxClick: handleCheckboxClick,
+      onNameClick: handleNameClick,
+      onTypeChange: handleTypeChange,
+      onSubtypeChange: handleSubtypeChange,
+      onToggleChange: handleToggleChange
+    })
+    fragment.appendChild(rowElement);
   }
 
-  UI.reviewTableBody.appendChild(fragment);
+  UI.dataTableBody.appendChild(fragment);
   updateMasterCheckbox(getVisibleAccounts());
   updateBulkActionBar('bulkActionBar', accounts.filter(acc => acc.isSelected).length);
   toggleDisabled(importBtn, !accounts.some(isIncludedAndUnprocessed));
@@ -173,147 +180,43 @@ function updateSelection(shouldSelect) {
   renderAccountTable(accounts);
 }
 
-function createAccountRowElement(account) {
-  const row = document.createElement('tr');
-  row.setAttribute('role', 'row');
-  row.className = 'border-t border-[#dce1e5]';
+function handleCheckboxClick(account, checkboxElement) {
+  account.isSelected = checkboxElement.checked;
+  refreshBulkActionBar();
+  updateMasterCheckbox(getVisibleAccounts());
+}
 
-  // Account checkbox cell
-  const checkboxTd = document.createElement('td');
-  checkboxTd.className = 'px-2 py-2 text-center';
-  const checkbox = document.createElement('input');
-  checkbox.type = 'checkbox';
-  const checkboxId = `account-checkbox-${account.id || account.modifiedName.replace(/\s+/g, '-')}`;
-  checkbox.id = checkboxId;
-  checkbox.name = checkboxId;
-  checkbox.setAttribute('aria-label', `Select account: ${account.modifiedName}`);
-  checkbox.className = 'w-5 h-5';
-  checkbox.checked = account.isSelected;
-  checkbox.addEventListener('change', () => {
-    account.isSelected = checkbox.checked;
-    refreshBulkActionBar();
-    updateMasterCheckbox(getVisibleAccounts());
-  });
-  checkboxTd.appendChild(checkbox);
-  row.appendChild(checkboxTd);
+function handleNameClick(account, nameTd) {
+  openNameEditor(account, nameTd)
+}
 
-  // Account name cell
-  const nameTd = document.createElement('td');
-  nameTd.className = 'px-2 py-2 max-w-[300px] truncate';
-  nameTd.textContent = account.modifiedName;
-  if (!account.isProcessed) {
-    nameTd.classList.add('cursor-pointer');
-    nameTd.title = `Click to rename '${account.modifiedName}'`;
-    nameTd.addEventListener('click', () => openNameEditor(account, nameTd));
-  } else {
-    nameTd.classList.add('text-gray-400', 'cursor-default');
+function handleTypeChange(account, newType) {
+  const monarchTypeData = getAccountTypeByDisplayName(newType);
+  account.type = {
+    display: monarchTypeData.typeDisplay,
+    name: monarchTypeData.typeName,
   }
-  row.appendChild(nameTd);
-
-  // Account Type cell
-  const typeTd = document.createElement('td');
-  typeTd.className = 'px-2 py-2';
-  const typeSelect = document.createElement('select');
-  const typeId = `type-select-${account.id || account.modifiedName.replace(/\s+/g, '-')}`;
-  typeSelect.id = typeId;
-  typeSelect.name = typeId;
-  typeSelect.title = account.type.display
-  typeSelect.className = 'border rounded px-2 py-1 w-full';
-  typeSelect.disabled = account.isProcessed;
-  if (account.isProcessed) typeSelect.classList.add('text-gray-300', 'cursor-default');
-  else typeSelect.classList.add('cursor-pointer');
-  monarchAccountTypes.data.forEach(type => {
-    const opt = document.createElement('option');
-    opt.value = type.typeDisplay;
-    opt.textContent = type.typeDisplay;
-    if (type.typeDisplay === account.type.display) opt.selected = true;
-    typeSelect.appendChild(opt);
-  });
-  typeSelect.addEventListener('change', () => {
-    const monarchTypeData = getAccountTypeByDisplayName(typeSelect.value);
-    account.type = {
-      display: monarchTypeData.typeDisplay,
-      name: monarchTypeData.typeName,
-    }
-    account.subtype = {
-      display: monarchTypeData.subtypes[0].display,
-      name: monarchTypeData.subtypes[0].name,
-    }
-    renderAccountTable(accounts);
-  });
-  typeTd.appendChild(typeSelect);
-  row.appendChild(typeTd);
-
-  // Account Subtype cell
-  const subtypeTd = document.createElement('td');
-  subtypeTd.className = 'px-2 py-2';
-  const subtypeSelect = document.createElement('select');
-  const subtypeId = `subtype-select-${account.id || account.modifiedName.replace(/\s+/g, '-')}`;
-  subtypeSelect.id = subtypeId;
-  subtypeSelect.name = subtypeId;
-  subtypeSelect.className = 'border rounded px-2 py-1 w-full';
-  subtypeSelect.disabled = account.isProcessed;
-  if (account.isProcessed) subtypeSelect.classList.add('text-gray-300', 'cursor-default');
-  else subtypeSelect.classList.add('cursor-pointer');
-  const selectedType = account.type
-  subtypeSelect.title = account.subtype.display
-  const availableSubtypes = getAccountTypeByDisplayName(selectedType.display)?.subtypes || [];
-  availableSubtypes.forEach(sub => {
-    const opt = document.createElement('option');
-    opt.value = sub.display;
-    opt.textContent = sub.display;
-    if (sub.display === account.subtype.display) opt.selected = true;
-    subtypeSelect.appendChild(opt);
-  });
-  subtypeSelect.addEventListener('change', () => {
-    const selectedSubtype = getSubtypeByDisplayName(account.type.display, subtypeSelect.value);
-    account.subtype = {
-      display: selectedSubtype.display,
-      name: selectedSubtype.name,
-    }
-    renderAccountTable(accounts);
-  });
-  subtypeTd.appendChild(subtypeSelect);
-  row.appendChild(subtypeTd);
-
-  // Account Balance cell
-  const balanceTd = document.createElement('td');
-  balanceTd.className = 'px-2 py-2 text-[#637988] cursor-default';
-  balanceTd.textContent = currencyFormatter.format(account.balance);
-  balanceTd.title = `Balance: ${currencyFormatter.format(account.balance)}`;
-  if (account.isProcessed) balanceTd.classList.add('text-gray-400');
-  row.appendChild(balanceTd);
-
-  // Account Include/Exclude cell
-  const includeTd = document.createElement('td');
-  includeTd.className = 'px-2 py-2 flex items-center gap-2';
-  const toggleBtn = document.createElement('button');
-  toggleBtn.classList.add('ui-button');
-  toggleBtn.dataset.type = account.isIncluded ? 'primary' : 'secondary';
-  toggleBtn.dataset.size = 'small';
-  toggleBtn.textContent = account.isProcessed ? 'Processed' : (account.isIncluded ? 'Included' : 'Excluded');
-  toggleBtn.disabled = account.isProcessed;
-  toggleBtn.title = account.isProcessed ? 'This account has already been processed' : (account.isIncluded ? 'Click to exclude this account' : 'Click to include this account');
-  if (!account.isProcessed) {
-    toggleBtn.addEventListener('click', () => {
-      account.isIncluded = !account.isIncluded;
-      console.log("Updated account:", account)
-      console.log("All accounts:", accounts)
-      renderAccountTable(accounts);
-    });
+  account.subtype = {
+    display: monarchTypeData.subtypes[0].display,
+    name: monarchTypeData.subtypes[0].name,
   }
-  includeTd.appendChild(toggleBtn);
+  renderAccountTable(accounts);
+}
 
-  if (account.isFailed) {
-    const errorIcon = document.createElement('span');
-    errorIcon.className = 'text-red-600 text-xl cursor-default';
-    errorIcon.innerHTML = '⚠️';
-    errorIcon.title = 'Previously failed to process';
-    includeTd.appendChild(errorIcon);
+function handleSubtypeChange(account, newSubtype) {
+  const selectedSubtype = getSubtypeByDisplayName(account.type.display, newSubtype);
+  console.log("Selected subtype:", selectedSubtype);
+  console.log("Account before subtype change:", account);
+  account.subtype = {
+    display: selectedSubtype.display,
+    name: selectedSubtype.name,
   }
+  renderAccountTable(accounts);
+}
 
-  row.appendChild(includeTd);
-  return row;
+function handleToggleChange(account) {
+  account.isIncluded = !account.isIncluded;
+  renderAccountTable(accounts);
 }
 
 function updateMasterCheckbox(visibleAccounts) {
@@ -346,7 +249,7 @@ function refreshBulkActionBar() {
   toggleElementVisible(UI.bulkActionBar, selectedCount > 0);
 }
 
-function openNameEditor(account, nameCell) {
+function openNameEditor(account, nameElement) {
   const overlay = document.createElement('div');
   overlay.className = 'fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 opacity-0 transition-opacity duration-200';
   document.body.appendChild(overlay);
@@ -401,8 +304,8 @@ function openNameEditor(account, nameCell) {
 
   function save() {
     account.modifiedName = input.value.trim();
-    nameCell.textContent = account.modifiedName;
-    nameCell.title = `Click to rename '${account.modifiedName}'`;
+    nameElement.textContent = account.modifiedName;
+    nameElement.title = `Click to rename '${account.modifiedName}'`;
     closeEditor();
   }
 }
