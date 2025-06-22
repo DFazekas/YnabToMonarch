@@ -20,8 +20,6 @@ export function getSubtypeByDisplayName(typeDisplayName, subtypeDisplayName) {
   return type?.subtypes.find(s => s.display === subtypeDisplayName);
 }
 
-import monarchAccountTypes from '../../public/static-data/monarchAccountTypes.json';
-
 /**
  * Find an account type object by its internal name.
  * @param {string} typeName
