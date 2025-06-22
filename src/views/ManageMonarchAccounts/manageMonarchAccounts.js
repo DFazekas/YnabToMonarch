@@ -45,7 +45,7 @@ export default function initManageMonarchAccountsView() {
     importBtn: $('importBtn'),
     bulkRenameModal: $('bulkRenameModal'),
     renamePattern: $('renamePattern'),
-    indexStart: $('indexStart'),
+    indexStartInput: $('indexStart'),
     renamePreview: $('renamePreview'),
     renameCancel: $('renameCancel'),
     renameApply: $('renameApply'),
@@ -180,6 +180,20 @@ function updateSelection(shouldSelect) {
   renderAccountTable(accounts);
 }
 
+function updatePreview(accounts) {
+  UI.renamePreview.innerHTML = '';
+
+  const pattern = UI.renamePattern.value;
+  const indexStart = parseInt(UI.indexStartInput.value, 10) || 1;
+
+  Object.values(accounts).filter(acc => acc.isSelected).slice(0, 3).forEach((acc, i) => {
+    const previewName = applyPattern(pattern, acc, i + indexStart);
+    const div = document.createElement('div');
+    div.textContent = previewName;
+    UI.renamePreview.appendChild(div);
+  });
+}
+
 function handleCheckboxClick(account, checkboxElement) {
   account.isSelected = checkboxElement.checked;
   refreshBulkActionBar();
@@ -205,8 +219,6 @@ function handleTypeChange(account, newType) {
 
 function handleSubtypeChange(account, newSubtype) {
   const selectedSubtype = getSubtypeByDisplayName(account.type.display, newSubtype);
-  console.log("Selected subtype:", selectedSubtype);
-  console.log("Account before subtype change:", account);
   account.subtype = {
     display: selectedSubtype.display,
     name: selectedSubtype.name,
@@ -242,9 +254,6 @@ function masterCheckboxChange(e) {
 
 function refreshBulkActionBar() {
   const selectedCount = Object.values(accounts).filter(acc => acc.isSelected).length;
-  console.log("Selected accounts count:", selectedCount);
-  console.log("Selected accounts:", accounts.filter(acc => acc.isSelected));
-  console.log("All accounts:", accounts);
   UI.selectedCount.textContent = selectedCount;
   toggleElementVisible(UI.bulkActionBar, selectedCount > 0);
 }
@@ -313,49 +322,31 @@ function openNameEditor(account, nameElement) {
 function openBulkRenameModal() {
   UI.bulkRenameModal.classList.remove('hidden');
   UI.renamePattern.focus();
-
   const selectedAccounts = Object.values(accounts).filter(acc => acc.isSelected);
 
   // Token insert handlers
-  UI.tokenButtons.forEach(btn => {
+  const tokenButtons = document.querySelectorAll('.token-btn');
+  tokenButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       const token = btn.dataset.token;
       UI.renamePattern.value += token;
-      updatePreview();
+      updatePreview(accounts);
     });
   });
 
   // Live preview
-  UI.renamePattern.addEventListener('input', updatePreview);
-  UI.indexStartInput.addEventListener('input', updatePreview);
+  UI.renamePattern.addEventListener('input', (accounts) => updatePreview(accounts));
+  UI.indexStartInput.addEventListener('input', (accounts) => updatePreview(accounts));
+  updatePreview(accounts);
 
-  updatePreview();
-
-  function updatePreview() {
-    UI.previewDiv.innerHTML = '';
-
+  UI.renameCancel.onclick = () => UI.bulkRenameModal.classList.add('hidden');
+  UI.renameApply.onclick = () => {
     const pattern = UI.renamePattern.value;
     const indexStart = parseInt(UI.indexStartInput.value, 10) || 1;
-
-    selectedAccounts.slice(0, 3).forEach((acc, i) => {
-      const previewName = applyPattern(pattern, acc, i + indexStart);
-      const div = document.createElement('div');
-      div.textContent = previewName;
-      UI.previewDiv.appendChild(div);
-    });
-  }
-
-  UI.cancelBtn.onclick = () => UI.modal.classList.add('hidden');
-
-  UI.applyBtn.onclick = () => {
-    const pattern = UI.renamePattern.value;
-    const indexStart = parseInt(UI.indexStartInput.value, 10) || 1;
-
     selectedAccounts.forEach((acc, i) => {
       acc.modifiedName = applyPattern(pattern, acc, i + indexStart);
     });
-
-    UI.modal.classList.add('hidden');
+    UI.bulkRenameModal.classList.add('hidden');
     renderAccountTable(accounts);
   };
 }
@@ -363,34 +354,34 @@ function openBulkRenameModal() {
 function applyPattern(pattern, account, index) {
   const today = new Date().toISOString().split('T')[0];
   return pattern
-    .replace(/{{YNAB}}/g, account.originalYnabName?.trim() || account.name || 'Account')
+    .replace(/{{YNAB}}/g, account.modifiedName)
     .replace(/{{Index}}/g, index)
-    .replace(/{{Upper}}/g, (account.originalYnabName?.trim() || account.name || 'Account').toUpperCase())
+    .replace(/{{Upper}}/g, account.modifiedName.toUpperCase())
     .replace(/{{Date}}/g, today);
 }
 
 function openBulkTypeModal() {
-  UI.modal.classList.remove('hidden');
+  UI.bulkTypeModal.classList.remove('hidden');
 
   // Populate Type dropdown
-  UI.typeSelect.innerHTML = '';
+  UI.bulkTypeSelect.innerHTML = '';
   monarchAccountTypes.data.forEach(type => {
     const opt = document.createElement('option');
     opt.value = type.typeName;
     opt.textContent = type.typeDisplay;
-    UI.typeSelect.appendChild(opt);
+    UI.bulkTypeSelect.appendChild(opt);
   });
 
   // On type change, repopulate subtype dropdown
   function updateSubtypeOptions() {
-    const selectedType = getAccountTypeByDisplayName(UI.typeSelect.value);
-    UI.subtypeSelect.innerHTML = '';
+    const selectedType = getAccountTypeByDisplayName(UI.bulkTypeSelect.value);
+    UI.bulkSubtypeSelect.innerHTML = '';
 
     (selectedType?.subtypes || []).forEach(sub => {
       const opt = document.createElement('option');
       opt.value = sub.name;
       opt.textContent = sub.display;
-      UI.subtypeSelect.appendChild(opt);
+      UI.bulkSubtypeSelect.appendChild(opt);
     });
 
     // If no subtypes available, add default empty option
@@ -398,18 +389,17 @@ function openBulkTypeModal() {
       const opt = document.createElement('option');
       opt.value = '';
       opt.textContent = '-';
-      UI.subtypeSelect.appendChild(opt);
+      UI.bulkSubtypeSelect.appendChild(opt);
     }
   }
 
-  UI.typeSelect.addEventListener('change', updateSubtypeOptions);
+  UI.bulkTypeSelect.addEventListener('change', updateSubtypeOptions);
   updateSubtypeOptions();
 
-  UI.cancelBtn.onclick = () => UI.bulkTypeModal.classList.add('hidden');
-
-  UI.applyBtn.onclick = () => {
-    const typeValue = UI.typeSelect.value;
-    const subtypeValue = UI.subtypeSelect.value;
+  UI.bulkTypeCancel.onclick = () => UI.bulkTypeModal.classList.add('hidden');
+  UI.bulkTypeApply.onclick = () => {
+    const typeValue = UI.bulkTypeSelect.value;
+    const subtypeValue = UI.bulkSubtypeSelect.value;
 
     const selectedAccounts = Object.values(accounts).filter(acc => acc.isSelected);
     selectedAccounts.forEach(acc => {
