@@ -31,6 +31,7 @@ export default function initManageMonarchAccountsView() {
   UI = {
     reviewTableBody: $('reviewTableBody'),
     statusMsg: $('statusMsg'),
+    lastSynced: $('lastSynced'),
     refreshBtn: $('refreshBtn'),
     masterCheckbox: $('masterCheckbox'),
     searchInput: $('searchInput'),
@@ -97,6 +98,8 @@ export default function initManageMonarchAccountsView() {
     renderAccountTable(accounts);
     renderButtons();
     UI.statusMsg.textContent = `Loaded ${accounts.length} accounts from cache.`;
+    const storedTs = localStorage.getItem('monarchAccountsTimestamp');
+    UI.lastSynced.textContent = `Last synced: ${new Date(parseInt(storedTs, 10)).toLocaleString()}`;
   } else {
     syncAccounts(token);
     renderButtons();
@@ -122,6 +125,9 @@ async function syncAccounts(token) {
     }));
 
     saveAccountsToCache(accounts);
+    const newTimestamp = Date.now().toString();
+    localStorage.setItem('monarchAccountsTimestamp', newTimestamp);
+    UI.lastSynced.textContent = `Last synced: ${new Date(parseInt(newTimestamp, 10)).toLocaleString()}`;
     UI.statusMsg.textContent = `Fetched ${accounts.length} accounts from Monarch.`;
     renderAccountTable(accounts);
     renderButtons();
