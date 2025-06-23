@@ -71,7 +71,7 @@ export default function initManageMonarchAccountsView() {
 
   // Bulk action bar listeners
   UI.unselectAllBtn.addEventListener('click', () => updateSelection(false));
-  UI.bulkResetBtn.addEventListener('click', () => handleBulkReset)
+  UI.bulkResetBtn.addEventListener('click', handleBulkReset)
   UI.bulkDeleteBtn.addEventListener('click', handleBulkDeleteClick);
   UI.bulkRenameBtn.addEventListener('click', openBulkRenameModal);
   UI.bulkTypeBtn.addEventListener('click', openBulkTypeModal);
@@ -201,8 +201,8 @@ function renderAccountTable(accounts) {
   UI.dataTableBody.appendChild(fragment);
   updateMasterCheckbox(getVisibleAccounts());
   updateBulkActionBar('bulkActionBar', accounts.filter(acc => acc.isSelected).length);
-  toggleDisabled(importBtn, !accounts.some(isIncludedAndUnprocessed));
-  UI.importBtn.title = UI.importBtn.disabled ? 'At least one account must be included to proceed' : '';
+  toggleDisabled(importBtn, !accounts.some(acc => (acc.isModified || acc.shouldDelete) && acc.status !== 'processed'));
+  UI.importBtn.title = UI.importBtn.disabled ? 'At least one account must be modified to proceed' : '';
   renderButtons();
 }
 
@@ -526,7 +526,7 @@ function openBulkTypeModal() {
   UI.bulkTypeSelect.innerHTML = '';
   monarchAccountTypes.data.forEach(type => {
     const opt = document.createElement('option');
-    opt.value = type.typeName;
+    opt.value = type.typeDisplay;
     opt.textContent = type.typeDisplay;
     UI.bulkTypeSelect.appendChild(opt);
   });
@@ -538,18 +538,10 @@ function openBulkTypeModal() {
 
     (selectedType?.subtypes || []).forEach(sub => {
       const opt = document.createElement('option');
-      opt.value = sub.name;
+      opt.value = sub.display;
       opt.textContent = sub.display;
       UI.bulkSubtypeSelect.appendChild(opt);
     });
-
-    // If no subtypes available, add default empty option
-    if ((selectedType?.subtypes || []).length === 0) {
-      const opt = document.createElement('option');
-      opt.value = '';
-      opt.textContent = '-';
-      UI.bulkSubtypeSelect.appendChild(opt);
-    }
   }
 
   UI.bulkTypeSelect.addEventListener('change', updateSubtypeOptions);
@@ -557,13 +549,19 @@ function openBulkTypeModal() {
 
   UI.bulkTypeCancel.onclick = () => UI.bulkTypeModal.classList.add('hidden');
   UI.bulkTypeApply.onclick = () => {
-    const typeValue = UI.bulkTypeSelect.value;
-    const subtypeValue = UI.bulkSubtypeSelect.value;
-
+    const newType = getAccountTypeByDisplayName(UI.bulkTypeSelect.value);
+    const newSubtype = getSubtypeByDisplayName(newType.typeDisplay, UI.bulkSubtypeSelect.value);
     const selectedAccounts = Object.values(accounts).filter(acc => acc.isSelected);
     selectedAccounts.forEach(acc => {
-      acc.type = typeValue;
-      acc.subtype = subtypeValue || null;
+      acc.type = {
+        display: newType.typeDisplay,
+        name: newType.typeName,
+      };
+      acc.subtype = {
+        display: newSubtype.display,
+        name: newSubtype.name,
+      };
+      acc.isModified = true;
     });
 
     UI.bulkTypeModal.classList.add('hidden');
@@ -579,8 +577,4 @@ function getVisibleAccounts() {
     if (searchQuery && !account.modifiedName.toLowerCase().includes(searchQuery)) return false;
     return true;
   });
-}
-
-function isIncludedAndUnprocessed(account) {
-  return account.isIncluded && account.status !== 'processed';
 }
