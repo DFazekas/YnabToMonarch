@@ -9,6 +9,7 @@ import { capitalize } from '../../utils/string.js';
 import { updateBulkActionBar } from '../../utils/bulkActionBar.js';
 import { toggleButtonActive, toggleDisabled, toggleElementVisible } from '../../utils/dom.js';
 import { createAccountRowElement } from '../../components/accountTable.js';
+import { chunkArray } from '../../utils/array.js';
 
 let currentFilter = 'all';
 let searchQuery = '';
@@ -29,40 +30,49 @@ export default function initManageMonarchAccountsView() {
   // bind queries
   $ = id => document.getElementById(id);
   UI = {
+    // Table elements
     dataTableBody: $('dataTableBody'),
     statusMsg: $('statusMsg'),
     lastSynced: $('lastSynced'),
     refreshBtn: $('refreshBtn'),
     masterCheckbox: $('masterCheckbox'),
     searchInput: $('searchInput'),
+    importBtn: $('importBtn'),
+    selectedCount: $('selectedCount'),
     filterAllBtn: $('filterAll'),
+    filterUnchangedBtn: $('filterUnchanged'),
+    filterModifiedBtn: $('filterModified'),
+    filterDeletedBtn: $('filterDeleted'),
+
+    // Action bar elements
+    bulkActionBar: $('bulkActionBar'),
     unselectAllBtn: $('unselectAllBtn'),
     bulkRenameBtn: $('bulkRenameBtn'),
     bulkTypeBtn: $('bulkTypeBtn'),
-    bulkIncludeBtn: $('bulkIncludeBtn'),
-    bulkExcludeBtn: $('bulkExcludeBtn'),
+    bulkResetBtn: $('bulkResetBtn'),
     bulkDeleteBtn: $('bulkDeleteBtn'),
-    importBtn: $('importBtn'),
+
+    // Bulk rename modal elements
     bulkRenameModal: $('bulkRenameModal'),
     renamePattern: $('renamePattern'),
     renamePreview: $('renamePreview'),
     renameCancel: $('renameCancel'),
     renameApply: $('renameApply'),
+
+    // Bulk type modal elements
     bulkTypeModal: $('bulkTypeModal'),
     bulkTypeSelect: $('bulkTypeSelect'),
     bulkSubtypeSelect: $('bulkSubtypeSelect'),
     bulkTypeCancel: $('bulkTypeCancel'),
     bulkTypeApply: $('bulkTypeApply'),
-    selectedCount: $('selectedCount'),
-    bulkActionBar: $('bulkActionBar'),
   };
 
   UI.filterAllBtn.classList.add('bg-blue-500', 'text-white');
 
   // Bulk action bar listeners
   UI.unselectAllBtn.addEventListener('click', () => updateSelection(false));
-  UI.bulkIncludeBtn.addEventListener('click', () => updateInclusion(true));
-  UI.bulkExcludeBtn.addEventListener('click', () => updateInclusion(false));
+  UI.bulkResetBtn.addEventListener('click', () => handleBulkReset)
+  UI.bulkDeleteBtn.addEventListener('click', handleBulkDeleteClick);
   UI.bulkRenameBtn.addEventListener('click', openBulkRenameModal);
   UI.bulkTypeBtn.addEventListener('click', openBulkTypeModal);
 
@@ -70,7 +80,7 @@ export default function initManageMonarchAccountsView() {
   UI.masterCheckbox.addEventListener('change', masterCheckboxChange);
 
   // Navigation listeners
-  UI.importBtn.addEventListener('click', () => navigate('methodView'));
+  UI.importBtn.addEventListener('click', handleApplyChanges);
   UI.refreshBtn.addEventListener('click', () => syncAccounts(token));
 
   // Search listener
@@ -84,7 +94,7 @@ export default function initManageMonarchAccountsView() {
   });
 
   // Filter listeners
-  ['all', 'included', 'excluded'].forEach(filter => {
+  ['all', 'unchanged', 'modified', 'deleted'].forEach(filter => {
     document.getElementById(`filter${capitalize(filter)}`).addEventListener('click', () => setFilter(filter));
   });
 
@@ -103,22 +113,56 @@ export default function initManageMonarchAccountsView() {
   }
 }
 
+async function handleApplyChanges(token) {
+  const modifiedAccounts = accounts.filter(acc => acc.isModified && !acc.shouldDelete);
+  const deletedAccounts = modifiedAccounts.filter(acc => acc.shouldDelete);
+  await handleDeletingAccounts(token, deletedAccounts);
+  await handleModifyingAccounts(token, modifiedAccounts);
+}
+
+function handleBulkReset() {
+  Object.values(accounts).forEach(acc => {
+    if (acc.isSelected) {
+      acc.modifiedName = acc.originalName;
+      acc.type = acc.originalType;
+      acc.subtype = acc.originalSubtype;
+      acc.isModified = false;
+      acc.shouldDelete = false;
+      acc.isFailed = false
+    }
+  });
+  renderAccountTable(accounts);
+}
+
+function handleBulkDeleteClick() {
+  Object.values(accounts).forEach(acc => {
+    if (acc.isSelected) acc.shouldDelete = !acc.shouldDelete;
+  });
+  renderAccountTable(accounts);
+}
+
 async function syncAccounts(token) {
+  // TODO: Check against stored accounts, and merge changes if any
   try {
     UI.statusMsg.textContent = 'Fetching accounts from Monarch...';
     const data = await monarchApi.fetchAccounts(token);
 
     accounts = data.accounts.map(account => ({
       ...account,
+      originalName: account.displayName,
       modifiedName: account.displayName,
-      isSelected: false,
-      isIncluded: true,
-      status: 'unprocessed',
       balance: account.displayBalance || 0,
+      originalType: account.type,
       type: account.type,
+      originalSubtype: account.subtype,
       subtype: account.subtype,
       isProcessed: false,
       isFailed: false,
+      isSelected: false,
+      isIncluded: true,
+      shouldDelete: false,
+      isModified: false,
+      status: 'unprocessed',
     }));
 
     saveAccountsToCache(accounts);
@@ -139,8 +183,9 @@ function renderAccountTable(accounts) {
   UI.dataTableBody.innerHTML = '';
 
   for (const account of accounts) {
-    if (currentFilter === 'included' && !account.isIncluded) continue;
-    if (currentFilter === 'excluded' && account.isIncluded) continue;
+    if (currentFilter === 'unchanged' && (account.isModified || account.shouldDelete)) continue;
+    if (currentFilter === 'modified' && (!account.isModified || account.shouldDelete)) continue;
+    if (currentFilter === 'deleted' && !account.shouldDelete) continue;
     if (searchQuery && !account.modifiedName.toLowerCase().includes(searchQuery)) continue;
 
     const rowElement = createAccountRowElement(account, {
@@ -148,8 +193,7 @@ function renderAccountTable(accounts) {
       onCheckboxClick: handleCheckboxClick,
       onNameClick: handleNameClick,
       onTypeChange: handleTypeChange,
-      onSubtypeChange: handleSubtypeChange,
-      onToggleChange: handleToggleChange
+      onSubtypeChange: handleSubtypeChange
     })
     fragment.appendChild(rowElement);
   }
@@ -190,10 +234,25 @@ function updatePreview(accounts) {
   });
 }
 
+function masterCheckboxChange(e) {
+  const checked = e.target.checked;
+  getVisibleAccounts().forEach(acc => {
+    acc.isSelected = checked;
+  });
+  renderAccountTable(accounts);
+}
+
 function handleCheckboxClick(account, checkboxElement) {
   account.isSelected = checkboxElement.checked;
   refreshBulkActionBar();
   updateMasterCheckbox(getVisibleAccounts());
+}
+
+function updateMasterCheckbox(visibleAccounts) {
+  const selectedCount = visibleAccounts.filter(acc => acc.isSelected).length;
+  UI.masterCheckbox.checked = selectedCount > 0 && selectedCount === visibleAccounts.length;
+  UI.masterCheckbox.indeterminate = selectedCount > 0 && selectedCount < visibleAccounts.length;
+  refreshBulkActionBar();
 }
 
 function handleNameClick(account, nameTd) {
@@ -210,6 +269,9 @@ function handleTypeChange(account, newType) {
     display: monarchTypeData.subtypes[0].display,
     name: monarchTypeData.subtypes[0].name,
   }
+  if (account.originalType.display !== account.type.display) {
+    account.isModified = true;
+  }
   renderAccountTable(accounts);
 }
 
@@ -219,33 +281,104 @@ function handleSubtypeChange(account, newSubtype) {
     display: selectedSubtype.display,
     name: selectedSubtype.name,
   }
+  if (account.originalSubtype.display !== account.subtype.display) {
+    account.isModified = true;
+  }
   renderAccountTable(accounts);
 }
 
-function handleToggleChange(account) {
-  account.isIncluded = !account.isIncluded;
-  renderAccountTable(accounts);
-}
+async function handleDeletingAccounts(token, accounts) {
+  toggleDisabled(UI.bulkDeleteBtn, true);
+  toggleDisabled(UI.refreshBtn, true);
+  UI.statusMsg.textContent = `Preparing to delete ${accounts.length} account(s)...`;
 
-function updateMasterCheckbox(visibleAccounts) {
-  const selectedCount = visibleAccounts.filter(acc => acc.isSelected).length;
-  UI.masterCheckbox.checked = selectedCount > 0 && selectedCount === visibleAccounts.length;
-  UI.masterCheckbox.indeterminate = selectedCount > 0 && selectedCount < visibleAccounts.length;
-}
+  const batches = chunkArray(accounts, 3);
+  const successes = [];
+  const failures = [];
 
-function updateInclusion(include) {
-  Object.values(accounts).forEach(acc => {
-    if (acc.isSelected) acc.isIncluded = include;
+  console.log("Batches:", batches)
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i];
+    UI.statusMsg.textContent = `Deleting batch ${i + 1} of ${batches.length} (${batch.length} accounts)...`;
+    // Execute concurrent deletions
+    await Promise.all(batch.map(async account => {
+      try {
+        const res = await monarchApi.deleteAccount(token, account.id);
+        if (res.success) {
+          successes.push(account);
+        } else {
+          failures.push({ account, error: res.error || 'Unknown error' });
+        }
+      } catch (err) {
+        failures.push({ account, error: err.message });
+      }
+    }));
+
+    // Delay before next batch
+    if (i < batches.length - 1) {
+      UI.statusMsg.textContent += ' Preparing...';
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+  }
+
+  // Update cache by removing successes
+  successes.forEach(account => {
+    accounts = accounts.filter(acc => acc.id !== account.id);
   });
+
+  // Summary and re-render
+  UI.statusMsg.textContent = `Deletion complete: ${successes.length} succeeded, ${failures.length} failed.`;
+  if (failures.length > 0) console.error('Deletion failures:', failures);
   renderAccountTable(accounts);
+  toggleDisabled(UI.bulkDeleteBtn, false);
+  toggleDisabled(UI.refreshBtn, false);
 }
 
-function masterCheckboxChange(e) {
-  const checked = e.target.checked;
-  getVisibleAccounts().forEach(acc => {
-    acc.isSelected = checked;
+async function handleModifyingAccounts(token, accounts) {
+  toggleDisabled(UI.bulkDeleteBtn, true);
+  toggleDisabled(UI.refreshBtn, true);
+  UI.statusMsg.textContent = `Preparing to upload ${accounts.length} modified account(s)...`;
+
+  const batches = chunkArray(accounts, 3);
+  const successes = [];
+  const failures = [];
+
+  console.log("Batches:", batches)
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i];
+    UI.statusMsg.textContent = `Processing batch ${i + 1} of ${batches.length} (${batch.length} accounts)...`;
+    // Execute concurrent API calls
+    await Promise.all(batch.map(async account => {
+      try {
+        const res = await monarchApi.patchAccount(token, account);
+        if (res.success) {
+          successes.push(account);
+        } else {
+          failures.push({ account, error: res.error || 'Unknown error' });
+        }
+      } catch (err) {
+        failures.push({ account, error: err.message });
+      }
+    }));
+
+    // Delay before next batch
+    if (i < batches.length - 1) {
+      UI.statusMsg.textContent += ' Preparing...';
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+  }
+
+  // Update cache by removing successes
+  successes.forEach(account => {
+    accounts = accounts.filter(acc => acc.id !== account.id);
   });
+
+  // Summary and re-render
+  UI.statusMsg.textContent = `Applying changes complete: ${successes.length} succeeded, ${failures.length} failed.`;
+  if (failures.length > 0) console.error('Update failures:', failures);
   renderAccountTable(accounts);
+  toggleDisabled(UI.bulkDeleteBtn, false);
+  toggleDisabled(UI.refreshBtn, false);
 }
 
 function refreshBulkActionBar() {
@@ -310,8 +443,10 @@ function openNameEditor(account, nameElement) {
   function save() {
     account.modifiedName = input.value.trim();
     nameElement.textContent = account.modifiedName;
+    account.isModified = true;
     nameElement.title = `Click to rename '${account.modifiedName}'`;
     closeEditor();
+    renderAccountTable(accounts);
   }
 }
 
@@ -339,6 +474,9 @@ function openBulkRenameModal() {
     const pattern = UI.renamePattern.value;
     selectedAccounts.forEach((account) => {
       account.modifiedName = applyPattern(pattern, account);
+      if (account.modifiedName !== account.originalName) {
+        account.isModified = true;
+      }
     });
     UI.bulkRenameModal.classList.add('hidden');
     renderAccountTable(accounts);

@@ -4,8 +4,10 @@
       <h2 class="text-[#111518] text-[32px] font-bold">Manage Accounts</h2>
     </div>
 
-    <p id="statusMsg" class="text-[#111518] text-base px-4"></p>
-    <p id="lastSynced" class="text-sm text-gray-500 px-4 mt-2"></p>
+    <div class="px-4 flex items-center">
+      <button id="refreshBtn" class="ui-button" data-type="secondary" data-size="small">Sync Accounts</button>
+      <p id="lastSynced" class="text-sm text-gray-500 px-4 mt-2"></p>
+    </div>
 
     <!-- Control bar -->
     <div class="flex items-center justify-between px-4 py-2">
@@ -20,16 +22,18 @@
           <button id="filterAll" class="filter-btn px-4 py-2 text-sm font-medium rounded-md transition cursor-pointer"
             title="Show all accounts" data-filter="all">All</button>
 
-          <button id="filterIncluded"
+          <button id="filterUnchanged"
             class="filter-btn px-4 py-2 text-sm font-medium rounded-md transition cursor-pointer"
-            title="Show only included accounts" data-filter="included">Included</button>
+            title="Show only unchanged accounts" data-filter="unchanged">Unchanged</button>
 
-          <button id="filterExcluded"
+          <button id="filterModified"
             class="filter-btn px-4 py-2 text-sm font-medium rounded-md transition cursor-pointer"
-            title="Show only excluded accounts" data-filter="excluded">Excluded</button>
+            title="Show only modified accounts" data-filter="modified">Modified</button>
+
+          <button id="filterDeleted"
+            class="filter-btn px-4 py-2 text-sm font-medium rounded-md transition cursor-pointer"
+            title="Show only deleted accounts" data-filter="deleted">Deleted</button>
         </div>
-
-        <button id="refreshBtn" class="ui-button" data-type="secondary" data-size="small">Sync Accounts</button>
 
       </div>
     </div>
@@ -46,7 +50,7 @@
               <th scope="col" class="px-2 py-3 text-left text-sm font-medium w-[250px]">Type</th>
               <th scope="col" class="px-2 py-3 text-left text-sm font-medium w-[250px]">Subtype</th>
               <th scope="col" class="px-2 py-3 text-left text-sm font-medium w-[200px]">Balance</th>
-              <th scope="col" class="px-2 py-3 text-left text-sm font-medium w-[150px]">Include</th>
+              <th scope="col" class="px-2 py-3 text-left text-sm font-medium w-[150px]">State</th>
             </tr>
           </thead>
           <tbody id="dataTableBody">
@@ -54,6 +58,7 @@
           </tbody>
         </table>
       </div>
+      <p id="statusMsg" class="text-[#111518] text-base px-4"></p>
 
       <div id="bulkActionBar"
         class="hidden bulk-bar fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-white shadow-lg rounded-lg flex items-center px-6 py-3 gap-4 border border-gray-300 transition-all duration-300">
@@ -77,21 +82,13 @@
         <!-- Bulk Edit Type -->
         <button id="bulkTypeBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"
           title="Bulk edit account types">
-          Edit Type
+          Edit Type & Subtype
         </button>
 
-        <!-- Bulk Include -->
-        <button id="bulkIncludeBtn"
-          class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"
-          title="Include selected accounts">
-          Include
-        </button>
-
-        <!-- Bulk Exclude -->
-        <button id="bulkExcludeBtn"
-          class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"
-          title="Exclude selected accounts">
-          Exclude
+        <!-- Bulk Reset Changes -->
+        <button id="bulkResetBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"
+          title="Reset modifications to selected accounts">
+          Reset Changes
         </button>
 
         <!-- Bulk delete -->

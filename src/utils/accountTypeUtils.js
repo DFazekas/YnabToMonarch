@@ -16,7 +16,7 @@ export function getAccountTypeByDisplayName(typeDisplayName) {
  * @returns {object | undefined}
  */
 export function getSubtypeByDisplayName(typeDisplayName, subtypeDisplayName) {
-  const type = getAccountTypeByName(typeDisplayName);
+  const type = getAccountTypeByDisplayName(typeDisplayName);
   return type?.subtypes.find(s => s.display === subtypeDisplayName);
 }
 

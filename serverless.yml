@@ -49,3 +49,9 @@ functions:
       - http:
           path: deleteMonarchAccounts
           method: post
+  patchAccount:
+    handler: netlify/functions/patchMonarchAccount.handler
+    events:
+      - http:
+          path: patchMonarchAccount
+          method: post

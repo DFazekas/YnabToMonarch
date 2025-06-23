@@ -13,6 +13,7 @@ export async function handler(event) {
 
   try {
     const { token, accountId } = JSON.parse(event.body);
+    console.log("Token:", token, "Account ID:", accountId);
     if (!token || !accountId) {
       console.error("❌ Missing token or accountId");
       console.groupEnd();

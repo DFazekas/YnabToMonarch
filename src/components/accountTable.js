@@ -26,14 +26,12 @@ export function createAccountRowElement(account, config = {}) {
   tr.appendChild(renderBalanceCell(account));
 
   // include toggle cell
-  if (typeof config.onToggleChange === 'function') {
-    tr.appendChild(renderToggleCell(account, config.onToggleChange));
-  }
+  // if (typeof config.onToggleChange === 'function') {
+  //   tr.appendChild(renderToggleCell(account, config.onToggleChange));
+  // }
 
-  // status cell
-  if (account.isFailed) {
-    tr.appendChild(renderStatusCell());
-  }
+  // state cell
+  tr.appendChild(renderStateCell(account));
 
   return tr;
 }
@@ -89,7 +87,7 @@ function renderTypeCell(account, onTypeChange) {
   typeSelect.disabled = account.isProcessed;
   if (account.isProcessed) typeSelect.classList.add('text-gray-300', 'cursor-default');
   else typeSelect.classList.add('cursor-pointer');
-  
+
   monarchAccountTypes.data.forEach(type => {
     const opt = document.createElement('option');
     opt.value = type.typeDisplay;
@@ -145,29 +143,45 @@ function renderBalanceCell(account) {
   return tdBal
 }
 
-function renderToggleCell(account, onToggleChange) {
-  const tdToggle = document.createElement('td');
-  tdToggle.className = 'px-2 py-2 flex items-center gap-2';
-  const btn = document.createElement('button');
-  btn.classList.add('ui-button');
-  btn.dataset.type = account.isIncluded ? 'primary' : 'secondary';
-  btn.dataset.size = 'small';
-  btn.textContent = account.isProcessed ? 'Processed' : (account.isIncluded ? 'Included' : 'Excluded');
-  btn.disabled = account.isProcessed;
-  btn.title = account.isProcessed ? 'This account has already been processed' : (account.isIncluded ? 'Click to exclude this account' : 'Click to include this account');
-  btn.addEventListener('click', () => {
-    if (typeof onToggleChange === 'function') {
-      onToggleChange(account);
-    }
-  });
-  tdToggle.appendChild(btn);
-  return tdToggle
-}
+// function renderToggleCell(account, onToggleChange) {
+//   const tdToggle = document.createElement('td');
+//   tdToggle.className = 'px-2 py-2 flex items-center gap-2';
+//   const btn = document.createElement('button');
+//   btn.classList.add('ui-button');
+//   btn.dataset.type = account.isIncluded ? 'primary' : 'secondary';
+//   btn.dataset.size = 'small';
+//   btn.textContent = account.isProcessed ? 'Processed' : (account.isIncluded ? 'Included' : 'Excluded');
+//   btn.disabled = account.isProcessed;
+//   btn.title = account.isProcessed ? 'This account has already been processed' : (account.isIncluded ? 'Click to exclude this account' : 'Click to include this account');
+//   btn.addEventListener('click', () => {
+//     if (typeof onToggleChange === 'function') {
+//       onToggleChange(account);
+//     }
+//   });
+//   tdToggle.appendChild(btn);
+//   return tdToggle
+// }
 
-function renderStatusCell() {
-  const errorIcon = document.createElement('span');
-  errorIcon.className = 'text-red-600 text-xl cursor-default';
-  errorIcon.innerHTML = '⚠️';
-  errorIcon.title = 'Previously failed to process';
-  return errorIcon
+function renderStateCell(account) {
+  const tdState = document.createElement('td');
+  if (account.isFailed) {
+    const label = document.createElement('span');
+    label.className = 'bg-red-100 text-red-800 text-sm font-medium px-2 py-0.5 rounded-full cursor-default';
+    label.textContent = 'Error';
+    label.title = "This account failed to be uploaded. Try again.";
+    tdState.appendChild(label);
+  } else if (account.shouldDelete) {
+    const label = document.createElement('span');
+    label.className = 'bg-yellow-100 text-yellow-800 text-sm font-medium px-2 py-0.5 rounded-full cursor-default';
+    label.textContent = 'Will Delete';
+    label.title = 'This account is planned for deletion.';
+    tdState.appendChild(label);
+  } else if (account.isModified && account.isIncluded) {
+    const label = document.createElement('span');
+    label.className = 'bg-blue-100 text-blue-800 text-sm font-medium px-2 py-0.5 rounded-full cursor-default';
+    label.textContent = 'Modified';
+    label.title = 'This account is planned for modifying.';
+    tdState.appendChild(label);
+  }
+  return tdState;
 }

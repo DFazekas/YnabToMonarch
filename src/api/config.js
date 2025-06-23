@@ -9,4 +9,5 @@ export const API = {
   generateStatements: base + 'generateStatements',
   getUploadStatus: base + 'getUploadStatus',
   deleteAccounts: base + 'deleteMonarchAccounts',
+  patchAccount: base + 'patchMonarchAccount',
 };
