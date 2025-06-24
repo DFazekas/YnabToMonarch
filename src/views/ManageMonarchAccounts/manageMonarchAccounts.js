@@ -65,6 +65,13 @@ export default function initManageMonarchAccountsView() {
     bulkSubtypeSelect: $('bulkSubtypeSelect'),
     bulkTypeCancel: $('bulkTypeCancel'),
     bulkTypeApply: $('bulkTypeApply'),
+
+    // Processing modal
+    processingModal: $('processingModal'),
+    progressBar: $('progressBar'),
+    progressCounters: $('progressCounters'),
+    closeProcessingBtnContainer: $('closeProcessingBtnContainer'),
+    closeProcessingBtn: $('closeProcessingBtn'),
   };
 
   UI.filterAllBtn.classList.add('bg-blue-500', 'text-white');
@@ -79,8 +86,78 @@ export default function initManageMonarchAccountsView() {
   // Master checkbox listener
   UI.masterCheckbox.addEventListener('change', masterCheckboxChange);
 
+  UI.closeProcessingBtn.addEventListener('click', () => {
+    UI.processingModal.classList.add('hidden');
+  })
+
   // Navigation listeners
-  UI.importBtn.addEventListener('click', handleApplyChanges);
+  UI.importBtn.addEventListener('click', async () => {
+    const token = state.credentials.apiToken || getLocalStorage().token;
+    UI.processingModal.classList.remove('hidden');
+    UI.closeProcessingBtnContainer.classList.add('hidden');
+
+    // Filter accounts to delete and modify
+    const toDelete = accounts.filter(a => a.shouldDelete);
+    const toModify = accounts.filter(a => a.isModified && !a.shouldDelete);
+    // Total counts and progress tracking
+    const totalDel = toDelete.length
+    const totalMod = toModify.length
+    const total = totalDel + totalMod;
+    const failDel = [], failMod = [];
+    const succDel = [], succMod = [];
+
+    function updateProgress() {
+      const done = failDel.length + failMod.length + succDel.length + succMod.length;
+      const percentDone = Math.round(done / total * 100);
+      UI.progressBar.style.width = `${percentDone}%`;
+      UI.progressBar.textContent = `${percentDone}%`;
+      UI.progressCounters.innerHTML =
+        `<p>Modifications: ${succMod.length} of ${totalMod}</p>` +
+        `<p>Deletions:   ${succDel.length} of ${totalDel}</p>` +
+        `<p>Failures — Modifications: ${failMod.length}, Deletions: ${failDel.length}</p>`;
+    }
+
+    // process batches of deletions
+    for (const batch of chunkArray(toDelete, 3)) {
+      await Promise.all(batch.map(async acc => {
+        try {
+          const res = await monarchApi.deleteAccount(token, acc.id);
+          if (res.success) succDel.push(acc);
+          else failDel.push(acc);
+        } catch { failDel.push(acc) }
+      }));
+      console.log("Successfully deleted accounts:", succDel);
+      console.log("Failed to delete accounts:", failDel);
+      updateProgress();
+      await new Promise(r => setTimeout(r, 2000));
+    }
+
+    // process batches of modifications
+    for (const batch of chunkArray(toModify, 3)) {
+      await Promise.all(batch.map(async acc => {
+        try {
+          const res = await monarchApi.patchAccount(token, acc);
+          if (res.success) succMod.push(acc);
+          else failMod.push(acc);
+        } catch { failMod.push(acc) }
+      }));
+      console.log("Successfully modified accounts:", succMod);
+      console.log("Failed to modify accounts:", failMod);
+      updateProgress();
+      await new Promise(r => setTimeout(r, 2000));
+    }
+
+    // update cache: remove successes, mark failures
+    failDel.forEach(acc => acc.isFailed = true);
+    failMod.forEach(acc => acc.isFailed = true);
+    accounts = accounts.filter(account => !(account.shouldDelete && !account.isFailed))
+
+    console.log("Final accounts after processing:", accounts);
+    saveAccountsToCache(accounts);
+    UI.closeProcessingBtnContainer.classList.remove('hidden');
+    renderAccountTable(accounts);
+  });
+
   UI.refreshBtn.addEventListener('click', () => syncAccounts(token));
 
   // Search listener
@@ -113,11 +190,139 @@ export default function initManageMonarchAccountsView() {
   }
 }
 
+
+
+async function handleModifyingAccounts(token, accounts) {
+  console.log("Modifying accounts:", accounts);
+  const successes = [];
+  const failures = [];
+
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i];
+    UI.statusMsg.textContent = `Processing batch ${i + 1} of ${batches.length} (${batch.length} accounts)...`;
+    // Execute concurrent API calls
+    await Promise.all(batch.map(async account => {
+      try {
+        const res = await monarchApi.patchAccount(token, account);
+        if (res.success) {
+          successes.push(account);
+        } else {
+          failures.push({ account, error: res.error || 'Unknown error' });
+        }
+      } catch (err) {
+        failures.push({ account, error: err.message });
+      }
+    }));
+
+    // Delay before next batch
+    if (i < batches.length - 1) {
+      UI.statusMsg.textContent += ' Preparing...';
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+  }
+
+  // Update cache by removing successes
+  successes.forEach(account => {
+    accounts = accounts.filter(acc => acc.id !== account.id);
+  });
+
+  // Summary and re-render
+  UI.statusMsg.textContent = `Applying changes complete: ${successes.length} succeeded, ${failures.length} failed.`;
+  if (failures.length > 0) console.error('Update failures:', failures);
+  renderAccountTable(accounts);
+  toggleDisabled(UI.bulkDeleteBtn, false);
+  toggleDisabled(UI.refreshBtn, false);
+}
+
+async function handleDeletingAccounts(token, accounts) {
+  console.log("Deleting accounts:", accounts);
+  const successes = [];
+  const failures = [];
+
+  // Execute concurrent deletions
+  await Promise.all(accounts.map(async account => {
+    try {
+      const res = await monarchApi.deleteAccount(token, account.id);
+      if (res.success) {
+        successes.push(account);
+      } else {
+        failures.push({ account, error: res.error || 'Unknown error' });
+      }
+    } catch (err) {
+      failures.push({ account, error: err.message });
+    }
+  }))
+
+  return {
+    successes,
+    failures,
+  }
+}
+
 async function handleApplyChanges(token) {
-  const modifiedAccounts = accounts.filter(acc => acc.isModified && !acc.shouldDelete);
-  const deletedAccounts = modifiedAccounts.filter(acc => acc.shouldDelete);
-  await handleDeletingAccounts(token, deletedAccounts);
-  await handleModifyingAccounts(token, modifiedAccounts);
+  UI.processingModal.classList.remove('hidden');
+
+  const toDelete = accounts.filter(a => a.shouldDelete);
+  const toModify = accounts.filter(a => a.isModified && !a.shouldDelete);
+  const total = toDelete.length + toModify.length
+  let doneDel = 0, doneMod = 0;
+  const successfullyModifiedAccounts = [];
+  const failedToModifyAccounts = [];
+  const successfullyDeletedAccounts = [];
+  const failedToDeleteAccounts = [];
+
+  console.log(`Processing ${total} accounts: ${toModify.length} to modify, ${toDelete.length} to delete.`);
+
+  const updateProgress = () => {
+    const done = doneDel + doneMod;
+    const pct = total ? Math.round(done / total * 100) : 100;
+    UI.progressBar.style.width = `${pct}%`;
+    UI.progressBar.textContent = `${pct}%`;
+    UI.progressCounters.innerHTML =
+      `<p>Modifying accounts: ${doneMod} of ${totalMod}</p>` +
+      `<p>Deleting accounts: ${doneDel} of ${totalDel}</p>`;
+  };
+
+
+  const toDeleteBatches = chunkArray(toDelete, 3);
+  const toModifyBatches = chunkArray(toModify, 3);
+
+  for (let i = 0; i < toDeleteBatches.length; i++) {
+    const batch = toDeleteBatches[i];
+    const { successes, failures } = await handleDeletingAccounts(token, batch)
+    successfullyDeletedAccounts.push(...successes);
+    doneDel += successes.length;
+    updateProgress();
+    failedToDeleteAccounts.push(...failures);
+
+    // Delay before next batch
+    if (i < toDeleteBatches.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+  }
+
+  for (let i = 0; i < toModifyBatches.length; i++) {
+    const batch = toModifyBatches[i];
+    const { successes, failures } = await handleModifyingAccounts(token, batch)
+    successfullyModifiedAccounts.push(...successes);
+    doneMod += successes.length;
+    updateProgress();
+    failedToModifyAccounts.push(...failures);
+
+    // Delay before next batch
+    if (i < toModifyBatches.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+  }
+
+  if (failedToDeleteAccounts.length > 0 || failedToModifyAccounts.length > 0) {
+    console.error('Deletion failures:', failedToDeleteAccounts);
+    console.error('Modifying failures:', failedToModifyAccounts);
+  } else {
+    renderAccountTable(accounts);
+    UI.processingModal.classList.add('hidden');
+    await syncAccounts(token);
+  }
 }
 
 function handleBulkReset() {
@@ -136,7 +341,7 @@ function handleBulkReset() {
 
 function handleBulkDeleteClick() {
   Object.values(accounts).forEach(acc => {
-    if (acc.isSelected) acc.shouldDelete = !acc.shouldDelete;
+    if (acc.isSelected) acc.shouldDelete = true;
   });
   renderAccountTable(accounts);
 }
@@ -287,99 +492,9 @@ function handleSubtypeChange(account, newSubtype) {
   renderAccountTable(accounts);
 }
 
-async function handleDeletingAccounts(token, accounts) {
-  toggleDisabled(UI.bulkDeleteBtn, true);
-  toggleDisabled(UI.refreshBtn, true);
-  UI.statusMsg.textContent = `Preparing to delete ${accounts.length} account(s)...`;
 
-  const batches = chunkArray(accounts, 3);
-  const successes = [];
-  const failures = [];
 
-  console.log("Batches:", batches)
-  for (let i = 0; i < batches.length; i++) {
-    const batch = batches[i];
-    UI.statusMsg.textContent = `Deleting batch ${i + 1} of ${batches.length} (${batch.length} accounts)...`;
-    // Execute concurrent deletions
-    await Promise.all(batch.map(async account => {
-      try {
-        const res = await monarchApi.deleteAccount(token, account.id);
-        if (res.success) {
-          successes.push(account);
-        } else {
-          failures.push({ account, error: res.error || 'Unknown error' });
-        }
-      } catch (err) {
-        failures.push({ account, error: err.message });
-      }
-    }));
 
-    // Delay before next batch
-    if (i < batches.length - 1) {
-      UI.statusMsg.textContent += ' Preparing...';
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    }
-  }
-
-  // Update cache by removing successes
-  successes.forEach(account => {
-    accounts = accounts.filter(acc => acc.id !== account.id);
-  });
-
-  // Summary and re-render
-  UI.statusMsg.textContent = `Deletion complete: ${successes.length} succeeded, ${failures.length} failed.`;
-  if (failures.length > 0) console.error('Deletion failures:', failures);
-  renderAccountTable(accounts);
-  toggleDisabled(UI.bulkDeleteBtn, false);
-  toggleDisabled(UI.refreshBtn, false);
-}
-
-async function handleModifyingAccounts(token, accounts) {
-  toggleDisabled(UI.bulkDeleteBtn, true);
-  toggleDisabled(UI.refreshBtn, true);
-  UI.statusMsg.textContent = `Preparing to upload ${accounts.length} modified account(s)...`;
-
-  const batches = chunkArray(accounts, 3);
-  const successes = [];
-  const failures = [];
-
-  console.log("Batches:", batches)
-  for (let i = 0; i < batches.length; i++) {
-    const batch = batches[i];
-    UI.statusMsg.textContent = `Processing batch ${i + 1} of ${batches.length} (${batch.length} accounts)...`;
-    // Execute concurrent API calls
-    await Promise.all(batch.map(async account => {
-      try {
-        const res = await monarchApi.patchAccount(token, account);
-        if (res.success) {
-          successes.push(account);
-        } else {
-          failures.push({ account, error: res.error || 'Unknown error' });
-        }
-      } catch (err) {
-        failures.push({ account, error: err.message });
-      }
-    }));
-
-    // Delay before next batch
-    if (i < batches.length - 1) {
-      UI.statusMsg.textContent += ' Preparing...';
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    }
-  }
-
-  // Update cache by removing successes
-  successes.forEach(account => {
-    accounts = accounts.filter(acc => acc.id !== account.id);
-  });
-
-  // Summary and re-render
-  UI.statusMsg.textContent = `Applying changes complete: ${successes.length} succeeded, ${failures.length} failed.`;
-  if (failures.length > 0) console.error('Update failures:', failures);
-  renderAccountTable(accounts);
-  toggleDisabled(UI.bulkDeleteBtn, false);
-  toggleDisabled(UI.refreshBtn, false);
-}
 
 function refreshBulkActionBar() {
   const selectedCount = Object.values(accounts).filter(acc => acc.isSelected).length;
