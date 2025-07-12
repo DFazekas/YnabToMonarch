@@ -15,14 +15,29 @@
 
   <!-- App Header -->
   <header class="flex justify-between items-center px-8 py-4 border-b border-[#f0f3f4]">
-    <div class="flex items-center gap-3">
-      <div class="w-5 h-5 text-[#005B96]">
-        <svg viewBox="0 0 48 48" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-          <path d="M4 4H17.3334V17.3334H30.6666V30.6666H44V44H4V4Z" />
-        </svg>
+    <div class="flex items-center gap-6">
+      <div class="flex items-center gap-3">
+        <div class="w-5 h-5 text-[#005B96]">
+          <svg viewBox="0 0 48 48" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 4H17.3334V17.3334H30.6666V30.6666H44V44H4V4Z" />
+          </svg>
+        </div>
+        <h1 class="font-bold text-lg">YNAB to Monarch Money</h1>
       </div>
-      <h1 class="font-bold text-lg">YNAB to Monarch Money</h1>
     </div>
+
+    <!-- center‐aligned main nav -->
+    <nav class="flex-1 flex justify-center space-x-6">
+      <button id="navUpload" class="text-gray-600 hover:text-gray-900 px-4 py-2 rounded-md transition"
+        data-type="text">
+        Migrate YNAB
+      </button>
+      <button id="navManage"
+        class="text-blue-600 underline px-4 py-2 rounded-md font-semibold transition" data-type="text">
+        Manage Accounts
+      </button>
+    </nav>
+
     <a href="https://buymeacoffee.com/fazekasdevh" target="_blank" rel="noopener noreferrer">
       <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" class="h-10">
     </a>

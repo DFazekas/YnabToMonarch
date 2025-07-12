@@ -3194,7 +3194,8 @@
   var state_default = {
     credentials: { email: "", encryptedPassword: "", otp: "", remember: false, apiToken: "", awaitingOtp: false, deviceUuid: "" },
     monarchAccounts: null,
-    accounts: {}
+    accounts: {},
+    redirectAfterLogin: ""
   };
 
   // src/services/ynabParser.js
@@ -3250,7 +3251,7 @@
             console.groupEnd("parseCSV");
             return reject(new Error("\u274C CSV file appears to be empty or invalid."));
           }
-          const accounts = /* @__PURE__ */ new Map();
+          const accounts2 = /* @__PURE__ */ new Map();
           for (const row of data2) {
             const accountName = row["Account"]?.trim();
             if (!accountName) {
@@ -3273,9 +3274,9 @@
             } else {
               row.Amount = "0.00";
             }
-            if (!accounts.has(accountName)) {
+            if (!accounts2.has(accountName)) {
               const { type, subtype } = inferMonarchType(accountName, monarchAccountTypes);
-              accounts.set(accountName, {
+              accounts2.set(accountName, {
                 id: generateId(),
                 name: accountName,
                 modifiedName: accountName,
@@ -3289,7 +3290,7 @@
                 status: "unprocessed"
               });
             }
-            const account = accounts.get(accountName);
+            const account = accounts2.get(accountName);
             account.transactions.push({
               Date: row.Date,
               Merchant: row.Payee || "",
@@ -3303,13 +3304,13 @@
             account.balanceCents += netCents;
           }
           ;
-          for (const account of accounts.values()) {
+          for (const account of accounts2.values()) {
             account.balance = account.balanceCents / 100;
             account.included = account.transactionCount > 0;
           }
           ;
           console.groupEnd("parseCSV");
-          resolve(Object.fromEntries(accounts));
+          resolve(Object.fromEntries(accounts2));
         },
         error: (err) => reject(err)
       });
@@ -3450,8 +3451,8 @@
         return;
       }
       try {
-        const accounts = await parseYNABCSV(csvFile);
-        state_default.accounts = accounts;
+        const accounts2 = await parseYNABCSV(csvFile);
+        state_default.accounts = accounts2;
         navigate("reviewView");
       } catch (err) {
         errorMessage.textContent = "Failed to parse ZIP file. Please ensure it includes a valid register.csv and plan.csv.";
@@ -3892,6 +3893,13 @@
   });
 
   // src/utils/accountTypeUtils.js
+  function getAccountTypeByDisplayName(typeDisplayName) {
+    return monarchAccountTypes_default.data.find((t) => t.typeDisplay === typeDisplayName);
+  }
+  function getSubtypeByDisplayName(typeDisplayName, subtypeDisplayName) {
+    const type = getAccountTypeByDisplayName(typeDisplayName);
+    return type?.subtypes.find((s) => s.display === subtypeDisplayName);
+  }
   function getAccountTypeByName(typeName) {
     return monarchAccountTypes_default.data.find((t) => t.typeName === typeName);
   }
@@ -3941,13 +3949,13 @@
 
   // src/views/AccountReview/review.js
   var reviewTableBody;
-  var importBtn;
+  var importBtn2;
   var searchInput;
   var currentFilter = "all";
   var searchQuery = "";
   function initAccountReviewView() {
     reviewTableBody = document.getElementById("reviewTableBody");
-    importBtn = document.getElementById("importBtn");
+    importBtn2 = document.getElementById("importBtn");
     searchInput = document.getElementById("searchInput");
     renderButtons();
     document.getElementById("filterAll").classList.add("bg-blue-500", "text-white");
@@ -3969,7 +3977,7 @@
     document.getElementById("bulkTypeBtn").addEventListener("click", openBulkTypeModal);
     document.getElementById("masterCheckbox").addEventListener("change", masterCheckboxChange);
     document.getElementById("backBtn").addEventListener("click", () => navigate("uploadView"));
-    importBtn.addEventListener("click", () => navigate("methodView"));
+    importBtn2.addEventListener("click", () => navigate("methodView"));
     renderAccountTable();
   }
   function setFilter(filter) {
@@ -3996,9 +4004,9 @@
   }
   function renderAccountTable() {
     const fragment = document.createDocumentFragment();
-    const accounts = Object.values(state_default.accounts);
+    const accounts2 = Object.values(state_default.accounts);
     reviewTableBody.innerHTML = "";
-    for (const account of accounts) {
+    for (const account of accounts2) {
       if (currentFilter === "included" && !account.included)
         continue;
       if (currentFilter === "excluded" && account.included)
@@ -4010,8 +4018,8 @@
     reviewTableBody.appendChild(fragment);
     updateMasterCheckbox(getVisibleAccounts());
     refreshBulkActionBar();
-    toggleDisabled(importBtn, !accounts.some(isIncludedAndUnprocessed));
-    importBtn.title = importBtn.disabled ? "At least one account must be included to proceed" : "";
+    toggleDisabled(importBtn2, !accounts2.some(isIncludedAndUnprocessed));
+    importBtn2.title = importBtn2.disabled ? "At least one account must be included to proceed" : "";
     renderButtons();
   }
   function isIncludedAndUnprocessed(account) {
@@ -4248,13 +4256,13 @@
       btn.addEventListener("click", () => {
         const token = btn.dataset.token;
         renamePattern.value += token;
-        updatePreview();
+        updatePreview2();
       });
     });
-    renamePattern.addEventListener("input", updatePreview);
-    indexStartInput.addEventListener("input", updatePreview);
-    updatePreview();
-    function updatePreview() {
+    renamePattern.addEventListener("input", updatePreview2);
+    indexStartInput.addEventListener("input", updatePreview2);
+    updatePreview2();
+    function updatePreview2() {
       previewDiv.innerHTML = "";
       const pattern = renamePattern.value;
       const indexStart = parseInt(indexStartInput.value, 10) || 1;
@@ -4605,7 +4613,9 @@
     fetchAccounts: base + "fetchMonarchAccounts",
     createAccounts: base + "createMonarchAccounts",
     generateStatements: base + "generateStatements",
-    getUploadStatus: base + "getUploadStatus"
+    getUploadStatus: base + "getUploadStatus",
+    deleteAccounts: base + "deleteMonarchAccounts",
+    patchAccount: base + "patchMonarchAccount"
   };
 
   // src/api/utils.js
@@ -4625,14 +4635,16 @@
   // src/api/monarchApi.js
   var monarchApi = {
     login: (email, encryptedPassword, deviceUuid, otp) => postJson(API.login, { email, encryptedPassword, deviceUuid, otp }),
-    fetchMonarchAccounts: (token) => postJson(API.fetchAccounts, { token }),
-    createAccounts: (token, accounts) => postJson(API.createAccounts, { token, accounts }),
-    generateAccounts: (accounts) => fetch(API.generateStatements, {
+    fetchAccounts: (token) => postJson(API.fetchAccounts, { token }),
+    createAccounts: (token, accounts2) => postJson(API.createAccounts, { token, accounts: accounts2 }),
+    generateAccounts: (accounts2) => fetch(API.generateStatements, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ accounts })
+      body: JSON.stringify({ accounts: accounts2 })
     }),
-    queryUploadStatus: (token, sessionKey) => postJson(API.getUploadStatus, { token, sessionKey })
+    queryUploadStatus: (token, sessionKey) => postJson(API.getUploadStatus, { token, sessionKey }),
+    deleteAccount: (token, accountId) => postJson(API.deleteAccounts, { token, accountId }),
+    patchAccount: (token, account) => postJson(API.patchAccount, { token, account })
   };
 
   // src/utils/storage.js
@@ -4641,7 +4653,9 @@
     ENCRYPTED_PASSWORD: "monarchPasswordBase64",
     TOKEN: "monarchApiToken",
     UUID: "monarchDeviceUuid",
-    REMEMBER: "monarchRememberMe"
+    REMEMBER: "monarchRememberMe",
+    ACCOUNTS: "monarchAccounts",
+    ACCOUNTS_TS: "monarchAccountsTimestamp"
   };
   function getLocalStorage() {
     return {
@@ -4666,6 +4680,21 @@
   }
   function clearStorage() {
     Object.values(STORAGE_KEYS).forEach(remove);
+  }
+  function getCachedAccounts() {
+    try {
+      const json = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
+      return json ? JSON.parse(json) : [];
+    } catch {
+      return [];
+    }
+  }
+  function saveAccountsToCache(accounts2) {
+    try {
+      localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts2));
+      localStorage.setItem(STORAGE_KEYS.ACCOUNTS_TS, Date.now().toString());
+    } catch {
+    }
   }
   function get(key) {
     return localStorage.getItem(key);
@@ -4748,24 +4777,24 @@
 
   // src/views/MonarchCredentials/monarchCredentials.js
   async function initMonarchCredentialsView() {
-    const $ = (id) => document.getElementById(id);
-    const UI = {
-      emailInput: $("email"),
-      passwordInput: $("password"),
-      connectBtn: $("connectBtn"),
-      backBtn: $("backBtn"),
-      form: $("credentialsForm"),
-      errorBox: $("errorBox"),
-      rememberCheckbox: $("rememberCredentials"),
-      rememberMeContainer: $("rememberMe"),
-      notYouContainer: $("notYouContainer"),
-      rememberedEmail: $("rememberedEmail"),
-      clearCredentialsBtn: $("clearCredentialsBtn"),
-      toggleBtn: $("togglePassword"),
-      eyeShow: $("eyeShow"),
-      eyeHide: $("eyeHide"),
-      securityNoteMsg: $("securityNote"),
-      securityNoteIcon: $("securityNoteIcon")
+    const $2 = (id) => document.getElementById(id);
+    const UI2 = {
+      emailInput: $2("email"),
+      passwordInput: $2("password"),
+      connectBtn: $2("connectBtn"),
+      backBtn: $2("backBtn"),
+      form: $2("credentialsForm"),
+      errorBox: $2("errorBox"),
+      rememberCheckbox: $2("rememberCredentials"),
+      rememberMeContainer: $2("rememberMe"),
+      notYouContainer: $2("notYouContainer"),
+      rememberedEmail: $2("rememberedEmail"),
+      clearCredentialsBtn: $2("clearCredentialsBtn"),
+      toggleBtn: $2("togglePassword"),
+      eyeShow: $2("eyeShow"),
+      eyeHide: $2("eyeHide"),
+      securityNoteMsg: $2("securityNote"),
+      securityNoteIcon: $2("securityNoteIcon")
     };
     renderButtons();
     const { credentials: creds } = state_default;
@@ -4782,25 +4811,25 @@
       saveToLocalStorage({ uuid: creds.deviceUuid });
     }
     if (email && encryptedPassword) {
-      UI.emailInput.value = email;
-      UI.passwordInput.value = "";
-      UI.rememberedEmail.textContent = `Signed in as ${email}`;
-      UI.rememberCheckbox.checked = creds.remember;
-      toggleDisabled(UI.emailInput, true);
-      toggleDisabled(UI.passwordInput, true);
-      toggleElementVisibility(UI.rememberMeContainer, false);
-      toggleElementVisibility(UI.notYouContainer, true);
-      toggleElementVisibility(UI.toggleBtn, false);
+      UI2.emailInput.value = email;
+      UI2.passwordInput.value = "";
+      UI2.rememberedEmail.textContent = `Signed in as ${email}`;
+      UI2.rememberCheckbox.checked = creds.remember;
+      toggleDisabled(UI2.emailInput, true);
+      toggleDisabled(UI2.passwordInput, true);
+      toggleElementVisibility(UI2.rememberMeContainer, false);
+      toggleElementVisibility(UI2.notYouContainer, true);
+      toggleElementVisibility(UI2.toggleBtn, false);
       updateSecurityNote("signed-in");
     } else {
-      toggleElementVisibility(UI.notYouContainer, false);
+      toggleElementVisibility(UI2.notYouContainer, false);
       updateSecurityNote();
     }
     function validateForm() {
-      const hasEmail = UI.emailInput.value.trim();
-      const hasPassword = UI.passwordInput.value.trim() || creds.encryptedPassword;
-      toggleDisabled(UI.connectBtn, !(hasEmail && hasPassword));
-      toggleElementVisibility(UI.errorBox, false);
+      const hasEmail = UI2.emailInput.value.trim();
+      const hasPassword = UI2.passwordInput.value.trim() || creds.encryptedPassword;
+      toggleDisabled(UI2.connectBtn, !(hasEmail && hasPassword));
+      toggleElementVisibility(UI2.errorBox, false);
       renderButtons();
     }
     function updateSecurityNote(status) {
@@ -4811,26 +4840,26 @@
       };
       switch (status) {
         case "remembered":
-          UI.securityNoteMsg.textContent = "Your credentials will be stored securely on this device.";
-          UI.securityNoteIcon.setAttribute("fill", COLOR.ORANGE);
+          UI2.securityNoteMsg.textContent = "Your credentials will be stored securely on this device.";
+          UI2.securityNoteIcon.setAttribute("fill", COLOR.ORANGE);
           break;
         case "signed-in":
-          UI.securityNoteMsg.textContent = 'You are signed in. To use different credentials, click "Not you?".';
-          UI.securityNoteIcon.setAttribute("fill", COLOR.BLUE);
+          UI2.securityNoteMsg.textContent = 'You are signed in. To use different credentials, click "Not you?".';
+          UI2.securityNoteIcon.setAttribute("fill", COLOR.BLUE);
           break;
         default:
-          UI.securityNoteMsg.textContent = "Your credentials will not be stored.";
-          UI.securityNoteIcon.setAttribute("fill", COLOR.GREEN);
+          UI2.securityNoteMsg.textContent = "Your credentials will not be stored.";
+          UI2.securityNoteIcon.setAttribute("fill", COLOR.GREEN);
       }
     }
     function onSubmitForm(e) {
       e.preventDefault();
-      UI.connectBtn.click();
+      UI2.connectBtn.click();
     }
     async function handleLoginAttempt() {
       const storage = getLocalStorage();
-      const email2 = UI.emailInput.value.trim() || storage.email;
-      const plaintextPassword = UI.passwordInput.value.trim();
+      const email2 = UI2.emailInput.value.trim() || storage.email;
+      const plaintextPassword = UI2.passwordInput.value.trim();
       let encryptedPassword2 = creds.encryptedPassword || storage.encryptedPassword;
       const uuid2 = creds.deviceUuid || storage.uuid;
       if (!encryptedPassword2 && plaintextPassword) {
@@ -4841,9 +4870,9 @@
           return;
         }
       }
-      toggleDisabled(UI.connectBtn, true);
-      UI.connectBtn.textContent = "Connecting\u2026";
-      toggleElementVisibility(UI.errorBox, false);
+      toggleDisabled(UI2.connectBtn, true);
+      UI2.connectBtn.textContent = "Connecting\u2026";
+      toggleElementVisibility(UI2.errorBox, false);
       try {
         const response = await monarchApi.login(email2, encryptedPassword2, uuid2);
         if (response?.otpRequired) {
@@ -4858,7 +4887,7 @@
             email: email2,
             encryptedPassword: encryptedPassword2,
             otp: "",
-            remember: UI.rememberCheckbox.checked,
+            remember: UI2.rememberCheckbox.checked,
             apiToken: response.token,
             awaitingOtp: false
           });
@@ -4872,8 +4901,8 @@
       } catch (err) {
         showError(err.message);
       } finally {
-        toggleDisabled(UI.connectBtn, false);
-        UI.connectBtn.textContent = "Connect to Monarch";
+        toggleDisabled(UI2.connectBtn, false);
+        UI2.connectBtn.textContent = "Connect to Monarch";
       }
     }
     async function onClickConnect(e) {
@@ -4884,46 +4913,46 @@
       e.preventDefault();
       clearStorage();
       clearState(creds);
-      UI.emailInput.value = "";
-      UI.passwordInput.value = "";
-      UI.rememberCheckbox.checked = false;
-      toggleDisabled(UI.emailInput, false);
-      toggleDisabled(UI.passwordInput, false);
-      toggleDisabled(UI.connectBtn, true);
-      toggleElementVisibility(UI.toggleBtn, true);
-      toggleElementVisibility(UI.notYouContainer, false);
-      toggleElementVisibility(UI.rememberMeContainer, true);
+      UI2.emailInput.value = "";
+      UI2.passwordInput.value = "";
+      UI2.rememberCheckbox.checked = false;
+      toggleDisabled(UI2.emailInput, false);
+      toggleDisabled(UI2.passwordInput, false);
+      toggleDisabled(UI2.connectBtn, true);
+      toggleElementVisibility(UI2.toggleBtn, true);
+      toggleElementVisibility(UI2.notYouContainer, false);
+      toggleElementVisibility(UI2.rememberMeContainer, true);
       updateSecurityNote();
       renderButtons();
-      UI.emailInput.focus();
+      UI2.emailInput.focus();
     }
     function onChangeRemember() {
-      creds.remember = UI.rememberCheckbox.checked;
+      creds.remember = UI2.rememberCheckbox.checked;
       updateSecurityNote(creds.remember ? "remembered" : "not-remembered");
-      const target = UI.emailInput.value.trim() === "" ? UI.emailInput : UI.passwordInput.value.trim() === "" ? UI.passwordInput : UI.connectBtn;
+      const target = UI2.emailInput.value.trim() === "" ? UI2.emailInput : UI2.passwordInput.value.trim() === "" ? UI2.passwordInput : UI2.connectBtn;
       target.focus();
     }
     function onTogglePassword() {
-      const isHidden = UI.passwordInput.type === "password";
-      UI.passwordInput.type = isHidden ? "text" : "password";
-      UI.toggleBtn.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
-      toggleElementVisibility(UI.eyeShow, !isHidden);
-      toggleElementVisibility(UI.eyeHide, isHidden);
+      const isHidden = UI2.passwordInput.type === "password";
+      UI2.passwordInput.type = isHidden ? "text" : "password";
+      UI2.toggleBtn.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
+      toggleElementVisibility(UI2.eyeShow, !isHidden);
+      toggleElementVisibility(UI2.eyeHide, isHidden);
     }
     function onClickBack() {
       navigate("methodView");
     }
     function showError(message) {
-      UI.errorBox.textContent = message;
-      toggleElementVisibility(UI.errorBox, true);
+      UI2.errorBox.textContent = message;
+      toggleElementVisibility(UI2.errorBox, true);
     }
-    UI.form.addEventListener("submit", onSubmitForm);
-    UI.connectBtn.addEventListener("click", onClickConnect);
-    UI.clearCredentialsBtn.addEventListener("click", onClickClearCredentials);
-    UI.rememberCheckbox.addEventListener("change", onChangeRemember);
-    UI.toggleBtn.addEventListener("click", onTogglePassword);
-    UI.backBtn.addEventListener("click", onClickBack);
-    [UI.emailInput, UI.passwordInput].forEach((input) => {
+    UI2.form.addEventListener("submit", onSubmitForm);
+    UI2.connectBtn.addEventListener("click", onClickConnect);
+    UI2.clearCredentialsBtn.addEventListener("click", onClickClearCredentials);
+    UI2.rememberCheckbox.addEventListener("change", onChangeRemember);
+    UI2.toggleBtn.addEventListener("click", onTogglePassword);
+    UI2.backBtn.addEventListener("click", onClickBack);
+    [UI2.emailInput, UI2.passwordInput].forEach((input) => {
       input.addEventListener("input", validateForm);
       input.addEventListener("focus", () => input.classList.add("ring-2", "ring-blue-500", "outline-none"));
       input.addEventListener("blur", () => input.classList.remove("ring-2", "ring-blue-500", "outline-none"));
@@ -4932,16 +4961,16 @@
   }
 
   // src/views/MonarchCredentials/monarchCredentials.html
-  var monarchCredentials_default = '<div class="flex flex-col items-center justify-center py-3 px-6 space-y-7 max-w-lg mx-auto">\n\n  <div class="text-center">\n    <h2 class="text-3xl font-bold mb-2">Auto Import: Connect Your Monarch Account</h2>\n    <p class="text-gray-600 text-base max-w-md">\n      Authorize your Monarch account so we can directly import your accounts and transactions.\n    </p>\n  </div>\n\n  <div class="w-full bg-white border border-gray-200 rounded-xl shadow-sm p-8 space-y-6">\n\n    <form id="credentialsForm" class="space-y-4">\n      <!-- Email -->\n      <div>\n        <label class="block font-medium text-sm text-[#111518] mb-1 cursor-pointer" for="email">Email</label>\n        <input id="email" type="email" class="border rounded-lg w-full px-4 py-3 text-sm placeholder-gray-300" placeholder="you@email.com"\n          autocomplete="username">\n      </div>\n\n      <!-- Password -->\n      <div>\n        <label class="block font-medium text-sm text-[#111518] mb-1 cursor-pointer" for="password">Password</label>\n        <div class="relative">\n          <input id="password" type="password" class="border rounded-lg w-full px-4 py-3 text-sm pr-12 placeholder-gray-300"\n            placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" autocomplete="current-password">\n\n          <button type="button" id="togglePassword" aria-label="Toggle password visibility"\n            class="absolute p-2 right-1 top-1/2 transform -translate-y-1/2 focus:outline-none bg-transparent border-none shadow-none hover:shadow-none transform-none hover:transform-none transition-none cursor-pointer">\n            <!-- Show Icon -->\n            <svg id="eyeShow" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"\n              stroke="currentColor" stroke-width="2">\n              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />\n              <path stroke-linecap="round" stroke-linejoin="round"\n                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />\n            </svg>\n\n            <!-- Hide Icon -->\n            <svg id="eyeHide" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 24 24" fill="none"\n              stroke="currentColor" stroke-width="2">\n              <path stroke-linecap="round" stroke-linejoin="round"\n                d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.27-2.945-9.543-7a9.966 9.966 0 012.398-4.442M9.88 9.88a3 3 0 104.24 4.24M6.1 6.1L17.9 17.9" />\n            </svg>\n          </button>\n        </div>\n      </div>\n\n      <!-- Remember Me -->\n      <div id="rememberMe" class="flex items-center gap-2">\n        <input id="rememberCredentials" type="checkbox" class="w-4 h-4 cursor-pointer">\n        <label for="rememberCredentials" class="text-sm text-gray-600 cursor-pointer">Remember me for this\n          session</label>\n      </div>\n\n      <!-- Not You? -->\n      <div id="notYouContainer" class="mt-2 text-sm text-gray-500 hidden">\n        <span id="rememberedEmail">"some@thing.com"</span>\n        <button id="clearCredentialsBtn" class="ml-2 text-blue-600 cursor-pointer hover:underline">Not You?</button>\n      </div>\n\n      <div id="errorBox" class="hidden text-red-500 text-sm mt-4"></div>\n\n    </form>\n\n    <button id="connectBtn" class="ui-button" data-type="primary" data-size="large" data-fullWidth disabled>\n      Connect & Start Import\n    </button>\n\n    <!-- Security Note -->\n    <div class="flex items-center gap-2 mt-1">\n      <div class="w-5 h-5 text-green-600 flex-shrink-0">\n        <svg id="securityNoteIcon" viewBox="0 0 24 24" fill="green">\n          <path\n            d="M12 1a11 11 0 100 22 11 11 0 000-22zm0 20a9 9 0 110-18 9 9 0 010 18zm-1-5h2v2h-2v-2zm0-10h2v8h-2V6z" />\n        </svg>\n      </div>\n      <p id="securityNote" class="text-xs text-gray-500">\n        <!-- Rendered dynamically -->\n      </p>\n    </div>\n\n  </div>\n\n  <div class="flex justify-between w-full max-w-md">\n    <button id="backBtn" class="ui-button" data-type="secondary" data-size="large">\u2190 Back</button>\n  </div>\n\n</div>\n<style>\n  input[type="password"]::-ms-reveal,\n  input[type="password"]::-ms-clear,\n  input[type="password"]::-webkit-credentials-auto-fill-button,\n  input[type="password"]::-webkit-inner-spin-button,\n  input[type="password"]::-webkit-clear-button {\n    display: none !important;\n    appearance: none;\n  }\n\n  input[type="password"]::-webkit-credentials-auto-fill-button {\n    display: none !important;\n    visibility: hidden;\n  }\n\n  #togglePassword, #clearCredentialsBtn {\n    transition: none !important;\n    box-shadow: none !important;\n    transform: none !important;\n  }\n</style>';
+  var monarchCredentials_default = '<div class="flex flex-col items-center justify-center py-3 px-6 space-y-7 max-w-lg mx-auto">\n\n  <div class="text-center">\n    <h2 class="text-3xl font-bold mb-2">Auto Import: Connect Your Monarch Account</h2>\n    <p class="text-gray-600 text-base max-w-md">\n      Authorize your Monarch account so we can directly import your accounts and transactions.\n    </p>\n  </div>\n\n  <div class="w-full bg-white border border-gray-200 rounded-xl shadow-sm p-8 space-y-6">\n\n    <form id="credentialsForm" class="space-y-4">\n      <!-- Email -->\n      <div>\n        <label class="block font-medium text-sm text-[#111518] mb-1 cursor-pointer" for="email">Email</label>\n        <input id="email" type="email" class="border rounded-lg w-full px-4 py-3 text-sm placeholder-gray-300" placeholder="you@email.com"\n          autocomplete="username">\n      </div>\n\n      <!-- Password -->\n      <div>\n        <label class="block font-medium text-sm text-[#111518] mb-1 cursor-pointer" for="password">Password</label>\n        <div class="relative">\n          <input id="password" type="password" class="border rounded-lg w-full px-4 py-3 text-sm pr-12 placeholder-gray-300"\n            placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" autocomplete="current-password">\n\n          <button type="button" id="togglePassword" aria-label="Toggle password visibility"\n            class="absolute p-2 right-1 top-1/2 transform -translate-y-1/2 focus:outline-none bg-transparent border-none shadow-none hover:shadow-none transform-none hover:transform-none transition-none cursor-pointer">\n            <!-- Show Icon -->\n            <svg id="eyeShow" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"\n              stroke="currentColor" stroke-width="2">\n              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />\n              <path stroke-linecap="round" stroke-linejoin="round"\n                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />\n            </svg>\n\n            <!-- Hide Icon -->\n            <svg id="eyeHide" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 24 24" fill="none"\n              stroke="currentColor" stroke-width="2">\n              <path stroke-linecap="round" stroke-linejoin="round"\n                d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.27-2.945-9.543-7a9.966 9.966 0 012.398-4.442M9.88 9.88a3 3 0 104.24 4.24M6.1 6.1L17.9 17.9" />\n            </svg>\n          </button>\n        </div>\n      </div>\n\n      <!-- Remember Me -->\n      <div id="rememberMe" class="flex items-center gap-2">\n        <input id="rememberCredentials" type="checkbox" class="w-4 h-4 cursor-pointer">\n        <label for="rememberCredentials" class="text-sm text-gray-600 cursor-pointer">Remember me for this\n          session</label>\n      </div>\n\n      <!-- Not You? -->\n      <div id="notYouContainer" class="mt-2 text-sm text-gray-500 hidden">\n        <span id="rememberedEmail">"some@thing.com"</span>\n        <button id="clearCredentialsBtn" class="ml-2 text-blue-600 cursor-pointer hover:underline">Not You?</button>\n      </div>\n\n      <div id="errorBox" class="hidden text-red-500 text-sm mt-4"></div>\n\n    </form>\n\n    <button id="connectBtn" class="ui-button" data-type="primary" data-size="large" data-fullWidth disabled>\n      Connect & Start Import\n    </button>\n\n    <!-- Security Note -->\n    <div class="flex items-center gap-2 mt-1">\n      <div class="w-5 h-5 text-green-600 flex-shrink-0">\n        <svg id="securityNoteIcon" viewBox="0 0 24 24" fill="green">\n          <path\n            d="M12 1a11 11 0 100 22 11 11 0 000-22zm0 20a9 9 0 110-18 9 9 0 010 18zm-1-5h2v2h-2v-2zm0-10h2v8h-2V6z" />\n        </svg>\n      </div>\n      <p id="securityNote" class="text-xs text-gray-500">\n        <!-- Rendered dynamically -->\n      </p>\n    </div>\n\n  </div>\n\n  <div class="flex justify-between w-full max-w-md">\n    <button id="backBtn" class="ui-button" data-type="secondary" data-size="large">\u2190 Back</button>\n  </div>\n\n</div>\n<style>\n  input[type="password"]::-ms-reveal,\n  input[type="password"]::-ms-clear,\n  input[type="password"]::-webkit-credentials-auto-fill-button,\n  input[type="password"]::-webkit-inner-spin-button,\n  input[type="password"]::-webkit-clear-button {\n    display: none !important;\n    appearance: none;\n  }\n\n  input[type="password"]::-webkit-credentials-auto-fill-button {\n    display: none !important;\n    visibility: hidden;\n  }\n\n  #togglePassword, #clearCredentialsBtn {\n    transition: none !important;\n    box-shadow: none !important;\n    transform: none !important;\n  }\n</style>\n';
 
   // src/views/MonarchOtp/monarchOtp.js
   function initMonarchOtpView() {
-    const $ = (id) => document.getElementById(id);
-    const UI = {
-      otpInput: $("otpInput"),
-      submitOtpBtn: $("submitOtpBtn"),
-      otpError: $("otpError"),
-      backBtn: $("backBtn")
+    const $2 = (id) => document.getElementById(id);
+    const UI2 = {
+      otpInput: $2("otpInput"),
+      submitOtpBtn: $2("submitOtpBtn"),
+      otpError: $2("otpError"),
+      backBtn: $2("backBtn")
     };
     renderButtons();
     const { credentials } = state_default;
@@ -4955,8 +4984,8 @@
     async function onClickSubmitOtp(e) {
       console.group("MonarchOtpView");
       e.preventDefault();
-      toggleElementVisibility(UI.otpError, false);
-      credentials.otp = UI.otpInput.value;
+      toggleElementVisibility(UI2.otpError, false);
+      credentials.otp = UI2.otpInput.value;
       try {
         const response = await monarchApi.login(credentials.email, credentials.encryptedPassword, credentials.deviceUuid, credentials.otp);
         if (response?.token) {
@@ -4972,8 +5001,8 @@
         }
         throw new Error("Unknown login response.");
       } catch (err) {
-        toggleElementVisibility(UI.otpError, true);
-        UI.otpError.textContent = "Invalid OTP. Please try again.";
+        toggleElementVisibility(UI2.otpError, true);
+        UI2.otpError.textContent = "Invalid OTP. Please try again.";
         console.error("\u274C OTP verification error", err);
         console.groupEnd("MonarchOtpView");
       }
@@ -4982,20 +5011,20 @@
       navigate("monarchCredentialsView");
     }
     function onOtpInput() {
-      UI.otpInput.value = UI.otpInput.value.replace(/\D/g, "").slice(0, 6);
-      toggleDisabled(UI.submitOtpBtn, UI.otpInput.value.length !== 6);
+      UI2.otpInput.value = UI2.otpInput.value.replace(/\D/g, "").slice(0, 6);
+      toggleDisabled(UI2.submitOtpBtn, UI2.otpInput.value.length !== 6);
       renderButtons();
     }
     function onOtpKeyDown(e) {
-      if (e.key === "Enter" && UI.otpInput.value.length === 6) {
-        UI.submitOtpBtn.click();
+      if (e.key === "Enter" && UI2.otpInput.value.length === 6) {
+        UI2.submitOtpBtn.click();
       }
     }
-    UI.otpInput.addEventListener("input", onOtpInput);
-    UI.otpInput.addEventListener("keydown", onOtpKeyDown);
-    UI.submitOtpBtn.addEventListener("click", onClickSubmitOtp);
-    UI.backBtn.addEventListener("click", onClickBack);
-    toggleDisabled(UI.submitOtpBtn, true);
+    UI2.otpInput.addEventListener("input", onOtpInput);
+    UI2.otpInput.addEventListener("keydown", onOtpKeyDown);
+    UI2.submitOtpBtn.addEventListener("click", onClickSubmitOtp);
+    UI2.backBtn.addEventListener("click", onClickBack);
+    toggleDisabled(UI2.submitOtpBtn, true);
   }
 
   // src/views/MonarchOtp/monarchOtp.html
@@ -5012,7 +5041,7 @@
     const subheader = document.getElementById("subheader");
     const overallStatus = document.getElementById("overallStatus");
     renderButtons();
-    const accounts = Object.values(state_default.accounts).filter((a) => a.included);
+    const accounts2 = Object.values(state_default.accounts).filter((a) => a.included);
     const CHUNK_SIZE = 4;
     const STATUS_MAP = {
       unprocessed: "queued",
@@ -5031,7 +5060,7 @@
       success: { text: "\u2714 Complete", color: "bg-green-100 text-green-700" },
       error: { text: "\u2716 Failed", color: "bg-red-100 text-red-700" }
     };
-    accounts.forEach((account) => {
+    accounts2.forEach((account) => {
       const container = document.createElement("div");
       container.id = `status-${account.modifiedName}`;
       container.className = "flex justify-between items-center py-2 border-b border-gray-100 text-base gap-3";
@@ -5049,7 +5078,7 @@
       updateStatus(account, STATUS_MAP[account.status] || "queued");
     });
     let hasInitiatedProcessing = false;
-    const allUnprocessed = accounts.every((acc) => acc.status === "unprocessed");
+    const allUnprocessed = accounts2.every((acc) => acc.status === "unprocessed");
     updateOverallStatus();
     if (allUnprocessed && !hasInitiatedProcessing) {
       hasInitiatedProcessing = true;
@@ -5061,7 +5090,7 @@
       restartBtn.setAttribute("hidden", "");
       openMonarchBtn.setAttribute("hidden", "");
       (async () => {
-        await processChunks(batchAccounts(accounts));
+        await processChunks(batchAccounts(accounts2));
         updateOverallStatus();
       })();
     }
@@ -5078,7 +5107,7 @@
         const pollingPromises = [];
         const response = await monarchApi.createAccounts(state_default.credentials.apiToken, chunk);
         for (const account of response.success) {
-          const original = accounts.find((a) => a.modifiedName === account.name);
+          const original = accounts2.find((a) => a.modifiedName === account.name);
           updateStatus(original, "pending");
           for (const key of account.sessionKeys) {
             pollingPromises.push(pollUntilComplete(original, key));
@@ -5116,9 +5145,9 @@
       }
     }
     function updateOverallStatus() {
-      const allProcessed = accounts.every((a) => a.status === "processed");
-      const someProcessing = accounts.some((a) => a.status === "processing");
-      const someFailed = accounts.some((a) => a.status === "failed");
+      const allProcessed = accounts2.every((a) => a.status === "processed");
+      const someProcessing = accounts2.some((a) => a.status === "processing");
+      const someFailed = accounts2.some((a) => a.status === "failed");
       if (someProcessing) {
         header.textContent = "Migration In Progress...";
         subheader.innerHTML = "We are importing your accounts now. Please do not refresh the page.";
@@ -5143,7 +5172,7 @@
         backBtn2.removeAttribute("hidden");
         restartBtn.setAttribute("hidden", "");
         openMonarchBtn.setAttribute("hidden", "");
-        const firstFailed = accounts.find((a) => a.status === "failed");
+        const firstFailed = accounts2.find((a) => a.status === "failed");
         if (firstFailed) {
           document.getElementById(`status-${firstFailed.modifiedName}`)?.scrollIntoView({ behavior: "smooth" });
         }
@@ -5172,7 +5201,7 @@
     retryAllBtn.addEventListener("click", async () => {
       retryAllBtn.disabled = true;
       retryAllBtn.textContent = "Retrying...";
-      const retryAccounts = accounts.filter((a) => a.status === "failed");
+      const retryAccounts = accounts2.filter((a) => a.status === "failed");
       await processChunks(batchAccounts(retryAccounts));
       retryAllBtn.disabled = false;
       retryAllBtn.textContent = "Retry All Failed Accounts";
@@ -5189,6 +5218,840 @@
   // src/views/MonarchComplete/monarchComplete.html
   var monarchComplete_default = '<div class="flex flex-col items-center justify-center py-24 space-y-10">\n\n  <!-- Progress Container -->\n  <div id="resultsContainer" class="text-center transition-opacity duration-500 ease-in-out">\n    <div id="overallStatus" class="w-20 h-20 mx-auto mb-6">\n      <!-- Updated dynamically -->\n    </div>\n\n    <h2 id="header" class="text-3xl font-bold mb-4">\n      <!-- Updated dynamically -->\n    </h2>\n    <p id="subheader" class="text-gray-600 text-base max-w-md mx-auto mb-6">\n      <!-- Updated dynamically -->\n    </p>\n\n    <!-- Account status list -->\n    <div id="accountList" class="text-left max-w-xl w-full mx-auto space-y-3 transition-all duration-300">\n      <!-- Account rows inserted by JavaScript -->\n    </div>\n\n    <!-- Action buttons Container -->\n    <div class="flex justify-between items-center gap-4 px-4 py-6 mt-6">\n      <button id="backBtn" class="ui-button" data-type="secondary" data-size="large" hidden>\n        \u2190 Back\n      </button>\n\n      <button id="retryAllBtn" class="ui-button" data-type="warning" data-size="large" hidden>\n        Retry All Failed Accounts\n      </button>\n\n      <button id="restartBtn" class="ui-button" data-type="secondary" data-size="large" hidden>\n        Upload More Accounts\n      </button>\n\n      <a id="openMonarchBtn" href="https://app.monarchmoney.com" target="_blank" class="ui-button" data-type="primary"\n        data-size="large" hidden>\n        <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"\n          stroke="currentColor">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n            d="M14 3h7m0 0v7m0-7L10 14M5 5h14v14H5V5z" />\n        </svg>Open Monarch\n      </a>\n    </div>\n  </div>\n\n</div>';
 
+  // src/utils/bulkActionBar.js
+  function updateBulkActionBar(barId, count) {
+    const bar = document.getElementById(barId);
+    if (!bar)
+      return;
+    const countEl = bar.querySelector("#selectedCount");
+    if (countEl)
+      countEl.textContent = count;
+    bar.classList.toggle("active", count > 0);
+  }
+
+  // src/components/accountTable.js
+  function createAccountRowElement2(account, config = {}) {
+    const tr = document.createElement("tr");
+    tr.setAttribute("role", "row");
+    tr.className = "border-t border-[#dce1e5]";
+    if (config.showCheckbox) {
+      tr.appendChild(renderCheckboxCell(account, config.onCheckboxClick));
+    }
+    tr.appendChild(renderNameCell(account, config.onNameClick));
+    tr.appendChild(renderTypeCell(account, config.onTypeChange));
+    tr.appendChild(renderSubtypeCell(account, config.onSubtypeChange));
+    tr.appendChild(renderBalanceCell(account));
+    tr.appendChild(renderStateCell(account));
+    return tr;
+  }
+  function renderCheckboxCell(account, onCheckboxClick) {
+    const tdCheck = document.createElement("td");
+    tdCheck.className = "px-2 py-2 text-center";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    const id = `account-checkbox-${account.id || account.modifiedName.replace(/\s+/g, "-")}`;
+    checkbox.id = id;
+    checkbox.name = id;
+    checkbox.setAttribute("aria-label", `Select account: ${account.modifiedName}`);
+    checkbox.className = "w-5 h-5";
+    checkbox.checked = account.isSelected;
+    checkbox.addEventListener("change", () => {
+      if (typeof onCheckboxClick === "function") {
+        onCheckboxClick(account, checkbox);
+      }
+    });
+    tdCheck.appendChild(checkbox);
+    return tdCheck;
+  }
+  function renderNameCell(account, onNameClick) {
+    const tdName = document.createElement("td");
+    tdName.className = "px-2 py-2 max-w-[300px] truncate";
+    tdName.textContent = account.modifiedName;
+    if (!account.isProcessed) {
+      tdName.classList.add("cursor-pointer");
+      tdName.title = `Click to rename '${account.modifiedName}'`;
+      tdName.addEventListener("click", () => {
+        if (typeof onNameClick === "function") {
+          onNameClick(account, tdName);
+        }
+      });
+    } else {
+      tdName.classList.add("text-gray-400", "cursor-default");
+    }
+    return tdName;
+  }
+  function renderTypeCell(account, onTypeChange) {
+    const tdType = document.createElement("td");
+    tdType.className = "px-2 py-2";
+    const typeId = `type-select-${account.id || account.modifiedName.replace(/\s+/g, "-")}`;
+    const typeSelect = document.createElement("select");
+    typeSelect.id = typeId;
+    typeSelect.name = typeId;
+    typeSelect.title = account.type.display;
+    typeSelect.className = "border rounded px-2 py-1 w-full";
+    typeSelect.disabled = account.isProcessed;
+    if (account.isProcessed)
+      typeSelect.classList.add("text-gray-300", "cursor-default");
+    else
+      typeSelect.classList.add("cursor-pointer");
+    monarchAccountTypes_default.data.forEach((type) => {
+      const opt = document.createElement("option");
+      opt.value = type.typeDisplay;
+      opt.textContent = type.typeDisplay;
+      if (type.typeDisplay === account.type.display)
+        opt.selected = true;
+      typeSelect.appendChild(opt);
+    });
+    typeSelect.addEventListener("change", () => {
+      if (typeof onTypeChange === "function") {
+        onTypeChange(account, typeSelect.value);
+      }
+    });
+    tdType.appendChild(typeSelect);
+    return tdType;
+  }
+  function renderSubtypeCell(account, onSubtypeChange) {
+    const tdSub = document.createElement("td");
+    tdSub.className = "px-2 py-2";
+    const subtypeSelect = document.createElement("select");
+    const subtypeId = `subtype-select-${account.id || account.modifiedName.replace(/\s+/g, "-")}`;
+    subtypeSelect.id = subtypeId;
+    subtypeSelect.name = subtypeId;
+    subtypeSelect.className = "border rounded px-2 py-1 w-full";
+    subtypeSelect.disabled = account.isProcessed;
+    if (account.isProcessed)
+      subtypeSelect.classList.add("text-gray-300", "cursor-default");
+    else
+      subtypeSelect.classList.add("cursor-pointer");
+    const selectedType = account.type;
+    subtypeSelect.title = account.subtype.display;
+    const availableSubtypes = getAccountTypeByDisplayName(selectedType.display)?.subtypes || [];
+    availableSubtypes.forEach((sub) => {
+      const opt = document.createElement("option");
+      opt.value = sub.display;
+      opt.textContent = sub.display;
+      if (sub.display === account.subtype.display)
+        opt.selected = true;
+      subtypeSelect.appendChild(opt);
+    });
+    subtypeSelect.addEventListener("change", () => {
+      if (typeof onSubtypeChange === "function") {
+        onSubtypeChange(account, subtypeSelect.value);
+      }
+    });
+    tdSub.appendChild(subtypeSelect);
+    return tdSub;
+  }
+  function renderBalanceCell(account) {
+    const tdBal = document.createElement("td");
+    tdBal.className = "px-2 py-2 text-[#637988] cursor-default";
+    tdBal.textContent = currencyFormatter.format(account.balance);
+    tdBal.title = `Balance: ${currencyFormatter.format(account.balance)}`;
+    if (account.isProcessed)
+      tdBal.classList.add("text-gray-400");
+    return tdBal;
+  }
+  function renderStateCell(account) {
+    const tdState = document.createElement("td");
+    if (account.isFailed) {
+      const label = document.createElement("span");
+      label.className = "bg-red-100 text-red-800 text-sm font-medium px-2 py-0.5 rounded-full cursor-default";
+      label.textContent = "Error";
+      label.title = "This account failed to be uploaded. Try again.";
+      tdState.appendChild(label);
+    } else if (account.shouldDelete) {
+      const label = document.createElement("span");
+      label.className = "bg-yellow-100 text-yellow-800 text-sm font-medium px-2 py-0.5 rounded-full cursor-default";
+      label.textContent = "Will Delete";
+      label.title = "This account is planned for deletion.";
+      tdState.appendChild(label);
+    } else if (account.isModified && account.isIncluded) {
+      const label = document.createElement("span");
+      label.className = "bg-blue-100 text-blue-800 text-sm font-medium px-2 py-0.5 rounded-full cursor-default";
+      label.textContent = "Modified";
+      label.title = "This account is planned for modifying.";
+      tdState.appendChild(label);
+    }
+    return tdState;
+  }
+
+  // src/utils/array.js
+  function chunkArray(arr, size) {
+    const batches2 = [];
+    for (let i = 0; i < arr.length; i += size) {
+      batches2.push(arr.slice(i, i + size));
+    }
+    return batches2;
+  }
+
+  // src/views/ManageMonarchAccounts/manageMonarchAccounts.js
+  var currentFilter2 = "all";
+  var searchQuery2 = "";
+  var accounts = [];
+  var $;
+  var UI;
+  function initManageMonarchAccountsView() {
+    const token = state_default.credentials.apiToken || getLocalStorage().token;
+    if (!token) {
+      state_default.redirectAfterLogin = "bulkDeleteView";
+      return navigate("monarchCredentialsView");
+    }
+    $ = (id) => document.getElementById(id);
+    UI = {
+      dataTableBody: $("dataTableBody"),
+      statusMsg: $("statusMsg"),
+      lastSynced: $("lastSynced"),
+      refreshBtn: $("refreshBtn"),
+      masterCheckbox: $("masterCheckbox"),
+      searchInput: $("searchInput"),
+      importBtn: $("importBtn"),
+      selectedCount: $("selectedCount"),
+      filterAllBtn: $("filterAll"),
+      filterUnchangedBtn: $("filterUnchanged"),
+      filterModifiedBtn: $("filterModified"),
+      filterDeletedBtn: $("filterDeleted"),
+      bulkActionBar: $("bulkActionBar"),
+      unselectAllBtn: $("unselectAllBtn"),
+      bulkRenameBtn: $("bulkRenameBtn"),
+      bulkTypeBtn: $("bulkTypeBtn"),
+      bulkResetBtn: $("bulkResetBtn"),
+      bulkDeleteBtn: $("bulkDeleteBtn"),
+      bulkRenameModal: $("bulkRenameModal"),
+      renamePattern: $("renamePattern"),
+      renamePreview: $("renamePreview"),
+      renameCancel: $("renameCancel"),
+      renameApply: $("renameApply"),
+      bulkTypeModal: $("bulkTypeModal"),
+      bulkTypeSelect: $("bulkTypeSelect"),
+      bulkSubtypeSelect: $("bulkSubtypeSelect"),
+      bulkTypeCancel: $("bulkTypeCancel"),
+      bulkTypeApply: $("bulkTypeApply"),
+      processingModal: $("processingModal"),
+      progressBar: $("progressBar"),
+      progressCounters: $("progressCounters"),
+      closeProcessingBtnContainer: $("closeProcessingBtnContainer"),
+      closeProcessingBtn: $("closeProcessingBtn")
+    };
+    UI.filterAllBtn.classList.add("bg-blue-500", "text-white");
+    UI.unselectAllBtn.addEventListener("click", () => updateSelection2(false));
+    UI.bulkResetBtn.addEventListener("click", handleBulkReset);
+    UI.bulkDeleteBtn.addEventListener("click", handleBulkDeleteClick);
+    UI.bulkRenameBtn.addEventListener("click", openBulkRenameModal2);
+    UI.bulkTypeBtn.addEventListener("click", openBulkTypeModal2);
+    UI.masterCheckbox.addEventListener("change", masterCheckboxChange2);
+    UI.closeProcessingBtn.addEventListener("click", () => {
+      UI.processingModal.classList.add("hidden");
+    });
+    UI.importBtn.addEventListener("click", async () => {
+      const token2 = state_default.credentials.apiToken || getLocalStorage().token;
+      UI.processingModal.classList.remove("hidden");
+      UI.closeProcessingBtnContainer.classList.add("hidden");
+      const toDelete = accounts.filter((a) => a.shouldDelete);
+      const toModify = accounts.filter((a) => a.isModified && !a.shouldDelete);
+      const totalDel2 = toDelete.length;
+      const totalMod2 = toModify.length;
+      const total = totalDel2 + totalMod2;
+      const failDel = [], failMod = [];
+      const succDel = [], succMod = [];
+      function updateProgress() {
+        const done = failDel.length + failMod.length + succDel.length + succMod.length;
+        const percentDone = Math.round(done / total * 100);
+        UI.progressBar.style.width = `${percentDone}%`;
+        UI.progressBar.textContent = `${percentDone}%`;
+        UI.progressCounters.innerHTML = `<p>Modifications: ${succMod.length} of ${totalMod2}</p><p>Deletions:   ${succDel.length} of ${totalDel2}</p><p>Failures \u2014 Modifications: ${failMod.length}, Deletions: ${failDel.length}</p>`;
+      }
+      for (const batch of chunkArray(toDelete, 3)) {
+        await Promise.all(batch.map(async (acc) => {
+          try {
+            const res = await monarchApi.deleteAccount(token2, acc.id);
+            if (res.success)
+              succDel.push(acc);
+            else
+              failDel.push(acc);
+          } catch {
+            failDel.push(acc);
+          }
+        }));
+        console.log("Successfully deleted accounts:", succDel);
+        console.log("Failed to delete accounts:", failDel);
+        updateProgress();
+        await new Promise((r) => setTimeout(r, 2e3));
+      }
+      for (const batch of chunkArray(toModify, 3)) {
+        await Promise.all(batch.map(async (acc) => {
+          try {
+            const res = await monarchApi.patchAccount(token2, acc);
+            if (res.success)
+              succMod.push(acc);
+            else
+              failMod.push(acc);
+          } catch {
+            failMod.push(acc);
+          }
+        }));
+        console.log("Successfully modified accounts:", succMod);
+        console.log("Failed to modify accounts:", failMod);
+        updateProgress();
+        await new Promise((r) => setTimeout(r, 2e3));
+      }
+      failDel.forEach((acc) => acc.isFailed = true);
+      failMod.forEach((acc) => acc.isFailed = true);
+      accounts = accounts.filter((account) => !(account.shouldDelete && !account.isFailed));
+      console.log("Final accounts after processing:", accounts);
+      saveAccountsToCache(accounts);
+      UI.closeProcessingBtnContainer.classList.remove("hidden");
+      renderAccountTable2(accounts);
+    });
+    UI.refreshBtn.addEventListener("click", () => syncAccounts(token));
+    let debounceTimer;
+    UI.searchInput.addEventListener("input", () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        searchQuery2 = UI.searchInput.value.toLowerCase();
+        renderAccountTable2(accounts);
+      }, 200);
+    });
+    ["all", "unchanged", "modified", "deleted"].forEach((filter) => {
+      document.getElementById(`filter${capitalize(filter)}`).addEventListener("click", () => setFilter2(filter));
+    });
+    const initialCache = getCachedAccounts();
+    if (initialCache.length) {
+      accounts = initialCache;
+      renderAccountTable2(accounts);
+      renderButtons();
+      UI.statusMsg.textContent = `Loaded ${accounts.length} accounts from cache.`;
+      const storedTs = localStorage.getItem("monarchAccountsTimestamp");
+      UI.lastSynced.textContent = `Last synced: ${new Date(parseInt(storedTs, 10)).toLocaleString()}`;
+    } else {
+      syncAccounts(token);
+      renderButtons();
+    }
+  }
+  function handleBulkReset() {
+    Object.values(accounts).forEach((acc) => {
+      if (acc.isSelected) {
+        acc.modifiedName = acc.originalName;
+        acc.type = acc.originalType;
+        acc.subtype = acc.originalSubtype;
+        acc.isModified = false;
+        acc.shouldDelete = false;
+        acc.isFailed = false;
+      }
+    });
+    renderAccountTable2(accounts);
+  }
+  function handleBulkDeleteClick() {
+    Object.values(accounts).forEach((acc) => {
+      if (acc.isSelected)
+        acc.shouldDelete = true;
+    });
+    renderAccountTable2(accounts);
+  }
+  async function syncAccounts(token) {
+    try {
+      UI.statusMsg.textContent = "Fetching accounts from Monarch...";
+      const data2 = await monarchApi.fetchAccounts(token);
+      accounts = data2.accounts.map((account) => ({
+        ...account,
+        originalName: account.displayName,
+        modifiedName: account.displayName,
+        balance: account.displayBalance || 0,
+        originalType: account.type,
+        type: account.type,
+        originalSubtype: account.subtype,
+        subtype: account.subtype,
+        isProcessed: false,
+        isFailed: false,
+        isSelected: false,
+        isIncluded: true,
+        shouldDelete: false,
+        isModified: false,
+        status: "unprocessed"
+      }));
+      saveAccountsToCache(accounts);
+      const newTimestamp = Date.now().toString();
+      localStorage.setItem("monarchAccountsTimestamp", newTimestamp);
+      UI.lastSynced.textContent = `Last synced: ${new Date(parseInt(newTimestamp, 10)).toLocaleString()}`;
+      UI.statusMsg.textContent = `Fetched ${accounts.length} accounts from Monarch.`;
+      renderAccountTable2(accounts);
+      renderButtons();
+    } catch (error) {
+      console.error("Error fetching accounts:", error);
+      UI.statusMsg.textContent = `Error fetching accounts: ${error.message}`;
+    }
+  }
+  function renderAccountTable2(accounts2) {
+    const fragment = document.createDocumentFragment();
+    UI.dataTableBody.innerHTML = "";
+    for (const account of accounts2) {
+      if (currentFilter2 === "unchanged" && (account.isModified || account.shouldDelete))
+        continue;
+      if (currentFilter2 === "modified" && (!account.isModified || account.shouldDelete))
+        continue;
+      if (currentFilter2 === "deleted" && !account.shouldDelete)
+        continue;
+      if (searchQuery2 && !account.modifiedName.toLowerCase().includes(searchQuery2))
+        continue;
+      const rowElement = createAccountRowElement2(account, {
+        showCheckbox: true,
+        onCheckboxClick: handleCheckboxClick,
+        onNameClick: handleNameClick,
+        onTypeChange: handleTypeChange,
+        onSubtypeChange: handleSubtypeChange
+      });
+      fragment.appendChild(rowElement);
+    }
+    UI.dataTableBody.appendChild(fragment);
+    updateMasterCheckbox2(getVisibleAccounts2());
+    updateBulkActionBar("bulkActionBar", accounts2.filter((acc) => acc.isSelected).length);
+    toggleDisabled(importBtn, !accounts2.some((acc) => (acc.isModified || acc.shouldDelete) && acc.status !== "processed"));
+    UI.importBtn.title = UI.importBtn.disabled ? "At least one account must be modified to proceed" : "";
+    renderButtons();
+  }
+  function setFilter2(filter) {
+    currentFilter2 = filter;
+    document.querySelectorAll(".filter-btn").forEach((btn) => {
+      const isActive = btn.id === `filter${capitalize(currentFilter2)}`;
+      toggleButtonActive(btn, isActive);
+    });
+    renderAccountTable2(accounts);
+  }
+  function updateSelection2(shouldSelect) {
+    accounts.forEach((acc) => {
+      if (acc.status !== "processed")
+        acc.isSelected = shouldSelect;
+    });
+    renderAccountTable2(accounts);
+  }
+  function updatePreview(accounts2) {
+    UI.renamePreview.innerHTML = "";
+    const pattern = UI.renamePattern.value;
+    Object.values(accounts2).filter((account) => account.isSelected).slice(0, 3).forEach((account) => {
+      const previewName = applyPattern2(pattern, account);
+      const div = document.createElement("div");
+      div.textContent = previewName;
+      UI.renamePreview.appendChild(div);
+    });
+  }
+  function masterCheckboxChange2(e) {
+    const checked = e.target.checked;
+    getVisibleAccounts2().forEach((acc) => {
+      acc.isSelected = checked;
+    });
+    renderAccountTable2(accounts);
+  }
+  function handleCheckboxClick(account, checkboxElement) {
+    account.isSelected = checkboxElement.checked;
+    refreshBulkActionBar2();
+    updateMasterCheckbox2(getVisibleAccounts2());
+  }
+  function updateMasterCheckbox2(visibleAccounts) {
+    const selectedCount = visibleAccounts.filter((acc) => acc.isSelected).length;
+    UI.masterCheckbox.checked = selectedCount > 0 && selectedCount === visibleAccounts.length;
+    UI.masterCheckbox.indeterminate = selectedCount > 0 && selectedCount < visibleAccounts.length;
+    refreshBulkActionBar2();
+  }
+  function handleNameClick(account, nameTd) {
+    openNameEditor2(account, nameTd);
+  }
+  function handleTypeChange(account, newType) {
+    const monarchTypeData = getAccountTypeByDisplayName(newType);
+    account.type = {
+      display: monarchTypeData.typeDisplay,
+      name: monarchTypeData.typeName
+    };
+    account.subtype = {
+      display: monarchTypeData.subtypes[0].display,
+      name: monarchTypeData.subtypes[0].name
+    };
+    if (account.originalType.display !== account.type.display) {
+      account.isModified = true;
+    }
+    renderAccountTable2(accounts);
+  }
+  function handleSubtypeChange(account, newSubtype) {
+    const selectedSubtype = getSubtypeByDisplayName(account.type.display, newSubtype);
+    account.subtype = {
+      display: selectedSubtype.display,
+      name: selectedSubtype.name
+    };
+    if (account.originalSubtype.display !== account.subtype.display) {
+      account.isModified = true;
+    }
+    renderAccountTable2(accounts);
+  }
+  function refreshBulkActionBar2() {
+    const selectedCount = Object.values(accounts).filter((acc) => acc.isSelected).length;
+    UI.selectedCount.textContent = selectedCount;
+    toggleElementVisible(UI.bulkActionBar, selectedCount > 0);
+  }
+  function openNameEditor2(account, nameElement) {
+    const overlay = document.createElement("div");
+    overlay.className = "fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 opacity-0 transition-opacity duration-200";
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add("opacity-100"));
+    const popup = document.createElement("div");
+    popup.className = "bg-white rounded-lg shadow-lg p-5 w-[400px]";
+    const title = document.createElement("h2");
+    title.className = "font-bold mb-3 text-lg";
+    title.textContent = "Edit Account Name";
+    popup.appendChild(title);
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = account.modifiedName;
+    input.setAttribute("aria-label", "Account name input");
+    input.className = "border rounded w-full px-3 py-2 mb-4";
+    popup.appendChild(input);
+    const buttonRow = document.createElement("div");
+    buttonRow.className = "flex justify-end gap-2";
+    const cancelBtn = document.createElement("button");
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.className = "bg-gray-300 px-4 py-2 rounded";
+    cancelBtn.addEventListener("click", () => closeEditor());
+    const saveBtn = document.createElement("button");
+    saveBtn.textContent = "Save";
+    saveBtn.className = "bg-blue-500 text-white px-4 py-2 rounded font-bold";
+    saveBtn.addEventListener("click", save);
+    buttonRow.appendChild(cancelBtn);
+    buttonRow.appendChild(saveBtn);
+    popup.appendChild(buttonRow);
+    overlay.appendChild(popup);
+    input.focus();
+    input.select();
+    overlay.addEventListener("keydown", (e) => {
+      if (e.key === "Escape")
+        closeEditor();
+      if (e.key === "Enter")
+        save();
+    });
+    function closeEditor() {
+      overlay.classList.remove("opacity-100");
+      overlay.classList.add("opacity-0");
+      setTimeout(() => document.body.removeChild(overlay), 200);
+    }
+    function save() {
+      account.modifiedName = input.value.trim();
+      nameElement.textContent = account.modifiedName;
+      account.isModified = true;
+      nameElement.title = `Click to rename '${account.modifiedName}'`;
+      closeEditor();
+      renderAccountTable2(accounts);
+    }
+  }
+  function openBulkRenameModal2() {
+    UI.bulkRenameModal.classList.remove("hidden");
+    UI.renamePattern.focus();
+    const selectedAccounts = Object.values(accounts).filter((acc) => acc.isSelected);
+    const tokenButtons = document.querySelectorAll(".token-btn");
+    tokenButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const token = btn.dataset.token;
+        UI.renamePattern.value += token;
+        updatePreview(accounts);
+      });
+    });
+    UI.renamePattern.addEventListener("input", () => updatePreview(selectedAccounts));
+    updatePreview(selectedAccounts);
+    UI.renameCancel.onclick = () => UI.bulkRenameModal.classList.add("hidden");
+    UI.renameApply.onclick = () => {
+      const pattern = UI.renamePattern.value;
+      selectedAccounts.forEach((account) => {
+        account.modifiedName = applyPattern2(pattern, account);
+        if (account.modifiedName !== account.originalName) {
+          account.isModified = true;
+        }
+      });
+      UI.bulkRenameModal.classList.add("hidden");
+      renderAccountTable2(accounts);
+    };
+  }
+  function applyPattern2(pattern, account) {
+    let input = pattern.replace(/{{name}}/g, account.modifiedName);
+    const calls = input.match(/(replaceAll?|replace?|substring)\([^)]*\)/g) || [];
+    let result = "";
+    calls.forEach((call) => {
+      if (call.startsWith("replaceAll(")) {
+        const args = call.match(/replaceAll\('([^']*)','([^']*)','([^']*)'\)/);
+        if (args) {
+          const [, src, search, repl] = args;
+          result = src.replace(new RegExp(search, "g"), repl);
+        }
+      } else if (call.startsWith("replace(")) {
+        const args = call.match(/replace\('([^']*)','([^']*)','([^']*)'\)/);
+        if (args) {
+          const [, src, search, repl] = args;
+          result = src.replace(new RegExp(search), repl);
+        }
+      } else if (call.startsWith("substring(")) {
+        const args = call.match(/substring\('([^']*)',(\d+),(\d+)\)/);
+        if (args) {
+          const [, src, start, end] = args;
+          result = src.substring(Number(start), Number(end));
+        }
+      }
+    });
+    return calls.length ? result : input;
+  }
+  function openBulkTypeModal2() {
+    UI.bulkTypeModal.classList.remove("hidden");
+    UI.bulkTypeSelect.innerHTML = "";
+    monarchAccountTypes_default.data.forEach((type) => {
+      const opt = document.createElement("option");
+      opt.value = type.typeDisplay;
+      opt.textContent = type.typeDisplay;
+      UI.bulkTypeSelect.appendChild(opt);
+    });
+    function updateSubtypeOptions() {
+      const selectedType = getAccountTypeByDisplayName(UI.bulkTypeSelect.value);
+      UI.bulkSubtypeSelect.innerHTML = "";
+      (selectedType?.subtypes || []).forEach((sub) => {
+        const opt = document.createElement("option");
+        opt.value = sub.display;
+        opt.textContent = sub.display;
+        UI.bulkSubtypeSelect.appendChild(opt);
+      });
+    }
+    UI.bulkTypeSelect.addEventListener("change", updateSubtypeOptions);
+    updateSubtypeOptions();
+    UI.bulkTypeCancel.onclick = () => UI.bulkTypeModal.classList.add("hidden");
+    UI.bulkTypeApply.onclick = () => {
+      const newType = getAccountTypeByDisplayName(UI.bulkTypeSelect.value);
+      const newSubtype = getSubtypeByDisplayName(newType.typeDisplay, UI.bulkSubtypeSelect.value);
+      const selectedAccounts = Object.values(accounts).filter((acc) => acc.isSelected);
+      selectedAccounts.forEach((acc) => {
+        acc.type = {
+          display: newType.typeDisplay,
+          name: newType.typeName
+        };
+        acc.subtype = {
+          display: newSubtype.display,
+          name: newSubtype.name
+        };
+        acc.isModified = true;
+      });
+      UI.bulkTypeModal.classList.add("hidden");
+      renderAccountTable2(accounts);
+    };
+  }
+  function getVisibleAccounts2() {
+    return Object.values(accounts).filter((account) => {
+      if (account.status === "processed")
+        return false;
+      if (currentFilter2 === "included" && !account.isIncluded)
+        return false;
+      if (currentFilter2 === "excluded" && account.isIncluded)
+        return false;
+      if (searchQuery2 && !account.modifiedName.toLowerCase().includes(searchQuery2))
+        return false;
+      return true;
+    });
+  }
+
+  // src/views/ManageMonarchAccounts/manageMonarchAccounts.html
+  var manageMonarchAccounts_default = `<div class="px-10 sm:px-16 lg:px-20 xl:px-40 flex flex-1 justify-center py-5">
+  <div class="layout-content-container flex flex-col max-w-[960px] flex-1">
+    <div class="flex justify-between items-center p-4">
+      <h2 class="text-[#111518] text-[32px] font-bold">Manage Accounts</h2>
+    </div>
+
+    <div class="px-4 pb-2 flex items-center">
+      <button id="refreshBtn" class="ui-button" data-type="secondary" data-size="small">Sync Accounts</button>
+      <p id="lastSynced" class="text-sm text-gray-500 px-4 mt-2"></p>
+    </div>
+
+    <!-- Control bar -->
+    <div class="flex items-center justify-between px-4 border-t-1 border-gray-100 mt-4 pt-6">
+      <!-- Search -->
+      <input id="searchInput" type="text" placeholder="Search accounts..." class="border border-[#dce1e5] rounded px-3 py-2 w-1/3 cursor-pointer">
+
+      <!-- Filters & Bulk -->
+      <div class="flex items-center gap-6">
+
+        <!-- Filters -->
+        <div class="flex bg-gray-100 rounded-lg p-1 space-x-1">
+          <button id="filterAll" class="filter-btn px-4 py-2 text-sm font-medium rounded-md transition cursor-pointer"
+            title="Show all accounts" data-filter="all">All</button>
+
+          <button id="filterUnchanged"
+            class="filter-btn px-4 py-2 text-sm font-medium rounded-md transition cursor-pointer"
+            title="Show only unchanged accounts" data-filter="unchanged">Unchanged</button>
+
+          <button id="filterModified"
+            class="filter-btn px-4 py-2 text-sm font-medium rounded-md transition cursor-pointer"
+            title="Show only modified accounts" data-filter="modified">Modified</button>
+
+          <button id="filterDeleted"
+            class="filter-btn px-4 py-2 text-sm font-medium rounded-md transition cursor-pointer"
+            title="Show only deleted accounts" data-filter="deleted">Deleted</button>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="px-4 py-3 @container">
+      <div class="flex overflow-hidden rounded-lg border border-[#dce1e5] bg-white">
+        <table class="flex-1" role="grid">
+          <thead>
+            <tr class="bg-white" role="row">
+              <th class="px-2 py-3 text-left text-sm font-medium w-[50px]">
+                <input type="checkbox" id="masterCheckbox" class="w-5 h-5 cursor-pointer">
+              </th>
+              <th scope="col" class="px-2 py-3 text-left text-sm font-medium w-[230px]">Account Name</th>
+              <th scope="col" class="px-2 py-3 text-left text-sm font-medium w-[250px]">Type</th>
+              <th scope="col" class="px-2 py-3 text-left text-sm font-medium w-[250px]">Subtype</th>
+              <th scope="col" class="px-2 py-3 text-left text-sm font-medium w-[200px]">Balance</th>
+              <th scope="col" class="px-2 py-3 text-left text-sm font-medium w-[150px]">State</th>
+            </tr>
+          </thead>
+          <tbody id="dataTableBody">
+            <!-- populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Status message -->
+      <p id="statusMsg" class="text-gray-400 text-base pt-2 px-4"></p>
+
+      <div id="bulkActionBar"
+        class="hidden bulk-bar fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-white shadow-lg rounded-lg flex items-center px-6 py-3 gap-4 border border-gray-300 transition-all duration-300">
+
+        <!-- Unselect -->
+        <button id="unselectAllBtn"
+          class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"
+          title="Unselect all accounts">
+          <span id="selectedCount">0</span> selected
+        </button>
+
+        <!-- Separator -->
+        <div class="h-5 border-l border-gray-300"></div>
+
+        <!-- Bulk Rename -->
+        <button id="bulkRenameBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"
+          title="Bulk rename accounts">
+          Rename
+        </button>
+
+        <!-- Bulk Edit Type -->
+        <button id="bulkTypeBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"
+          title="Bulk edit account types">
+          Edit Type & Subtype
+        </button>
+
+        <!-- Bulk Reset Changes -->
+        <button id="bulkResetBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"
+          title="Reset modifications to selected accounts">
+          Reset Changes
+        </button>
+
+        <!-- Bulk delete -->
+        <button id="bulkDeleteBtn" class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"
+          title="Delete selected accounts">
+          Delete
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation controls -->
+    <div class="flex justify-between items-center px-4 py-6 mt-6">
+
+      <!-- Forward Button -->
+      <button id="importBtn" class="ui-button" data-type="primary" data-size="large" disabled>Apply Changes</button>
+    </div>
+  </div>
+</div>
+
+<div id="bulkRenameModal" class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 hidden">
+  <div class="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 relative">
+
+    <h2 class="text-xl font-bold mb-4">Bulk Rename Accounts</h2>
+
+    <label for="renamePattern" class="font-medium text-sm">Pattern:</label>
+    <input id="renamePattern" name="renamePattern" type="text" class="border rounded w-full px-3 py-2 mb-3"
+      placeholder="e.g. {{name}}" value="{{name}}">
+
+    <!-- Token shortcuts -->
+    <div class="flex flex-wrap gap-2 mb-4">
+      <button class="func-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"
+        data-snippet="'{{name}}'">{{name}}</button>
+      <button class="func-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"
+        data-snippet="replace('value','v','V')">replace('value','a','b')</button>
+      <button class="func-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"
+        data-snippet="replaceAll('value','\\\\d','')">replaceAll('value','\\\\d','')</button>
+      <button class="func-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"
+        data-snippet="substring('value',0,3)">substring('value',0,3)</button>
+    </div>
+
+    <!-- Preview -->
+    <div class="border rounded p-3 bg-gray-50 mb-4">
+      <div class="font-medium text-sm mb-2">Preview:</div>
+      <div id="renamePreview" class="text-sm text-gray-700 space-y-1" aria-live="polite"></div>
+    </div>
+
+    <div class="flex justify-end gap-3">
+      <button id="renameCancel" class="ui-button" data-type="secondary">Cancel</button>
+      <button id="renameApply" class="ui-button">Apply</button>
+    </div>
+
+  </div>
+</div>
+
+<div id="bulkTypeModal" class="fixed inset-0 bg-black bg-opacity-40 hidden z-50 flex items-center justify-center">
+  <div class="bg-white rounded-lg p-6 w-[400px]">
+    <h2 class="text-lg font-bold mb-4">Bulk Edit Account Type</h2>
+
+    <div class="mb-4">
+      <label for="bulkTypeSelect" class="block mb-1 font-medium">Account Type</label>
+      <select id="bulkTypeSelect" name="bulkSubtypeSelect"
+        class="border rounded w-full px-3 py-2 cursor-pointer"></select>
+    </div>
+
+    <div class="mb-4">
+      <label for="bulkSubtypeSelect" class="block mb-1 font-medium">Subtype</label>
+      <select id="bulkSubtypeSelect" class="border rounded w-full px-3 py-2 cursor-pointer"></select>
+    </div>
+
+    <div class="flex justify-end gap-2">
+      <button id="bulkTypeCancel" class="ui-button" data-type="secondary">Cancel</button>
+      <button id="bulkTypeApply" class="ui-button">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- Processing modal -->
+<div id="processingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  <div class="relative bg-white rounded-lg p-6 w-80 flex flex-col items-center gap-4">
+    <h3 class="text-lg font-semibold">Processing Your Changes</h3>
+    <p class="text-sm text-gray-600 text-center mb-2">
+      Applying updates\u2014please wait and do not refresh or close this window.
+    </p>
+    <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+      <div id="progressBar" class="bg-blue-600 h-full text-xs text-white text-center" style="width:0%">0%</div>
+    </div>
+    <div id="progressCounters" class="text-sm text-gray-700 mt-2 text-left w-full">
+      <p>Modifying accounts: 0 of 0</p>
+      <p>Deleting accounts: 0 of 0</p>
+    </div>
+    <div id="closeProcessingBtnContainer" class="hidden flex justify-center items-center border-t-1 border-gray-100 w-full pt-4">
+      <button id="closeProcessingBtn" class="ui-button hidden" data-type="primary">Close</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .bulk-bar {
+    opacity: 1;
+    transform: translateY(75px);
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  .bulk-bar.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+</style>`;
+
   // src/router.js
   var routes = {
     uploadView: { template: upload_default, init: initUploadView, scroll: false },
@@ -5197,7 +6060,8 @@
     manualInstructionsView: { template: manualInstructions_default, init: initManualInstructionsView, scroll: true },
     monarchCredentialsView: { template: monarchCredentials_default, init: initMonarchCredentialsView, scroll: false },
     monarchOtpView: { template: monarchOtp_default, init: initMonarchOtpView, scroll: false },
-    monarchCompleteView: { template: monarchComplete_default, init: initAutoImportCompleteView, scroll: false }
+    monarchCompleteView: { template: monarchComplete_default, init: initAutoImportCompleteView, scroll: false },
+    bulkDeleteView: { template: manageMonarchAccounts_default, init: initManageMonarchAccountsView, scroll: true }
   };
   async function navigate(view) {
     const app = document.getElementById("app");
@@ -5218,7 +6082,9 @@
 
   // src/main.js
   window.addEventListener("DOMContentLoaded", () => {
-    navigate("uploadView");
+    navigate("bulkDeleteView");
+    document.getElementById("navUpload").addEventListener("click", () => navigate("uploadView"));
+    document.getElementById("navManage").addEventListener("click", () => navigate("bulkDeleteView"));
   });
 })();
 /* @license
