@@ -1,55 +1,210 @@
-<div class="flex flex-col items-center justify-center py-16 px-6 space-y-12 max-w-2xl mx-auto">
+<div class="container-responsive flex flex-col items-center justify-center py-6 sm:py-8 md:py-12 lg:py-16 space-y-8 sm:space-y-10 md:space-y-12 min-h-[calc(100vh-200px)]">
 
-  <!-- Progress -->
-  <div class="text-center space-y-2">
-    <h2 class="text-3xl font-bold text-[#111518]">You're Ready to Import</h2>
-    <p class="text-gray-600 text-base">
-      <span id="accountCount"></span> prepared for migration.
+  <!-- Progress Header -->
+  <div class="text-center space-y-3 sm:space-y-4 w-full max-w-3xl">
+    <div class="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full mb-4">
+      <svg class="w-8 h-8 sm:w-10 sm:h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+      </svg>
+    </div>
+    <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">You're Ready to Import</h2>
+    <p class="text-gray-600 text-sm sm:text-base md:text-lg">
+      <span id="accountCount" class="font-semibold text-green-600">0 accounts</span> prepared for migration.
     </p>
   </div>
 
-  <!-- Manual Import Card -->
-  <div class="w-full bg-white border border-gray-200 rounded-xl shadow-sm p-8 space-y-6">
+  <!-- Main Instructions Card -->
+  <div class="w-full max-w-4xl bg-white border border-gray-200 rounded-xl shadow-lg p-6 sm:p-8 md:p-10 space-y-8 sm:space-y-10">
 
-    <!-- Download -->
-    <div>
-      <h3 class="text-xl font-semibold mb-2">Step 1 — Download Files</h3>
-      <p class="text-gray-500 mb-4">
-        Download a ZIP containing one CSV per account.
-      </p>
+    <!-- Step 1: Download -->
+    <div class="relative">
+      <!-- Step Number -->
+      <div class="flex items-center mb-4 sm:mb-6">
+        <div class="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 text-blue-600 rounded-full font-bold text-sm sm:text-base mr-3 sm:mr-4">
+          1
+        </div>
+        <h3 class="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900">Download Files</h3>
+      </div>
+      
+      <div class="ml-11 sm:ml-14">
+        <p class="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base leading-relaxed">
+          Download a ZIP file containing one CSV per account. Each CSV is formatted 
+          specifically for Monarch Money import.
+        </p>
 
-      <a id="downloadBtn" class="ui-button" data-type="primary" data-size="large" href="#">
-        <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
-          stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 10l5 5 5-5M12 4v12" />
-        </svg>Download CSV Bundle
-      </a>
+        <a id="downloadBtn" 
+           class="ui-button inline-flex items-center btn-responsive" 
+           data-type="primary" 
+           data-size="large" 
+           href="#">
+          <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 10l5 5 5-5M12 4v12" />
+          </svg>
+          Download CSV Bundle
+        </a>
+      </div>
     </div>
 
-    <!-- Upload Instructions -->
-    <div class="mt-12">
-      <h3 class="text-xl font-semibold mb-2">Step 2 — Import into Monarch</h3>
-      <p class="text-gray-500 mb-2">In Monarch:</p>
+    <!-- Divider -->
+    <div class="relative">
+      <div class="absolute inset-0 flex items-center">
+        <div class="w-full border-t border-gray-200"></div>
+      </div>
+      <div class="relative flex justify-center">
+        <div class="px-4 bg-white">
+          <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          </svg>
+        </div>
+      </div>
+    </div>
 
-      <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
-        <li>Go to <strong>Accounts → Add account</strong></li>
-        <li>Choose <strong>Add manual account</strong></li>
-        <li>Select your desire <strong>account type</strong></li>
-        <li>Give it a name and starting balance of <strong>$0.00</strong></li>
-        <li>Go to <strong>Edit → Upload transactions</strong></li>
-        <li>Upload your account CSV file</li>
-        <li>Enable <strong>Adjust account's balances based on these transactions</strong></li>
-        <li>Click <strong>Add to account</strong></li>
-        <li>Repeat for all your accounts</li>
-      </ul>
+    <!-- Step 2: Import Instructions -->
+    <div class="relative">
+      <!-- Step Number -->
+      <div class="flex items-center mb-4 sm:mb-6">
+        <div class="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-green-100 text-green-600 rounded-full font-bold text-sm sm:text-base mr-3 sm:mr-4">
+          2
+        </div>
+        <h3 class="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900">Import into Monarch</h3>
+      </div>
+      
+      <div class="ml-11 sm:ml-14">
+        <p class="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base leading-relaxed">
+          Follow these steps in your Monarch Money account to import each CSV file:
+        </p>
+
+        <div class="bg-gray-50 rounded-lg p-4 sm:p-6 border border-gray-100">
+          <ol class="space-y-3 sm:space-y-4">
+            <li class="flex items-start gap-3">
+              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+                a
+              </span>
+              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+                Go to <strong class="text-gray-900">Accounts → Add account</strong>
+              </div>
+            </li>
+            
+            <li class="flex items-start gap-3">
+              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+                b
+              </span>
+              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+                Choose <strong class="text-gray-900">Add manual account</strong>
+              </div>
+            </li>
+            
+            <li class="flex items-start gap-3">
+              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+                c
+              </span>
+              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+                Select your desired <strong class="text-gray-900">account type</strong>
+              </div>
+            </li>
+            
+            <li class="flex items-start gap-3">
+              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+                d
+              </span>
+              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+                Give it a name and starting balance of <strong class="text-gray-900 bg-yellow-100 px-1 rounded">$0.00</strong>
+              </div>
+            </li>
+            
+            <li class="flex items-start gap-3">
+              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+                e
+              </span>
+              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+                Go to <strong class="text-gray-900">Edit → Upload transactions</strong>
+              </div>
+            </li>
+            
+            <li class="flex items-start gap-3">
+              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+                f
+              </span>
+              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+                Upload your account CSV file
+              </div>
+            </li>
+            
+            <li class="flex items-start gap-3">
+              <span class="flex items-center justify-center w-6 h-6 bg-green-100 text-green-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+                g
+              </span>
+              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+                <strong class="text-green-700">Enable</strong> 
+                <em>"Adjust account's balances based on these transactions"</em>
+              </div>
+            </li>
+            
+            <li class="flex items-start gap-3">
+              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+                h
+              </span>
+              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+                Click <strong class="text-gray-900">Add to account</strong>
+              </div>
+            </li>
+            
+            <li class="flex items-start gap-3">
+              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+                i
+              </span>
+              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+                <strong class="text-blue-600">Repeat for all your accounts</strong>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Auto Import Promo -->
-  <div class="flex flex-col items-center text-center gap-3 bg-[#f9fafb] rounded-lg p-6 border border-gray-200">
-    <h4 class="text-lg font-semibold text-[#111518]">Looking for the easiest way?</h4>
-    <p class="text-sm text-gray-600">
+  <!-- Auto Import Promotion -->
+  <div class="flex flex-col items-center text-center gap-4 sm:gap-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 sm:p-8 md:p-10 border border-blue-100 w-full max-w-4xl shadow-sm">
+    
+    <div class="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center">
+      <svg class="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    </div>
+    
+    <div>
+      <h3 class="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 mb-2">
+        Want us to do this automatically?
+      </h3>
+      <p class="text-gray-600 text-sm sm:text-base md:text-lg leading-relaxed max-w-2xl">
+        Skip the manual work! Our auto-import feature can handle all of this for you 
+        securely and automatically.
+      </p>
+    </div>
+    
+    <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+      <button class="ui-button btn-responsive" data-type="primary" data-size="large" onclick="history.back()">
+        Try Auto Import Instead
+      </button>
+      <button class="ui-button" data-type="secondary" data-size="large" onclick="window.location.reload()">
+        Continue with Manual
+      </button>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="flex flex-col sm:flex-row justify-between items-center w-full max-w-4xl gap-4">
+    <button class="ui-button order-2 sm:order-1" data-type="secondary" data-size="large" onclick="history.back()">
+      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      </svg>
+      Back
+    </button>
+  </div>
+
+</div>
+    <h4 class="text-base sm:text-lg font-semibold text-[#111518]">Looking for the easiest way?</h4>
+    <p class="text-xs sm:text-sm text-gray-600 max-w-lg">
       Our Auto Import tool transfers your accounts directly into Monarch with zero file handling.
     </p>
 
@@ -57,13 +212,13 @@
   </div>
 
   <!-- Footer -->
-  <div class="flex justify-between items-center px-4 py-2 w-full">
-    <button id="backBtn" class="ui-button" data-type="secondary" data-size="large">
+  <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center px-4 py-2 w-full gap-3">
+    <button id="backBtn" class="ui-button order-2 sm:order-1" data-type="secondary" data-size="large">
       ← Back
     </button>
 
-    <a href="https://app.monarchmoney.com" target="_blank" class="ui-button" data-type="secondary" data-size="large">
-      <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
+    <a href="https://app.monarchmoney.com" target="_blank" class="ui-button order-1 sm:order-2 inline-flex items-center justify-center" data-type="secondary" data-size="large">
+      <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-3 w-3 sm:h-4 sm:w-4 mr-2" fill="none" viewBox="0 0 24 24"
         stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
           d="M14 3h7m0 0v7m0-7L10 14M5 5h14v14H5V5z" />
