@@ -17,14 +17,15 @@
   "keywords": [],
   "scripts": {
     "functions": "serverless offline --reloadHandler",
-    "website": "npx live-server public",
+    "website": "npx live-server public --entry-file=index.html",
     "build:css": "tailwindcss -i ./styles/global.css -o ./public/styles.css --minify",
     "build:js": "esbuild ./src/main.js --bundle --minify --outfile=./public/bundle.js --loader:.html=text",
     "build": "npm run build:css && npm run build:js",
     "watch:css": "tailwindcss -i ./styles/global.css -o ./public/styles.css --watch",
     "watch:js": "esbuild ./src/main.js --bundle --outfile=./public/bundle.js --loader:.html=text --watch",
     "dev": "npm-run-all --parallel watch:* website functions",
-    "update:Shortcuts": "node ./tools/fetchMonarchShortcuts.js"
+    "update:Shortcuts": "node ./tools/fetchMonarchShortcuts.js",
+    "delete:AllAccounts": "node ./tools/deleteAllMonarchAccounts.js"
   },
   "dependencies": {
     "@tailwindcss/cli": "^4.1.8",

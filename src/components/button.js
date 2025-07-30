@@ -29,7 +29,7 @@ export function renderButtons() {
     button.className = 'ui-button';
     button.type = 'button';
 
-    button.classList.add('font-semibold', 'rounded-lg', 'transition-all', 'duration-200', 'ease-in-out');
+    button.classList.add('font-semibold', 'rounded-lg', 'transition-all', 'duration-200', 'ease-in-out', 'flex', 'items-center', 'justify-center');
     button.style.transform = 'none';
 
     // Apply responsive size classes with better mobile support

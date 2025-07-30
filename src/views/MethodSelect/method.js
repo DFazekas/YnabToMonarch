@@ -1,11 +1,27 @@
-import { navigate } from '../../router.js';
+import { navigate, goBack } from '../../router.js';
 import state from '../../state.js';
 import { renderButtons } from '../../components/button.js';
+import { updateNavigationTexts } from '../../utils/navigation.js';
+import { createSimpleNavigationBar } from '../../utils/navigationBar.js';
 
 export default function initMethodSelectView() {
+  // Redirect to upload if no accounts are available
+  if (!state.accounts || Object.keys(state.accounts).length === 0) {
+    navigate('/upload', true);
+    return;
+  }
+
+  // Add navigation bar at the bottom of the content
+  const mainContainer = document.querySelector('.container-responsive');
+  mainContainer.insertAdjacentHTML('beforeend', createSimpleNavigationBar({
+    backText: "Back"
+  }));
+
   renderButtons();
+  updateNavigationTexts();
   const manualBtn = document.getElementById('manualImportBtn');
   const autoBtn = document.getElementById('autoImportBtn');
+  const backBtn = document.getElementById('backBtn');
 
   const totalCount = Object.keys(state.accounts).length;
   const selectedCount = Object.values(state.accounts).filter(acc => acc.included).length;
@@ -16,16 +32,15 @@ export default function initMethodSelectView() {
   document.getElementById('manualFileCount').textContent = selectedCount;
 
   manualBtn.addEventListener('click', () => {
-    navigate('manualInstructionsView');
+    navigate('/manual');
   });
 
   autoBtn.addEventListener('click', () => {
-    navigate('monarchCredentialsView');
+    navigate('/login');
   });
 
   // Handle back navigation
   backBtn.addEventListener('click', () => {
-    navigate('reviewView');
+    goBack();
   });
-
 }

@@ -183,47 +183,12 @@
     </div>
     
     <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
-      <button class="ui-button btn-responsive" data-type="primary" data-size="large" onclick="history.back()">
+      <button id="switchToAuto" class="ui-button btn-responsive" data-type="primary" data-size="large">
         Try Auto Import Instead
-      </button>
-      <button class="ui-button" data-type="secondary" data-size="large" onclick="window.location.reload()">
-        Continue with Manual
       </button>
     </div>
   </div>
 
-  <!-- Navigation -->
-  <div class="flex flex-col sm:flex-row justify-between items-center w-full max-w-4xl gap-4">
-    <button class="ui-button order-2 sm:order-1" data-type="secondary" data-size="large" onclick="history.back()">
-      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-      </svg>
-      Back
-    </button>
-  </div>
-
-</div>
-    <h4 class="text-base sm:text-lg font-semibold text-[#111518]">Looking for the easiest way?</h4>
-    <p class="text-xs sm:text-sm text-gray-600 max-w-lg">
-      Our Auto Import tool transfers your accounts directly into Monarch with zero file handling.
-    </p>
-
-    <button id="switchToAuto" class="ui-button" data-size="large">Use Auto Import Instead</button>
-  </div>
-
-  <!-- Footer -->
-  <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center px-4 py-2 w-full gap-3">
-    <button id="backBtn" class="ui-button order-2 sm:order-1" data-type="secondary" data-size="large">
-      ← Back
-    </button>
-
-    <a href="https://app.monarchmoney.com" target="_blank" class="ui-button order-1 sm:order-2 inline-flex items-center justify-center" data-type="secondary" data-size="large">
-      <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-3 w-3 sm:h-4 sm:w-4 mr-2" fill="none" viewBox="0 0 24 24"
-        stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M14 3h7m0 0v7m0-7L10 14M5 5h14v14H5V5z" />
-      </svg>Open Monarch
-    </a>
-  </div>
+  <!-- Navigation will be added here by JavaScript -->
 
 </div>

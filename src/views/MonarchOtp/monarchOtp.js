@@ -1,7 +1,8 @@
-import { navigate } from '../../router.js';
+import { navigate, goBack } from '../../router.js';
 import state from '../../state.js';
 import { monarchApi } from '../../api/monarchApi.js';
 import { renderButtons } from '../../components/button.js';
+import { createSimpleNavigationBar } from '../../utils/navigationBar.js';
 import {
   saveToLocalStorage, getLocalStorage
 } from '../../utils/storage.js';
@@ -9,6 +10,12 @@ import { toggleDisabled, toggleElementVisibility } from '../../utils/dom.js';
 import { patchState } from '../../utils/state.js';
 
 export default function initMonarchOtpView() {
+  // Add navigation bar at the bottom of the content
+  const mainContainer = document.querySelector('.container-responsive');
+  mainContainer.insertAdjacentHTML('beforeend', createSimpleNavigationBar({
+    backText: "Back"
+  }));
+
   const $ = (id) => document.getElementById(id);
   const UI = {
     otpInput: $('otpInput'),
@@ -54,7 +61,7 @@ export default function initMonarchOtpView() {
         }
 
         console.groupEnd("MonarchOtpView");
-        return navigate('monarchCompleteView');
+        return navigate('/complete');
       }
 
       throw new Error('Unknown login response.');
@@ -67,7 +74,7 @@ export default function initMonarchOtpView() {
   }
 
   function onClickBack() {
-    navigate('monarchCredentialsView');
+    goBack();
   }
 
   function onOtpInput() {

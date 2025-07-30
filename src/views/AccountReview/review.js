@@ -1,7 +1,9 @@
 import state from '../../state.js';
 import monarchAccountTypes from '../../../public/static-data/monarchAccountTypes.json';
-import { navigate } from '../../router.js';
+import { navigate, persistState, goBack } from '../../router.js';
 import { renderButtons } from '../../components/button.js';
+import { updateNavigationTexts } from '../../utils/navigation.js';
+import { createNavigationBar } from '../../utils/navigationBar.js';
 import { capitalize } from '../../utils/string.js';
 import { currencyFormatter } from '../../utils/format.js';
 import { getAccountTypeByName, getSubtypeByName } from '../../utils/accountTypeUtils.js';
@@ -12,12 +14,31 @@ let currentFilter = 'all';
 let searchQuery = '';
 
 export default function initAccountReviewView() {
+  // Redirect to upload if no accounts are available
+  if (!state.accounts || Object.keys(state.accounts).length === 0) {
+    navigate('/upload', true);
+    return;
+  }
+
+  // Add navigation bar at the bottom of the content
+  const mainContainer = document.querySelector('.flex.flex-col.max-w-7xl');
+  const navigationConfig = {
+    backText: "Back",
+    showBack: true,
+    showNext: true,
+    nextText: "Continue", 
+    nextId: "continueBtn",
+    nextType: "primary"
+  };
+  mainContainer.insertAdjacentHTML('beforeend', createNavigationBar(navigationConfig));
+
   reviewTableBody = document.getElementById('reviewTableBody');
   mobileAccountList = document.getElementById('mobileAccountList');
   importBtn = document.getElementById('continueBtn');
   searchInput = document.getElementById('searchInput');
 
   renderButtons();
+  updateNavigationTexts();
   renderAccountTable(); // Initialize the table/mobile view
 
   document.getElementById('filterAll').classList.add('bg-blue-500', 'text-white');
@@ -29,6 +50,7 @@ export default function initAccountReviewView() {
     debounceTimer = setTimeout(() => {
       searchQuery = searchInput.value.toLowerCase();
       renderAccountTable();
+      persistState();
     }, 200);
   });
 
@@ -59,7 +81,8 @@ export default function initAccountReviewView() {
   }
 
   // Navigation listeners
-  document.getElementById('continueBtn').addEventListener('click', () => navigate('methodView'));
+  document.getElementById('continueBtn').addEventListener('click', () => navigate('/method'));
+  document.getElementById('backBtn').addEventListener('click', () => goBack());
 
   renderAccountTable();
 }
@@ -78,6 +101,7 @@ function updateSelection(shouldSelect) {
   Object.values(state.accounts).forEach(acc => {
     if (acc.status !== 'processed') acc.selected = shouldSelect;
   });
+  persistState();
   renderAccountTable();
 }
 
@@ -85,6 +109,7 @@ function updateInclusion(include) {
   Object.values(state.accounts).forEach(acc => {
     if (acc.selected) acc.included = include;
   });
+  persistState();
   renderAccountTable();
 }
 
@@ -119,8 +144,21 @@ function renderAccountTable() {
   updateMasterCheckbox(getVisibleAccounts());
   refreshBulkActionBar();
   updateMobileSelectionCount();
-  toggleDisabled(importBtn, !accounts.some(isIncludedAndUnprocessed));
+  
+  // Update continue button with included account count
+  const includedCount = accounts.filter(isIncludedAndUnprocessed).length;
+  const hasIncludedAccounts = includedCount > 0;
+  
+  toggleDisabled(importBtn, !hasIncludedAccounts);
   importBtn.title = importBtn.disabled ? 'At least one account must be included to proceed' : '';
+  
+  // Update button text to show included account count
+  if (hasIncludedAccounts) {
+    importBtn.textContent = `Continue with ${includedCount} account${includedCount !== 1 ? 's' : ''}`;
+  } else {
+    importBtn.textContent = 'Continue';
+  }
+  
   renderButtons();
 }
 
@@ -253,6 +291,7 @@ function createAccountRowElement(account) {
   if (!isProcessed) {
     toggleBtn.addEventListener('click', () => {
       account.included = !account.included;
+      persistState();
       renderAccountTable();
     });
   }
@@ -292,6 +331,7 @@ function createMobileAccountCard(account) {
   checkbox.checked = account.selected || false;
   checkbox.addEventListener('change', () => {
     account.selected = checkbox.checked;
+    persistState();
     refreshBulkActionBar();
     updateMasterCheckbox(getVisibleAccounts());
     updateMobileSelectionCount();
