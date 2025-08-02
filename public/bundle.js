@@ -3250,7 +3250,7 @@
             console.groupEnd("parseCSV");
             return reject(new Error("\u274C CSV file appears to be empty or invalid."));
           }
-          const accounts = /* @__PURE__ */ new Map();
+          const accounts2 = /* @__PURE__ */ new Map();
           for (const row of data2) {
             const accountName = row["Account"]?.trim();
             if (!accountName) {
@@ -3273,9 +3273,9 @@
             } else {
               row.Amount = "0.00";
             }
-            if (!accounts.has(accountName)) {
+            if (!accounts2.has(accountName)) {
               const { type, subtype } = inferMonarchType(accountName, monarchAccountTypes);
-              accounts.set(accountName, {
+              accounts2.set(accountName, {
                 id: generateId(),
                 name: accountName,
                 modifiedName: accountName,
@@ -3289,7 +3289,7 @@
                 status: "unprocessed"
               });
             }
-            const account = accounts.get(accountName);
+            const account = accounts2.get(accountName);
             account.transactions.push({
               Date: row.Date,
               Merchant: row.Payee || "",
@@ -3303,13 +3303,13 @@
             account.balanceCents += netCents;
           }
           ;
-          for (const account of accounts.values()) {
+          for (const account of accounts2.values()) {
             account.balance = account.balanceCents / 100;
             account.included = account.transactionCount > 0;
           }
           ;
           console.groupEnd("parseCSV");
-          resolve(Object.fromEntries(accounts));
+          resolve(Object.fromEntries(accounts2));
         },
         error: (err) => reject(err)
       });
@@ -3460,10 +3460,10 @@
         return;
       }
       try {
-        const accounts = await parseYNABCSV(csvFile);
-        state_default.accounts = accounts;
+        const accounts2 = await parseYNABCSV(csvFile);
+        state_default.accounts = accounts2;
         persistState();
-        if (accounts && Object.keys(accounts).length > 0) {
+        if (accounts2 && Object.keys(accounts2).length > 0) {
           navigate("/review", false, true);
         } else {
           errorMessage.textContent = "No accounts found in the uploaded file.";
@@ -4021,17 +4021,6 @@
   }
 
   // src/utils/dom.js
-  function toggleButtonActive(button, isActive) {
-    const activeClasses = ["bg-blue-500", "text-white"];
-    const inactiveClasses = ["bg-transparent", "text-gray-700", "hover:bg-blue-100"];
-    if (isActive) {
-      button.classList.add(...activeClasses);
-      button.classList.remove(...inactiveClasses);
-    } else {
-      button.classList.remove(...activeClasses);
-      button.classList.add(...inactiveClasses);
-    }
-  }
   function toggleDisabled(el, disabled) {
     el.disabled = disabled;
     el.classList.toggle("cursor-default", disabled);
@@ -4055,7 +4044,18 @@
   var mobileAccountList;
   var importBtn;
   var searchInput;
-  var currentFilter = "all";
+  var activeFilters = {
+    accountName: "",
+    nameMatchType: "contains",
+    nameCaseSensitive: false,
+    types: /* @__PURE__ */ new Set(),
+    subtypes: /* @__PURE__ */ new Set(),
+    transactionsMin: null,
+    transactionsMax: null,
+    balanceMin: null,
+    balanceMax: null,
+    inclusion: "all"
+  };
   var searchQuery = "";
   function initAccountReviewView() {
     if (!state_default.accounts || Object.keys(state_default.accounts).length === 0) {
@@ -4079,7 +4079,11 @@
     renderButtons();
     updateNavigationTexts();
     renderAccountTable();
-    document.getElementById("filterAll").classList.add("bg-blue-500", "text-white");
+    setTimeout(() => {
+      initializeFiltersModal();
+      const totalAccounts = Object.keys(state_default.accounts).length;
+      updateAccountCountDisplay(totalAccounts, totalAccounts);
+    }, 100);
     let debounceTimer;
     searchInput.addEventListener("input", () => {
       clearTimeout(debounceTimer);
@@ -4089,9 +4093,55 @@
         persistState();
       }, 200);
     });
-    ["all", "included", "excluded"].forEach((filter) => {
-      document.getElementById(`filter${capitalize(filter)}`).addEventListener("click", () => setFilter(filter));
-    });
+    setTimeout(() => {
+      const filtersBtn = document.getElementById("filtersBtn");
+      if (filtersBtn) {
+        console.log("Adding click listener to filters button");
+        filtersBtn.addEventListener("click", (e) => {
+          console.log("Filters button clicked!");
+          e.preventDefault();
+          openFiltersModal();
+        });
+      } else {
+        console.error("Filters button not found!");
+      }
+      const filtersModalClose = document.getElementById("filtersModalClose");
+      if (filtersModalClose) {
+        filtersModalClose.addEventListener("click", closeFiltersModal);
+      }
+      const filtersApply = document.getElementById("filtersApply");
+      if (filtersApply) {
+        filtersApply.addEventListener("click", applyFilters);
+      }
+      const filtersReset = document.getElementById("filtersReset");
+      if (filtersReset) {
+        filtersReset.addEventListener("click", resetFilters);
+      }
+      const clearAllFilters2 = document.getElementById("clearAllFilters");
+      if (clearAllFilters2) {
+        clearAllFilters2.addEventListener("click", clearAllFilters2);
+      }
+      const filtersModal = document.getElementById("filtersModal");
+      if (filtersModal) {
+        filtersModal.addEventListener("click", (e) => {
+          if (e.target.id === "filtersModal") {
+            closeFiltersModal();
+          }
+        });
+      }
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && filtersModal && !filtersModal.classList.contains("hidden")) {
+          closeFiltersModal();
+        }
+      });
+      const clearFiltersBtn = document.getElementById("clearFiltersBtn");
+      if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener("click", () => {
+          resetFilters();
+          closeFiltersModal();
+        });
+      }
+    }, 100);
     document.getElementById("unselectAllBtnMobile").addEventListener("click", () => updateSelection(false));
     document.getElementById("unselectAllBtnDesktop").addEventListener("click", () => updateSelection(false));
     document.getElementById("bulkIncludeBtnMobile").addEventListener("click", () => updateInclusion(true));
@@ -4109,14 +4159,6 @@
     }
     document.getElementById("continueBtn").addEventListener("click", () => navigate("/method"));
     document.getElementById("backBtn").addEventListener("click", () => goBack());
-    renderAccountTable();
-  }
-  function setFilter(filter) {
-    currentFilter = filter;
-    document.querySelectorAll(".filter-btn").forEach((btn) => {
-      const isActive = btn.id === `filter${capitalize(currentFilter)}`;
-      toggleButtonActive(btn, isActive);
-    });
     renderAccountTable();
   }
   function updateSelection(shouldSelect) {
@@ -4138,17 +4180,17 @@
   function renderAccountTable() {
     const fragment = document.createDocumentFragment();
     const mobileFragment = document.createDocumentFragment();
-    const accounts = Object.values(state_default.accounts);
+    const accounts2 = Object.values(state_default.accounts);
+    let visibleCount2 = 0;
     reviewTableBody.innerHTML = "";
     if (mobileAccountList)
       mobileAccountList.innerHTML = "";
-    for (const account of accounts) {
-      if (currentFilter === "included" && !account.included)
-        continue;
-      if (currentFilter === "excluded" && account.included)
+    for (const account of accounts2) {
+      if (!passesFilters(account))
         continue;
       if (searchQuery && !account.modifiedName.toLowerCase().includes(searchQuery))
         continue;
+      visibleCount2++;
       fragment.appendChild(createAccountRowElement(account));
       if (mobileAccountList) {
         mobileFragment.appendChild(createMobileAccountCard(account));
@@ -4158,10 +4200,11 @@
     if (mobileAccountList) {
       mobileAccountList.appendChild(mobileFragment);
     }
+    updateAccountCountDisplay(visibleCount2, accounts2.length);
     updateMasterCheckbox(getVisibleAccounts());
     refreshBulkActionBar();
     updateMobileSelectionCount();
-    const includedCount = accounts.filter(isIncludedAndUnprocessed).length;
+    const includedCount = accounts2.filter(isIncludedAndUnprocessed).length;
     const hasIncludedAccounts = includedCount > 0;
     toggleDisabled(importBtn, !hasIncludedAccounts);
     importBtn.title = importBtn.disabled ? "At least one account must be included to proceed" : "";
@@ -4482,9 +4525,7 @@
     return Object.values(state_default.accounts).filter((account) => {
       if (account.status === "processed")
         return false;
-      if (currentFilter === "included" && !account.included)
-        return false;
-      if (currentFilter === "excluded" && account.included)
+      if (!passesFilters(account))
         return false;
       if (searchQuery && !account.modifiedName.toLowerCase().includes(searchQuery))
         return false;
@@ -4664,9 +4705,416 @@
       renderAccountTable();
     };
   }
+  function initializeFiltersModal() {
+    console.log("Initializing filters modal...");
+    try {
+      populateTypeFilters();
+      populateSubtypeFilters();
+      updateFilterDisplay();
+      console.log("Filters modal initialized successfully");
+    } catch (error) {
+      console.error("Error initializing filters modal:", error);
+    }
+  }
+  function populateTypeFilters() {
+    const container = document.getElementById("typeFiltersContainer");
+    if (!container) {
+      console.error("typeFiltersContainer not found");
+      return;
+    }
+    const types = [...new Set(monarchAccountTypes_default.data.map((type) => type.typeDisplay))].sort();
+    container.innerHTML = "";
+    types.forEach((type) => {
+      const checkbox = createFilterCheckbox("type", type, type);
+      container.appendChild(checkbox);
+    });
+    console.log(`Populated ${types.length} type filters`);
+  }
+  function populateSubtypeFilters() {
+    const container = document.getElementById("subtypeFiltersContainer");
+    if (!container) {
+      console.error("subtypeFiltersContainer not found");
+      return;
+    }
+    const subtypes = /* @__PURE__ */ new Set();
+    monarchAccountTypes_default.data.forEach((type) => {
+      type.subtypes.forEach((subtype) => {
+        subtypes.add(subtype.display);
+      });
+    });
+    const sortedSubtypes = [...subtypes].sort();
+    container.innerHTML = "";
+    sortedSubtypes.forEach((subtype) => {
+      const checkbox = createFilterCheckbox("subtype", subtype, subtype);
+      container.appendChild(checkbox);
+    });
+    console.log(`Populated ${sortedSubtypes.length} subtype filters`);
+  }
+  function createFilterCheckbox(filterType, value, label) {
+    const div = document.createElement("div");
+    div.className = "flex items-center";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.id = `filter-${filterType}-${value.replace(/\s+/g, "-")}`;
+    checkbox.value = value;
+    checkbox.className = "w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded";
+    checkbox.addEventListener("change", updateFilterDisplay);
+    const labelEl = document.createElement("label");
+    labelEl.htmlFor = checkbox.id;
+    labelEl.className = "ml-2 text-sm text-gray-700 cursor-pointer";
+    labelEl.textContent = label;
+    div.appendChild(checkbox);
+    div.appendChild(labelEl);
+    return div;
+  }
+  function openFiltersModal() {
+    console.log("Opening filters modal...");
+    try {
+      const filterAccountName = document.getElementById("filterAccountName");
+      if (filterAccountName) {
+        filterAccountName.value = activeFilters.accountName;
+      }
+      const nameMatchType = document.querySelector(`input[name="nameMatchType"][value="${activeFilters.nameMatchType}"]`);
+      if (nameMatchType) {
+        nameMatchType.checked = true;
+      }
+      const nameCaseSensitive = document.getElementById("nameCaseSensitive");
+      if (nameCaseSensitive) {
+        nameCaseSensitive.checked = activeFilters.nameCaseSensitive;
+      }
+      document.querySelectorAll('#typeFiltersContainer input[type="checkbox"]').forEach((cb) => {
+        cb.checked = activeFilters.types.has(cb.value);
+      });
+      document.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]').forEach((cb) => {
+        cb.checked = activeFilters.subtypes.has(cb.value);
+      });
+      const filterTransactionsMin = document.getElementById("filterTransactionsMin");
+      if (filterTransactionsMin) {
+        filterTransactionsMin.value = activeFilters.transactionsMin || "";
+      }
+      const filterTransactionsMax = document.getElementById("filterTransactionsMax");
+      if (filterTransactionsMax) {
+        filterTransactionsMax.value = activeFilters.transactionsMax || "";
+      }
+      const filterBalanceMin = document.getElementById("filterBalanceMin");
+      if (filterBalanceMin) {
+        filterBalanceMin.value = activeFilters.balanceMin || "";
+      }
+      const filterBalanceMax = document.getElementById("filterBalanceMax");
+      if (filterBalanceMax) {
+        filterBalanceMax.value = activeFilters.balanceMax || "";
+      }
+      const inclusionFilter = document.querySelector(`input[name="inclusionFilter"][value="${activeFilters.inclusion}"]`);
+      if (inclusionFilter) {
+        inclusionFilter.checked = true;
+      }
+      const modal = document.getElementById("filtersModal");
+      if (modal) {
+        console.log("Found modal, showing it...");
+        modal.classList.remove("hidden");
+        setTimeout(() => modal.classList.add("show"), 10);
+      } else {
+        console.error("Modal not found!");
+      }
+    } catch (error) {
+      console.error("Error opening filters modal:", error);
+    }
+  }
+  window.openFiltersModal = openFiltersModal;
+  function closeFiltersModal() {
+    const modal = document.getElementById("filtersModal");
+    modal.classList.remove("show");
+    setTimeout(() => modal.classList.add("hidden"), 300);
+  }
+  window.closeFiltersModal = closeFiltersModal;
+  function applyFilters() {
+    console.log("Apply filters button clicked!");
+    try {
+      const filterAccountName = document.getElementById("filterAccountName");
+      activeFilters.accountName = filterAccountName ? filterAccountName.value.trim() : "";
+      const nameMatchType = document.querySelector('input[name="nameMatchType"]:checked');
+      activeFilters.nameMatchType = nameMatchType ? nameMatchType.value : "contains";
+      const nameCaseSensitive = document.getElementById("nameCaseSensitive");
+      activeFilters.nameCaseSensitive = nameCaseSensitive ? nameCaseSensitive.checked : false;
+      activeFilters.types.clear();
+      document.querySelectorAll('#typeFiltersContainer input[type="checkbox"]:checked').forEach((cb) => {
+        activeFilters.types.add(cb.value);
+      });
+      activeFilters.subtypes.clear();
+      document.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]:checked').forEach((cb) => {
+        activeFilters.subtypes.add(cb.value);
+      });
+      const transMin = document.getElementById("filterTransactionsMin");
+      const transMax = document.getElementById("filterTransactionsMax");
+      activeFilters.transactionsMin = transMin && transMin.value ? parseInt(transMin.value) : null;
+      activeFilters.transactionsMax = transMax && transMax.value ? parseInt(transMax.value) : null;
+      const balMin = document.getElementById("filterBalanceMin");
+      const balMax = document.getElementById("filterBalanceMax");
+      activeFilters.balanceMin = balMin && balMin.value ? parseFloat(balMin.value) : null;
+      activeFilters.balanceMax = balMax && balMax.value ? parseFloat(balMax.value) : null;
+      const inclusionFilter = document.querySelector('input[name="inclusionFilter"]:checked');
+      activeFilters.inclusion = inclusionFilter ? inclusionFilter.value : "all";
+      console.log("Applied filters:", activeFilters);
+      closeFiltersModal();
+      renderAccountTable();
+      updateFilterDisplay();
+      persistState();
+    } catch (error) {
+      console.error("Error applying filters:", error);
+    }
+  }
+  window.applyFilters = applyFilters;
+  function resetFilters() {
+    console.log("Reset filters button clicked!");
+    try {
+      const filterAccountName = document.getElementById("filterAccountName");
+      if (filterAccountName)
+        filterAccountName.value = "";
+      const containsRadio = document.querySelector('input[name="nameMatchType"][value="contains"]');
+      if (containsRadio)
+        containsRadio.checked = true;
+      const nameCaseSensitive = document.getElementById("nameCaseSensitive");
+      if (nameCaseSensitive)
+        nameCaseSensitive.checked = false;
+      document.querySelectorAll('#typeFiltersContainer input[type="checkbox"]').forEach((cb) => cb.checked = false);
+      document.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]').forEach((cb) => cb.checked = false);
+      const filterTransactionsMin = document.getElementById("filterTransactionsMin");
+      if (filterTransactionsMin)
+        filterTransactionsMin.value = "";
+      const filterTransactionsMax = document.getElementById("filterTransactionsMax");
+      if (filterTransactionsMax)
+        filterTransactionsMax.value = "";
+      const filterBalanceMin = document.getElementById("filterBalanceMin");
+      if (filterBalanceMin)
+        filterBalanceMin.value = "";
+      const filterBalanceMax = document.getElementById("filterBalanceMax");
+      if (filterBalanceMax)
+        filterBalanceMax.value = "";
+      const allRadio = document.querySelector('input[name="inclusionFilter"][value="all"]');
+      if (allRadio)
+        allRadio.checked = true;
+      activeFilters = {
+        accountName: "",
+        nameMatchType: "contains",
+        nameCaseSensitive: false,
+        types: /* @__PURE__ */ new Set(),
+        subtypes: /* @__PURE__ */ new Set(),
+        transactionsMin: null,
+        transactionsMax: null,
+        balanceMin: null,
+        balanceMax: null,
+        inclusion: "all"
+      };
+      renderAccountTable();
+      updateFilterDisplay();
+      persistState();
+      closeFiltersModal();
+      console.log("Filters reset successfully");
+    } catch (error) {
+      console.error("Error resetting filters:", error);
+    }
+  }
+  window.resetFilters = resetFilters;
+  function clearAllFilters() {
+    console.log("Clear all filters clicked!");
+    resetFilters();
+    closeFiltersModal();
+  }
+  window.clearAllFilters = clearAllFilters;
+  function updateFilterDisplay() {
+    const filterCount = document.getElementById("filterCount");
+    const activeFiltersSection = document.getElementById("activeFiltersSection");
+    const activeFiltersContainer = document.getElementById("activeFiltersContainer");
+    let activeFilterCount = 0;
+    const filterChips = [];
+    if (activeFilters.accountName) {
+      activeFilterCount++;
+      filterChips.push(createFilterChip("Name", `${activeFilters.nameMatchType}: "${activeFilters.accountName}"`, () => {
+        activeFilters.accountName = "";
+        document.getElementById("filterAccountName").value = "";
+        renderAccountTable();
+        updateFilterDisplay();
+      }));
+    }
+    if (activeFilters.types.size > 0) {
+      activeFilterCount++;
+      const typeList = [...activeFilters.types].join(", ");
+      filterChips.push(createFilterChip("Types", typeList, () => {
+        activeFilters.types.clear();
+        document.querySelectorAll('#typeFiltersContainer input[type="checkbox"]').forEach((cb) => cb.checked = false);
+        renderAccountTable();
+        updateFilterDisplay();
+      }));
+    }
+    if (activeFilters.subtypes.size > 0) {
+      activeFilterCount++;
+      const subtypeList = [...activeFilters.subtypes].join(", ");
+      filterChips.push(createFilterChip("Subtypes", subtypeList, () => {
+        activeFilters.subtypes.clear();
+        document.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]').forEach((cb) => cb.checked = false);
+        renderAccountTable();
+        updateFilterDisplay();
+      }));
+    }
+    if (activeFilters.transactionsMin !== null || activeFilters.transactionsMax !== null) {
+      activeFilterCount++;
+      const min = activeFilters.transactionsMin || 0;
+      const max = activeFilters.transactionsMax || "\u221E";
+      filterChips.push(createFilterChip("Transactions", `${min} - ${max}`, () => {
+        activeFilters.transactionsMin = null;
+        activeFilters.transactionsMax = null;
+        document.getElementById("filterTransactionsMin").value = "";
+        document.getElementById("filterTransactionsMax").value = "";
+        renderAccountTable();
+        updateFilterDisplay();
+      }));
+    }
+    if (activeFilters.balanceMin !== null || activeFilters.balanceMax !== null) {
+      activeFilterCount++;
+      const min = activeFilters.balanceMin !== null ? `$${activeFilters.balanceMin}` : "$0";
+      const max = activeFilters.balanceMax !== null ? `$${activeFilters.balanceMax}` : "\u221E";
+      filterChips.push(createFilterChip("Balance", `${min} - ${max}`, () => {
+        activeFilters.balanceMin = null;
+        activeFilters.balanceMax = null;
+        document.getElementById("filterBalanceMin").value = "";
+        document.getElementById("filterBalanceMax").value = "";
+        renderAccountTable();
+        updateFilterDisplay();
+      }));
+    }
+    if (activeFilters.inclusion !== "all") {
+      activeFilterCount++;
+      filterChips.push(createFilterChip("Status", capitalize(activeFilters.inclusion), () => {
+        activeFilters.inclusion = "all";
+        document.querySelector('input[name="inclusionFilter"][value="all"]').checked = true;
+        renderAccountTable();
+        updateFilterDisplay();
+      }));
+    }
+    if (activeFilterCount > 0) {
+      filterCount.textContent = activeFilterCount;
+      filterCount.classList.remove("hidden");
+    } else {
+      filterCount.classList.add("hidden");
+    }
+    if (filterChips.length > 0) {
+      activeFiltersSection.classList.remove("hidden");
+      activeFiltersContainer.innerHTML = "";
+      filterChips.forEach((chip) => activeFiltersContainer.appendChild(chip));
+    } else {
+      activeFiltersSection.classList.add("hidden");
+    }
+    updateAccountCountDisplay(visibleCount, accounts.length);
+  }
+  function createFilterChip(label, value, onRemove) {
+    const chip = document.createElement("div");
+    chip.className = "filter-chip";
+    const content = document.createElement("span");
+    content.textContent = `${label}: ${value}`;
+    const removeBtn = document.createElement("button");
+    removeBtn.onclick = onRemove;
+    removeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+    chip.appendChild(content);
+    chip.appendChild(removeBtn);
+    return chip;
+  }
+  function passesFilters(account) {
+    if (activeFilters.accountName) {
+      const accountName = activeFilters.nameCaseSensitive ? account.modifiedName : account.modifiedName.toLowerCase();
+      const filterName = activeFilters.nameCaseSensitive ? activeFilters.accountName : activeFilters.accountName.toLowerCase();
+      if (activeFilters.nameMatchType === "exact") {
+        if (accountName !== filterName)
+          return false;
+      } else {
+        if (!accountName.includes(filterName))
+          return false;
+      }
+    }
+    if (activeFilters.types.size > 0) {
+      const accountType = getAccountTypeByName(account.type);
+      const typeDisplay = accountType ? accountType.typeDisplay : account.type || "";
+      if (!activeFilters.types.has(typeDisplay))
+        return false;
+    }
+    if (activeFilters.subtypes.size > 0) {
+      const accountSubtype = getSubtypeByName(account.subtype);
+      const subtypeDisplay = accountSubtype ? accountSubtype.display : account.subtype || "";
+      if (!activeFilters.subtypes.has(subtypeDisplay))
+        return false;
+    }
+    const transactionCount = account.transactionCount || 0;
+    if (activeFilters.transactionsMin !== null && transactionCount < activeFilters.transactionsMin)
+      return false;
+    if (activeFilters.transactionsMax !== null && transactionCount > activeFilters.transactionsMax)
+      return false;
+    const balance = parseFloat(account.balance) || 0;
+    if (activeFilters.balanceMin !== null && balance < activeFilters.balanceMin)
+      return false;
+    if (activeFilters.balanceMax !== null && balance > activeFilters.balanceMax)
+      return false;
+    if (activeFilters.inclusion === "included" && !account.included)
+      return false;
+    if (activeFilters.inclusion === "excluded" && account.included)
+      return false;
+    return true;
+  }
+  function updateAccountCountDisplay(visibleCount2, totalCount) {
+    const visibleAccountCount = document.getElementById("visibleAccountCount");
+    const totalAccountCount = document.getElementById("totalAccountCount");
+    const filterResultsSummary = document.getElementById("filterResultsSummary");
+    const filterNotificationBadge = document.getElementById("filterNotificationBadge");
+    const clearFiltersBtn = document.getElementById("clearFiltersBtn");
+    if (visibleAccountCount)
+      visibleAccountCount.textContent = visibleCount2;
+    if (totalAccountCount)
+      totalAccountCount.textContent = totalCount;
+    const hasFilters = hasActiveFilters();
+    const filterCount = countActiveFilters();
+    if (hasFilters && filterCount > 0 && filterNotificationBadge) {
+      filterNotificationBadge.textContent = filterCount;
+      filterNotificationBadge.classList.remove("hidden");
+    } else if (filterNotificationBadge) {
+      filterNotificationBadge.classList.add("hidden");
+    }
+    if (hasFilters && clearFiltersBtn) {
+      clearFiltersBtn.classList.remove("hidden");
+    } else if (clearFiltersBtn) {
+      clearFiltersBtn.classList.add("hidden");
+    }
+    if (hasFilters && filterResultsSummary) {
+      filterResultsSummary.classList.add("filtered");
+    } else if (filterResultsSummary) {
+      filterResultsSummary.classList.remove("filtered");
+    }
+  }
+  function hasActiveFilters() {
+    return activeFilters.accountName || activeFilters.types.size > 0 || activeFilters.subtypes.size > 0 || activeFilters.transactionsMin !== null || activeFilters.transactionsMax !== null || activeFilters.balanceMin !== null || activeFilters.balanceMax !== null || activeFilters.inclusion !== "all";
+  }
+  function countActiveFilters() {
+    let count = 0;
+    if (activeFilters.accountName) {
+      count++;
+    }
+    if (activeFilters.types.size > 0) {
+      count++;
+    }
+    if (activeFilters.subtypes.size > 0) {
+      count++;
+    }
+    if (activeFilters.transactionsMin !== null || activeFilters.transactionsMax !== null) {
+      count++;
+    }
+    if (activeFilters.balanceMin !== null || activeFilters.balanceMax !== null) {
+      count++;
+    }
+    if (activeFilters.inclusion !== "all") {
+      count++;
+    }
+    return count;
+  }
 
   // src/views/AccountReview/review.html
-  var review_default = '<div class="container-responsive flex flex-1 justify-center py-3 sm:py-5 md:py-6">\n  <div class="flex flex-col max-w-7xl flex-1 w-full">\n    \n    <!-- Page Header -->\n    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 sm:p-4 md:p-6 gap-3 sm:gap-4 bg-white rounded-lg mb-4 sm:mb-6 border border-gray-100 shadow-sm">\n      <div>\n        <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1">Review Accounts</h2>\n        <p class="text-gray-600 text-sm sm:text-base">\n          Review detected accounts and adjust their Monarch types before importing.\n        </p>\n      </div>\n    </div>\n\n    <!-- Control Bar -->\n    <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between \n                p-3 sm:p-4 md:p-6 gap-3 sm:gap-4 lg:gap-6 bg-white rounded-lg mb-4 sm:mb-6 \n                border border-gray-100 shadow-sm">\n      \n      <!-- Search -->\n      <div class="flex-1 lg:max-w-md">\n        <div class="relative">\n          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">\n            <svg class="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />\n            </svg>\n          </div>\n          <input id="searchInput" \n                 type="text" \n                 placeholder="Search accounts..." \n                 style="padding-left: 2.75rem !important;"\n                 class="block w-full pr-3 py-2 sm:py-3 text-sm sm:text-base\n                        border border-gray-300 rounded-lg placeholder-gray-400 \n                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 \n                        transition-colors duration-200">\n        </div>\n      </div>\n\n      <!-- Filters -->\n      <div class="flex items-center gap-2 sm:gap-3">\n        <span class="text-sm font-medium text-gray-700 hidden sm:inline">Filter:</span>\n        <div class="flex bg-gray-100 rounded-lg p-1 space-x-1">\n          <button id="filterAll" \n                  class="filter-btn px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-xs sm:text-sm \n                         font-medium rounded-md transition-all duration-200 cursor-pointer\n                         hover:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"\n                  title="Show all accounts"\n                  data-filter="all">\n            All\n          </button>\n\n          <button id="filterIncluded" \n                  class="filter-btn px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-xs sm:text-sm \n                         font-medium rounded-md transition-all duration-200 cursor-pointer\n                         hover:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"\n                  title="Show only included accounts" \n                  data-filter="included">\n            <span class="hidden sm:inline">Included</span>\n            <span class="sm:hidden">Inc.</span>\n          </button>\n\n          <button id="filterExcluded" \n                  class="filter-btn px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-xs sm:text-sm \n                         font-medium rounded-md transition-all duration-200 cursor-pointer\n                         hover:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"\n                  title="Show only excluded accounts" \n                  data-filter="excluded">\n            <span class="hidden sm:inline">Excluded</span>\n            <span class="sm:hidden">Exc.</span>\n          </button>\n        </div>\n      </div>\n    </div>\n\n    <!-- Table Container -->\n    <div class="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">\n      \n      <!-- Mobile Card View (hidden on larger screens) -->\n      <div id="mobileView" class="block lg:hidden">\n        <!-- Mobile Header with Master Checkbox -->\n        <div class="border-b border-gray-200 bg-gray-50 p-4">\n          <div class="flex items-center justify-between">\n            <label class="custom-checkbox-container">\n              <input type="checkbox" \n                     id="masterCheckboxMobile" \n                     class="custom-checkbox-input">\n              <span class="custom-checkbox-visual"></span>\n              <span class="text-sm font-medium text-gray-700 pl-2">Select All</span>\n            </label>\n            <div class="text-xs text-gray-500 font-medium" id="mobileSelectionCount">0 selected</div>\n          </div>\n        </div>\n        \n        <div id="mobileAccountList" class="divide-y divide-gray-100">\n          <!-- populated dynamically for mobile -->\n        </div>\n      </div>\n\n      <!-- Desktop Table View (hidden on mobile) -->\n      <div class="hidden lg:block overflow-x-auto">\n        <table class="w-full min-w-[800px]" role="grid">\n          <thead>\n            <tr class="bg-gray-50 border-b border-gray-200" role="row">\n              <th class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 w-[50px] sm:w-[60px]">\n                <input type="checkbox" \n                       id="masterCheckbox" \n                       class="w-4 h-4 sm:w-5 sm:h-5 cursor-pointer rounded border-gray-300 \n                              text-blue-600 focus:ring-blue-500 focus:ring-2">\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[200px]">\n                Account Name\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[150px]">\n                Type\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[150px]">\n                Subtype\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[100px] text-center">\n                Transactions\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[120px] text-right">\n                Balance\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[100px] text-center">\n                Include\n              </th>\n            </tr>\n          </thead>\n          <tbody id="reviewTableBody" class="divide-y divide-gray-100">\n            <!-- populated dynamically -->\n          </tbody>\n        </table>\n      </div>\n    </div>\n\n    <!-- Bulk Action Bar -->\n    <div id="bulkActionBar"\n         class="hidden fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300">\n      \n      <!-- Mobile Bulk Actions (visible on mobile/tablet) -->\n      <div class="block lg:hidden bg-white shadow-2xl rounded-xl border border-gray-200 w-[calc(100vw-2rem)] max-w-md mx-auto">\n        <div class="p-4">\n          <div class="flex flex-col gap-3">\n            <!-- Selection Info -->\n            <div class="flex items-center justify-between">\n              <span class="text-sm font-medium text-gray-900">\n                <span id="selectedCountMobile">0</span> selected\n              </span>\n              <button id="unselectAllBtnMobile"\n                      class="text-xs font-medium px-3 py-1.5 border border-gray-300 text-gray-700 \n                             bg-white rounded-md hover:bg-gray-50 cursor-pointer transition-colors \n                             duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n                      title="Unselect all accounts">\n                Clear\n              </button>\n            </div>\n            \n            <!-- Action Buttons Grid -->\n            <div class="grid grid-cols-2 gap-2">\n              <button id="bulkRenameBtnMobile"\n                      class="flex items-center justify-center gap-2 px-3 py-3 border border-gray-300 \n                             bg-white rounded-lg hover:bg-gray-50 cursor-pointer transition-colors \n                             duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n                      title="Bulk rename accounts">\n                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />\n                </svg>\n                <span class="text-sm font-medium">Rename</span>\n              </button>\n\n              <button id="bulkTypeBtnMobile"\n                      class="flex items-center justify-center gap-2 px-3 py-3 border border-gray-300 \n                             bg-white rounded-lg hover:bg-gray-50 cursor-pointer transition-colors \n                             duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n                      title="Bulk edit account types">\n                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />\n                </svg>\n                <span class="text-sm font-medium">Edit Type</span>\n              </button>\n\n              <button id="bulkIncludeBtnMobile"\n                      class="flex items-center justify-center gap-2 px-3 py-3 border border-green-300 \n                             text-green-700 bg-green-50 rounded-lg hover:bg-green-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500"\n                      title="Include selected accounts">\n                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />\n                </svg>\n                <span class="text-sm font-medium">Include</span>\n              </button>\n\n              <button id="bulkExcludeBtnMobile"\n                      class="flex items-center justify-center gap-2 px-3 py-3 border border-red-300 \n                             text-red-700 bg-red-50 rounded-lg hover:bg-red-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"\n                      title="Exclude selected accounts">\n                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />\n                </svg>\n                <span class="text-sm font-medium">Exclude</span>\n              </button>\n            </div>\n          </div>\n        </div>\n      </div>\n\n      <!-- Desktop Bulk Actions (visible on desktop) -->\n      <div class="hidden lg:block bg-white shadow-2xl rounded-xl border border-gray-200">\n        <div class="px-6 py-4">\n          <div class="flex items-center gap-6">\n            <!-- Selection Count -->\n            <button id="unselectAllBtnDesktop"\n                    class="text-sm font-medium px-4 py-2 border border-gray-300 \n                           rounded-lg hover:bg-gray-50 cursor-pointer whitespace-nowrap transition-colors \n                           duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n                    title="Unselect all accounts">\n              <span id="selectedCountDesktop">0</span> selected\n            </button>\n\n            <!-- Separator -->\n            <div class="h-6 border-l border-gray-300"></div>\n\n            <!-- Action Buttons -->\n            <div class="flex items-center gap-3">\n              <button id="bulkRenameBtnDesktop"\n                      class="text-sm font-medium px-4 py-2 border border-gray-300 \n                             rounded-lg hover:bg-gray-50 cursor-pointer transition-colors duration-200\n                             focus:outline-none focus:ring-2 focus:ring-blue-500"\n                      title="Bulk rename accounts">\n                Rename\n              </button>\n\n              <button id="bulkTypeBtnDesktop"\n                      class="text-sm font-medium px-4 py-2 border border-gray-300 \n                             rounded-lg hover:bg-gray-50 cursor-pointer transition-colors duration-200\n                             focus:outline-none focus:ring-2 focus:ring-blue-500"\n                      title="Bulk edit account types">\n                Edit Type\n              </button>\n\n              <button id="bulkIncludeBtnDesktop"\n                      class="text-sm font-medium px-4 py-2 border border-green-300 \n                             text-green-700 bg-green-50 rounded-lg hover:bg-green-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500"\n                      title="Include selected accounts">\n                Include\n              </button>\n\n              <button id="bulkExcludeBtnDesktop"\n                      class="text-sm font-medium px-4 py-2 border border-red-300 \n                             text-red-700 bg-red-50 rounded-lg hover:bg-red-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"\n                      title="Exclude selected accounts">\n                Exclude\n              </button>\n            </div>\n          </div>\n        </div>\n      </div>\n    </div>\n\n    <!-- Navigation will be added here by JavaScript -->\n\n  </div>\n</div>\n\n<div id="bulkRenameModal" class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 hidden p-3 sm:p-4">\n  <div class="bg-white rounded-lg shadow-lg w-full max-w-lg p-4 sm:p-6 relative max-h-[90vh] overflow-y-auto">\n\n    <h2 class="text-lg sm:text-xl font-bold mb-4">Bulk Rename Accounts</h2>\n\n    <label for="renamePattern" class="font-medium text-sm">Pattern:</label>\n    <input id="renamePattern" name="renamePattern" type="text" \n           class="border rounded w-full px-3 py-2 mb-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"\n           placeholder="e.g. {{YNAB}} - {{Index}}">\n\n    <!-- Token shortcuts -->\n    <div class="grid grid-cols-2 gap-2 mb-4">\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{YNAB}}">YNAB Name</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{Index}}">Index</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{Upper}}">Uppercase YNAB</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{Date}}">Today (YYYY-MM-DD)</button>\n    </div>\n\n    <!-- Index start -->\n    <div class="flex items-center gap-3 mb-4">\n      <label for="indexStart" class="text-sm">Index Start:</label>\n      <input id="indexStart" type="number" \n             class="border rounded px-3 py-2 w-20 sm:w-24 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" \n             value="1" />\n    </div>\n\n    <!-- Preview -->\n    <div class="border rounded p-3 bg-gray-50 mb-4">\n      <div class="font-medium text-sm mb-2">Preview:</div>\n      <div id="renamePreview" class="text-xs sm:text-sm text-gray-700 space-y-1 max-h-32 overflow-y-auto" aria-live="polite"></div>\n    </div>\n\n    <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">\n      <button id="renameCancel" class="ui-button order-2 sm:order-1 w-full sm:w-auto" data-type="secondary">Cancel</button>\n      <button id="renameApply" class="ui-button order-1 sm:order-2 w-full sm:w-auto" data-type="primary">Apply</button>\n    </div>\n\n  </div>\n</div>\n\n<div id="bulkTypeModal" class="fixed inset-0 bg-black bg-opacity-40 hidden z-50 flex items-center justify-center p-3 sm:p-4">\n  <div class="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">\n    <h2 class="text-lg font-bold mb-4">Bulk Edit Account Type</h2>\n\n    <div class="mb-4">\n      <label for="bulkTypeSelect" class="block mb-2 font-medium text-sm">Account Type</label>\n      <select id="bulkTypeSelect" name="bulkSubtypeSelect" \n              class="border rounded w-full px-3 py-2 cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></select>\n    </div>\n\n    <div class="mb-6">\n      <label for="bulkSubtypeSelect" class="block mb-2 font-medium text-sm">Subtype</label>\n      <select id="bulkSubtypeSelect" \n              class="border rounded w-full px-3 py-2 cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></select>\n    </div>\n\n    <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">\n      <button id="bulkTypeCancel" class="ui-button order-2 sm:order-1 w-full sm:w-auto" data-type="secondary">Cancel</button>\n      <button id="bulkTypeApply" class="ui-button order-1 sm:order-2 w-full sm:w-auto" data-type="primary">Apply</button>\n    </div>\n  </div>\n</div>\n\n<style>\n  /* Bulk action bar styling */\n  #bulkActionBar {\n    transition: opacity 0.3s ease, transform 0.3s ease;\n  }\n\n  #bulkActionBar:not(.active) {\n    opacity: 0;\n    transform: translateY(-10px);\n    pointer-events: none;\n  }\n\n  #bulkActionBar.active {\n    opacity: 1;\n    transform: translateY(0);\n    pointer-events: auto;\n  }\n\n  /* Enhanced button hover effects */\n  #bulkActionBar button:hover {\n    transform: translateY(-1px);\n    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);\n  }\n\n  #bulkActionBar button:active {\n    transform: translateY(0);\n  }\n\n  /* Mobile grid button sizing */\n  @media (max-width: 1024px) {\n    #bulkActionBar .grid button {\n      min-height: 48px;\n    }\n  }\n\n  /* Mobile card styles for accounts */\n  .mobile-account-card {\n    padding: 1rem;\n    border-bottom: 1px solid #f3f4f6;\n    position: relative;\n    display: flex;\n    align-items: flex-start;\n    gap: 0.75rem;\n  }\n\n  .mobile-account-card:last-child {\n    border-bottom: none;\n  }\n\n  .mobile-account-card .card-content {\n    flex: 1;\n    min-width: 0;\n  }\n\n  .mobile-account-card .account-name {\n    font-weight: 500;\n    color: #111827;\n    margin-bottom: 0.5rem;\n    word-wrap: break-word;\n  }\n\n  .mobile-account-card .account-details {\n    font-size: 0.875rem;\n    color: #6b7280;\n  }\n\n  .mobile-account-card .account-details > div {\n    margin-bottom: 0.5rem;\n  }\n\n  .mobile-account-card .account-balance {\n    font-weight: 500;\n    text-align: right;\n  }\n\n  /* Custom checkbox styling */\n  .custom-checkbox-container {\n    display: flex;\n    align-items: center;\n    cursor: pointer;\n    user-select: none;\n    position: relative;\n  }\n\n  .custom-checkbox-input {\n    position: absolute;\n    opacity: 0;\n    cursor: pointer;\n    height: 0;\n    width: 0;\n  }\n\n  .custom-checkbox-visual {\n    position: relative;\n    height: 20px;\n    width: 20px;\n    background-color: #ffffff;\n    border: 2px solid #d1d5db;\n    border-radius: 4px;\n    transition: all 0.2s ease;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n  }\n\n  .custom-checkbox-visual::after {\n    content: "";\n    position: absolute;\n    display: none;\n    left: 6px;\n    top: 2px;\n    width: 4px;\n    height: 8px;\n    border: solid white;\n    border-width: 0 2px 2px 0;\n    transform: rotate(45deg);\n  }\n\n  .custom-checkbox-input:checked + .custom-checkbox-visual {\n    background-color: #3b82f6;\n    border-color: #3b82f6;\n  }\n\n  .custom-checkbox-input:checked + .custom-checkbox-visual::after {\n    display: block;\n  }\n\n  .custom-checkbox-input:focus + .custom-checkbox-visual {\n    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);\n    outline: none;\n  }\n\n  .custom-checkbox-input:disabled + .custom-checkbox-visual {\n    background-color: #f3f4f6;\n    border-color: #e5e7eb;\n    cursor: not-allowed;\n  }\n\n  .custom-checkbox-container:hover .custom-checkbox-input:not(:disabled) + .custom-checkbox-visual {\n    border-color: #3b82f6;\n  }\n\n  /* Mobile specific enhancements */\n  @media (max-width: 1024px) {\n    .custom-checkbox-visual {\n      height: 24px;\n      width: 24px;\n      min-width: 24px;\n      min-height: 24px;\n    }\n\n    .custom-checkbox-visual::after {\n      left: 8px;\n      top: 3px;\n      width: 5px;\n      height: 10px;\n    }\n\n    button, select {\n      min-height: 44px;\n      padding: 0.75rem;\n    }\n    \n    .token-btn {\n      min-height: 44px;\n    }\n\n    input[type="text"], input[type="number"] {\n      min-height: 44px;\n      padding: 0.75rem;\n    }\n  }\n</style>\n';
+  var review_default = '<div class="container-responsive flex flex-1 justify-center py-3 sm:py-5 md:py-6">\n  <div class="flex flex-col max-w-7xl flex-1 w-full">\n    \n    <!-- Page Header -->\n    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 sm:p-4 md:p-6 gap-3 sm:gap-4 bg-white rounded-lg mb-4 sm:mb-6 border border-gray-100 shadow-sm">\n      <div>\n        <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1">Review Accounts</h2>\n        <p class="text-gray-600 text-sm sm:text-base">\n          Review detected accounts and adjust their Monarch types before importing.\n        </p>\n      </div>\n    </div>\n\n    <!-- Control Bar -->\n    <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between \n                p-4 sm:p-6 gap-4 lg:gap-6 bg-white rounded-lg mb-4 sm:mb-6 \n                border border-gray-100 shadow-sm">\n      \n      <!-- Filters, Search and Account Summary -->\n      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 flex-1">\n        <!-- Filters Button -->\n        <div class="flex-shrink-0">\n          <button id="filtersBtn" \n                  class="flex items-center gap-2 px-4 py-2 sm:py-3 text-sm sm:text-base\n                         border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer \n                         transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500\n                         relative whitespace-nowrap"\n                  title="Open advanced filters"\n                  onclick="window.openFiltersModal && window.openFiltersModal()">\n            <!-- Notification Badge -->\n            <div id="filterNotificationBadge" class="hidden"></div>\n            \n            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z" />\n            </svg>\n            <span>Filters</span>\n          </button>\n        </div>\n        \n        <!-- Search Input -->\n        <div class="flex-1 max-w-md">\n          <div class="relative">\n            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">\n              <svg class="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />\n              </svg>\n            </div>\n            <input id="searchInput" \n                   type="text" \n                   placeholder="Search accounts..." \n                   style="padding-left: 2.75rem !important;"\n                   class="block w-full pr-3 py-2 sm:py-3 text-sm sm:text-base\n                          border border-gray-300 rounded-lg placeholder-gray-400 \n                          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 \n                          transition-colors duration-200">\n          </div>\n        </div>\n        \n        <!-- Account Count Summary -->\n        <div id="filterResultsSummary" class="text-sm text-gray-600 whitespace-nowrap">\n          Showing <span id="visibleAccountCount" class="font-medium text-gray-900">0</span> \n          of <span id="totalAccountCount" class="font-medium text-gray-900">0</span> accounts\n        </div>\n      </div>\n\n      <!-- Clear Filter Controls -->\n      <div class="flex items-center gap-3">\n        <!-- Clear All Filters Button (only shown when filters are active) -->\n        <button id="clearFiltersBtn" \n                class="hidden px-3 py-2 sm:py-3 text-sm text-red-600 hover:text-red-800 \n                       hover:bg-red-50 rounded-lg transition-colors duration-200 \n                       focus:outline-none focus:ring-2 focus:ring-red-500"\n                title="Clear all filters"\n                onclick="window.clearAllFilters && window.clearAllFilters()">\n          Clear\n        </button>\n      </div>\n    </div>\n\n    <!-- Table Container -->\n    <div class="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">\n      \n      <!-- Mobile Card View (hidden on larger screens) -->\n      <div id="mobileView" class="block lg:hidden">\n        <!-- Mobile Header with Master Checkbox -->\n        <div class="border-b border-gray-200 bg-gray-50 p-4">\n          <div class="flex items-center justify-between">\n            <label class="custom-checkbox-container">\n              <input type="checkbox" \n                     id="masterCheckboxMobile" \n                     class="custom-checkbox-input">\n              <span class="custom-checkbox-visual"></span>\n              <span class="text-sm font-medium text-gray-700 pl-2">Select All</span>\n            </label>\n            <div class="text-xs text-gray-500 font-medium" id="mobileSelectionCount">0 selected</div>\n          </div>\n        </div>\n        \n        <div id="mobileAccountList" class="divide-y divide-gray-100">\n          <!-- populated dynamically for mobile -->\n        </div>\n      </div>\n\n      <!-- Desktop Table View (hidden on mobile) -->\n      <div class="hidden lg:block overflow-x-auto">\n        <table class="w-full min-w-[800px]" role="grid">\n          <thead>\n            <tr class="bg-gray-50 border-b border-gray-200" role="row">\n              <th class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 w-[50px] sm:w-[60px]">\n                <input type="checkbox" \n                       id="masterCheckbox" \n                       class="w-4 h-4 sm:w-5 sm:h-5 cursor-pointer rounded border-gray-300 \n                              text-blue-600 focus:ring-blue-500 focus:ring-2">\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[200px]">\n                Account Name\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[150px]">\n                Type\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[150px]">\n                Subtype\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[100px] text-center">\n                Transactions\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[120px] text-right">\n                Balance\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[100px] text-center">\n                Include\n              </th>\n            </tr>\n          </thead>\n          <tbody id="reviewTableBody" class="divide-y divide-gray-100">\n            <!-- populated dynamically -->\n          </tbody>\n        </table>\n      </div>\n    </div>\n\n    <!-- Bulk Action Bar -->\n    <div id="bulkActionBar"\n         class="hidden fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300">\n      \n      <!-- Mobile Bulk Actions (visible on mobile/tablet) -->\n      <div class="block lg:hidden bg-white shadow-2xl rounded-xl border border-gray-200 w-[calc(100vw-2rem)] max-w-md mx-auto">\n        <div class="p-4">\n          <div class="flex flex-col gap-3">\n            <!-- Selection Info -->\n            <div class="flex items-center justify-between">\n              <span class="text-sm font-medium text-gray-900">\n                <span id="selectedCountMobile">0</span> selected\n              </span>\n              <button id="unselectAllBtnMobile"\n                      class="text-xs font-medium px-3 py-1.5 border border-gray-300 text-gray-700 \n                             bg-white rounded-md hover:bg-gray-50 cursor-pointer transition-colors \n                             duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n                      title="Unselect all accounts">\n                Clear\n              </button>\n            </div>\n            \n            <!-- Action Buttons Grid -->\n            <div class="grid grid-cols-2 gap-2">\n              <button id="bulkRenameBtnMobile"\n                      class="flex items-center justify-center gap-2 px-3 py-3 border border-gray-300 \n                             bg-white rounded-lg hover:bg-gray-50 cursor-pointer transition-colors \n                             duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n                      title="Bulk rename accounts">\n                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />\n                </svg>\n                <span class="text-sm font-medium">Rename</span>\n              </button>\n\n              <button id="bulkTypeBtnMobile"\n                      class="flex items-center justify-center gap-2 px-3 py-3 border border-gray-300 \n                             bg-white rounded-lg hover:bg-gray-50 cursor-pointer transition-colors \n                             duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n                      title="Bulk edit account types">\n                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />\n                </svg>\n                <span class="text-sm font-medium">Edit Type</span>\n              </button>\n\n              <button id="bulkIncludeBtnMobile"\n                      class="flex items-center justify-center gap-2 px-3 py-3 border border-green-300 \n                             text-green-700 bg-green-50 rounded-lg hover:bg-green-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500"\n                      title="Include selected accounts">\n                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />\n                </svg>\n                <span class="text-sm font-medium">Include</span>\n              </button>\n\n              <button id="bulkExcludeBtnMobile"\n                      class="flex items-center justify-center gap-2 px-3 py-3 border border-red-300 \n                             text-red-700 bg-red-50 rounded-lg hover:bg-red-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"\n                      title="Exclude selected accounts">\n                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />\n                </svg>\n                <span class="text-sm font-medium">Exclude</span>\n              </button>\n            </div>\n          </div>\n        </div>\n      </div>\n\n      <!-- Desktop Bulk Actions (visible on desktop) -->\n      <div class="hidden lg:block bg-white shadow-2xl rounded-xl border border-gray-200">\n        <div class="px-6 py-4">\n          <div class="flex items-center gap-6">\n            <!-- Selection Count -->\n            <button id="unselectAllBtnDesktop"\n                    class="text-sm font-medium px-4 py-2 border border-gray-300 \n                           rounded-lg hover:bg-gray-50 cursor-pointer whitespace-nowrap transition-colors \n                           duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n                    title="Unselect all accounts">\n              <span id="selectedCountDesktop">0</span> selected\n            </button>\n\n            <!-- Separator -->\n            <div class="h-6 border-l border-gray-300"></div>\n\n            <!-- Action Buttons -->\n            <div class="flex items-center gap-3">\n              <button id="bulkRenameBtnDesktop"\n                      class="text-sm font-medium px-4 py-2 border border-gray-300 \n                             rounded-lg hover:bg-gray-50 cursor-pointer transition-colors duration-200\n                             focus:outline-none focus:ring-2 focus:ring-blue-500"\n                      title="Bulk rename accounts">\n                Rename\n              </button>\n\n              <button id="bulkTypeBtnDesktop"\n                      class="text-sm font-medium px-4 py-2 border border-gray-300 \n                             rounded-lg hover:bg-gray-50 cursor-pointer transition-colors duration-200\n                             focus:outline-none focus:ring-2 focus:ring-blue-500"\n                      title="Bulk edit account types">\n                Edit Type\n              </button>\n\n              <button id="bulkIncludeBtnDesktop"\n                      class="text-sm font-medium px-4 py-2 border border-green-300 \n                             text-green-700 bg-green-50 rounded-lg hover:bg-green-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500"\n                      title="Include selected accounts">\n                Include\n              </button>\n\n              <button id="bulkExcludeBtnDesktop"\n                      class="text-sm font-medium px-4 py-2 border border-red-300 \n                             text-red-700 bg-red-50 rounded-lg hover:bg-red-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"\n                      title="Exclude selected accounts">\n                Exclude\n              </button>\n            </div>\n          </div>\n        </div>\n      </div>\n    </div>\n\n    <!-- Navigation will be added here by JavaScript -->\n\n  </div>\n</div>\n\n<div id="bulkRenameModal" class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 hidden p-3 sm:p-4">\n  <div class="bg-white rounded-lg shadow-lg w-full max-w-lg p-4 sm:p-6 relative max-h-[90vh] overflow-y-auto">\n\n    <h2 class="text-lg sm:text-xl font-bold mb-4">Bulk Rename Accounts</h2>\n\n    <label for="renamePattern" class="font-medium text-sm">Pattern:</label>\n    <input id="renamePattern" name="renamePattern" type="text" \n           class="border rounded w-full px-3 py-2 mb-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"\n           placeholder="e.g. {{YNAB}} - {{Index}}">\n\n    <!-- Token shortcuts -->\n    <div class="grid grid-cols-2 gap-2 mb-4">\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{YNAB}}">YNAB Name</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{Index}}">Index</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{Upper}}">Uppercase YNAB</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{Date}}">Today (YYYY-MM-DD)</button>\n    </div>\n\n    <!-- Index start -->\n    <div class="flex items-center gap-3 mb-4">\n      <label for="indexStart" class="text-sm">Index Start:</label>\n      <input id="indexStart" type="number" \n             class="border rounded px-3 py-2 w-20 sm:w-24 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" \n             value="1" />\n    </div>\n\n    <!-- Preview -->\n    <div class="border rounded p-3 bg-gray-50 mb-4">\n      <div class="font-medium text-sm mb-2">Preview:</div>\n      <div id="renamePreview" class="text-xs sm:text-sm text-gray-700 space-y-1 max-h-32 overflow-y-auto" aria-live="polite"></div>\n    </div>\n\n    <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">\n      <button id="renameCancel" class="ui-button order-2 sm:order-1 w-full sm:w-auto" data-type="secondary">Cancel</button>\n      <button id="renameApply" class="ui-button order-1 sm:order-2 w-full sm:w-auto" data-type="primary">Apply</button>\n    </div>\n\n  </div>\n</div>\n\n<div id="bulkTypeModal" class="fixed inset-0 bg-black bg-opacity-40 hidden z-50 flex items-center justify-center p-3 sm:p-4">\n  <div class="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">\n    <h2 class="text-lg font-bold mb-4">Bulk Edit Account Type</h2>\n\n    <div class="mb-4">\n      <label for="bulkTypeSelect" class="block mb-2 font-medium text-sm">Account Type</label>\n      <select id="bulkTypeSelect" name="bulkSubtypeSelect" \n              class="border rounded w-full px-3 py-2 cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></select>\n    </div>\n\n    <div class="mb-6">\n      <label for="bulkSubtypeSelect" class="block mb-2 font-medium text-sm">Subtype</label>\n      <select id="bulkSubtypeSelect" \n              class="border rounded w-full px-3 py-2 cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></select>\n    </div>\n\n    <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">\n      <button id="bulkTypeCancel" class="ui-button order-2 sm:order-1 w-full sm:w-auto" data-type="secondary">Cancel</button>\n      <button id="bulkTypeApply" class="ui-button order-1 sm:order-2 w-full sm:w-auto" data-type="primary">Apply</button>\n    </div>\n  </div>\n</div>\n\n<!-- Advanced Filters Modal -->\n<div id="filtersModal" class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 hidden p-3 sm:p-4">\n  <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] flex flex-col relative">\n    \n    <!-- Modal Header -->\n    <div class="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 flex-shrink-0 rounded-t-lg">\n      <h2 class="text-lg sm:text-xl font-bold text-gray-900">Advanced Filters</h2>\n      <button id="filtersModalClose" \n              class="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-1"\n              title="Close filters"\n              onclick="window.closeFiltersModal && window.closeFiltersModal()">\n        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />\n        </svg>\n      </button>\n    </div>\n\n    <!-- Modal Content - Scrollable -->\n    <div class="p-4 sm:p-6 space-y-6 overflow-y-auto flex-1 min-h-0">\n      \n      <!-- Active Filters Display -->\n      <div id="activeFiltersSection" class="hidden">\n        <div class="flex items-center justify-between mb-3">\n          <h3 class="text-sm font-medium text-gray-700">Active Filters</h3>\n          <button id="clearAllFilters" \n                  class="text-xs text-blue-600 hover:text-blue-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"\n                  onclick="window.clearAllFilters && window.clearAllFilters()">\n            Clear All\n          </button>\n        </div>\n        <div id="activeFiltersContainer" class="flex flex-wrap gap-2"></div>\n        <hr class="mt-4">\n      </div>\n\n      <!-- Account Name Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Account Name</h3>\n        <div class="space-y-3">\n          <input id="filterAccountName" \n                 type="text" \n                 placeholder="Enter account name..."\n                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          \n          <div class="flex flex-wrap gap-4">\n            <label class="flex items-center">\n              <input type="radio" name="nameMatchType" value="contains" checked \n                     class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n              <span class="ml-2 text-sm text-gray-700">Contains</span>\n            </label>\n            <label class="flex items-center">\n              <input type="radio" name="nameMatchType" value="exact" \n                     class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n              <span class="ml-2 text-sm text-gray-700">Exact match</span>\n            </label>\n            <label class="flex items-center">\n              <input type="checkbox" id="nameCaseSensitive" \n                     class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">\n              <span class="ml-2 text-sm text-gray-700">Case sensitive</span>\n            </label>\n          </div>\n        </div>\n      </div>\n\n      <!-- Account Type Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Account Type</h3>\n        <div class="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">\n          <div id="typeFiltersContainer" class="space-y-2">\n            <!-- Populated dynamically -->\n          </div>\n        </div>\n      </div>\n\n      <!-- Account Subtype Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Account Subtype</h3>\n        <div class="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">\n          <div id="subtypeFiltersContainer" class="space-y-2">\n            <!-- Populated dynamically -->\n          </div>\n        </div>\n      </div>\n\n      <!-- Transactions Count Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Transaction Count</h3>\n        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">\n          <div>\n            <label class="block text-xs text-gray-600 mb-1">Minimum</label>\n            <input id="filterTransactionsMin" \n                   type="number" \n                   placeholder="0"\n                   min="0"\n                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          </div>\n          <div>\n            <label class="block text-xs text-gray-600 mb-1">Maximum</label>\n            <input id="filterTransactionsMax" \n                   type="number" \n                   placeholder="999999"\n                   min="0"\n                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          </div>\n        </div>\n      </div>\n\n      <!-- Balance Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Balance</h3>\n        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">\n          <div>\n            <label class="block text-xs text-gray-600 mb-1">Minimum ($)</label>\n            <input id="filterBalanceMin" \n                   type="number" \n                   placeholder="0.00"\n                   step="0.01"\n                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          </div>\n          <div>\n            <label class="block text-xs text-gray-600 mb-1">Maximum ($)</label>\n            <input id="filterBalanceMax" \n                   type="number" \n                   placeholder="999999.99"\n                   step="0.01"\n                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          </div>\n        </div>\n      </div>\n\n      <!-- Inclusion Status Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Include Status</h3>\n        <div class="flex flex-wrap gap-4">\n          <label class="flex items-center">\n            <input type="radio" name="inclusionFilter" value="all" checked \n                   class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n            <span class="ml-2 text-sm text-gray-700">All accounts</span>\n          </label>\n          <label class="flex items-center">\n            <input type="radio" name="inclusionFilter" value="included" \n                   class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n            <span class="ml-2 text-sm text-gray-700">Included only</span>\n          </label>\n          <label class="flex items-center">\n            <input type="radio" name="inclusionFilter" value="excluded" \n                   class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n            <span class="ml-2 text-sm text-gray-700">Excluded only</span>\n          </label>\n        </div>\n      </div>\n    </div>\n\n    <!-- Modal Footer - Fixed at bottom -->\n    <div class="flex flex-col sm:flex-row justify-end gap-3 p-4 sm:p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg flex-shrink-0">\n      <button id="filtersReset" \n              class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-lg hover:bg-gray-50 \n                     cursor-pointer transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n              onclick="window.resetFilters && window.resetFilters()">\n        Reset Filters\n      </button>\n      <button id="filtersApply" \n              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer \n                     transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n              onclick="window.applyFilters && window.applyFilters()">\n        Apply Filters\n      </button>\n    </div>\n  </div>\n</div>\n\n<style>\n  /* Filter chip styles */\n  .filter-chip {\n    display: inline-flex;\n    align-items: center;\n    gap: 0.5rem;\n    background-color: #dbeafe;\n    color: #1e40af;\n    padding: 0.25rem 0.75rem;\n    border-radius: 9999px;\n    font-size: 0.75rem;\n    font-weight: 500;\n    max-width: 250px;\n  }\n\n  .filter-chip span {\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n\n  /* Mini filter chips for status bar */\n  .filter-chip-mini {\n    display: inline-flex;\n    align-items: center;\n    background-color: #1e40af;\n    color: white;\n    padding: 0.125rem 0.5rem;\n    border-radius: 9999px;\n    font-size: 0.625rem;\n    font-weight: 500;\n    max-width: 120px;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n\n  /* Filter results summary styling */\n  #filterResultsSummary {\n    transition: all 0.3s ease;\n  }\n\n  #filterResultsSummary.filtered {\n    color: #1e40af;\n    font-weight: 500;\n  }\n\n  /* Filter notification badge */\n  #filtersBtn {\n    position: relative;\n  }\n\n  #filterNotificationBadge {\n    position: absolute;\n    top: -8px;\n    right: -8px;\n    background-color: #dc2626;\n    color: white;\n    border-radius: 50%;\n    width: 20px;\n    height: 20px;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 0.75rem;\n    font-weight: 600;\n    line-height: 1;\n    border: 2px solid white;\n    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);\n    transition: all 0.2s ease;\n    z-index: 10;\n  }\n\n  #filterNotificationBadge.hidden {\n    display: none;\n  }\n\n  /* Clear filters button animation */\n  #clearFiltersBtn {\n    transition: all 0.3s ease;\n    transform: scale(0.95);\n    opacity: 0;\n  }\n\n  #clearFiltersBtn:not(.hidden) {\n    transform: scale(1);\n    opacity: 1;\n  }\n\n  .filter-chip button {\n    background: none;\n    border: none;\n    color: inherit;\n    cursor: pointer;\n    padding: 0;\n    margin-left: 0.25rem;\n    border-radius: 50%;\n    width: 1rem;\n    height: 1rem;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: background-color 0.2s;\n  }\n\n  .filter-chip button:hover {\n    background-color: rgba(59, 130, 246, 0.2);\n  }\n\n  .filter-chip svg {\n    width: 0.75rem;\n    height: 0.75rem;\n  }\n\n  /* Modal animation and layout */\n  #filtersModal {\n    transition: opacity 0.3s ease;\n    opacity: 0;\n  }\n\n  #filtersModal.show {\n    opacity: 1;\n  }\n\n  #filtersModal.hide {\n    opacity: 0;\n  }\n\n  /* Ensure proper modal sizing and scrolling */\n  #filtersModal .max-w-2xl {\n    min-height: 300px;\n  }\n\n  /* Improve mobile modal experience */\n  @media (max-width: 640px) {\n    #filtersModal .max-w-2xl {\n      max-width: calc(100vw - 1.5rem);\n      margin: 0.75rem;\n    }\n    \n    #filtersModal .max-h-\\[90vh\\] {\n      max-height: calc(100vh - 1.5rem);\n    }\n\n    /* Ensure footer buttons are properly sized on mobile */\n    #filtersModal .flex-col.sm\\:flex-row button {\n      min-height: 44px;\n    }\n  }\n\n  /* Bulk action bar styling */\n  #bulkActionBar {\n    transition: opacity 0.3s ease, transform 0.3s ease;\n  }\n\n  #bulkActionBar:not(.active) {\n    opacity: 0;\n    transform: translateY(-10px);\n    pointer-events: none;\n  }\n\n  #bulkActionBar.active {\n    opacity: 1;\n    transform: translateY(0);\n    pointer-events: auto;\n  }\n\n  /* Enhanced button hover effects */\n  #bulkActionBar button:hover {\n    transform: translateY(-1px);\n    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);\n  }\n\n  #bulkActionBar button:active {\n    transform: translateY(0);\n  }\n\n  /* Mobile grid button sizing */\n  @media (max-width: 1024px) {\n    #bulkActionBar .grid button {\n      min-height: 48px;\n    }\n  }\n\n  /* Mobile card styles for accounts */\n  .mobile-account-card {\n    padding: 1rem;\n    border-bottom: 1px solid #f3f4f6;\n    position: relative;\n    display: flex;\n    align-items: flex-start;\n    gap: 0.75rem;\n  }\n\n  .mobile-account-card:last-child {\n    border-bottom: none;\n  }\n\n  .mobile-account-card .card-content {\n    flex: 1;\n    min-width: 0;\n  }\n\n  .mobile-account-card .account-name {\n    font-weight: 500;\n    color: #111827;\n    margin-bottom: 0.5rem;\n    word-wrap: break-word;\n  }\n\n  .mobile-account-card .account-details {\n    font-size: 0.875rem;\n    color: #6b7280;\n  }\n\n  .mobile-account-card .account-details > div {\n    margin-bottom: 0.5rem;\n  }\n\n  .mobile-account-card .account-balance {\n    font-weight: 500;\n    text-align: right;\n  }\n\n  /* Custom checkbox styling */\n  .custom-checkbox-container {\n    display: flex;\n    align-items: center;\n    cursor: pointer;\n    user-select: none;\n    position: relative;\n  }\n\n  .custom-checkbox-input {\n    position: absolute;\n    opacity: 0;\n    cursor: pointer;\n    height: 0;\n    width: 0;\n  }\n\n  .custom-checkbox-visual {\n    position: relative;\n    height: 20px;\n    width: 20px;\n    background-color: #ffffff;\n    border: 2px solid #d1d5db;\n    border-radius: 4px;\n    transition: all 0.2s ease;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n  }\n\n  .custom-checkbox-visual::after {\n    content: "";\n    position: absolute;\n    display: none;\n    left: 6px;\n    top: 2px;\n    width: 4px;\n    height: 8px;\n    border: solid white;\n    border-width: 0 2px 2px 0;\n    transform: rotate(45deg);\n  }\n\n  .custom-checkbox-input:checked + .custom-checkbox-visual {\n    background-color: #3b82f6;\n    border-color: #3b82f6;\n  }\n\n  .custom-checkbox-input:checked + .custom-checkbox-visual::after {\n    display: block;\n  }\n\n  .custom-checkbox-input:focus + .custom-checkbox-visual {\n    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);\n    outline: none;\n  }\n\n  .custom-checkbox-input:disabled + .custom-checkbox-visual {\n    background-color: #f3f4f6;\n    border-color: #e5e7eb;\n    cursor: not-allowed;\n  }\n\n  .custom-checkbox-container:hover .custom-checkbox-input:not(:disabled) + .custom-checkbox-visual {\n    border-color: #3b82f6;\n  }\n\n  /* Mobile specific enhancements */\n  @media (max-width: 1024px) {\n    .custom-checkbox-visual {\n      height: 24px;\n      width: 24px;\n      min-width: 24px;\n      min-height: 24px;\n    }\n\n    .custom-checkbox-visual::after {\n      left: 8px;\n      top: 3px;\n      width: 5px;\n      height: 10px;\n    }\n\n    button, select {\n      min-height: 44px;\n      padding: 0.75rem;\n    }\n    \n    .token-btn {\n      min-height: 44px;\n    }\n\n    input[type="text"], input[type="number"] {\n      min-height: 44px;\n      padding: 0.75rem;\n    }\n  }\n</style>\n';
 
   // src/views/MethodSelect/method.js
   function initMethodSelectView() {
@@ -5167,11 +5615,11 @@
   var monarchApi = {
     login: (email, encryptedPassword, deviceUuid, otp) => postJson(API.login, { email, encryptedPassword, deviceUuid, otp }),
     fetchMonarchAccounts: (token) => postJson(API.fetchAccounts, { token }),
-    createAccounts: (token, accounts) => postJson(API.createAccounts, { token, accounts }),
-    generateAccounts: (accounts) => fetch(API.generateStatements, {
+    createAccounts: (token, accounts2) => postJson(API.createAccounts, { token, accounts: accounts2 }),
+    generateAccounts: (accounts2) => fetch(API.generateStatements, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ accounts })
+      body: JSON.stringify({ accounts: accounts2 })
     }),
     queryUploadStatus: (token, sessionKey) => postJson(API.getUploadStatus, { token, sessionKey })
   };
@@ -6010,8 +6458,8 @@
       }));
     }
     function updateStatusOverview() {
-      const accounts = state_default.accounts || {};
-      const includedAccounts = Object.values(accounts).filter((acc) => acc.included);
+      const accounts2 = state_default.accounts || {};
+      const includedAccounts = Object.values(accounts2).filter((acc) => acc.included);
       const totalAccounts = includedAccounts.length;
       const completedAccounts = includedAccounts.filter((acc) => acc.status === "completed").length;
       const failedAccounts = includedAccounts.filter((acc) => acc.status === "failed").length;
@@ -6057,9 +6505,9 @@
     function updateAccountList() {
       if (!accountList)
         return;
-      const accounts = state_default.accounts || {};
+      const accounts2 = state_default.accounts || {};
       accountList.innerHTML = "";
-      Object.entries(accounts).forEach(([accountId, account]) => {
+      Object.entries(accounts2).forEach(([accountId, account]) => {
         if (!account.included)
           return;
         const accountItem = document.createElement("div");
@@ -6136,9 +6584,9 @@
     function updateActionButtons() {
       if (!actionButtonsContainer)
         return;
-      const accounts = state_default.accounts || {};
-      const failedAccounts = Object.values(accounts).filter((acc) => acc.included && acc.status === "failed");
-      const completedAccounts = Object.values(accounts).filter((acc) => acc.included && acc.status === "completed");
+      const accounts2 = state_default.accounts || {};
+      const failedAccounts = Object.values(accounts2).filter((acc) => acc.included && acc.status === "failed");
+      const completedAccounts = Object.values(accounts2).filter((acc) => acc.included && acc.status === "completed");
       actionButtonsContainer.innerHTML = "";
       if (failedAccounts.length > 0) {
         const retryBtn = document.createElement("button");

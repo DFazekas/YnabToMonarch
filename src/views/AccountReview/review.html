@@ -13,61 +13,67 @@
 
     <!-- Control Bar -->
     <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between 
-                p-3 sm:p-4 md:p-6 gap-3 sm:gap-4 lg:gap-6 bg-white rounded-lg mb-4 sm:mb-6 
+                p-4 sm:p-6 gap-4 lg:gap-6 bg-white rounded-lg mb-4 sm:mb-6 
                 border border-gray-100 shadow-sm">
       
-      <!-- Search -->
-      <div class="flex-1 lg:max-w-md">
-        <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
-            <svg class="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      <!-- Filters, Search and Account Summary -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 flex-1">
+        <!-- Filters Button -->
+        <div class="flex-shrink-0">
+          <button id="filtersBtn" 
+                  class="flex items-center gap-2 px-4 py-2 sm:py-3 text-sm sm:text-base
+                         border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer 
+                         transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500
+                         relative whitespace-nowrap"
+                  title="Open advanced filters"
+                  onclick="window.openFiltersModal && window.openFiltersModal()">
+            <!-- Notification Badge -->
+            <div id="filterNotificationBadge" class="hidden"></div>
+            
+            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z" />
             </svg>
+            <span>Filters</span>
+          </button>
+        </div>
+        
+        <!-- Search Input -->
+        <div class="flex-1 max-w-md">
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+              <svg class="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input id="searchInput" 
+                   type="text" 
+                   placeholder="Search accounts..." 
+                   style="padding-left: 2.75rem !important;"
+                   class="block w-full pr-3 py-2 sm:py-3 text-sm sm:text-base
+                          border border-gray-300 rounded-lg placeholder-gray-400 
+                          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+                          transition-colors duration-200">
           </div>
-          <input id="searchInput" 
-                 type="text" 
-                 placeholder="Search accounts..." 
-                 style="padding-left: 2.75rem !important;"
-                 class="block w-full pr-3 py-2 sm:py-3 text-sm sm:text-base
-                        border border-gray-300 rounded-lg placeholder-gray-400 
-                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
-                        transition-colors duration-200">
+        </div>
+        
+        <!-- Account Count Summary -->
+        <div id="filterResultsSummary" class="text-sm text-gray-600 whitespace-nowrap">
+          Showing <span id="visibleAccountCount" class="font-medium text-gray-900">0</span> 
+          of <span id="totalAccountCount" class="font-medium text-gray-900">0</span> accounts
         </div>
       </div>
 
-      <!-- Filters -->
-      <div class="flex items-center gap-2 sm:gap-3">
-        <span class="text-sm font-medium text-gray-700 hidden sm:inline">Filter:</span>
-        <div class="flex bg-gray-100 rounded-lg p-1 space-x-1">
-          <button id="filterAll" 
-                  class="filter-btn px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-xs sm:text-sm 
-                         font-medium rounded-md transition-all duration-200 cursor-pointer
-                         hover:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  title="Show all accounts"
-                  data-filter="all">
-            All
-          </button>
-
-          <button id="filterIncluded" 
-                  class="filter-btn px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-xs sm:text-sm 
-                         font-medium rounded-md transition-all duration-200 cursor-pointer
-                         hover:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  title="Show only included accounts" 
-                  data-filter="included">
-            <span class="hidden sm:inline">Included</span>
-            <span class="sm:hidden">Inc.</span>
-          </button>
-
-          <button id="filterExcluded" 
-                  class="filter-btn px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-xs sm:text-sm 
-                         font-medium rounded-md transition-all duration-200 cursor-pointer
-                         hover:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  title="Show only excluded accounts" 
-                  data-filter="excluded">
-            <span class="hidden sm:inline">Excluded</span>
-            <span class="sm:hidden">Exc.</span>
-          </button>
-        </div>
+      <!-- Clear Filter Controls -->
+      <div class="flex items-center gap-3">
+        <!-- Clear All Filters Button (only shown when filters are active) -->
+        <button id="clearFiltersBtn" 
+                class="hidden px-3 py-2 sm:py-3 text-sm text-red-600 hover:text-red-800 
+                       hover:bg-red-50 rounded-lg transition-colors duration-200 
+                       focus:outline-none focus:ring-2 focus:ring-red-500"
+                title="Clear all filters"
+                onclick="window.clearAllFilters && window.clearAllFilters()">
+          Clear
+        </button>
       </div>
     </div>
 
@@ -332,7 +338,326 @@
   </div>
 </div>
 
+<!-- Advanced Filters Modal -->
+<div id="filtersModal" class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 hidden p-3 sm:p-4">
+  <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] flex flex-col relative">
+    
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 flex-shrink-0 rounded-t-lg">
+      <h2 class="text-lg sm:text-xl font-bold text-gray-900">Advanced Filters</h2>
+      <button id="filtersModalClose" 
+              class="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-1"
+              title="Close filters"
+              onclick="window.closeFiltersModal && window.closeFiltersModal()">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Modal Content - Scrollable -->
+    <div class="p-4 sm:p-6 space-y-6 overflow-y-auto flex-1 min-h-0">
+      
+      <!-- Active Filters Display -->
+      <div id="activeFiltersSection" class="hidden">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-medium text-gray-700">Active Filters</h3>
+          <button id="clearAllFilters" 
+                  class="text-xs text-blue-600 hover:text-blue-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
+                  onclick="window.clearAllFilters && window.clearAllFilters()">
+            Clear All
+          </button>
+        </div>
+        <div id="activeFiltersContainer" class="flex flex-wrap gap-2"></div>
+        <hr class="mt-4">
+      </div>
+
+      <!-- Account Name Filter -->
+      <div class="space-y-3">
+        <h3 class="text-sm font-medium text-gray-900">Account Name</h3>
+        <div class="space-y-3">
+          <input id="filterAccountName" 
+                 type="text" 
+                 placeholder="Enter account name..."
+                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          
+          <div class="flex flex-wrap gap-4">
+            <label class="flex items-center">
+              <input type="radio" name="nameMatchType" value="contains" checked 
+                     class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+              <span class="ml-2 text-sm text-gray-700">Contains</span>
+            </label>
+            <label class="flex items-center">
+              <input type="radio" name="nameMatchType" value="exact" 
+                     class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+              <span class="ml-2 text-sm text-gray-700">Exact match</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" id="nameCaseSensitive" 
+                     class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+              <span class="ml-2 text-sm text-gray-700">Case sensitive</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Account Type Filter -->
+      <div class="space-y-3">
+        <h3 class="text-sm font-medium text-gray-900">Account Type</h3>
+        <div class="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">
+          <div id="typeFiltersContainer" class="space-y-2">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Account Subtype Filter -->
+      <div class="space-y-3">
+        <h3 class="text-sm font-medium text-gray-900">Account Subtype</h3>
+        <div class="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">
+          <div id="subtypeFiltersContainer" class="space-y-2">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Transactions Count Filter -->
+      <div class="space-y-3">
+        <h3 class="text-sm font-medium text-gray-900">Transaction Count</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Minimum</label>
+            <input id="filterTransactionsMin" 
+                   type="number" 
+                   placeholder="0"
+                   min="0"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Maximum</label>
+            <input id="filterTransactionsMax" 
+                   type="number" 
+                   placeholder="999999"
+                   min="0"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+        </div>
+      </div>
+
+      <!-- Balance Filter -->
+      <div class="space-y-3">
+        <h3 class="text-sm font-medium text-gray-900">Balance</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Minimum ($)</label>
+            <input id="filterBalanceMin" 
+                   type="number" 
+                   placeholder="0.00"
+                   step="0.01"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Maximum ($)</label>
+            <input id="filterBalanceMax" 
+                   type="number" 
+                   placeholder="999999.99"
+                   step="0.01"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          </div>
+        </div>
+      </div>
+
+      <!-- Inclusion Status Filter -->
+      <div class="space-y-3">
+        <h3 class="text-sm font-medium text-gray-900">Include Status</h3>
+        <div class="flex flex-wrap gap-4">
+          <label class="flex items-center">
+            <input type="radio" name="inclusionFilter" value="all" checked 
+                   class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+            <span class="ml-2 text-sm text-gray-700">All accounts</span>
+          </label>
+          <label class="flex items-center">
+            <input type="radio" name="inclusionFilter" value="included" 
+                   class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+            <span class="ml-2 text-sm text-gray-700">Included only</span>
+          </label>
+          <label class="flex items-center">
+            <input type="radio" name="inclusionFilter" value="excluded" 
+                   class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+            <span class="ml-2 text-sm text-gray-700">Excluded only</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer - Fixed at bottom -->
+    <div class="flex flex-col sm:flex-row justify-end gap-3 p-4 sm:p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg flex-shrink-0">
+      <button id="filtersReset" 
+              class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-lg hover:bg-gray-50 
+                     cursor-pointer transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onclick="window.resetFilters && window.resetFilters()">
+        Reset Filters
+      </button>
+      <button id="filtersApply" 
+              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer 
+                     transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onclick="window.applyFilters && window.applyFilters()">
+        Apply Filters
+      </button>
+    </div>
+  </div>
+</div>
+
 <style>
+  /* Filter chip styles */
+  .filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #dbeafe;
+    color: #1e40af;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    max-width: 250px;
+  }
+
+  .filter-chip span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Mini filter chips for status bar */
+  .filter-chip-mini {
+    display: inline-flex;
+    align-items: center;
+    background-color: #1e40af;
+    color: white;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.625rem;
+    font-weight: 500;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Filter results summary styling */
+  #filterResultsSummary {
+    transition: all 0.3s ease;
+  }
+
+  #filterResultsSummary.filtered {
+    color: #1e40af;
+    font-weight: 500;
+  }
+
+  /* Filter notification badge */
+  #filtersBtn {
+    position: relative;
+  }
+
+  #filterNotificationBadge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: #dc2626;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+    z-index: 10;
+  }
+
+  #filterNotificationBadge.hidden {
+    display: none;
+  }
+
+  /* Clear filters button animation */
+  #clearFiltersBtn {
+    transition: all 0.3s ease;
+    transform: scale(0.95);
+    opacity: 0;
+  }
+
+  #clearFiltersBtn:not(.hidden) {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  .filter-chip button {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 0.25rem;
+    border-radius: 50%;
+    width: 1rem;
+    height: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+  }
+
+  .filter-chip button:hover {
+    background-color: rgba(59, 130, 246, 0.2);
+  }
+
+  .filter-chip svg {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+
+  /* Modal animation and layout */
+  #filtersModal {
+    transition: opacity 0.3s ease;
+    opacity: 0;
+  }
+
+  #filtersModal.show {
+    opacity: 1;
+  }
+
+  #filtersModal.hide {
+    opacity: 0;
+  }
+
+  /* Ensure proper modal sizing and scrolling */
+  #filtersModal .max-w-2xl {
+    min-height: 300px;
+  }
+
+  /* Improve mobile modal experience */
+  @media (max-width: 640px) {
+    #filtersModal .max-w-2xl {
+      max-width: calc(100vw - 1.5rem);
+      margin: 0.75rem;
+    }
+    
+    #filtersModal .max-h-\[90vh\] {
+      max-height: calc(100vh - 1.5rem);
+    }
+
+    /* Ensure footer buttons are properly sized on mobile */
+    #filtersModal .flex-col.sm\:flex-row button {
+      min-height: 44px;
+    }
+  }
+
   /* Bulk action bar styling */
   #bulkActionBar {
     transition: opacity 0.3s ease, transform 0.3s ease;

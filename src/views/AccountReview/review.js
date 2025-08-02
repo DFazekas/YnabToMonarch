@@ -10,7 +10,18 @@ import { getAccountTypeByName, getSubtypeByName } from '../../utils/accountTypeU
 import { toggleButtonActive, toggleElementVisible, toggleDisabled } from '../../utils/dom.js';
 
 let reviewTableBody, mobileAccountList, importBtn, searchInput;
-let currentFilter = 'all';
+let activeFilters = {
+  accountName: '',
+  nameMatchType: 'contains',
+  nameCaseSensitive: false,
+  types: new Set(),
+  subtypes: new Set(),
+  transactionsMin: null,
+  transactionsMax: null,
+  balanceMin: null,
+  balanceMax: null,
+  inclusion: 'all'
+};
 let searchQuery = '';
 
 export default function initAccountReviewView() {
@@ -41,7 +52,13 @@ export default function initAccountReviewView() {
   updateNavigationTexts();
   renderAccountTable(); // Initialize the table/mobile view
 
-  document.getElementById('filterAll').classList.add('bg-blue-500', 'text-white');
+  // Initialize filters modal after a brief delay to ensure DOM is ready
+  setTimeout(() => {
+    initializeFiltersModal();
+    // Initial account count display
+    const totalAccounts = Object.keys(state.accounts).length;
+    updateAccountCountDisplay(totalAccounts, totalAccounts);
+  }, 100);
 
   // Search listener
   let debounceTimer;
@@ -54,10 +71,67 @@ export default function initAccountReviewView() {
     }, 200);
   });
 
-  // Filter listeners
-  ['all', 'included', 'excluded'].forEach(filter => {
-    document.getElementById(`filter${capitalize(filter)}`).addEventListener('click', () => setFilter(filter));
-  });
+  // Filter modal listeners - use timeout to ensure DOM is ready
+  setTimeout(() => {
+    const filtersBtn = document.getElementById('filtersBtn');
+    if (filtersBtn) {
+      console.log('Adding click listener to filters button');
+      filtersBtn.addEventListener('click', (e) => {
+        console.log('Filters button clicked!');
+        e.preventDefault();
+        openFiltersModal();
+      });
+    } else {
+      console.error('Filters button not found!');
+    }
+    
+    const filtersModalClose = document.getElementById('filtersModalClose');
+    if (filtersModalClose) {
+      filtersModalClose.addEventListener('click', closeFiltersModal);
+    }
+    
+    const filtersApply = document.getElementById('filtersApply');
+    if (filtersApply) {
+      filtersApply.addEventListener('click', applyFilters);
+    }
+    
+    const filtersReset = document.getElementById('filtersReset');
+    if (filtersReset) {
+      filtersReset.addEventListener('click', resetFilters);
+    }
+    
+    const clearAllFilters = document.getElementById('clearAllFilters');
+    if (clearAllFilters) {
+      clearAllFilters.addEventListener('click', clearAllFilters);
+    }
+    
+    // Close modal when clicking outside
+    const filtersModal = document.getElementById('filtersModal');
+    if (filtersModal) {
+      filtersModal.addEventListener('click', (e) => {
+        if (e.target.id === 'filtersModal') {
+          closeFiltersModal();
+        }
+      });
+    }
+    
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && filtersModal && !filtersModal.classList.contains('hidden')) {
+        closeFiltersModal();
+      }
+    });
+    
+    // Quick clear filters button (new clear button)
+    const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+    if (clearFiltersBtn) {
+      clearFiltersBtn.addEventListener('click', () => {
+        resetFilters();
+        // Close modal if it's open
+        closeFiltersModal();
+      });
+    }
+  }, 100);
 
   // Bulk action bar listeners
   document.getElementById('unselectAllBtnMobile').addEventListener('click', () => updateSelection(false));
@@ -87,16 +161,6 @@ export default function initAccountReviewView() {
   renderAccountTable();
 }
 
-function setFilter(filter) {
-  currentFilter = filter;
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    const isActive = btn.id === `filter${capitalize(currentFilter)}`;
-    toggleButtonActive(btn, isActive);
-  });
-
-  renderAccountTable();
-}
-
 function updateSelection(shouldSelect) {
   Object.values(state.accounts).forEach(acc => {
     if (acc.status !== 'processed') acc.selected = shouldSelect;
@@ -117,15 +181,20 @@ function renderAccountTable() {
   const fragment = document.createDocumentFragment();
   const mobileFragment = document.createDocumentFragment();
   const accounts = Object.values(state.accounts);
+  let visibleCount = 0;
   
   // Clear both desktop and mobile views
   reviewTableBody.innerHTML = '';
   if (mobileAccountList) mobileAccountList.innerHTML = '';
 
   for (const account of accounts) {
-    if (currentFilter === 'included' && !account.included) continue;
-    if (currentFilter === 'excluded' && account.included) continue;
+    // Apply advanced filters
+    if (!passesFilters(account)) continue;
+    
+    // Apply search query
     if (searchQuery && !account.modifiedName.toLowerCase().includes(searchQuery)) continue;
+
+    visibleCount++;
 
     // Create desktop table row
     fragment.appendChild(createAccountRowElement(account));
@@ -140,6 +209,9 @@ function renderAccountTable() {
   if (mobileAccountList) {
     mobileAccountList.appendChild(mobileFragment);
   }
+  
+  // Update account count indicators
+  updateAccountCountDisplay(visibleCount, accounts.length);
   
   updateMasterCheckbox(getVisibleAccounts());
   refreshBulkActionBar();
@@ -524,9 +596,13 @@ function updateMobileSelectionCount() {
 function getVisibleAccounts() {
   return Object.values(state.accounts).filter(account => {
     if (account.status === 'processed') return false;
-    if (currentFilter === 'included' && !account.included) return false;
-    if (currentFilter === 'excluded' && account.included) return false;
+    
+    // Apply advanced filters
+    if (!passesFilters(account)) return false;
+    
+    // Apply search query
     if (searchQuery && !account.modifiedName.toLowerCase().includes(searchQuery)) return false;
+    
     return true;
   });
 }
@@ -754,4 +830,539 @@ function openBulkTypeModal() {
     modal.classList.add('hidden');
     renderAccountTable();
   };
+}
+
+// Advanced Filters Functions
+function initializeFiltersModal() {
+  console.log('Initializing filters modal...');
+  try {
+    populateTypeFilters();
+    populateSubtypeFilters();
+    updateFilterDisplay();
+    console.log('Filters modal initialized successfully');
+  } catch (error) {
+    console.error('Error initializing filters modal:', error);
+  }
+}
+
+function populateTypeFilters() {
+  const container = document.getElementById('typeFiltersContainer');
+  if (!container) {
+    console.error('typeFiltersContainer not found');
+    return;
+  }
+  
+  const types = [...new Set(monarchAccountTypes.data.map(type => type.typeDisplay))].sort();
+  
+  container.innerHTML = '';
+  types.forEach(type => {
+    const checkbox = createFilterCheckbox('type', type, type);
+    container.appendChild(checkbox);
+  });
+  console.log(`Populated ${types.length} type filters`);
+}
+
+function populateSubtypeFilters() {
+  const container = document.getElementById('subtypeFiltersContainer');
+  if (!container) {
+    console.error('subtypeFiltersContainer not found');
+    return;
+  }
+  
+  const subtypes = new Set();
+  
+  monarchAccountTypes.data.forEach(type => {
+    type.subtypes.forEach(subtype => {
+      subtypes.add(subtype.display);
+    });
+  });
+  
+  const sortedSubtypes = [...subtypes].sort();
+  container.innerHTML = '';
+  sortedSubtypes.forEach(subtype => {
+    const checkbox = createFilterCheckbox('subtype', subtype, subtype);
+    container.appendChild(checkbox);
+  });
+  console.log(`Populated ${sortedSubtypes.length} subtype filters`);
+}
+
+function createFilterCheckbox(filterType, value, label) {
+  const div = document.createElement('div');
+  div.className = 'flex items-center';
+  
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.id = `filter-${filterType}-${value.replace(/\s+/g, '-')}`;
+  checkbox.value = value;
+  checkbox.className = 'w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded';
+  checkbox.addEventListener('change', updateFilterDisplay);
+  
+  const labelEl = document.createElement('label');
+  labelEl.htmlFor = checkbox.id;
+  labelEl.className = 'ml-2 text-sm text-gray-700 cursor-pointer';
+  labelEl.textContent = label;
+  
+  div.appendChild(checkbox);
+  div.appendChild(labelEl);
+  
+  return div;
+}
+
+function openFiltersModal() {
+  console.log('Opening filters modal...');
+  
+  try {
+    // Populate current filter values
+    const filterAccountName = document.getElementById('filterAccountName');
+    if (filterAccountName) {
+      filterAccountName.value = activeFilters.accountName;
+    }
+    
+    const nameMatchType = document.querySelector(`input[name="nameMatchType"][value="${activeFilters.nameMatchType}"]`);
+    if (nameMatchType) {
+      nameMatchType.checked = true;
+    }
+    
+    const nameCaseSensitive = document.getElementById('nameCaseSensitive');
+    if (nameCaseSensitive) {
+      nameCaseSensitive.checked = activeFilters.nameCaseSensitive;
+    }
+    
+    // Update type checkboxes
+    document.querySelectorAll('#typeFiltersContainer input[type="checkbox"]').forEach(cb => {
+      cb.checked = activeFilters.types.has(cb.value);
+    });
+    
+    // Update subtype checkboxes
+    document.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]').forEach(cb => {
+      cb.checked = activeFilters.subtypes.has(cb.value);
+    });
+    
+    // Update number inputs
+    const filterTransactionsMin = document.getElementById('filterTransactionsMin');
+    if (filterTransactionsMin) {
+      filterTransactionsMin.value = activeFilters.transactionsMin || '';
+    }
+    
+    const filterTransactionsMax = document.getElementById('filterTransactionsMax');
+    if (filterTransactionsMax) {
+      filterTransactionsMax.value = activeFilters.transactionsMax || '';
+    }
+    
+    const filterBalanceMin = document.getElementById('filterBalanceMin');
+    if (filterBalanceMin) {
+      filterBalanceMin.value = activeFilters.balanceMin || '';
+    }
+    
+    const filterBalanceMax = document.getElementById('filterBalanceMax');
+    if (filterBalanceMax) {
+      filterBalanceMax.value = activeFilters.balanceMax || '';
+    }
+    
+    // Update inclusion radio
+    const inclusionFilter = document.querySelector(`input[name="inclusionFilter"][value="${activeFilters.inclusion}"]`);
+    if (inclusionFilter) {
+      inclusionFilter.checked = true;
+    }
+    
+    const modal = document.getElementById('filtersModal');
+    if (modal) {
+      console.log('Found modal, showing it...');
+      modal.classList.remove('hidden');
+      setTimeout(() => modal.classList.add('show'), 10);
+    } else {
+      console.error('Modal not found!');
+    }
+  } catch (error) {
+    console.error('Error opening filters modal:', error);
+  }
+}
+
+// Expose globally for onclick handler
+window.openFiltersModal = openFiltersModal;
+
+function closeFiltersModal() {
+  const modal = document.getElementById('filtersModal');
+  modal.classList.remove('show');
+  setTimeout(() => modal.classList.add('hidden'), 300);
+}
+
+// Expose globally for onclick handlers
+window.closeFiltersModal = closeFiltersModal;
+
+function applyFilters() {
+  console.log('Apply filters button clicked!');
+  
+  try {
+    // Account name filter
+    const filterAccountName = document.getElementById('filterAccountName');
+    activeFilters.accountName = filterAccountName ? filterAccountName.value.trim() : '';
+    
+    const nameMatchType = document.querySelector('input[name="nameMatchType"]:checked');
+    activeFilters.nameMatchType = nameMatchType ? nameMatchType.value : 'contains';
+    
+    const nameCaseSensitive = document.getElementById('nameCaseSensitive');
+    activeFilters.nameCaseSensitive = nameCaseSensitive ? nameCaseSensitive.checked : false;
+    
+    // Type filters
+    activeFilters.types.clear();
+    document.querySelectorAll('#typeFiltersContainer input[type="checkbox"]:checked').forEach(cb => {
+      activeFilters.types.add(cb.value);
+    });
+    
+    // Subtype filters
+    activeFilters.subtypes.clear();
+    document.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]:checked').forEach(cb => {
+      activeFilters.subtypes.add(cb.value);
+    });
+    
+    // Transactions filters
+    const transMin = document.getElementById('filterTransactionsMin');
+    const transMax = document.getElementById('filterTransactionsMax');
+    activeFilters.transactionsMin = transMin && transMin.value ? parseInt(transMin.value) : null;
+    activeFilters.transactionsMax = transMax && transMax.value ? parseInt(transMax.value) : null;
+    
+    // Balance filters
+    const balMin = document.getElementById('filterBalanceMin');
+    const balMax = document.getElementById('filterBalanceMax');
+    activeFilters.balanceMin = balMin && balMin.value ? parseFloat(balMin.value) : null;
+    activeFilters.balanceMax = balMax && balMax.value ? parseFloat(balMax.value) : null;
+    
+    // Inclusion filter
+    const inclusionFilter = document.querySelector('input[name="inclusionFilter"]:checked');
+    activeFilters.inclusion = inclusionFilter ? inclusionFilter.value : 'all';
+    
+    console.log('Applied filters:', activeFilters);
+    
+    closeFiltersModal();
+    renderAccountTable();
+    updateFilterDisplay();
+    persistState();
+  } catch (error) {
+    console.error('Error applying filters:', error);
+  }
+}
+
+// Expose globally for onclick handler
+window.applyFilters = applyFilters;
+
+function resetFilters() {
+  console.log('Reset filters button clicked!');
+  
+  try {
+    // Reset all form fields
+    const filterAccountName = document.getElementById('filterAccountName');
+    if (filterAccountName) filterAccountName.value = '';
+    
+    const containsRadio = document.querySelector('input[name="nameMatchType"][value="contains"]');
+    if (containsRadio) containsRadio.checked = true;
+    
+    const nameCaseSensitive = document.getElementById('nameCaseSensitive');
+    if (nameCaseSensitive) nameCaseSensitive.checked = false;
+    
+    document.querySelectorAll('#typeFiltersContainer input[type="checkbox"]').forEach(cb => cb.checked = false);
+    document.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]').forEach(cb => cb.checked = false);
+    
+    const filterTransactionsMin = document.getElementById('filterTransactionsMin');
+    if (filterTransactionsMin) filterTransactionsMin.value = '';
+    
+    const filterTransactionsMax = document.getElementById('filterTransactionsMax');
+    if (filterTransactionsMax) filterTransactionsMax.value = '';
+    
+    const filterBalanceMin = document.getElementById('filterBalanceMin');
+    if (filterBalanceMin) filterBalanceMin.value = '';
+    
+    const filterBalanceMax = document.getElementById('filterBalanceMax');
+    if (filterBalanceMax) filterBalanceMax.value = '';
+    
+    const allRadio = document.querySelector('input[name="inclusionFilter"][value="all"]');
+    if (allRadio) allRadio.checked = true;
+    
+    // Reset active filters
+    activeFilters = {
+      accountName: '',
+      nameMatchType: 'contains',
+      nameCaseSensitive: false,
+      types: new Set(),
+      subtypes: new Set(),
+      transactionsMin: null,
+      transactionsMax: null,
+      balanceMin: null,
+      balanceMax: null,
+      inclusion: 'all'
+    };
+    
+    renderAccountTable();
+    updateFilterDisplay();
+    persistState();
+    
+    // Close the modal after resetting
+    closeFiltersModal();
+    
+    console.log('Filters reset successfully');
+  } catch (error) {
+    console.error('Error resetting filters:', error);
+  }
+}
+
+// Expose globally for onclick handler
+window.resetFilters = resetFilters;
+
+function clearAllFilters() {
+  console.log('Clear all filters clicked!');
+  resetFilters();
+  closeFiltersModal();
+}
+
+// Expose globally for onclick handler
+window.clearAllFilters = clearAllFilters;
+
+function updateFilterDisplay() {
+  const filterCount = document.getElementById('filterCount');
+  const activeFiltersSection = document.getElementById('activeFiltersSection');
+  const activeFiltersContainer = document.getElementById('activeFiltersContainer');
+  
+  let activeFilterCount = 0;
+  const filterChips = [];
+  
+  // Account name filter
+  if (activeFilters.accountName) {
+    activeFilterCount++;
+    filterChips.push(createFilterChip('Name', `${activeFilters.nameMatchType}: "${activeFilters.accountName}"`, () => {
+      activeFilters.accountName = '';
+      document.getElementById('filterAccountName').value = '';
+      renderAccountTable();
+      updateFilterDisplay();
+    }));
+  }
+  
+  // Type filters
+  if (activeFilters.types.size > 0) {
+    activeFilterCount++;
+    const typeList = [...activeFilters.types].join(', ');
+    filterChips.push(createFilterChip('Types', typeList, () => {
+      activeFilters.types.clear();
+      document.querySelectorAll('#typeFiltersContainer input[type="checkbox"]').forEach(cb => cb.checked = false);
+      renderAccountTable();
+      updateFilterDisplay();
+    }));
+  }
+  
+  // Subtype filters
+  if (activeFilters.subtypes.size > 0) {
+    activeFilterCount++;
+    const subtypeList = [...activeFilters.subtypes].join(', ');
+    filterChips.push(createFilterChip('Subtypes', subtypeList, () => {
+      activeFilters.subtypes.clear();
+      document.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]').forEach(cb => cb.checked = false);
+      renderAccountTable();
+      updateFilterDisplay();
+    }));
+  }
+  
+  // Transaction count filter
+  if (activeFilters.transactionsMin !== null || activeFilters.transactionsMax !== null) {
+    activeFilterCount++;
+    const min = activeFilters.transactionsMin || 0;
+    const max = activeFilters.transactionsMax || '∞';
+    filterChips.push(createFilterChip('Transactions', `${min} - ${max}`, () => {
+      activeFilters.transactionsMin = null;
+      activeFilters.transactionsMax = null;
+      document.getElementById('filterTransactionsMin').value = '';
+      document.getElementById('filterTransactionsMax').value = '';
+      renderAccountTable();
+      updateFilterDisplay();
+    }));
+  }
+  
+  // Balance filter
+  if (activeFilters.balanceMin !== null || activeFilters.balanceMax !== null) {
+    activeFilterCount++;
+    const min = activeFilters.balanceMin !== null ? `$${activeFilters.balanceMin}` : '$0';
+    const max = activeFilters.balanceMax !== null ? `$${activeFilters.balanceMax}` : '∞';
+    filterChips.push(createFilterChip('Balance', `${min} - ${max}`, () => {
+      activeFilters.balanceMin = null;
+      activeFilters.balanceMax = null;
+      document.getElementById('filterBalanceMin').value = '';
+      document.getElementById('filterBalanceMax').value = '';
+      renderAccountTable();
+      updateFilterDisplay();
+    }));
+  }
+  
+  // Inclusion filter
+  if (activeFilters.inclusion !== 'all') {
+    activeFilterCount++;
+    filterChips.push(createFilterChip('Status', capitalize(activeFilters.inclusion), () => {
+      activeFilters.inclusion = 'all';
+      document.querySelector('input[name="inclusionFilter"][value="all"]').checked = true;
+      renderAccountTable();
+      updateFilterDisplay();
+    }));
+  }
+  
+  // Update filter count badge
+  if (activeFilterCount > 0) {
+    filterCount.textContent = activeFilterCount;
+    filterCount.classList.remove('hidden');
+  } else {
+    filterCount.classList.add('hidden');
+  }
+  
+  // Update active filters section
+  if (filterChips.length > 0) {
+    activeFiltersSection.classList.remove('hidden');
+    activeFiltersContainer.innerHTML = '';
+    filterChips.forEach(chip => activeFiltersContainer.appendChild(chip));
+  } else {
+    activeFiltersSection.classList.add('hidden');
+  }
+  
+  // Update filter status display
+  updateAccountCountDisplay(visibleCount, accounts.length);
+}
+
+function createFilterChip(label, value, onRemove) {
+  const chip = document.createElement('div');
+  chip.className = 'filter-chip';
+  
+  const content = document.createElement('span');
+  content.textContent = `${label}: ${value}`;
+  
+  const removeBtn = document.createElement('button');
+  removeBtn.onclick = onRemove;
+  removeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+  
+  chip.appendChild(content);
+  chip.appendChild(removeBtn);
+  
+  return chip;
+}
+
+function passesFilters(account) {
+  // Account name filter
+  if (activeFilters.accountName) {
+    const accountName = activeFilters.nameCaseSensitive ? account.modifiedName : account.modifiedName.toLowerCase();
+    const filterName = activeFilters.nameCaseSensitive ? activeFilters.accountName : activeFilters.accountName.toLowerCase();
+    
+    if (activeFilters.nameMatchType === 'exact') {
+      if (accountName !== filterName) return false;
+    } else {
+      if (!accountName.includes(filterName)) return false;
+    }
+  }
+  
+  // Type filter
+  if (activeFilters.types.size > 0) {
+    const accountType = getAccountTypeByName(account.type);
+    const typeDisplay = accountType ? accountType.typeDisplay : (account.type || '');
+    if (!activeFilters.types.has(typeDisplay)) return false;
+  }
+  
+  // Subtype filter
+  if (activeFilters.subtypes.size > 0) {
+    const accountSubtype = getSubtypeByName(account.subtype);
+    const subtypeDisplay = accountSubtype ? accountSubtype.display : (account.subtype || '');
+    if (!activeFilters.subtypes.has(subtypeDisplay)) return false;
+  }
+  
+  // Transaction count filter
+  const transactionCount = account.transactionCount || 0;
+  if (activeFilters.transactionsMin !== null && transactionCount < activeFilters.transactionsMin) return false;
+  if (activeFilters.transactionsMax !== null && transactionCount > activeFilters.transactionsMax) return false;
+  
+  // Balance filter
+  const balance = parseFloat(account.balance) || 0;
+  if (activeFilters.balanceMin !== null && balance < activeFilters.balanceMin) return false;
+  if (activeFilters.balanceMax !== null && balance > activeFilters.balanceMax) return false;
+  
+  // Inclusion filter
+  if (activeFilters.inclusion === 'included' && !account.included) return false;
+  if (activeFilters.inclusion === 'excluded' && account.included) return false;
+  
+  return true;
+}
+
+function updateAccountCountDisplay(visibleCount, totalCount) {
+  const visibleAccountCount = document.getElementById('visibleAccountCount');
+  const totalAccountCount = document.getElementById('totalAccountCount');
+  const filterResultsSummary = document.getElementById('filterResultsSummary');
+  const filterNotificationBadge = document.getElementById('filterNotificationBadge');
+  const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+  
+  if (visibleAccountCount) visibleAccountCount.textContent = visibleCount;
+  if (totalAccountCount) totalAccountCount.textContent = totalCount;
+  
+  // Check if filters are active and count them
+  const hasFilters = hasActiveFilters();
+  const filterCount = countActiveFilters();
+  
+  // Show/hide and update the notification badge
+  if (hasFilters && filterCount > 0 && filterNotificationBadge) {
+    filterNotificationBadge.textContent = filterCount;
+    filterNotificationBadge.classList.remove('hidden');
+  } else if (filterNotificationBadge) {
+    filterNotificationBadge.classList.add('hidden');
+  }
+  
+  // Show/hide clear filters button
+  if (hasFilters && clearFiltersBtn) {
+    clearFiltersBtn.classList.remove('hidden');
+  } else if (clearFiltersBtn) {
+    clearFiltersBtn.classList.add('hidden');
+  }
+  
+  // Add subtle styling to results summary when filtered
+  if (hasFilters && filterResultsSummary) {
+    filterResultsSummary.classList.add('filtered');
+  } else if (filterResultsSummary) {
+    filterResultsSummary.classList.remove('filtered');
+  }
+}
+
+function hasActiveFilters() {
+  return activeFilters.accountName ||
+         activeFilters.types.size > 0 ||
+         activeFilters.subtypes.size > 0 ||
+         activeFilters.transactionsMin !== null ||
+         activeFilters.transactionsMax !== null ||
+         activeFilters.balanceMin !== null ||
+         activeFilters.balanceMax !== null ||
+         activeFilters.inclusion !== 'all';
+}
+
+function countActiveFilters() {
+  let count = 0;
+  
+  // Account name filter
+  if (activeFilters.accountName) {
+    count++;
+  }
+  
+  // Type filters
+  if (activeFilters.types.size > 0) {
+    count++;
+  }
+  
+  // Subtype filters
+  if (activeFilters.subtypes.size > 0) {
+    count++;
+  }
+  
+  // Transaction count range filter
+  if (activeFilters.transactionsMin !== null || activeFilters.transactionsMax !== null) {
+    count++;
+  }
+  
+  // Balance range filter
+  if (activeFilters.balanceMin !== null || activeFilters.balanceMax !== null) {
+    count++;
+  }
+  
+  // Inclusion status filter (only count if not 'all')
+  if (activeFilters.inclusion !== 'all') {
+    count++;
+  }
+  
+  return count;
 }
