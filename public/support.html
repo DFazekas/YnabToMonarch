@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Support - YNAB to Monarch Money</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+  <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+
+<body class="bg-white text-[#111518] font-inter min-h-screen flex flex-col">
+
+  <!-- App Header -->
+  <header class="border-b border-[#f0f3f4] py-3 sm:py-4 md:py-5 px-3 sm:px-6 lg:px-8 bg-white sticky top-0 z-40">
+    <div class="flex items-center justify-between max-w-7xl mx-auto">
+      <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+        <div class="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-[#005B96] flex-shrink-0">
+          <svg viewBox="0 0 48 48" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 4H17.3334V17.3334H30.6666V30.6666H44V44H4V4Z" />
+          </svg>
+        </div>
+        <h1 class="font-bold text-sm sm:text-base md:text-lg truncate">YNAB to Monarch Money</h1>
+      </div>
+      <a href="/" class="text-blue-600 hover:text-blue-800 text-sm font-medium">← Back to App</a>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div class="max-w-4xl mx-auto">
+      <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6 sm:p-8">
+        
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Support & Contact</h1>
+
+        <div class="grid md:grid-cols-2 gap-8">
+          
+          <!-- Contact Information -->
+          <div>
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Get in Touch</h2>
+            <div class="space-y-4">
+              <div class="flex items-start gap-3">
+                <div class="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                  </svg>
+                </div>
+                <div>
+                  <p class="font-medium text-gray-900">Email Support</p>
+                  <p class="text-gray-600">
+                    <a href="mailto:fazekas.devon@gmail.com" class="text-blue-600 hover:text-blue-800">
+                      fazekas.devon@gmail.com
+                    </a>
+                  </p>
+                  <p class="text-sm text-gray-500 mt-1">We typically respond within 24-48 hours</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3">
+                <div class="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
+                <div>
+                  <p class="font-medium text-gray-900">Response Time</p>
+                  <p class="text-gray-600">24-48 hours for general inquiries</p>
+                  <p class="text-gray-600">Technical support and guidance</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div>
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+            <div class="space-y-3">
+              
+              <div class="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                <h3 class="font-medium text-blue-900 mb-2">� Clear Browser Data</h3>
+                <p class="text-sm text-blue-700 mb-3">
+                  All data is stored locally in your browser. To clear your data, simply clear your browser's localStorage and sessionStorage or use your browser's "Clear browsing data" feature.
+                </p>
+                <button onclick="localStorage.clear(); sessionStorage.clear(); alert('Local data cleared successfully!');" 
+                   class="inline-flex items-center px-3 py-2 border border-blue-300 text-sm font-medium rounded-md text-blue-700 bg-white hover:bg-blue-50 transition-colors">
+                  Clear Local Data
+                </button>
+              </div>
+
+              <div class="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                <h3 class="font-medium text-blue-900 mb-2">❓ General Support</h3>
+                <p class="text-sm text-blue-700 mb-3">
+                  Having trouble with the transfer process or need technical help?
+                </p>
+                <a href="mailto:fazekas.devon@gmail.com?subject=Support%20Request&body=Please%20describe%20your%20issue%20or%20question:%0A%0A%0A%0AWhat%20were%20you%20trying%20to%20do%20when%20this%20happened?%0A%0A%0A%0ABrowser%20and%20operating%20system:%0A" 
+                   class="inline-flex items-center px-3 py-2 border border-blue-300 text-sm font-medium rounded-md text-blue-700 bg-white hover:bg-blue-50 transition-colors">
+                  Get Support
+                </a>
+              </div>
+
+              <div class="border border-green-200 rounded-lg p-4 bg-green-50">
+                <h3 class="font-medium text-green-900 mb-2">💡 Feature Request</h3>
+                <p class="text-sm text-green-700 mb-3">
+                  Have an idea for improving the service? Submit it on our GitHub Issues page!
+                </p>
+                <a href="https://github.com/DFazekas/YnabToMonarch/issues/new" 
+                   class="inline-flex items-center px-3 py-2 border border-green-300 text-sm font-medium rounded-md text-green-700 bg-white hover:bg-green-50 transition-colors"
+                   target="_blank" rel="noopener noreferrer">
+                  Submit Feature Request
+                </a>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- FAQ Section -->
+        <div class="mt-12">
+          <h2 class="text-xl font-semibold text-gray-900 mb-6">Frequently Asked Questions</h2>
+          
+          <div class="space-y-6">
+            
+            <div class="border-b border-gray-200 pb-6">
+              <h3 class="font-medium text-gray-900 mb-2">What are the age requirements?</h3>
+              <p class="text-gray-600">
+                You must be at least 18 years old to use this service. This requirement exists because Monarch Money 
+                (the destination platform) requires users to be 18 or older. If you are under 18, please do not use 
+                this application.
+              </p>
+            </div>
+
+            <div class="border-b border-gray-200 pb-6">
+              <h3 class="font-medium text-gray-900 mb-2">Does this service provide financial advice?</h3>
+              <p class="text-gray-600">
+                No. This is strictly a data transfer tool and does not provide financial, investment, tax, legal, or 
+                any other professional advice. You should always consult with qualified professionals before making 
+                financial decisions based on your transferred data.
+              </p>
+            </div>
+            
+            <div class="border-b border-gray-200 pb-6">
+              <h3 class="font-medium text-gray-900 mb-2">How long is my data stored?</h3>
+              <p class="text-gray-600">
+                Your financial data is automatically deleted from our systems within 24 hours of processing. 
+                We do not permanently store any of your YNAB or financial information.
+              </p>
+            </div>
+
+            <div class="border-b border-gray-200 pb-6">
+              <h3 class="font-medium text-gray-900 mb-2">Is my financial data secure?</h3>
+              <p class="text-gray-600">
+                Yes. We use industry-standard encryption for all data transfers and storage. Your data is encrypted 
+                both in transit and at rest. We never store your YNAB credentials - only secure OAuth tokens.
+              </p>
+            </div>
+
+            <div class="border-b border-gray-200 pb-6">
+              <h3 class="font-medium text-gray-900 mb-2">How do I clear my data from the application?</h3>
+              <p class="text-gray-600">
+                All data is stored locally in your browser only. You can clear it instantly by using the "Clear Local Data" button above, 
+                or by clearing your browser's storage. We don't store any data on our servers, so there's nothing for us to delete.
+              </p>
+            </div>
+
+            <div class="border-b border-gray-200 pb-6">
+              <h3 class="font-medium text-gray-900 mb-2">Do you share my data with third parties?</h3>
+              <p class="text-gray-600">
+                No. We do not sell, share, or provide your data to any third parties for marketing, analytics, 
+                or any other purpose. The only "sharing" is the intended transfer to Monarch Money that you explicitly authorize.
+              </p>
+            </div>
+
+            <div class="border-b border-gray-200 pb-6">
+              <h3 class="font-medium text-gray-900 mb-2">What if the transfer doesn't work correctly?</h3>
+              <p class="text-gray-600">
+                Contact us immediately at <a href="mailto:fazekas.devon@gmail.com" class="text-blue-600 hover:text-blue-800">fazekas.devon@gmail.com</a>. 
+                We'll help troubleshoot the issue and ensure your data transfers correctly. We recommend keeping 
+                a backup of your original YNAB data.
+              </p>
+            </div>
+
+            <div class="border-b border-gray-200 pb-6">
+              <h3 class="font-medium text-gray-900 mb-2">How can I suggest improvements or report bugs?</h3>
+              <p class="text-gray-600">
+                This is an open source project! You can submit feature requests, bug reports, or contribute code on our 
+                <a href="https://github.com/DFazekas/YnabToMonarch" class="text-blue-600 hover:text-blue-800" target="_blank" rel="noopener noreferrer">GitHub repository</a>. 
+                Use the <a href="https://github.com/DFazekas/YnabToMonarch/issues/new" class="text-blue-600 hover:text-blue-800" target="_blank" rel="noopener noreferrer">Issues page</a> 
+                to submit suggestions or report problems.
+              </p>
+            </div>
+
+            <div class="pb-6">
+              <h3 class="font-medium text-gray-900 mb-2">Are you affiliated with YNAB or Monarch Money?</h3>
+              <p class="text-gray-600">
+                No. We are an independent service created to help users transfer data between these platforms. 
+                We are not affiliated, associated, or officially connected with YNAB or Monarch Money. You are 
+                responsible for complying with both platforms' terms of service when using their respective services.
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Data Protection Notice -->
+        <div class="mt-12 bg-gray-50 rounded-lg p-6 border border-gray-200">
+          <h2 class="text-lg font-semibold text-gray-900 mb-3">🔒 Your Data Rights</h2>
+          <div class="text-sm text-gray-600 space-y-2">
+            <p><strong>Local Storage Control:</strong> All data is stored in your browser - you have complete control</p>
+            <p><strong>Instant Clearing:</strong> Clear your data instantly using browser storage controls</p>
+            <p><strong>Right to Revoke:</strong> Revoke access permissions through your YNAB account settings</p>
+            <p><strong>Data Portability:</strong> Your data remains in your original YNAB account</p>
+          </div>
+          <p class="text-sm text-gray-500 mt-3">
+            For more details, see our <a href="/privacy" class="text-blue-600 hover:text-blue-800">Privacy Policy</a>.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- App Footer Component -->
+  <!-- This footer should be consistent across all pages -->
+  <footer class="border-t border-[#f0f3f4] py-3 sm:py-4 px-3 sm:px-6 lg:px-8 text-xs sm:text-sm bg-white">
+    <div class="max-w-7xl mx-auto">
+      <!-- Main Footer Content -->
+      <div class="flex flex-col sm:flex-row justify-between items-center gap-2 mb-3">
+        <span class="text-center sm:text-left">© 2025 Fazekas Solutions</span>
+        <div class="flex gap-4 text-center sm:text-right">
+          <a href="/privacy.html" class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200">
+            Privacy Policy
+          </a>
+          <a href="/terms.html" class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200">
+            Terms of Service
+          </a>
+          <a href="/support.html" class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200">
+            Support
+          </a>
+          <a href="https://github.com/DFazekas/YnabToMonarch" 
+             class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200" 
+             target="_blank" rel="noopener noreferrer">
+            GitHub
+          </a>
+        </div>
+      </div>
+      
+      <!-- YNAB and Monarch Money Disclaimers (Required by API Terms) -->
+      <div class="text-center text-gray-500 text-xs border-t border-gray-100 pt-3">
+        <p class="mb-2">
+          We are not affiliated, associated, or in any way officially connected with YNAB or any of its subsidiaries or affiliates. 
+          The official YNAB website can be found at <a href="https://www.ynab.com" class="text-blue-600 hover:text-blue-800 hover:underline" target="_blank" rel="noopener noreferrer">https://www.ynab.com</a>.
+          The names YNAB and You Need A Budget, as well as related names, tradenames, marks, trademarks, emblems, and images are registered trademarks of YNAB.
+        </p>
+        <p>
+          We are not affiliated, associated, or in any way officially connected with Monarch Money or any of its subsidiaries or affiliates. 
+          The official Monarch Money website can be found at <a href="https://www.monarchmoney.com" class="text-blue-600 hover:text-blue-800 hover:underline" target="_blank" rel="noopener noreferrer">https://www.monarchmoney.com</a>.
+        </p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

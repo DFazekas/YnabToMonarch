@@ -3250,7 +3250,7 @@
             console.groupEnd("parseCSV");
             return reject(new Error("\u274C CSV file appears to be empty or invalid."));
           }
-          const accounts = /* @__PURE__ */ new Map();
+          const accounts2 = /* @__PURE__ */ new Map();
           for (const row of data2) {
             const accountName = row["Account"]?.trim();
             if (!accountName) {
@@ -3273,9 +3273,9 @@
             } else {
               row.Amount = "0.00";
             }
-            if (!accounts.has(accountName)) {
+            if (!accounts2.has(accountName)) {
               const { type, subtype } = inferMonarchType(accountName, monarchAccountTypes);
-              accounts.set(accountName, {
+              accounts2.set(accountName, {
                 id: generateId(),
                 name: accountName,
                 modifiedName: accountName,
@@ -3289,7 +3289,7 @@
                 status: "unprocessed"
               });
             }
-            const account = accounts.get(accountName);
+            const account = accounts2.get(accountName);
             account.transactions.push({
               Date: row.Date,
               Merchant: row.Payee || "",
@@ -3303,13 +3303,13 @@
             account.balanceCents += netCents;
           }
           ;
-          for (const account of accounts.values()) {
+          for (const account of accounts2.values()) {
             account.balance = account.balanceCents / 100;
             account.included = account.transactionCount > 0;
           }
           ;
           console.groupEnd("parseCSV");
-          resolve(Object.fromEntries(accounts));
+          resolve(Object.fromEntries(accounts2));
         },
         error: (err) => reject(err)
       });
@@ -3348,18 +3348,18 @@
       const isDisabled = button.hasAttribute("disabled") || button.disabled;
       button.className = "ui-button";
       button.type = "button";
-      button.classList.add("font-semibold", "rounded-lg", "transition");
+      button.classList.add("font-semibold", "rounded-lg", "transition-all", "duration-200", "ease-in-out", "flex", "items-center", "justify-center");
       button.style.transform = "none";
       switch (size) {
         case "small":
-          button.classList.add("px-3", "py-1.5", "text-sm");
+          button.classList.add("px-2", "py-1", "text-xs", "sm:px-3", "sm:py-1.5", "sm:text-sm");
           break;
         case "large":
-          button.classList.add("px-6", "py-3", "text-base");
+          button.classList.add("px-4", "py-2.5", "text-sm", "sm:px-6", "sm:py-3", "sm:text-base", "md:px-8", "md:py-4");
           break;
         case "medium":
         default:
-          button.classList.add("px-5", "py-2", "text-sm");
+          button.classList.add("px-3", "py-2", "text-sm", "sm:px-5", "sm:py-2", "sm:text-sm");
           break;
       }
       if (isDisabled) {
@@ -3372,30 +3372,35 @@
       }
       switch (type) {
         case "primary":
-          button.classList.add("bg-[#1993e5]", "text-white", "border", "border-[#1993e5]");
-          if (!isDisabled)
-            button.classList.add("hover:bg-blue-600");
+          button.classList.add("bg-[#1993e5]", "text-white", "border", "border-[#1993e5]", "shadow-sm");
+          if (!isDisabled) {
+            button.classList.add("hover:bg-blue-600", "hover:border-blue-600", "hover:shadow-md", "focus:ring-2", "focus:ring-blue-500", "focus:ring-offset-2", "active:bg-blue-700", "transform", "hover:scale-105");
+          }
           break;
         case "secondary":
-          button.classList.add("bg-white", "text-[#111518]", "border", "border-gray-300");
-          if (!isDisabled)
-            button.classList.add("hover:bg-gray-100");
+          button.classList.add("bg-white", "text-gray-700", "border", "border-gray-300", "shadow-sm");
+          if (!isDisabled) {
+            button.classList.add("hover:bg-gray-50", "hover:border-gray-400", "hover:text-gray-800", "focus:ring-2", "focus:ring-gray-500", "focus:ring-offset-2", "active:bg-gray-100");
+          }
           break;
         case "text":
-          button.classList.remove("px-3", "px-5", "px-6", "py-1.5", "py-2", "py-3");
-          button.classList.add("bg-transparent", "text-blue-600");
-          if (!isDisabled)
-            button.classList.add("hover:underline");
+          button.classList.remove("px-2", "px-3", "px-4", "px-5", "px-6", "px-8", "py-1", "py-1.5", "py-2", "py-2.5", "py-3", "py-4", "sm:px-3", "sm:px-5", "sm:px-6", "sm:px-8", "sm:py-1.5", "sm:py-2", "sm:py-3", "sm:py-4", "md:px-8", "md:py-4");
+          button.classList.add("bg-transparent", "text-blue-600", "px-2", "py-1", "sm:px-3", "sm:py-1.5");
+          if (!isDisabled) {
+            button.classList.add("hover:underline", "hover:text-blue-700", "focus:ring-2", "focus:ring-blue-500", "focus:ring-offset-2");
+          }
           break;
         case "danger":
-          button.classList.add("bg-red-500", "text-white");
-          if (!isDisabled)
-            button.classList.add("hover:bg-red-600");
+          button.classList.add("bg-red-500", "text-white", "border", "border-red-500", "shadow-sm");
+          if (!isDisabled) {
+            button.classList.add("hover:bg-red-600", "hover:border-red-600", "hover:shadow-md", "focus:ring-2", "focus:ring-red-500", "focus:ring-offset-2", "active:bg-red-700", "transform", "hover:scale-105");
+          }
           break;
         case "warning":
-          button.classList.add("bg-orange-500", "text-white");
-          if (!isDisabled)
-            button.classList.add("hover:bg-orange-600");
+          button.classList.add("bg-orange-500", "text-white", "border", "border-orange-500", "shadow-sm");
+          if (!isDisabled) {
+            button.classList.add("hover:bg-orange-600", "hover:border-orange-600", "hover:shadow-md", "focus:ring-2", "focus:ring-orange-500", "focus:ring-offset-2", "active:bg-orange-700", "transform", "hover:scale-105");
+          }
           break;
       }
       if (fixedWidth) {
@@ -3403,6 +3408,11 @@
       }
       if (fullWidth) {
         button.classList.add("w-full");
+      }
+      if (!isDisabled) {
+        button.classList.add("touch-manipulation", "select-none");
+        button.style.minHeight = "44px";
+        button.style.minWidth = "44px";
       }
     });
   }
@@ -3443,18 +3453,51 @@
         await handleFile(file);
     });
     async function handleFile(csvFile) {
-      const isZIP = csvFile.name.endsWith(".zip");
-      if (!isZIP) {
+      const fileName = csvFile.name.toLowerCase();
+      const fileType = csvFile.type.toLowerCase();
+      console.log("File upload debug:", {
+        name: csvFile.name,
+        type: csvFile.type,
+        size: csvFile.size,
+        fileName,
+        fileType
+      });
+      const isZipByExtension = fileName.endsWith(".zip") || fileName.endsWith(".bin") || fileName.includes("ynab") || fileName.includes("register") || fileName.includes("export");
+      const isZipByMimeType = [
+        "application/zip",
+        "application/x-zip-compressed",
+        "application/octet-stream",
+        "application/x-zip",
+        "multipart/x-zip",
+        "application/x-compressed",
+        "application/binary"
+      ].includes(fileType);
+      const isPotentialZip = isZipByExtension || isZipByMimeType || csvFile.size > 1e3;
+      console.log("File validation debug:", {
+        isZipByExtension,
+        isZipByMimeType,
+        isPotentialZip,
+        fileSize: csvFile.size
+      });
+      if (!isPotentialZip) {
+        console.log("File rejected - not a potential ZIP");
         errorMessage.textContent = "Please upload a ZIP export from YNAB.";
         errorMessage.classList.remove("hidden");
         return;
       }
+      console.log("File accepted, attempting to parse...");
       try {
-        const accounts = await parseYNABCSV(csvFile);
-        state_default.accounts = accounts;
-        navigate("reviewView");
+        const accounts2 = await parseYNABCSV(csvFile);
+        state_default.accounts = accounts2;
+        persistState();
+        if (accounts2 && Object.keys(accounts2).length > 0) {
+          navigate("/review", false, true);
+        } else {
+          errorMessage.textContent = "No accounts found in the uploaded file.";
+          errorMessage.classList.remove("hidden");
+        }
       } catch (err) {
-        errorMessage.textContent = "Failed to parse ZIP file. Please ensure it includes a valid register.csv and plan.csv.";
+        errorMessage.textContent = "Failed to parse file. Please ensure it's a valid YNAB ZIP export with register.csv and plan.csv.";
         errorMessage.classList.remove("hidden");
         console.error(err);
       }
@@ -3462,7 +3505,7 @@
   }
 
   // src/views/Upload/upload.html
-  var upload_default = '<div class="flex flex-col items-center justify-center py-10 px-4">\n\n  <div class="text-center max-w-1xl w-full">\n    <h2 class="text-3xl font-bold mb-4">Migrate your YNAB data</h2>\n    <p class="text-gray-600 text-base max-w-md mx-auto leading-relaxed">\n      Upload a YNAB ZIP file to begin the migration process into Monarch Money.\n    </p>\n\n    <a id="howItWorksBtn" class="ui-button" data-type="text">How does this work?</a>\n  </div>\n\n  <!-- Upload Box -->\n  <div id="uploadBox" class="w-full max-w-md border-2 border-dashed border-gray-300 rounded-xl p-10 mt-10 flex flex-col items-center gap-3 transition-all">\n    <p class="text-lg font-semibold">Drag & Drop your Register ZIP file</p>\n    <p class="text-sm text-gray-500">or</p>\n    <input id="fileInput" type="file" accept=".csv,.zip" hidden>\n    <button id="browseButton" class="ui-button" data-type="primary">Browse Files</button>\n\n    <p class="text-xs text-gray-400 mt-2">Your file stays local. We never store or transmit your data.</p>\n  </div>\n\n  <div id="errorMessage" class="hidden text-red-500 text-sm mt-4">Some error</div>\n\n</div>\n\n<!-- Modal -->\n<div id="howItWorksModal" class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300">\n  <!-- Overlay -->\n  <div class="absolute inset-0 bg-[rgba(0,0,0,0.3)] transition-opacity duration-300"></div>\n\n  <!-- Modal Content -->\n  <div class="relative z-10 bg-white rounded-lg p-8 max-w-lg w-full shadow-xl transform translate-y-full transition-transform duration-500">\n    <a href="#" id="closeHowItWorksModal" class="absolute top-3 right-3 text-gray-400 text-xl font-bold cursor-pointer hover:text-black">&times;</a>\n    <h3 class="text-xl font-bold mb-4">How does this work?</h3>\n    <ol class="list-decimal pl-5 space-y-2 text-sm text-gray-700">\n      <li>Export your YNAB data.</li>\n      <li>Upload the YNAB ZIP file here.</li>\n      <li>Choose between manual import or guided auto-import into Monarch Money.</li>\n    </ol>\n    <p class="mt-4 text-xs text-gray-500">Your files are never uploaded or stored externally.</p>\n  </div>\n</div>\n';
+  var upload_default = '<div class="container-responsive flex flex-col items-center justify-center py-6 sm:py-8 md:py-12 lg:py-16 min-h-[calc(100vh-200px)]">\n\n  <div class="text-center w-full max-w-3xl mb-8 sm:mb-10 md:mb-12">\n    <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 md:mb-6 text-gray-900">\n      Migrate your YNAB data\n    </h2>\n    <p class="text-gray-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed px-2">\n      Upload a YNAB ZIP file to begin the migration process into Monarch Money.\n    </p>\n\n    <a id="howItWorksBtn" class="ui-button mt-4 sm:mt-6 inline-block" data-type="text">\n      How does this work?\n    </a>\n  </div>\n\n  <!-- Upload Box -->\n  <div id="uploadBox" \n       class="w-full max-w-sm sm:max-w-md md:max-w-lg border-2 border-dashed border-gray-300 rounded-xl \n              p-4 sm:p-6 md:p-8 lg:p-10 flex flex-col items-center gap-3 sm:gap-4 \n              transition-all duration-300 hover:border-blue-400 hover:bg-blue-50/30 \n              cursor-pointer focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200">\n    \n    <div class="text-center space-y-2 sm:space-y-3">\n      <div class="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-400 mb-2">\n        <svg fill="none" stroke="currentColor" viewBox="0 0 48 48" aria-hidden="true">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" \n                d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" />\n        </svg>\n      </div>\n      \n      <p class="text-base sm:text-lg md:text-xl font-semibold text-gray-700">\n        Drag & Drop your YNAB export file\n      </p>\n      <p class="text-sm text-gray-500">or click to browse (ZIP format)</p>\n    </div>\n    \n    <input id="fileInput" type="file" accept=".csv,.zip,.bin,application/zip,application/x-zip-compressed,application/octet-stream,application/binary,*/*" hidden>\n    <button id="browseButton" class="ui-button btn-responsive" data-type="primary" data-size="large">\n      Browse Files\n    </button>\n\n    <p class="text-xs sm:text-sm text-gray-400 text-center max-w-xs leading-relaxed">\n      <span class="inline-flex items-center gap-1">\n        <svg class="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">\n          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />\n        </svg>\n        Secure & Private\n      </span>\n      <br>\n      Your file stays local. We never store or transmit your data.\n      <br><br>\n      <span class="text-xs text-gray-400">\n        On mobile devices, ZIP files may appear as BIN or other formats - we support all common archive types.\n      </span>\n    </p>\n  </div>\n\n  <div id="errorMessage" \n       class="hidden text-red-600 text-sm sm:text-base mt-4 sm:mt-6 text-center px-4 \n              bg-red-50 border border-red-200 rounded-lg py-3 max-w-md mx-auto">\n    Some error\n  </div>\n\n</div>\n\n<!-- Modal -->\n<div id="howItWorksModal" \n     class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 \n            transition-opacity duration-300 p-3 sm:p-4 md:p-6">\n  <!-- Overlay -->\n  <div class="absolute inset-0 bg-black/30 transition-opacity duration-300"></div>\n\n  <!-- Modal Content -->\n  <div class="relative z-10 bg-white rounded-xl p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md md:max-w-lg w-full \n              shadow-2xl transform translate-y-full transition-transform duration-500 \n              max-h-[90vh] overflow-y-auto">\n    \n    <button id="closeHowItWorksModal" \n            class="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 \n                   w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 \n                   transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n            aria-label="Close modal">\n      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />\n      </svg>\n    </button>\n    \n    <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 pr-8 text-gray-900">\n      How does this work?\n    </h3>\n    \n    <ol class="list-decimal pl-5 sm:pl-6 space-y-3 sm:space-y-4 text-sm sm:text-base text-gray-700 leading-relaxed">\n      <li class="pl-2">\n        <strong>Export your YNAB data</strong> by going to your YNAB budget settings and downloading the full export.\n      </li>\n      <li class="pl-2">\n        <strong>Upload the YNAB ZIP file</strong> using the drag & drop area above or by clicking "Browse Files".\n      </li>\n      <li class="pl-2">\n        <strong>Choose your import method</strong> - either manual CSV download or guided auto-import into Monarch Money.\n      </li>\n    </ol>\n    \n    <div class="mt-6 sm:mt-8 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">\n      <div class="flex items-start gap-2 sm:gap-3">\n        <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">\n          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />\n        </svg>\n        <p class="text-xs sm:text-sm text-green-800 leading-relaxed">\n          <strong>100% Private:</strong> Your files are processed locally in your browser. \n          Nothing is uploaded to our servers or stored externally.\n        </p>\n      </div>\n    </div>\n  </div>\n</div>\n';
 
   // public/static-data/monarchAccountTypes.json
   var generatedAt = "2025-06-02T06:26:29.704Z";
@@ -3878,6 +3921,110 @@
     data
   };
 
+  // src/utils/navigation.js
+  function updateBackButtonText() {
+    const currentPath = getCurrentPath();
+    const backBtn = document.getElementById("backBtn");
+    if (!backBtn)
+      return;
+    const backButtonTexts = {
+      "/review": "Back to Upload",
+      "/method": "Back to Review",
+      "/manual": "Back to Method",
+      "/login": "Back to Method",
+      "/otp": "Back to Login",
+      "/complete": "Back to Review"
+    };
+    const text = backButtonTexts[currentPath] || "Back";
+    backBtn.innerHTML = `
+    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+    </svg>
+    ${text}
+  `;
+  }
+  function updateNavigationTexts() {
+    updateBackButtonText();
+    const backToMethodBtn = document.getElementById("backToMethodBtn");
+    if (backToMethodBtn) {
+      backToMethodBtn.innerHTML = `
+      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      </svg>
+      Back to Method
+    `;
+    }
+  }
+
+  // src/utils/navigationBar.js
+  function createNavigationBar(config = {}) {
+    const {
+      backText = "Back",
+      nextText = "Continue",
+      backId = "backBtn",
+      nextId = "continueBtn",
+      showBack = true,
+      showNext = false,
+      nextType = "primary",
+      nextDisabled = false,
+      containerClass = ""
+    } = config;
+    const backButton = showBack ? `
+    <button id="${backId}" class="ui-button order-2 sm:order-1 w-full sm:w-auto whitespace-nowrap" data-type="secondary" data-size="large">
+      <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      </svg>
+      ${backText}
+    </button>
+  ` : "<div></div>";
+    const nextButton = showNext ? `
+    <button id="${nextId}" 
+            class="ui-button order-1 sm:order-2 w-full sm:w-auto whitespace-nowrap" 
+            data-type="${nextType}" 
+            data-size="large"
+            ${nextDisabled ? "disabled" : ""}>
+      <span class="hidden sm:inline truncate">${nextText}</span>
+      <span class="sm:hidden truncate">${nextText.split(" ")[0]}</span>
+      <svg class="w-4 h-4 ml-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
+  ` : "<div></div>";
+    return `
+    <!-- Navigation Bar -->
+    <div class="bg-white border-t border-gray-200 mt-8 sm:mt-12">
+      <div class="container-responsive">
+        <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center py-6 sm:py-8 gap-4 sm:gap-6 ${containerClass}">
+          ${backButton}
+          ${nextButton}
+        </div>
+      </div>
+    </div>
+  `;
+  }
+  function createSimpleNavigationBar(config = {}) {
+    const {
+      backText = "Back",
+      backId = "backBtn",
+      containerClass = ""
+    } = config;
+    return `
+    <!-- Navigation Bar -->
+    <div class="bg-white border-t border-gray-200 mt-8 sm:mt-12">
+      <div class="container-responsive">
+        <div class="flex justify-center items-center py-6 sm:py-8 ${containerClass}">
+          <button id="${backId}" class="ui-button w-full sm:w-auto sm:max-w-xs whitespace-nowrap" data-type="secondary" data-size="large">
+            <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            ${backText}
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  }
+
   // src/utils/string.js
   function capitalize(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
@@ -3901,26 +4048,6 @@
   }
 
   // src/utils/dom.js
-  function toggleButtonActive(button, isActive) {
-    const activeClasses = ["bg-blue-500", "text-white"];
-    const inactiveClasses = ["bg-transparent", "text-gray-700", "hover:bg-blue-100"];
-    if (isActive) {
-      button.classList.add(...activeClasses);
-      button.classList.remove(...inactiveClasses);
-    } else {
-      button.classList.remove(...activeClasses);
-      button.classList.add(...inactiveClasses);
-    }
-  }
-  function toggleElementVisible(el, show) {
-    if (show) {
-      el.classList.remove("hidden");
-      requestAnimationFrame(() => el.classList.add("active"));
-    } else {
-      el.classList.remove("active");
-      setTimeout(() => el.classList.add("hidden"), 300);
-    }
-  }
   function toggleDisabled(el, disabled) {
     el.disabled = disabled;
     el.classList.toggle("cursor-default", disabled);
@@ -3941,43 +4068,124 @@
 
   // src/views/AccountReview/review.js
   var reviewTableBody;
+  var mobileAccountList;
   var importBtn;
   var searchInput;
-  var currentFilter = "all";
+  var activeFilters = {
+    accountName: "",
+    nameMatchType: "contains",
+    nameCaseSensitive: false,
+    types: /* @__PURE__ */ new Set(),
+    subtypes: /* @__PURE__ */ new Set(),
+    transactionsMin: null,
+    transactionsMax: null,
+    balanceMin: null,
+    balanceMax: null,
+    inclusion: "all"
+  };
   var searchQuery = "";
   function initAccountReviewView() {
+    if (!state_default.accounts || Object.keys(state_default.accounts).length === 0) {
+      navigate("/upload", true);
+      return;
+    }
+    const mainContainer = document.querySelector(".flex.flex-col.max-w-7xl");
+    const navigationConfig = {
+      backText: "Back",
+      showBack: true,
+      showNext: true,
+      nextText: "Continue",
+      nextId: "continueBtn",
+      nextType: "primary"
+    };
+    mainContainer.insertAdjacentHTML("beforeend", createNavigationBar(navigationConfig));
     reviewTableBody = document.getElementById("reviewTableBody");
-    importBtn = document.getElementById("importBtn");
+    mobileAccountList = document.getElementById("mobileAccountList");
+    importBtn = document.getElementById("continueBtn");
     searchInput = document.getElementById("searchInput");
     renderButtons();
-    document.getElementById("filterAll").classList.add("bg-blue-500", "text-white");
+    updateNavigationTexts();
+    renderAccountTable();
+    setTimeout(() => {
+      initializeFiltersModal();
+      const totalAccounts = Object.keys(state_default.accounts).length;
+      updateAccountCountDisplay(totalAccounts, totalAccounts);
+    }, 100);
     let debounceTimer;
     searchInput.addEventListener("input", () => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         searchQuery = searchInput.value.toLowerCase();
         renderAccountTable();
+        persistState();
       }, 200);
     });
-    ["all", "included", "excluded"].forEach((filter) => {
-      document.getElementById(`filter${capitalize(filter)}`).addEventListener("click", () => setFilter(filter));
-    });
-    document.getElementById("unselectAllBtn").addEventListener("click", () => updateSelection(false));
-    document.getElementById("bulkIncludeBtn").addEventListener("click", () => updateInclusion(true));
-    document.getElementById("bulkExcludeBtn").addEventListener("click", () => updateInclusion(false));
-    document.getElementById("bulkRenameBtn").addEventListener("click", openBulkRenameModal);
-    document.getElementById("bulkTypeBtn").addEventListener("click", openBulkTypeModal);
+    setTimeout(() => {
+      const filtersBtn = document.getElementById("filtersBtn");
+      if (filtersBtn) {
+        console.log("Adding click listener to filters button");
+        filtersBtn.addEventListener("click", (e) => {
+          console.log("Filters button clicked!");
+          e.preventDefault();
+          openFiltersModal();
+        });
+      } else {
+        console.error("Filters button not found!");
+      }
+      const filtersModalClose = document.getElementById("filtersModalClose");
+      if (filtersModalClose) {
+        filtersModalClose.addEventListener("click", closeFiltersModal);
+      }
+      const filtersApply = document.getElementById("filtersApply");
+      if (filtersApply) {
+        filtersApply.addEventListener("click", applyFilters);
+      }
+      const filtersReset = document.getElementById("filtersReset");
+      if (filtersReset) {
+        filtersReset.addEventListener("click", resetFilters);
+      }
+      const clearAllFilters2 = document.getElementById("clearAllFilters");
+      if (clearAllFilters2) {
+        clearAllFilters2.addEventListener("click", clearAllFilters2);
+      }
+      const filtersModal = document.getElementById("filtersModal");
+      if (filtersModal) {
+        filtersModal.addEventListener("click", (e) => {
+          if (e.target.id === "filtersModal") {
+            closeFiltersModal();
+          }
+        });
+      }
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && filtersModal && !filtersModal.classList.contains("hidden")) {
+          closeFiltersModal();
+        }
+      });
+      const clearFiltersBtn = document.getElementById("clearFiltersBtn");
+      if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener("click", () => {
+          resetFilters();
+          closeFiltersModal();
+        });
+      }
+    }, 100);
+    document.getElementById("unselectAllBtnMobile").addEventListener("click", () => updateSelection(false));
+    document.getElementById("unselectAllBtnDesktop").addEventListener("click", () => updateSelection(false));
+    document.getElementById("bulkIncludeBtnMobile").addEventListener("click", () => updateInclusion(true));
+    document.getElementById("bulkIncludeBtnDesktop").addEventListener("click", () => updateInclusion(true));
+    document.getElementById("bulkExcludeBtnMobile").addEventListener("click", () => updateInclusion(false));
+    document.getElementById("bulkExcludeBtnDesktop").addEventListener("click", () => updateInclusion(false));
+    document.getElementById("bulkRenameBtnMobile").addEventListener("click", openBulkRenameModal);
+    document.getElementById("bulkRenameBtnDesktop").addEventListener("click", openBulkRenameModal);
+    document.getElementById("bulkTypeBtnMobile").addEventListener("click", openBulkTypeModal);
+    document.getElementById("bulkTypeBtnDesktop").addEventListener("click", openBulkTypeModal);
     document.getElementById("masterCheckbox").addEventListener("change", masterCheckboxChange);
-    document.getElementById("backBtn").addEventListener("click", () => navigate("uploadView"));
-    importBtn.addEventListener("click", () => navigate("methodView"));
-    renderAccountTable();
-  }
-  function setFilter(filter) {
-    currentFilter = filter;
-    document.querySelectorAll(".filter-btn").forEach((btn) => {
-      const isActive = btn.id === `filter${capitalize(currentFilter)}`;
-      toggleButtonActive(btn, isActive);
-    });
+    const masterCheckboxMobile = document.getElementById("masterCheckboxMobile");
+    if (masterCheckboxMobile) {
+      masterCheckboxMobile.addEventListener("change", masterCheckboxChange);
+    }
+    document.getElementById("continueBtn").addEventListener("click", () => navigate("/method"));
+    document.getElementById("backBtn").addEventListener("click", () => goBack());
     renderAccountTable();
   }
   function updateSelection(shouldSelect) {
@@ -3985,6 +4193,7 @@
       if (acc.status !== "processed")
         acc.selected = shouldSelect;
     });
+    persistState();
     renderAccountTable();
   }
   function updateInclusion(include) {
@@ -3992,26 +4201,45 @@
       if (acc.selected)
         acc.included = include;
     });
+    persistState();
     renderAccountTable();
   }
   function renderAccountTable() {
     const fragment = document.createDocumentFragment();
-    const accounts = Object.values(state_default.accounts);
+    const mobileFragment = document.createDocumentFragment();
+    const accounts2 = Object.values(state_default.accounts);
+    let visibleCount2 = 0;
     reviewTableBody.innerHTML = "";
-    for (const account of accounts) {
-      if (currentFilter === "included" && !account.included)
-        continue;
-      if (currentFilter === "excluded" && account.included)
+    if (mobileAccountList)
+      mobileAccountList.innerHTML = "";
+    for (const account of accounts2) {
+      if (!passesFilters(account))
         continue;
       if (searchQuery && !account.modifiedName.toLowerCase().includes(searchQuery))
         continue;
+      visibleCount2++;
       fragment.appendChild(createAccountRowElement(account));
+      if (mobileAccountList) {
+        mobileFragment.appendChild(createMobileAccountCard(account));
+      }
     }
     reviewTableBody.appendChild(fragment);
+    if (mobileAccountList) {
+      mobileAccountList.appendChild(mobileFragment);
+    }
+    updateAccountCountDisplay(visibleCount2, accounts2.length);
     updateMasterCheckbox(getVisibleAccounts());
     refreshBulkActionBar();
-    toggleDisabled(importBtn, !accounts.some(isIncludedAndUnprocessed));
+    updateMobileSelectionCount();
+    const includedCount = accounts2.filter(isIncludedAndUnprocessed).length;
+    const hasIncludedAccounts = includedCount > 0;
+    toggleDisabled(importBtn, !hasIncludedAccounts);
     importBtn.title = importBtn.disabled ? "At least one account must be included to proceed" : "";
+    if (hasIncludedAccounts) {
+      importBtn.textContent = `Continue with ${includedCount} account${includedCount !== 1 ? "s" : ""}`;
+    } else {
+      importBtn.textContent = "Continue";
+    }
     renderButtons();
   }
   function isIncludedAndUnprocessed(account) {
@@ -4135,6 +4363,7 @@
     if (!isProcessed) {
       toggleBtn.addEventListener("click", () => {
         account.included = !account.included;
+        persistState();
         renderAccountTable();
       });
     }
@@ -4149,19 +4378,181 @@
     row.appendChild(includeTd);
     return row;
   }
+  function createMobileAccountCard(account) {
+    const card = document.createElement("div");
+    card.className = "mobile-account-card";
+    const isProcessed = account.status === "processed";
+    const isFailed = account.status === "failed";
+    const checkboxContainer = document.createElement("label");
+    checkboxContainer.className = "custom-checkbox-container flex-shrink-0";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "custom-checkbox-input";
+    const checkboxId = `mobile-account-checkbox-${account.id || account.modifiedName.replace(/\s+/g, "-")}`;
+    checkbox.id = checkboxId;
+    checkbox.name = checkboxId;
+    checkbox.setAttribute("aria-label", `Select account: ${account.modifiedName}`);
+    checkbox.disabled = isProcessed;
+    checkbox.checked = account.selected || false;
+    checkbox.addEventListener("change", () => {
+      account.selected = checkbox.checked;
+      persistState();
+      refreshBulkActionBar();
+      updateMasterCheckbox(getVisibleAccounts());
+      updateMobileSelectionCount();
+    });
+    const checkboxVisual = document.createElement("span");
+    checkboxVisual.className = "custom-checkbox-visual";
+    checkboxContainer.appendChild(checkbox);
+    checkboxContainer.appendChild(checkboxVisual);
+    card.appendChild(checkboxContainer);
+    const contentDiv = document.createElement("div");
+    contentDiv.className = "card-content";
+    const nameDiv = document.createElement("div");
+    nameDiv.className = "account-name";
+    nameDiv.textContent = account.modifiedName;
+    if (!isProcessed) {
+      nameDiv.classList.add("cursor-pointer", "hover:text-blue-600", "transition-colors", "duration-200");
+      nameDiv.title = `Click to rename '${account.modifiedName}'`;
+      nameDiv.addEventListener("click", () => openNameEditor(account, nameDiv));
+    } else {
+      nameDiv.classList.add("text-gray-400", "cursor-default");
+    }
+    contentDiv.appendChild(nameDiv);
+    const detailsDiv = document.createElement("div");
+    detailsDiv.className = "account-details";
+    const typeRow = document.createElement("div");
+    typeRow.className = "flex flex-col xs:flex-row xs:items-center gap-2 xs:gap-4";
+    const typeContainer = document.createElement("div");
+    typeContainer.className = "flex items-center gap-2 flex-1 min-w-0";
+    const typeLabel = document.createElement("span");
+    typeLabel.textContent = "Type:";
+    typeLabel.className = "text-xs font-medium text-gray-500 flex-shrink-0";
+    const typeSelect = document.createElement("select");
+    const typeId = `mobile-type-select-${account.id || account.modifiedName.replace(/\s+/g, "-")}`;
+    typeSelect.id = typeId;
+    typeSelect.name = typeId;
+    typeSelect.title = getAccountTypeByName(account.type)?.typeDisplay || "";
+    typeSelect.className = "border border-gray-300 rounded-lg px-2 py-1 text-xs flex-1 min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white";
+    typeSelect.disabled = isProcessed;
+    if (isProcessed)
+      typeSelect.classList.add("text-gray-300", "bg-gray-50", "cursor-not-allowed");
+    else
+      typeSelect.classList.add("cursor-pointer");
+    monarchAccountTypes_default.data.forEach((type) => {
+      const opt = document.createElement("option");
+      opt.value = type.typeName;
+      opt.textContent = type.typeDisplay;
+      if (type.typeName === account.type)
+        opt.selected = true;
+      typeSelect.appendChild(opt);
+    });
+    typeSelect.addEventListener("change", () => {
+      account.type = typeSelect.value;
+      const selectedType2 = getAccountTypeByName(account.type);
+      account.subtype = selectedType2?.subtypes[0]?.name || null;
+      renderAccountTable();
+    });
+    typeContainer.appendChild(typeLabel);
+    typeContainer.appendChild(typeSelect);
+    typeRow.appendChild(typeContainer);
+    const subtypeContainer = document.createElement("div");
+    subtypeContainer.className = "flex items-center gap-2 flex-1 min-w-0";
+    const subtypeLabel = document.createElement("span");
+    subtypeLabel.textContent = "Sub:";
+    subtypeLabel.className = "text-xs font-medium text-gray-500 flex-shrink-0";
+    const subtypeSelect = document.createElement("select");
+    const subtypeId = `mobile-subtype-select-${account.id || account.modifiedName.replace(/\s+/g, "-")}`;
+    subtypeSelect.id = subtypeId;
+    subtypeSelect.name = subtypeId;
+    subtypeSelect.className = "border border-gray-300 rounded-lg px-2 py-1 text-xs flex-1 min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white";
+    subtypeSelect.disabled = isProcessed;
+    if (isProcessed)
+      subtypeSelect.classList.add("text-gray-300", "bg-gray-50", "cursor-not-allowed");
+    else
+      subtypeSelect.classList.add("cursor-pointer");
+    const selectedType = getAccountTypeByName(account.type);
+    subtypeSelect.title = getSubtypeByName(account.type, account.subtype)?.display || "";
+    (selectedType?.subtypes || []).forEach((sub) => {
+      const opt = document.createElement("option");
+      opt.value = sub.name;
+      opt.textContent = sub.display;
+      if (sub.name === account.subtype)
+        opt.selected = true;
+      subtypeSelect.appendChild(opt);
+    });
+    subtypeSelect.addEventListener("change", () => {
+      account.subtype = subtypeSelect.value;
+      renderAccountTable();
+    });
+    subtypeContainer.appendChild(subtypeLabel);
+    subtypeContainer.appendChild(subtypeSelect);
+    typeRow.appendChild(subtypeContainer);
+    detailsDiv.appendChild(typeRow);
+    const statsRow = document.createElement("div");
+    statsRow.className = "flex justify-between items-center";
+    const transactionInfo = document.createElement("span");
+    transactionInfo.className = isProcessed ? "text-gray-400" : "text-gray-600";
+    transactionInfo.textContent = `${account.transactionCount} transaction${account.transactionCount !== 1 ? "s" : ""}`;
+    const balanceInfo = document.createElement("span");
+    balanceInfo.className = `account-balance ${isProcessed ? "text-gray-400" : "text-gray-900"}`;
+    balanceInfo.textContent = currencyFormatter.format(account.balance);
+    statsRow.appendChild(transactionInfo);
+    statsRow.appendChild(balanceInfo);
+    detailsDiv.appendChild(statsRow);
+    const actionRow = document.createElement("div");
+    actionRow.className = "flex items-center justify-end pt-1";
+    if (!isProcessed) {
+      const toggleBtn = document.createElement("button");
+      toggleBtn.className = `px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 ${account.included ? "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 focus:ring-red-500" : "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 focus:ring-green-500"}`;
+      toggleBtn.textContent = account.included ? "Exclude" : "Include";
+      toggleBtn.title = account.included ? "Click to exclude this account" : "Click to include this account";
+      toggleBtn.addEventListener("click", () => {
+        account.included = !account.included;
+        renderAccountTable();
+      });
+      actionRow.appendChild(toggleBtn);
+    }
+    if (isFailed) {
+      const errorIcon = document.createElement("span");
+      errorIcon.className = "text-red-600 text-lg cursor-default ml-2";
+      errorIcon.innerHTML = "\u26A0\uFE0F";
+      errorIcon.title = "Previously failed to process";
+      actionRow.appendChild(errorIcon);
+    }
+    detailsDiv.appendChild(actionRow);
+    contentDiv.appendChild(detailsDiv);
+    card.appendChild(contentDiv);
+    return card;
+  }
   function updateMasterCheckbox(visibleAccounts) {
     const masterCheckbox = document.getElementById("masterCheckbox");
+    const masterCheckboxMobile = document.getElementById("masterCheckboxMobile");
     const selectedCount = visibleAccounts.filter((acc) => acc.selected).length;
-    masterCheckbox.checked = selectedCount > 0 && selectedCount === visibleAccounts.length;
-    masterCheckbox.indeterminate = selectedCount > 0 && selectedCount < visibleAccounts.length;
+    const isChecked = selectedCount > 0 && selectedCount === visibleAccounts.length;
+    const isIndeterminate = selectedCount > 0 && selectedCount < visibleAccounts.length;
+    if (masterCheckbox) {
+      masterCheckbox.checked = isChecked;
+      masterCheckbox.indeterminate = isIndeterminate;
+    }
+    if (masterCheckboxMobile) {
+      masterCheckboxMobile.checked = isChecked;
+      masterCheckboxMobile.indeterminate = isIndeterminate;
+    }
+    updateMobileSelectionCount();
+  }
+  function updateMobileSelectionCount() {
+    const countElement = document.getElementById("mobileSelectionCount");
+    if (countElement) {
+      const selectedCount = Object.values(state_default.accounts).filter((acc) => acc.selected).length;
+      countElement.textContent = `${selectedCount} selected`;
+    }
   }
   function getVisibleAccounts() {
     return Object.values(state_default.accounts).filter((account) => {
       if (account.status === "processed")
         return false;
-      if (currentFilter === "included" && !account.included)
-        return false;
-      if (currentFilter === "excluded" && account.included)
+      if (!passesFilters(account))
         return false;
       if (searchQuery && !account.modifiedName.toLowerCase().includes(searchQuery))
         return false;
@@ -4177,10 +4568,26 @@
   }
   function refreshBulkActionBar() {
     const bar = document.getElementById("bulkActionBar");
-    const countSpan = document.getElementById("selectedCount");
     const selectedCount = Object.values(state_default.accounts).filter((acc) => acc.selected).length;
-    countSpan.textContent = selectedCount;
-    toggleElementVisible(bar, selectedCount > 0);
+    const mobileCountSpan = document.getElementById("selectedCountMobile");
+    if (mobileCountSpan) {
+      mobileCountSpan.textContent = selectedCount;
+    }
+    const desktopCountSpan = document.getElementById("selectedCountDesktop");
+    if (desktopCountSpan) {
+      desktopCountSpan.textContent = selectedCount;
+    }
+    if (selectedCount > 0) {
+      bar.classList.remove("hidden");
+      bar.classList.add("active");
+    } else {
+      bar.classList.remove("active");
+      setTimeout(() => {
+        if (!bar.classList.contains("active")) {
+          bar.classList.add("hidden");
+        }
+      }, 300);
+    }
   }
   function openNameEditor(account, nameCell) {
     const overlay = document.createElement("div");
@@ -4325,89 +4732,569 @@
       renderAccountTable();
     };
   }
+  function initializeFiltersModal() {
+    console.log("Initializing filters modal...");
+    try {
+      populateTypeFilters();
+      populateSubtypeFilters();
+      updateFilterDisplay();
+      console.log("Filters modal initialized successfully");
+    } catch (error) {
+      console.error("Error initializing filters modal:", error);
+    }
+  }
+  function populateTypeFilters() {
+    const container = document.getElementById("typeFiltersContainer");
+    if (!container) {
+      console.error("typeFiltersContainer not found");
+      return;
+    }
+    const types = [...new Set(monarchAccountTypes_default.data.map((type) => type.typeDisplay))].sort();
+    container.innerHTML = "";
+    types.forEach((type) => {
+      const checkbox = createFilterCheckbox("type", type, type);
+      container.appendChild(checkbox);
+    });
+    console.log(`Populated ${types.length} type filters`);
+  }
+  function populateSubtypeFilters() {
+    const container = document.getElementById("subtypeFiltersContainer");
+    if (!container) {
+      console.error("subtypeFiltersContainer not found");
+      return;
+    }
+    const subtypes = /* @__PURE__ */ new Set();
+    monarchAccountTypes_default.data.forEach((type) => {
+      type.subtypes.forEach((subtype) => {
+        subtypes.add(subtype.display);
+      });
+    });
+    const sortedSubtypes = [...subtypes].sort();
+    container.innerHTML = "";
+    sortedSubtypes.forEach((subtype) => {
+      const checkbox = createFilterCheckbox("subtype", subtype, subtype);
+      container.appendChild(checkbox);
+    });
+    console.log(`Populated ${sortedSubtypes.length} subtype filters`);
+  }
+  function createFilterCheckbox(filterType, value, label) {
+    const div = document.createElement("div");
+    div.className = "flex items-center";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.id = `filter-${filterType}-${value.replace(/\s+/g, "-")}`;
+    checkbox.value = value;
+    checkbox.className = "w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded";
+    checkbox.addEventListener("change", updateFilterDisplay);
+    const labelEl = document.createElement("label");
+    labelEl.htmlFor = checkbox.id;
+    labelEl.className = "ml-2 text-sm text-gray-700 cursor-pointer";
+    labelEl.textContent = label;
+    div.appendChild(checkbox);
+    div.appendChild(labelEl);
+    return div;
+  }
+  function openFiltersModal() {
+    console.log("Opening filters modal...");
+    try {
+      const filterAccountName = document.getElementById("filterAccountName");
+      if (filterAccountName) {
+        filterAccountName.value = activeFilters.accountName;
+      }
+      const nameMatchType = document.querySelector(`input[name="nameMatchType"][value="${activeFilters.nameMatchType}"]`);
+      if (nameMatchType) {
+        nameMatchType.checked = true;
+      }
+      const nameCaseSensitive = document.getElementById("nameCaseSensitive");
+      if (nameCaseSensitive) {
+        nameCaseSensitive.checked = activeFilters.nameCaseSensitive;
+      }
+      document.querySelectorAll('#typeFiltersContainer input[type="checkbox"]').forEach((cb) => {
+        cb.checked = activeFilters.types.has(cb.value);
+      });
+      document.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]').forEach((cb) => {
+        cb.checked = activeFilters.subtypes.has(cb.value);
+      });
+      const filterTransactionsMin = document.getElementById("filterTransactionsMin");
+      if (filterTransactionsMin) {
+        filterTransactionsMin.value = activeFilters.transactionsMin || "";
+      }
+      const filterTransactionsMax = document.getElementById("filterTransactionsMax");
+      if (filterTransactionsMax) {
+        filterTransactionsMax.value = activeFilters.transactionsMax || "";
+      }
+      const filterBalanceMin = document.getElementById("filterBalanceMin");
+      if (filterBalanceMin) {
+        filterBalanceMin.value = activeFilters.balanceMin || "";
+      }
+      const filterBalanceMax = document.getElementById("filterBalanceMax");
+      if (filterBalanceMax) {
+        filterBalanceMax.value = activeFilters.balanceMax || "";
+      }
+      const inclusionFilter = document.querySelector(`input[name="inclusionFilter"][value="${activeFilters.inclusion}"]`);
+      if (inclusionFilter) {
+        inclusionFilter.checked = true;
+      }
+      const modal = document.getElementById("filtersModal");
+      if (modal) {
+        console.log("Found modal, showing it...");
+        modal.classList.remove("hidden");
+        setTimeout(() => modal.classList.add("show"), 10);
+      } else {
+        console.error("Modal not found!");
+      }
+    } catch (error) {
+      console.error("Error opening filters modal:", error);
+    }
+  }
+  window.openFiltersModal = openFiltersModal;
+  function closeFiltersModal() {
+    const modal = document.getElementById("filtersModal");
+    modal.classList.remove("show");
+    setTimeout(() => modal.classList.add("hidden"), 300);
+  }
+  window.closeFiltersModal = closeFiltersModal;
+  function applyFilters() {
+    console.log("Apply filters button clicked!");
+    try {
+      const filterAccountName = document.getElementById("filterAccountName");
+      activeFilters.accountName = filterAccountName ? filterAccountName.value.trim() : "";
+      const nameMatchType = document.querySelector('input[name="nameMatchType"]:checked');
+      activeFilters.nameMatchType = nameMatchType ? nameMatchType.value : "contains";
+      const nameCaseSensitive = document.getElementById("nameCaseSensitive");
+      activeFilters.nameCaseSensitive = nameCaseSensitive ? nameCaseSensitive.checked : false;
+      activeFilters.types.clear();
+      document.querySelectorAll('#typeFiltersContainer input[type="checkbox"]:checked').forEach((cb) => {
+        activeFilters.types.add(cb.value);
+      });
+      activeFilters.subtypes.clear();
+      document.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]:checked').forEach((cb) => {
+        activeFilters.subtypes.add(cb.value);
+      });
+      const transMin = document.getElementById("filterTransactionsMin");
+      const transMax = document.getElementById("filterTransactionsMax");
+      activeFilters.transactionsMin = transMin && transMin.value ? parseInt(transMin.value) : null;
+      activeFilters.transactionsMax = transMax && transMax.value ? parseInt(transMax.value) : null;
+      const balMin = document.getElementById("filterBalanceMin");
+      const balMax = document.getElementById("filterBalanceMax");
+      activeFilters.balanceMin = balMin && balMin.value ? parseFloat(balMin.value) : null;
+      activeFilters.balanceMax = balMax && balMax.value ? parseFloat(balMax.value) : null;
+      const inclusionFilter = document.querySelector('input[name="inclusionFilter"]:checked');
+      activeFilters.inclusion = inclusionFilter ? inclusionFilter.value : "all";
+      console.log("Applied filters:", activeFilters);
+      closeFiltersModal();
+      renderAccountTable();
+      updateFilterDisplay();
+      persistState();
+    } catch (error) {
+      console.error("Error applying filters:", error);
+    }
+  }
+  window.applyFilters = applyFilters;
+  function resetFilters() {
+    console.log("Reset filters button clicked!");
+    try {
+      const filterAccountName = document.getElementById("filterAccountName");
+      if (filterAccountName)
+        filterAccountName.value = "";
+      const containsRadio = document.querySelector('input[name="nameMatchType"][value="contains"]');
+      if (containsRadio)
+        containsRadio.checked = true;
+      const nameCaseSensitive = document.getElementById("nameCaseSensitive");
+      if (nameCaseSensitive)
+        nameCaseSensitive.checked = false;
+      document.querySelectorAll('#typeFiltersContainer input[type="checkbox"]').forEach((cb) => cb.checked = false);
+      document.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]').forEach((cb) => cb.checked = false);
+      const filterTransactionsMin = document.getElementById("filterTransactionsMin");
+      if (filterTransactionsMin)
+        filterTransactionsMin.value = "";
+      const filterTransactionsMax = document.getElementById("filterTransactionsMax");
+      if (filterTransactionsMax)
+        filterTransactionsMax.value = "";
+      const filterBalanceMin = document.getElementById("filterBalanceMin");
+      if (filterBalanceMin)
+        filterBalanceMin.value = "";
+      const filterBalanceMax = document.getElementById("filterBalanceMax");
+      if (filterBalanceMax)
+        filterBalanceMax.value = "";
+      const allRadio = document.querySelector('input[name="inclusionFilter"][value="all"]');
+      if (allRadio)
+        allRadio.checked = true;
+      activeFilters = {
+        accountName: "",
+        nameMatchType: "contains",
+        nameCaseSensitive: false,
+        types: /* @__PURE__ */ new Set(),
+        subtypes: /* @__PURE__ */ new Set(),
+        transactionsMin: null,
+        transactionsMax: null,
+        balanceMin: null,
+        balanceMax: null,
+        inclusion: "all"
+      };
+      renderAccountTable();
+      updateFilterDisplay();
+      persistState();
+      closeFiltersModal();
+      console.log("Filters reset successfully");
+    } catch (error) {
+      console.error("Error resetting filters:", error);
+    }
+  }
+  window.resetFilters = resetFilters;
+  function clearAllFilters() {
+    console.log("Clear all filters clicked!");
+    resetFilters();
+    closeFiltersModal();
+  }
+  window.clearAllFilters = clearAllFilters;
+  function updateFilterDisplay() {
+    const filterCount = document.getElementById("filterCount");
+    const activeFiltersSection = document.getElementById("activeFiltersSection");
+    const activeFiltersContainer = document.getElementById("activeFiltersContainer");
+    let activeFilterCount = 0;
+    const filterChips = [];
+    if (activeFilters.accountName) {
+      activeFilterCount++;
+      filterChips.push(createFilterChip("Name", `${activeFilters.nameMatchType}: "${activeFilters.accountName}"`, () => {
+        activeFilters.accountName = "";
+        document.getElementById("filterAccountName").value = "";
+        renderAccountTable();
+        updateFilterDisplay();
+      }));
+    }
+    if (activeFilters.types.size > 0) {
+      activeFilterCount++;
+      const typeList = [...activeFilters.types].join(", ");
+      filterChips.push(createFilterChip("Types", typeList, () => {
+        activeFilters.types.clear();
+        document.querySelectorAll('#typeFiltersContainer input[type="checkbox"]').forEach((cb) => cb.checked = false);
+        renderAccountTable();
+        updateFilterDisplay();
+      }));
+    }
+    if (activeFilters.subtypes.size > 0) {
+      activeFilterCount++;
+      const subtypeList = [...activeFilters.subtypes].join(", ");
+      filterChips.push(createFilterChip("Subtypes", subtypeList, () => {
+        activeFilters.subtypes.clear();
+        document.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]').forEach((cb) => cb.checked = false);
+        renderAccountTable();
+        updateFilterDisplay();
+      }));
+    }
+    if (activeFilters.transactionsMin !== null || activeFilters.transactionsMax !== null) {
+      activeFilterCount++;
+      const min = activeFilters.transactionsMin || 0;
+      const max = activeFilters.transactionsMax || "\u221E";
+      filterChips.push(createFilterChip("Transactions", `${min} - ${max}`, () => {
+        activeFilters.transactionsMin = null;
+        activeFilters.transactionsMax = null;
+        document.getElementById("filterTransactionsMin").value = "";
+        document.getElementById("filterTransactionsMax").value = "";
+        renderAccountTable();
+        updateFilterDisplay();
+      }));
+    }
+    if (activeFilters.balanceMin !== null || activeFilters.balanceMax !== null) {
+      activeFilterCount++;
+      const min = activeFilters.balanceMin !== null ? `$${activeFilters.balanceMin}` : "$0";
+      const max = activeFilters.balanceMax !== null ? `$${activeFilters.balanceMax}` : "\u221E";
+      filterChips.push(createFilterChip("Balance", `${min} - ${max}`, () => {
+        activeFilters.balanceMin = null;
+        activeFilters.balanceMax = null;
+        document.getElementById("filterBalanceMin").value = "";
+        document.getElementById("filterBalanceMax").value = "";
+        renderAccountTable();
+        updateFilterDisplay();
+      }));
+    }
+    if (activeFilters.inclusion !== "all") {
+      activeFilterCount++;
+      filterChips.push(createFilterChip("Status", capitalize(activeFilters.inclusion), () => {
+        activeFilters.inclusion = "all";
+        document.querySelector('input[name="inclusionFilter"][value="all"]').checked = true;
+        renderAccountTable();
+        updateFilterDisplay();
+      }));
+    }
+    if (activeFilterCount > 0) {
+      filterCount.textContent = activeFilterCount;
+      filterCount.classList.remove("hidden");
+    } else {
+      filterCount.classList.add("hidden");
+    }
+    if (filterChips.length > 0) {
+      activeFiltersSection.classList.remove("hidden");
+      activeFiltersContainer.innerHTML = "";
+      filterChips.forEach((chip) => activeFiltersContainer.appendChild(chip));
+    } else {
+      activeFiltersSection.classList.add("hidden");
+    }
+    updateAccountCountDisplay(visibleCount, accounts.length);
+  }
+  function createFilterChip(label, value, onRemove) {
+    const chip = document.createElement("div");
+    chip.className = "filter-chip";
+    const content = document.createElement("span");
+    content.textContent = `${label}: ${value}`;
+    const removeBtn = document.createElement("button");
+    removeBtn.onclick = onRemove;
+    removeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+    chip.appendChild(content);
+    chip.appendChild(removeBtn);
+    return chip;
+  }
+  function passesFilters(account) {
+    if (activeFilters.accountName) {
+      const accountName = activeFilters.nameCaseSensitive ? account.modifiedName : account.modifiedName.toLowerCase();
+      const filterName = activeFilters.nameCaseSensitive ? activeFilters.accountName : activeFilters.accountName.toLowerCase();
+      if (activeFilters.nameMatchType === "exact") {
+        if (accountName !== filterName)
+          return false;
+      } else {
+        if (!accountName.includes(filterName))
+          return false;
+      }
+    }
+    if (activeFilters.types.size > 0) {
+      const accountType = getAccountTypeByName(account.type);
+      const typeDisplay = accountType ? accountType.typeDisplay : account.type || "";
+      if (!activeFilters.types.has(typeDisplay))
+        return false;
+    }
+    if (activeFilters.subtypes.size > 0) {
+      const accountSubtype = getSubtypeByName(account.subtype);
+      const subtypeDisplay = accountSubtype ? accountSubtype.display : account.subtype || "";
+      if (!activeFilters.subtypes.has(subtypeDisplay))
+        return false;
+    }
+    const transactionCount = account.transactionCount || 0;
+    if (activeFilters.transactionsMin !== null && transactionCount < activeFilters.transactionsMin)
+      return false;
+    if (activeFilters.transactionsMax !== null && transactionCount > activeFilters.transactionsMax)
+      return false;
+    const balance = parseFloat(account.balance) || 0;
+    if (activeFilters.balanceMin !== null && balance < activeFilters.balanceMin)
+      return false;
+    if (activeFilters.balanceMax !== null && balance > activeFilters.balanceMax)
+      return false;
+    if (activeFilters.inclusion === "included" && !account.included)
+      return false;
+    if (activeFilters.inclusion === "excluded" && account.included)
+      return false;
+    return true;
+  }
+  function updateAccountCountDisplay(visibleCount2, totalCount) {
+    const visibleAccountCount = document.getElementById("visibleAccountCount");
+    const totalAccountCount = document.getElementById("totalAccountCount");
+    const filterResultsSummary = document.getElementById("filterResultsSummary");
+    const filterNotificationBadge = document.getElementById("filterNotificationBadge");
+    const clearFiltersBtn = document.getElementById("clearFiltersBtn");
+    if (visibleAccountCount)
+      visibleAccountCount.textContent = visibleCount2;
+    if (totalAccountCount)
+      totalAccountCount.textContent = totalCount;
+    const hasFilters = hasActiveFilters();
+    const filterCount = countActiveFilters();
+    if (hasFilters && filterCount > 0 && filterNotificationBadge) {
+      filterNotificationBadge.textContent = filterCount;
+      filterNotificationBadge.classList.remove("hidden");
+    } else if (filterNotificationBadge) {
+      filterNotificationBadge.classList.add("hidden");
+    }
+    if (hasFilters && clearFiltersBtn) {
+      clearFiltersBtn.classList.remove("hidden");
+    } else if (clearFiltersBtn) {
+      clearFiltersBtn.classList.add("hidden");
+    }
+    if (hasFilters && filterResultsSummary) {
+      filterResultsSummary.classList.add("filtered");
+    } else if (filterResultsSummary) {
+      filterResultsSummary.classList.remove("filtered");
+    }
+  }
+  function hasActiveFilters() {
+    return activeFilters.accountName || activeFilters.types.size > 0 || activeFilters.subtypes.size > 0 || activeFilters.transactionsMin !== null || activeFilters.transactionsMax !== null || activeFilters.balanceMin !== null || activeFilters.balanceMax !== null || activeFilters.inclusion !== "all";
+  }
+  function countActiveFilters() {
+    let count = 0;
+    if (activeFilters.accountName) {
+      count++;
+    }
+    if (activeFilters.types.size > 0) {
+      count++;
+    }
+    if (activeFilters.subtypes.size > 0) {
+      count++;
+    }
+    if (activeFilters.transactionsMin !== null || activeFilters.transactionsMax !== null) {
+      count++;
+    }
+    if (activeFilters.balanceMin !== null || activeFilters.balanceMax !== null) {
+      count++;
+    }
+    if (activeFilters.inclusion !== "all") {
+      count++;
+    }
+    return count;
+  }
 
   // src/views/AccountReview/review.html
-  var review_default = '<div class="px-10 sm:px-16 lg:px-20 xl:px-40 flex flex-1 justify-center py-5">\n  <div class="layout-content-container flex flex-col max-w-[960px] flex-1">\n    <div class="flex justify-between items-center p-4">\n      <h2 class="text-[#111518] text-[32px] font-bold">Review Accounts</h2>\n    </div>\n\n    <p class="text-[#111518] text-base px-4">\n      Review detected accounts and adjust their Monarch types before importing.\n    </p>\n\n    <!-- Control bar -->\n    <div class="flex items-center justify-between px-4 py-2">\n      <!-- Search -->\n      <input id="searchInput" type="text" placeholder="Search accounts..." class="border rounded px-3 py-2 w-1/3">\n\n      <!-- Filters & Bulk -->\n      <div class="flex items-center gap-6">\n\n        <!-- Filters -->\n        <div class="flex bg-gray-100 rounded-lg p-1 space-x-1">\n          <button id="filterAll" \n            class="filter-btn px-4 py-2 text-sm font-medium rounded-md transition cursor-pointer"\n            title="Show all accounts"\n            data-filter="all">All</button>\n\n          <button id="filterIncluded" class="filter-btn px-4 py-2 text-sm font-medium rounded-md transition cursor-pointer"\n            title="Show only included accounts" data-filter="included">Included</button>\n\n          <button id="filterExcluded" class="filter-btn px-4 py-2 text-sm font-medium rounded-md transition cursor-pointer"\n            title="Show only excluded accounts" data-filter="excluded">Excluded</button>\n        </div>\n\n      </div>\n    </div>\n\n    <div class="px-4 py-3 @container">\n      <div class="flex overflow-hidden rounded-lg border border-[#dce1e5] bg-white">\n        <table class="flex-1" role="grid">\n          <thead>\n            <tr class="bg-white" role="row">\n              <th class="px-2 py-3 text-left text-sm font-medium w-[50px]">\n                <input type="checkbox" id="masterCheckbox" class="w-5 h-5 cursor-pointer">\n              </th>\n              <th scope="col" class="px-2 py-3 text-left text-sm font-medium w-[230px]">Account Name</th>\n              <th scope="col" class="px-2 py-3 text-left text-sm font-medium w-[250px]">Type</th>\n              <th scope="col" class="px-2 py-3 text-left text-sm font-medium w-[250px]">Subtype</th>\n              <th scope="col" class="px-2 py-3 text-left text-sm font-medium w-[140px] @sm:w-[100px]">Transactions</th>\n              <th scope="col" class="px-2 py-3 text-left text-sm font-medium w-[200px]">Balance</th>\n              <th scope="col" class="px-2 py-3 text-left text-sm font-medium w-[150px]">Include</th>\n            </tr>\n          </thead>\n          <tbody id="reviewTableBody">\n            <!-- populated dynamically -->\n          </tbody>\n        </table>\n      </div>\n\n      <div id="bulkActionBar"\n        class="hidden bulk-bar fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-white shadow-lg rounded-lg flex items-center px-6 py-3 gap-4 border border-gray-300 transition-all duration-300">\n\n        <!-- Unselect -->\n        <button id="unselectAllBtn"\n          class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"\n          title="Unselect all accounts">\n          <span id="selectedCount">0</span> selected\n        </button>\n\n        <!-- Separator -->\n        <div class="h-5 border-l border-gray-300"></div>\n\n        <!-- Bulk Rename -->\n        <button id="bulkRenameBtn"\n          class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"\n          title="Bulk rename accounts">\n          Rename\n        </button>\n\n        <!-- Bulk Edit Type -->\n        <button id="bulkTypeBtn"\n          class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"\n          title="Bulk edit account types">\n          Edit Type\n        </button>\n\n        <!-- Bulk Include -->\n        <button id="bulkIncludeBtn"\n          class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"\n          title="Include selected accounts">\n          Include\n        </button>\n\n        <!-- Bulk Exclude -->\n        <button id="bulkExcludeBtn"\n          class="text-sm font-medium px-4 py-2 border rounded hover:bg-gray-100 cursor-pointer"\n          title="Exclude selected accounts">\n          Exclude\n        </button>\n      </div>\n    </div>\n\n    <div class="flex justify-between items-center px-4 py-6 mt-6">\n      <!-- Back Button -->\n      <button id="backBtn" class="ui-button" data-type="secondary" data-size="large">\u2190 Back</button>\n\n      <!-- Forward Button -->\n      <button id="importBtn" class="ui-button" data-type="primary" data-size="large" disabled>Import Accounts</button>\n    </div>\n  </div>\n</div>\n\n<div id="bulkRenameModal" class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 hidden">\n  <div class="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 relative">\n\n    <h2 class="text-xl font-bold mb-4">Bulk Rename Accounts</h2>\n\n    <label for="renamePattern" class="font-medium text-sm">Pattern:</label>\n    <input id="renamePattern" name="renamePattern" type="text" class="border rounded w-full px-3 py-2 mb-3"\n      placeholder="e.g. {{YNAB}} - {{Index}}">\n\n    <!-- Token shortcuts -->\n    <div class="flex flex-col gap-2 mb-4">\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"\n        data-token="{{YNAB}}">YNAB\n        Name</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"\n        data-token="{{Index}}">Index</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"\n        data-token="{{Upper}}">Uppercase YNAB</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm w-max cursor-pointer"\n        data-token="{{Date}}">Today (YYYY-MM-DD)</button>\n    </div>\n\n    <!-- Index start -->\n    <div class="flex items-center gap-3 mb-4">\n      <label for="indexStart" class="text-sm">Index Start:</label>\n      <input id="indexStart" type="number" class="border rounded px-3 py-1 w-24" value="1" />\n    </div>\n\n    <!-- Preview -->\n    <div class="border rounded p-3 bg-gray-50 mb-4">\n      <div class="font-medium text-sm mb-2">Preview:</div>\n      <div id="renamePreview" class="text-sm text-gray-700 space-y-1" aria-live="polite"></div>\n    </div>\n\n    <div class="flex justify-end gap-3">\n      <button id="renameCancel" class="ui-button" data-type="secondary">Cancel</button>\n      <button id="renameApply" class="ui-button">Apply</button>\n    </div>\n\n  </div>\n</div>\n\n<div id="bulkTypeModal" class="fixed inset-0 bg-black bg-opacity-40 hidden z-50 flex items-center justify-center">\n  <div class="bg-white rounded-lg p-6 w-[400px]">\n    <h2 class="text-lg font-bold mb-4">Bulk Edit Account Type</h2>\n\n    <div class="mb-4">\n      <label for="bulkTypeSelect" class="block mb-1 font-medium">Account Type</label>\n      <select id="bulkTypeSelect" name="bulkSubtypeSelect" class="border rounded w-full px-3 py-2 cursor-pointer"></select>\n    </div>\n\n    <div class="mb-4">\n      <label for="bulkSubtypeSelect" class="block mb-1 font-medium">Subtype</label>\n      <select id="bulkSubtypeSelect" class="border rounded w-full px-3 py-2 cursor-pointer"></select>\n    </div>\n\n    <div class="flex justify-end gap-2">\n      <button id="bulkTypeCancel" class="ui-button" data-type="secondary">Cancel</button>\n      <button id="bulkTypeApply" class="ui-button">Apply</button>\n    </div>\n  </div>\n</div>\n\n<style>\n  .bulk-bar {\n    opacity: 1;\n    transform: translateY(75px);\n    pointer-events: none;\n    transition: opacity 0.3s ease, transform 0.3s ease;\n  }\n\n  .bulk-bar.active {\n    opacity: 1;\n    transform: translateY(0);\n    pointer-events: auto;\n  }\n</style>\n';
+  var review_default = '<div class="container-responsive flex flex-1 justify-center py-3 sm:py-5 md:py-6">\n  <div class="flex flex-col max-w-7xl flex-1 w-full">\n    \n    <!-- Page Header -->\n    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 sm:p-4 md:p-6 gap-3 sm:gap-4 bg-white rounded-lg mb-4 sm:mb-6 border border-gray-100 shadow-sm">\n      <div>\n        <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1">Review Accounts</h2>\n        <p class="text-gray-600 text-sm sm:text-base">\n          Review detected accounts and adjust their Monarch types before importing.\n        </p>\n      </div>\n    </div>\n\n    <!-- Control Bar -->\n    <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between \n                p-4 sm:p-6 gap-4 lg:gap-6 bg-white rounded-lg mb-4 sm:mb-6 \n                border border-gray-100 shadow-sm">\n      \n      <!-- Filters, Search and Account Summary -->\n      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 flex-1">\n        <!-- Filters Button -->\n        <div class="flex-shrink-0">\n          <button id="filtersBtn" \n                  class="flex items-center gap-2 px-4 py-2 sm:py-3 text-sm sm:text-base\n                         border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer \n                         transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500\n                         relative whitespace-nowrap"\n                  title="Open advanced filters"\n                  onclick="window.openFiltersModal && window.openFiltersModal()">\n            <!-- Notification Badge -->\n            <div id="filterNotificationBadge" class="hidden"></div>\n            \n            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z" />\n            </svg>\n            <span>Filters</span>\n          </button>\n        </div>\n        \n        <!-- Search Input -->\n        <div class="flex-1 max-w-md">\n          <div class="relative">\n            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">\n              <svg class="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />\n              </svg>\n            </div>\n            <input id="searchInput" \n                   type="text" \n                   placeholder="Search accounts..." \n                   style="padding-left: 2.75rem !important;"\n                   class="block w-full pr-3 py-2 sm:py-3 text-sm sm:text-base\n                          border border-gray-300 rounded-lg placeholder-gray-400 \n                          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 \n                          transition-colors duration-200">\n          </div>\n        </div>\n        \n        <!-- Account Count Summary -->\n        <div id="filterResultsSummary" class="text-sm text-gray-600 whitespace-nowrap">\n          Showing <span id="visibleAccountCount" class="font-medium text-gray-900">0</span> \n          of <span id="totalAccountCount" class="font-medium text-gray-900">0</span> accounts\n        </div>\n      </div>\n\n      <!-- Clear Filter Controls -->\n      <div class="flex items-center gap-3">\n        <!-- Clear All Filters Button (only shown when filters are active) -->\n        <button id="clearFiltersBtn" \n                class="hidden px-3 py-2 sm:py-3 text-sm text-red-600 hover:text-red-800 \n                       hover:bg-red-50 rounded-lg transition-colors duration-200 \n                       focus:outline-none focus:ring-2 focus:ring-red-500"\n                title="Clear all filters"\n                onclick="window.clearAllFilters && window.clearAllFilters()">\n          Clear\n        </button>\n      </div>\n    </div>\n\n    <!-- Table Container -->\n    <div class="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">\n      \n      <!-- Mobile Card View (hidden on larger screens) -->\n      <div id="mobileView" class="block lg:hidden">\n        <!-- Mobile Header with Master Checkbox -->\n        <div class="border-b border-gray-200 bg-gray-50 p-4">\n          <div class="flex items-center justify-between">\n            <label class="custom-checkbox-container">\n              <input type="checkbox" \n                     id="masterCheckboxMobile" \n                     class="custom-checkbox-input">\n              <span class="custom-checkbox-visual"></span>\n              <span class="text-sm font-medium text-gray-700 pl-2">Select All</span>\n            </label>\n            <div class="text-xs text-gray-500 font-medium" id="mobileSelectionCount">0 selected</div>\n          </div>\n        </div>\n        \n        <div id="mobileAccountList" class="divide-y divide-gray-100">\n          <!-- populated dynamically for mobile -->\n        </div>\n      </div>\n\n      <!-- Desktop Table View (hidden on mobile) -->\n      <div class="hidden lg:block overflow-x-auto">\n        <table class="w-full min-w-[800px]" role="grid">\n          <thead>\n            <tr class="bg-gray-50 border-b border-gray-200" role="row">\n              <th class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 w-[50px] sm:w-[60px]">\n                <input type="checkbox" \n                       id="masterCheckbox" \n                       class="w-4 h-4 sm:w-5 sm:h-5 cursor-pointer rounded border-gray-300 \n                              text-blue-600 focus:ring-blue-500 focus:ring-2">\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[200px]">\n                Account Name\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[150px]">\n                Type\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[150px]">\n                Subtype\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[100px] text-center">\n                Transactions\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[120px] text-right">\n                Balance\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[100px] text-center">\n                Include\n              </th>\n            </tr>\n          </thead>\n          <tbody id="reviewTableBody" class="divide-y divide-gray-100">\n            <!-- populated dynamically -->\n          </tbody>\n        </table>\n      </div>\n    </div>\n\n    <!-- Bulk Action Bar -->\n    <div id="bulkActionBar"\n         class="hidden fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300">\n      \n      <!-- Mobile Bulk Actions (visible on mobile/tablet) -->\n      <div class="block lg:hidden bg-white shadow-2xl rounded-xl border border-gray-200 w-[calc(100vw-2rem)] max-w-md mx-auto">\n        <div class="p-4">\n          <div class="flex flex-col gap-3">\n            <!-- Selection Info -->\n            <div class="flex items-center justify-between">\n              <span class="text-sm font-medium text-gray-900">\n                <span id="selectedCountMobile">0</span> selected\n              </span>\n              <button id="unselectAllBtnMobile"\n                      class="text-xs font-medium px-3 py-1.5 border border-gray-300 text-gray-700 \n                             bg-white rounded-md hover:bg-gray-50 cursor-pointer transition-colors \n                             duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n                      title="Unselect all accounts">\n                Clear\n              </button>\n            </div>\n            \n            <!-- Action Buttons Grid -->\n            <div class="grid grid-cols-2 gap-2">\n              <button id="bulkRenameBtnMobile"\n                      class="flex items-center justify-center gap-2 px-3 py-3 border border-gray-300 \n                             bg-white rounded-lg hover:bg-gray-50 cursor-pointer transition-colors \n                             duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n                      title="Bulk rename accounts">\n                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />\n                </svg>\n                <span class="text-sm font-medium">Rename</span>\n              </button>\n\n              <button id="bulkTypeBtnMobile"\n                      class="flex items-center justify-center gap-2 px-3 py-3 border border-gray-300 \n                             bg-white rounded-lg hover:bg-gray-50 cursor-pointer transition-colors \n                             duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n                      title="Bulk edit account types">\n                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />\n                </svg>\n                <span class="text-sm font-medium">Edit Type</span>\n              </button>\n\n              <button id="bulkIncludeBtnMobile"\n                      class="flex items-center justify-center gap-2 px-3 py-3 border border-green-300 \n                             text-green-700 bg-green-50 rounded-lg hover:bg-green-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500"\n                      title="Include selected accounts">\n                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />\n                </svg>\n                <span class="text-sm font-medium">Include</span>\n              </button>\n\n              <button id="bulkExcludeBtnMobile"\n                      class="flex items-center justify-center gap-2 px-3 py-3 border border-red-300 \n                             text-red-700 bg-red-50 rounded-lg hover:bg-red-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"\n                      title="Exclude selected accounts">\n                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />\n                </svg>\n                <span class="text-sm font-medium">Exclude</span>\n              </button>\n            </div>\n          </div>\n        </div>\n      </div>\n\n      <!-- Desktop Bulk Actions (visible on desktop) -->\n      <div class="hidden lg:block bg-white shadow-2xl rounded-xl border border-gray-200">\n        <div class="px-6 py-4">\n          <div class="flex items-center gap-6">\n            <!-- Selection Count -->\n            <button id="unselectAllBtnDesktop"\n                    class="text-sm font-medium px-4 py-2 border border-gray-300 \n                           rounded-lg hover:bg-gray-50 cursor-pointer whitespace-nowrap transition-colors \n                           duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n                    title="Unselect all accounts">\n              <span id="selectedCountDesktop">0</span> selected\n            </button>\n\n            <!-- Separator -->\n            <div class="h-6 border-l border-gray-300"></div>\n\n            <!-- Action Buttons -->\n            <div class="flex items-center gap-3">\n              <button id="bulkRenameBtnDesktop"\n                      class="text-sm font-medium px-4 py-2 border border-gray-300 \n                             rounded-lg hover:bg-gray-50 cursor-pointer transition-colors duration-200\n                             focus:outline-none focus:ring-2 focus:ring-blue-500"\n                      title="Bulk rename accounts">\n                Rename\n              </button>\n\n              <button id="bulkTypeBtnDesktop"\n                      class="text-sm font-medium px-4 py-2 border border-gray-300 \n                             rounded-lg hover:bg-gray-50 cursor-pointer transition-colors duration-200\n                             focus:outline-none focus:ring-2 focus:ring-blue-500"\n                      title="Bulk edit account types">\n                Edit Type\n              </button>\n\n              <button id="bulkIncludeBtnDesktop"\n                      class="text-sm font-medium px-4 py-2 border border-green-300 \n                             text-green-700 bg-green-50 rounded-lg hover:bg-green-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500"\n                      title="Include selected accounts">\n                Include\n              </button>\n\n              <button id="bulkExcludeBtnDesktop"\n                      class="text-sm font-medium px-4 py-2 border border-red-300 \n                             text-red-700 bg-red-50 rounded-lg hover:bg-red-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"\n                      title="Exclude selected accounts">\n                Exclude\n              </button>\n            </div>\n          </div>\n        </div>\n      </div>\n    </div>\n\n    <!-- Navigation will be added here by JavaScript -->\n\n  </div>\n</div>\n\n<div id="bulkRenameModal" class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 hidden p-3 sm:p-4">\n  <div class="bg-white rounded-lg shadow-lg w-full max-w-lg p-4 sm:p-6 relative max-h-[90vh] overflow-y-auto">\n\n    <h2 class="text-lg sm:text-xl font-bold mb-4">Bulk Rename Accounts</h2>\n\n    <label for="renamePattern" class="font-medium text-sm">Pattern:</label>\n    <input id="renamePattern" name="renamePattern" type="text" \n           class="border rounded w-full px-3 py-2 mb-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"\n           placeholder="e.g. {{YNAB}} - {{Index}}">\n\n    <!-- Token shortcuts -->\n    <div class="grid grid-cols-2 gap-2 mb-4">\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{YNAB}}">YNAB Name</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{Index}}">Index</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{Upper}}">Uppercase YNAB</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{Date}}">Today (YYYY-MM-DD)</button>\n    </div>\n\n    <!-- Index start -->\n    <div class="flex items-center gap-3 mb-4">\n      <label for="indexStart" class="text-sm">Index Start:</label>\n      <input id="indexStart" type="number" \n             class="border rounded px-3 py-2 w-20 sm:w-24 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" \n             value="1" />\n    </div>\n\n    <!-- Preview -->\n    <div class="border rounded p-3 bg-gray-50 mb-4">\n      <div class="font-medium text-sm mb-2">Preview:</div>\n      <div id="renamePreview" class="text-xs sm:text-sm text-gray-700 space-y-1 max-h-32 overflow-y-auto" aria-live="polite"></div>\n    </div>\n\n    <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">\n      <button id="renameCancel" class="ui-button order-2 sm:order-1 w-full sm:w-auto" data-type="secondary">Cancel</button>\n      <button id="renameApply" class="ui-button order-1 sm:order-2 w-full sm:w-auto" data-type="primary">Apply</button>\n    </div>\n\n  </div>\n</div>\n\n<div id="bulkTypeModal" class="fixed inset-0 bg-black bg-opacity-40 hidden z-50 flex items-center justify-center p-3 sm:p-4">\n  <div class="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">\n    <h2 class="text-lg font-bold mb-4">Bulk Edit Account Type</h2>\n\n    <div class="mb-4">\n      <label for="bulkTypeSelect" class="block mb-2 font-medium text-sm">Account Type</label>\n      <select id="bulkTypeSelect" name="bulkSubtypeSelect" \n              class="border rounded w-full px-3 py-2 cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></select>\n    </div>\n\n    <div class="mb-6">\n      <label for="bulkSubtypeSelect" class="block mb-2 font-medium text-sm">Subtype</label>\n      <select id="bulkSubtypeSelect" \n              class="border rounded w-full px-3 py-2 cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></select>\n    </div>\n\n    <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">\n      <button id="bulkTypeCancel" class="ui-button order-2 sm:order-1 w-full sm:w-auto" data-type="secondary">Cancel</button>\n      <button id="bulkTypeApply" class="ui-button order-1 sm:order-2 w-full sm:w-auto" data-type="primary">Apply</button>\n    </div>\n  </div>\n</div>\n\n<!-- Advanced Filters Modal -->\n<div id="filtersModal" class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 hidden p-3 sm:p-4">\n  <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] flex flex-col relative">\n    \n    <!-- Modal Header -->\n    <div class="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 flex-shrink-0 rounded-t-lg">\n      <h2 class="text-lg sm:text-xl font-bold text-gray-900">Advanced Filters</h2>\n      <button id="filtersModalClose" \n              class="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-1"\n              title="Close filters"\n              onclick="window.closeFiltersModal && window.closeFiltersModal()">\n        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />\n        </svg>\n      </button>\n    </div>\n\n    <!-- Modal Content - Scrollable -->\n    <div class="p-4 sm:p-6 space-y-6 overflow-y-auto flex-1 min-h-0">\n      \n      <!-- Active Filters Display -->\n      <div id="activeFiltersSection" class="hidden">\n        <div class="flex items-center justify-between mb-3">\n          <h3 class="text-sm font-medium text-gray-700">Active Filters</h3>\n          <button id="clearAllFilters" \n                  class="text-xs text-blue-600 hover:text-blue-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"\n                  onclick="window.clearAllFilters && window.clearAllFilters()">\n            Clear All\n          </button>\n        </div>\n        <div id="activeFiltersContainer" class="flex flex-wrap gap-2"></div>\n        <hr class="mt-4">\n      </div>\n\n      <!-- Account Name Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Account Name</h3>\n        <div class="space-y-3">\n          <input id="filterAccountName" \n                 type="text" \n                 placeholder="Enter account name..."\n                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          \n          <div class="flex flex-wrap gap-4">\n            <label class="flex items-center">\n              <input type="radio" name="nameMatchType" value="contains" checked \n                     class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n              <span class="ml-2 text-sm text-gray-700">Contains</span>\n            </label>\n            <label class="flex items-center">\n              <input type="radio" name="nameMatchType" value="exact" \n                     class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n              <span class="ml-2 text-sm text-gray-700">Exact match</span>\n            </label>\n            <label class="flex items-center">\n              <input type="checkbox" id="nameCaseSensitive" \n                     class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">\n              <span class="ml-2 text-sm text-gray-700">Case sensitive</span>\n            </label>\n          </div>\n        </div>\n      </div>\n\n      <!-- Account Type Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Account Type</h3>\n        <div class="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">\n          <div id="typeFiltersContainer" class="space-y-2">\n            <!-- Populated dynamically -->\n          </div>\n        </div>\n      </div>\n\n      <!-- Account Subtype Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Account Subtype</h3>\n        <div class="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">\n          <div id="subtypeFiltersContainer" class="space-y-2">\n            <!-- Populated dynamically -->\n          </div>\n        </div>\n      </div>\n\n      <!-- Transactions Count Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Transaction Count</h3>\n        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">\n          <div>\n            <label class="block text-xs text-gray-600 mb-1">Minimum</label>\n            <input id="filterTransactionsMin" \n                   type="number" \n                   placeholder="0"\n                   min="0"\n                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          </div>\n          <div>\n            <label class="block text-xs text-gray-600 mb-1">Maximum</label>\n            <input id="filterTransactionsMax" \n                   type="number" \n                   placeholder="999999"\n                   min="0"\n                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          </div>\n        </div>\n      </div>\n\n      <!-- Balance Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Balance</h3>\n        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">\n          <div>\n            <label class="block text-xs text-gray-600 mb-1">Minimum ($)</label>\n            <input id="filterBalanceMin" \n                   type="number" \n                   placeholder="0.00"\n                   step="0.01"\n                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          </div>\n          <div>\n            <label class="block text-xs text-gray-600 mb-1">Maximum ($)</label>\n            <input id="filterBalanceMax" \n                   type="number" \n                   placeholder="999999.99"\n                   step="0.01"\n                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          </div>\n        </div>\n      </div>\n\n      <!-- Inclusion Status Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Include Status</h3>\n        <div class="flex flex-wrap gap-4">\n          <label class="flex items-center">\n            <input type="radio" name="inclusionFilter" value="all" checked \n                   class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n            <span class="ml-2 text-sm text-gray-700">All accounts</span>\n          </label>\n          <label class="flex items-center">\n            <input type="radio" name="inclusionFilter" value="included" \n                   class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n            <span class="ml-2 text-sm text-gray-700">Included only</span>\n          </label>\n          <label class="flex items-center">\n            <input type="radio" name="inclusionFilter" value="excluded" \n                   class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n            <span class="ml-2 text-sm text-gray-700">Excluded only</span>\n          </label>\n        </div>\n      </div>\n    </div>\n\n    <!-- Modal Footer - Fixed at bottom -->\n    <div class="flex flex-col sm:flex-row justify-end gap-3 p-4 sm:p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg flex-shrink-0">\n      <button id="filtersReset" \n              class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-lg hover:bg-gray-50 \n                     cursor-pointer transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n              onclick="window.resetFilters && window.resetFilters()">\n        Reset Filters\n      </button>\n      <button id="filtersApply" \n              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer \n                     transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n              onclick="window.applyFilters && window.applyFilters()">\n        Apply Filters\n      </button>\n    </div>\n  </div>\n</div>\n\n<style>\n  /* Filter chip styles */\n  .filter-chip {\n    display: inline-flex;\n    align-items: center;\n    gap: 0.5rem;\n    background-color: #dbeafe;\n    color: #1e40af;\n    padding: 0.25rem 0.75rem;\n    border-radius: 9999px;\n    font-size: 0.75rem;\n    font-weight: 500;\n    max-width: 250px;\n  }\n\n  .filter-chip span {\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n\n  /* Mini filter chips for status bar */\n  .filter-chip-mini {\n    display: inline-flex;\n    align-items: center;\n    background-color: #1e40af;\n    color: white;\n    padding: 0.125rem 0.5rem;\n    border-radius: 9999px;\n    font-size: 0.625rem;\n    font-weight: 500;\n    max-width: 120px;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n\n  /* Filter results summary styling */\n  #filterResultsSummary {\n    transition: all 0.3s ease;\n  }\n\n  #filterResultsSummary.filtered {\n    color: #1e40af;\n    font-weight: 500;\n  }\n\n  /* Filter notification badge */\n  #filtersBtn {\n    position: relative;\n  }\n\n  #filterNotificationBadge {\n    position: absolute;\n    top: -8px;\n    right: -8px;\n    background-color: #dc2626;\n    color: white;\n    border-radius: 50%;\n    width: 20px;\n    height: 20px;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 0.75rem;\n    font-weight: 600;\n    line-height: 1;\n    border: 2px solid white;\n    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);\n    transition: all 0.2s ease;\n    z-index: 10;\n  }\n\n  #filterNotificationBadge.hidden {\n    display: none;\n  }\n\n  /* Clear filters button animation */\n  #clearFiltersBtn {\n    transition: all 0.3s ease;\n    transform: scale(0.95);\n    opacity: 0;\n  }\n\n  #clearFiltersBtn:not(.hidden) {\n    transform: scale(1);\n    opacity: 1;\n  }\n\n  .filter-chip button {\n    background: none;\n    border: none;\n    color: inherit;\n    cursor: pointer;\n    padding: 0;\n    margin-left: 0.25rem;\n    border-radius: 50%;\n    width: 1rem;\n    height: 1rem;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: background-color 0.2s;\n  }\n\n  .filter-chip button:hover {\n    background-color: rgba(59, 130, 246, 0.2);\n  }\n\n  .filter-chip svg {\n    width: 0.75rem;\n    height: 0.75rem;\n  }\n\n  /* Modal animation and layout */\n  #filtersModal {\n    transition: opacity 0.3s ease;\n    opacity: 0;\n  }\n\n  #filtersModal.show {\n    opacity: 1;\n  }\n\n  #filtersModal.hide {\n    opacity: 0;\n  }\n\n  /* Ensure proper modal sizing and scrolling */\n  #filtersModal .max-w-2xl {\n    min-height: 300px;\n  }\n\n  /* Improve mobile modal experience */\n  @media (max-width: 640px) {\n    #filtersModal .max-w-2xl {\n      max-width: calc(100vw - 1.5rem);\n      margin: 0.75rem;\n    }\n    \n    #filtersModal .max-h-\\[90vh\\] {\n      max-height: calc(100vh - 1.5rem);\n    }\n\n    /* Ensure footer buttons are properly sized on mobile */\n    #filtersModal .flex-col.sm\\:flex-row button {\n      min-height: 44px;\n    }\n  }\n\n  /* Bulk action bar styling */\n  #bulkActionBar {\n    transition: opacity 0.3s ease, transform 0.3s ease;\n  }\n\n  #bulkActionBar:not(.active) {\n    opacity: 0;\n    transform: translateY(-10px);\n    pointer-events: none;\n  }\n\n  #bulkActionBar.active {\n    opacity: 1;\n    transform: translateY(0);\n    pointer-events: auto;\n  }\n\n  /* Enhanced button hover effects */\n  #bulkActionBar button:hover {\n    transform: translateY(-1px);\n    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);\n  }\n\n  #bulkActionBar button:active {\n    transform: translateY(0);\n  }\n\n  /* Mobile grid button sizing */\n  @media (max-width: 1024px) {\n    #bulkActionBar .grid button {\n      min-height: 48px;\n    }\n  }\n\n  /* Mobile card styles for accounts */\n  .mobile-account-card {\n    padding: 1rem;\n    border-bottom: 1px solid #f3f4f6;\n    position: relative;\n    display: flex;\n    align-items: flex-start;\n    gap: 0.75rem;\n  }\n\n  .mobile-account-card:last-child {\n    border-bottom: none;\n  }\n\n  .mobile-account-card .card-content {\n    flex: 1;\n    min-width: 0;\n  }\n\n  .mobile-account-card .account-name {\n    font-weight: 500;\n    color: #111827;\n    margin-bottom: 0.5rem;\n    word-wrap: break-word;\n  }\n\n  .mobile-account-card .account-details {\n    font-size: 0.875rem;\n    color: #6b7280;\n  }\n\n  .mobile-account-card .account-details > div {\n    margin-bottom: 0.5rem;\n  }\n\n  .mobile-account-card .account-balance {\n    font-weight: 500;\n    text-align: right;\n  }\n\n  /* Custom checkbox styling */\n  .custom-checkbox-container {\n    display: flex;\n    align-items: center;\n    cursor: pointer;\n    user-select: none;\n    position: relative;\n  }\n\n  .custom-checkbox-input {\n    position: absolute;\n    opacity: 0;\n    cursor: pointer;\n    height: 0;\n    width: 0;\n  }\n\n  .custom-checkbox-visual {\n    position: relative;\n    height: 20px;\n    width: 20px;\n    background-color: #ffffff;\n    border: 2px solid #d1d5db;\n    border-radius: 4px;\n    transition: all 0.2s ease;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n  }\n\n  .custom-checkbox-visual::after {\n    content: "";\n    position: absolute;\n    display: none;\n    left: 6px;\n    top: 2px;\n    width: 4px;\n    height: 8px;\n    border: solid white;\n    border-width: 0 2px 2px 0;\n    transform: rotate(45deg);\n  }\n\n  .custom-checkbox-input:checked + .custom-checkbox-visual {\n    background-color: #3b82f6;\n    border-color: #3b82f6;\n  }\n\n  .custom-checkbox-input:checked + .custom-checkbox-visual::after {\n    display: block;\n  }\n\n  .custom-checkbox-input:focus + .custom-checkbox-visual {\n    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);\n    outline: none;\n  }\n\n  .custom-checkbox-input:disabled + .custom-checkbox-visual {\n    background-color: #f3f4f6;\n    border-color: #e5e7eb;\n    cursor: not-allowed;\n  }\n\n  .custom-checkbox-container:hover .custom-checkbox-input:not(:disabled) + .custom-checkbox-visual {\n    border-color: #3b82f6;\n  }\n\n  /* Mobile specific enhancements */\n  @media (max-width: 1024px) {\n    .custom-checkbox-visual {\n      height: 24px;\n      width: 24px;\n      min-width: 24px;\n      min-height: 24px;\n    }\n\n    .custom-checkbox-visual::after {\n      left: 8px;\n      top: 3px;\n      width: 5px;\n      height: 10px;\n    }\n\n    button, select {\n      min-height: 44px;\n      padding: 0.75rem;\n    }\n    \n    .token-btn {\n      min-height: 44px;\n    }\n\n    input[type="text"], input[type="number"] {\n      min-height: 44px;\n      padding: 0.75rem;\n    }\n  }\n</style>\n';
 
   // src/views/MethodSelect/method.js
   function initMethodSelectView() {
+    if (!state_default.accounts || Object.keys(state_default.accounts).length === 0) {
+      navigate("/upload", true);
+      return;
+    }
+    const mainContainer = document.querySelector(".container-responsive");
+    mainContainer.insertAdjacentHTML("beforeend", createSimpleNavigationBar({
+      backText: "Back"
+    }));
     renderButtons();
+    updateNavigationTexts();
     const manualBtn = document.getElementById("manualImportBtn");
     const autoBtn = document.getElementById("autoImportBtn");
+    const backBtn = document.getElementById("backBtn");
     const totalCount = Object.keys(state_default.accounts).length;
     const selectedCount = Object.values(state_default.accounts).filter((acc) => acc.included).length;
     document.getElementById("totalCountDisplay").textContent = totalCount;
     document.getElementById("filesCountDisplay").textContent = selectedCount;
     document.getElementById("manualFileCount").textContent = selectedCount;
     manualBtn.addEventListener("click", () => {
-      navigate("manualInstructionsView");
+      navigate("/manual");
     });
     autoBtn.addEventListener("click", () => {
-      navigate("monarchCredentialsView");
+      navigate("/login");
     });
     backBtn.addEventListener("click", () => {
-      navigate("reviewView");
+      goBack();
     });
   }
 
   // src/views/MethodSelect/method.html
-  var method_default = `<div class="flex flex-col items-center justify-center py-16 space-y-8">
+  var method_default = `<div class="container-responsive flex flex-col items-center justify-center py-6 sm:py-8 md:py-12 lg:py-16 space-y-6 sm:space-y-8 md:space-y-10 min-h-[calc(100vh-200px)]">
 
   <!-- Header -->
-  <div class="text-center space-y-3">
-    <h2 class="text-3xl font-bold">Choose Your Migration Method</h2>
-    <p class="text-gray-600 text-base max-w-md mx-auto">
+  <div class="text-center space-y-3 sm:space-y-4 max-w-4xl w-full">
+    <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
+      Choose Your Migration Method
+    </h2>
+    <p class="text-gray-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto px-2 leading-relaxed">
       You can either manually import your accounts into Monarch or let us automatically import your data.
     </p>
   </div>
 
   <!-- Summary Counts -->
-  <div
-    class="flex flex-col sm:flex-row items-center justify-center gap-10 bg-gray-50 rounded-lg p-6 border border-gray-200">
+  <div class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 md:gap-10 
+              bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 md:p-8 
+              border border-blue-100 w-full max-w-2xl shadow-sm">
 
     <div class="text-center">
-      <div class="text-4xl font-bold" id="totalCountDisplay">0</div>
-      <div class="text-gray-500 text-sm">Total Accounts</div>
+      <div class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-800" id="totalCountDisplay">0</div>
+      <div class="text-gray-600 text-xs sm:text-sm md:text-base font-medium">Total Accounts</div>
     </div>
 
+    <div class="hidden sm:block w-px h-12 bg-gray-300"></div>
+    <div class="sm:hidden w-full h-px bg-gray-300"></div>
+
     <div class="text-center">
-      <div class="text-4xl font-bold text-green-600" id="filesCountDisplay">0</div>
-      <div class="text-gray-500 text-sm">Accounts To Migrate</div>
+      <div class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-green-600" id="filesCountDisplay">0</div>
+      <div class="text-gray-600 text-xs sm:text-sm md:text-base font-medium">Accounts To Migrate</div>
     </div>
   </div>
 
-
   <!-- Migration Options -->
-  <div class="flex flex-col sm:flex-row gap-8">
+  <div class="flex flex-col lg:flex-row gap-4 sm:gap-6 md:gap-8 w-full max-w-5xl">
 
     <!-- Manual Import -->
-    <div class="w-80 p-6 border rounded-lg shadow-sm hover:shadow-md transition cursor-pointer bg-white"
-      id="manualImportBtn">
-      <h3 class="text-xl font-semibold mb-2">Manual Import</h3>
-      <p class="text-gray-500 text-sm mb-4">Download <span id="manualFileCount">0</span> CSVs and upload them directly
-        into Monarch yourself.</p>
-      <div class="mt-auto text-blue-600 font-semibold text-sm text-right">Select \u2192</div>
+    <div class="w-full lg:flex-1 group cursor-pointer" id="manualImportBtn">
+      <div class="h-full p-4 sm:p-6 md:p-8 border-2 border-gray-200 rounded-xl shadow-sm 
+                  hover:shadow-lg hover:border-blue-300 transition-all duration-300 
+                  bg-white group-hover:bg-blue-50/30 relative overflow-hidden">
+        
+        <!-- Background decoration -->
+        <div class="absolute top-0 right-0 w-20 h-20 bg-blue-100 rounded-full -translate-y-10 translate-x-10 opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
+        
+        <div class="relative z-10">
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
+              <svg class="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <div class="text-blue-600 group-hover:text-blue-700 transition-colors duration-300">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+          
+          <h3 class="text-lg sm:text-xl md:text-2xl font-semibold mb-3 text-gray-900">Manual Import</h3>
+          <p class="text-gray-600 text-sm sm:text-base mb-6 leading-relaxed min-h-[3rem]">
+            Download <span id="manualFileCount" class="font-semibold text-blue-600">0</span> CSV files and upload them directly
+            into Monarch yourself. Perfect for users who prefer full control.
+          </p>
+          
+          <div class="flex items-center text-blue-600 font-semibold text-sm sm:text-base group-hover:text-blue-700 transition-colors duration-300">
+            Select Manual Import
+            <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Auto Import -->
-    <div class="w-80 p-6 border rounded-lg shadow-sm hover:shadow-md transition cursor-pointer bg-white"
-      id="autoImportBtn">
-      <h3 class="text-xl font-semibold mb-2">Auto Import</h3>
-      <p class="text-gray-500 text-sm mb-4">We'll connect to Monarch and automatically import your selected accounts on
-        your behalf.</p>
-      <div class="mt-auto text-blue-600 font-semibold text-sm text-right">Select \u2192</div>
+    <div class="w-full lg:flex-1 group cursor-pointer" id="autoImportBtn">
+      <div class="h-full p-4 sm:p-6 md:p-8 border-2 border-gray-200 rounded-xl shadow-sm 
+                  hover:shadow-lg hover:border-green-300 transition-all duration-300 
+                  bg-white group-hover:bg-green-50/30 relative overflow-hidden">
+        
+        <!-- Background decoration -->
+        <div class="absolute top-0 right-0 w-20 h-20 bg-green-100 rounded-full -translate-y-10 translate-x-10 opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
+        
+        <!-- "Recommended" badge -->
+        <div class="absolute top-4 left-4 bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-full">
+          Recommended
+        </div>
+        
+        <div class="relative z-10 pt-6">
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300">
+              <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div class="text-green-600 group-hover:text-green-700 transition-colors duration-300">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+          
+          <h3 class="text-lg sm:text-xl md:text-2xl font-semibold mb-3 text-gray-900">Auto Import</h3>
+          <p class="text-gray-600 text-sm sm:text-base mb-6 leading-relaxed min-h-[3rem]">
+            We'll connect to Monarch and automatically import your selected accounts on
+            your behalf. Fast, secure, and hassle-free.
+          </p>
+          
+          <div class="flex items-center text-green-600 font-semibold text-sm sm:text-base group-hover:text-green-700 transition-colors duration-300">
+            Select Auto Import
+            <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </div>
+      </div>
     </div>
 
-  </div>
+    <!-- Navigation will be added here by JavaScript -->
 
-  <!-- Back Button -->
-  <div class="flex justify-between items-center px-4 py-2 w-full">
-    <!-- Back Button -->
-    <button id="backBtn" class="ui-button" data-type="secondary" data-size="large">
-      \u2190 Back
-    </button>
   </div>
-</div>
 
 </div>`;
 
@@ -4423,14 +5310,19 @@
 
   // src/views/ManualInstructions/manualInstructions.js
   function initManualInstructionsView() {
+    if (!state_default.accounts || Object.keys(state_default.accounts).length === 0) {
+      navigate("/upload", true);
+      return;
+    }
     const countSpan = document.getElementById("accountCount");
     const downloadBtn = document.getElementById("downloadBtn");
     const switchBtn = document.getElementById("switchToAuto");
-    const backBtn2 = document.getElementById("backBtn");
+    const backBtn = document.getElementById("backBtn");
     renderButtons();
     const includedAccounts = Object.values(state_default.accounts).filter((acc) => acc.included);
     countSpan.textContent = `${includedAccounts.length} account${includedAccounts.length !== 1 ? "s" : ""}`;
-    downloadBtn.addEventListener("click", async () => {
+    downloadBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
       const zip = new import_jszip2.default();
       const MAX_ROWS_PER_FILE = 1e3;
       includedAccounts.forEach((account) => {
@@ -4457,94 +5349,218 @@
         downloadLink.href = URL.createObjectURL(content);
         downloadLink.download = "accounts_export.zip";
         downloadLink.click();
-      } catch (e) {
-        console.error("\u274C ZIP generation failed", e);
+      } catch (e2) {
+        console.error("\u274C ZIP generation failed", e2);
         alert("Failed to generate ZIP file.");
       }
     });
     switchBtn.addEventListener("click", () => {
-      navigate("monarchCredentialsView");
+      navigate("/login");
     });
-    backBtn2.addEventListener("click", () => {
-      navigate("methodView");
+    backBtn.addEventListener("click", () => {
+      goBack();
+    });
+    document.getElementById("backToMethodBtn").addEventListener("click", () => {
+      goBack();
     });
   }
 
   // src/views/ManualInstructions/manualInstructions.html
-  var manualInstructions_default = `<div class="flex flex-col items-center justify-center py-16 px-6 space-y-12 max-w-2xl mx-auto">
+  var manualInstructions_default = `<div class="container-responsive flex flex-col items-center justify-center py-6 sm:py-8 md:py-12 lg:py-16 space-y-8 sm:space-y-10 md:space-y-12 min-h-[calc(100vh-200px)]">
 
-  <!-- Progress -->
-  <div class="text-center space-y-2">
-    <h2 class="text-3xl font-bold text-[#111518]">You're Ready to Import</h2>
-    <p class="text-gray-600 text-base">
-      <span id="accountCount"></span> prepared for migration.
+  <!-- Progress Header -->
+  <div class="text-center space-y-3 sm:space-y-4 w-full max-w-3xl">
+    <div class="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full mb-4">
+      <svg class="w-8 h-8 sm:w-10 sm:h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+      </svg>
+    </div>
+    <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">You're Ready to Import</h2>
+    <p class="text-gray-600 text-sm sm:text-base md:text-lg">
+      <span id="accountCount" class="font-semibold text-green-600">0 accounts</span> prepared for migration.
     </p>
   </div>
 
-  <!-- Manual Import Card -->
-  <div class="w-full bg-white border border-gray-200 rounded-xl shadow-sm p-8 space-y-6">
+  <!-- Main Instructions Card -->
+  <div class="w-full max-w-4xl bg-white border border-gray-200 rounded-xl shadow-lg p-6 sm:p-8 md:p-10 space-y-8 sm:space-y-10">
 
-    <!-- Download -->
+    <!-- Step 1: Download -->
+    <div class="relative">
+      <!-- Step Number -->
+      <div class="flex items-center mb-4 sm:mb-6">
+        <div class="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 text-blue-600 rounded-full font-bold text-sm sm:text-base mr-3 sm:mr-4">
+          1
+        </div>
+        <h3 class="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900">Download Files</h3>
+      </div>
+      
+      <div class="ml-11 sm:ml-14">
+        <p class="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base leading-relaxed">
+          Download a ZIP file containing one CSV per account. Each CSV is formatted 
+          specifically for Monarch Money import.
+        </p>
+
+        <a id="downloadBtn" 
+           class="ui-button inline-flex items-center btn-responsive" 
+           data-type="primary" 
+           data-size="large" 
+           href="#">
+          <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 10l5 5 5-5M12 4v12" />
+          </svg>
+          Download CSV Bundle
+        </a>
+      </div>
+    </div>
+
+    <!-- Divider -->
+    <div class="relative">
+      <div class="absolute inset-0 flex items-center">
+        <div class="w-full border-t border-gray-200"></div>
+      </div>
+      <div class="relative flex justify-center">
+        <div class="px-4 bg-white">
+          <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Import Instructions -->
+    <div class="relative">
+      <!-- Step Number -->
+      <div class="flex items-center mb-4 sm:mb-6">
+        <div class="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-green-100 text-green-600 rounded-full font-bold text-sm sm:text-base mr-3 sm:mr-4">
+          2
+        </div>
+        <h3 class="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900">Import into Monarch</h3>
+      </div>
+      
+      <div class="ml-11 sm:ml-14">
+        <p class="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base leading-relaxed">
+          Follow these steps in your Monarch Money account to import each CSV file:
+        </p>
+
+        <div class="bg-gray-50 rounded-lg p-4 sm:p-6 border border-gray-100">
+          <ol class="space-y-3 sm:space-y-4">
+            <li class="flex items-start gap-3">
+              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+                a
+              </span>
+              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+                Go to <strong class="text-gray-900">Accounts \u2192 Add account</strong>
+              </div>
+            </li>
+            
+            <li class="flex items-start gap-3">
+              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+                b
+              </span>
+              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+                Choose <strong class="text-gray-900">Add manual account</strong>
+              </div>
+            </li>
+            
+            <li class="flex items-start gap-3">
+              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+                c
+              </span>
+              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+                Select your desired <strong class="text-gray-900">account type</strong>
+              </div>
+            </li>
+            
+            <li class="flex items-start gap-3">
+              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+                d
+              </span>
+              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+                Give it a name and starting balance of <strong class="text-gray-900 bg-yellow-100 px-1 rounded">$0.00</strong>
+              </div>
+            </li>
+            
+            <li class="flex items-start gap-3">
+              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+                e
+              </span>
+              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+                Go to <strong class="text-gray-900">Edit \u2192 Upload transactions</strong>
+              </div>
+            </li>
+            
+            <li class="flex items-start gap-3">
+              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+                f
+              </span>
+              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+                Upload your account CSV file
+              </div>
+            </li>
+            
+            <li class="flex items-start gap-3">
+              <span class="flex items-center justify-center w-6 h-6 bg-green-100 text-green-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+                g
+              </span>
+              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+                <strong class="text-green-700">Enable</strong> 
+                <em>"Adjust account's balances based on these transactions"</em>
+              </div>
+            </li>
+            
+            <li class="flex items-start gap-3">
+              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+                h
+              </span>
+              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+                Click <strong class="text-gray-900">Add to account</strong>
+              </div>
+            </li>
+            
+            <li class="flex items-start gap-3">
+              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+                i
+              </span>
+              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+                <strong class="text-blue-600">Repeat for all your accounts</strong>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auto Import Promotion -->
+  <div class="flex flex-col items-center text-center gap-4 sm:gap-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 sm:p-8 md:p-10 border border-blue-100 w-full max-w-4xl shadow-sm">
+    
+    <div class="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center">
+      <svg class="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    </div>
+    
     <div>
-      <h3 class="text-xl font-semibold mb-2">Step 1 \u2014 Download Files</h3>
-      <p class="text-gray-500 mb-4">
-        Download a ZIP containing one CSV per account.
+      <h3 class="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 mb-2">
+        Want us to do this automatically?
+      </h3>
+      <p class="text-gray-600 text-sm sm:text-base md:text-lg leading-relaxed max-w-2xl">
+        Skip the manual work! Our auto-import feature can handle all of this for you 
+        securely and automatically.
       </p>
-
-      <a id="downloadBtn" class="ui-button" data-type="primary" data-size="large" href="#">
-        <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
-          stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 10l5 5 5-5M12 4v12" />
-        </svg>Download CSV Bundle
-      </a>
     </div>
-
-    <!-- Upload Instructions -->
-    <div class="mt-12">
-      <h3 class="text-xl font-semibold mb-2">Step 2 \u2014 Import into Monarch</h3>
-      <p class="text-gray-500 mb-2">In Monarch:</p>
-
-      <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
-        <li>Go to <strong>Accounts \u2192 Add account</strong></li>
-        <li>Choose <strong>Add manual account</strong></li>
-        <li>Select your desire <strong>account type</strong></li>
-        <li>Give it a name and starting balance of <strong>$0.00</strong></li>
-        <li>Go to <strong>Edit \u2192 Upload transactions</strong></li>
-        <li>Upload your account CSV file</li>
-        <li>Enable <strong>Adjust account's balances based on these transactions</strong></li>
-        <li>Click <strong>Add to account</strong></li>
-        <li>Repeat for all your accounts</li>
-      </ul>
+    
+    <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+      <button id="switchToAuto" class="ui-button btn-responsive" data-type="primary" data-size="large">
+        Try Auto Import Instead
+      </button>
     </div>
   </div>
 
-  <!-- Auto Import Promo -->
-  <div class="flex flex-col items-center text-center gap-3 bg-[#f9fafb] rounded-lg p-6 border border-gray-200">
-    <h4 class="text-lg font-semibold text-[#111518]">Looking for the easiest way?</h4>
-    <p class="text-sm text-gray-600">
-      Our Auto Import tool transfers your accounts directly into Monarch with zero file handling.
-    </p>
+  <!-- Navigation will be added here by JavaScript -->
 
-    <button id="switchToAuto" class="ui-button" data-size="large">Use Auto Import Instead</button>
-  </div>
-
-  <!-- Footer -->
-  <div class="flex justify-between items-center px-4 py-2 w-full">
-    <button id="backBtn" class="ui-button" data-type="secondary" data-size="large">
-      \u2190 Back
-    </button>
-
-    <a href="https://app.monarchmoney.com" target="_blank" class="ui-button" data-type="secondary" data-size="large">
-      <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
-        stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M14 3h7m0 0v7m0-7L10 14M5 5h14v14H5V5z" />
-      </svg>Open Monarch
-    </a>
-  </div>
-
-</div>`;
+</div>
+`;
 
   // node_modules/uuid/dist/esm-browser/stringify.js
   var byteToHex = [];
@@ -4626,11 +5642,11 @@
   var monarchApi = {
     login: (email, encryptedPassword, deviceUuid, otp) => postJson(API.login, { email, encryptedPassword, deviceUuid, otp }),
     fetchMonarchAccounts: (token) => postJson(API.fetchAccounts, { token }),
-    createAccounts: (token, accounts) => postJson(API.createAccounts, { token, accounts }),
-    generateAccounts: (accounts) => fetch(API.generateStatements, {
+    createAccounts: (token, accounts2) => postJson(API.createAccounts, { token, accounts: accounts2 }),
+    generateAccounts: (accounts2) => fetch(API.generateStatements, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ accounts })
+      body: JSON.stringify({ accounts: accounts2 })
     }),
     queryUploadStatus: (token, sessionKey) => postJson(API.getUploadStatus, { token, sessionKey })
   };
@@ -4641,7 +5657,8 @@
     ENCRYPTED_PASSWORD: "monarchPasswordBase64",
     TOKEN: "monarchApiToken",
     UUID: "monarchDeviceUuid",
-    REMEMBER: "monarchRememberMe"
+    REMEMBER: "monarchRememberMe",
+    TEMP_FOR_OTP: "monarchTempForOtp"
   };
   function getLocalStorage() {
     return {
@@ -4649,10 +5666,11 @@
       encryptedPassword: get(STORAGE_KEYS.ENCRYPTED_PASSWORD),
       token: get(STORAGE_KEYS.TOKEN),
       uuid: get(STORAGE_KEYS.UUID),
-      remember: get(STORAGE_KEYS.REMEMBER) === "true"
+      remember: get(STORAGE_KEYS.REMEMBER) === "true",
+      tempForOtp: get(STORAGE_KEYS.TEMP_FOR_OTP) === "true"
     };
   }
-  function saveToLocalStorage({ email, encryptedPassword, token, uuid, remember }) {
+  function saveToLocalStorage({ email, encryptedPassword, token, uuid, remember, tempForOtp }) {
     if (email)
       set(STORAGE_KEYS.EMAIL, email);
     if (encryptedPassword)
@@ -4663,6 +5681,8 @@
       set(STORAGE_KEYS.UUID, uuid);
     if (typeof remember === "boolean")
       set(STORAGE_KEYS.REMEMBER, remember ? "true" : "false");
+    if (typeof tempForOtp === "boolean")
+      set(STORAGE_KEYS.TEMP_FOR_OTP, tempForOtp ? "true" : "false");
   }
   function clearStorage() {
     Object.values(STORAGE_KEYS).forEach(remove);
@@ -4748,6 +5768,10 @@
 
   // src/views/MonarchCredentials/monarchCredentials.js
   async function initMonarchCredentialsView() {
+    const mainContainer = document.querySelector(".container-responsive");
+    mainContainer.insertAdjacentHTML("beforeend", createSimpleNavigationBar({
+      backText: "Back"
+    }));
     const $ = (id) => document.getElementById(id);
     const UI = {
       emailInput: $("email"),
@@ -4756,6 +5780,7 @@
       backBtn: $("backBtn"),
       form: $("credentialsForm"),
       errorBox: $("errorBox"),
+      errorContainer: $("credentialsError"),
       rememberCheckbox: $("rememberCredentials"),
       rememberMeContainer: $("rememberMe"),
       notYouContainer: $("notYouContainer"),
@@ -4777,7 +5802,7 @@
       deviceUuid: creds.deviceUuid || uuid,
       remember
     });
-    if (!creds.deviceUuid) {
+    if (!creds.deviceUuid || creds.deviceUuid === "") {
       creds.deviceUuid = v4_default();
       saveToLocalStorage({ uuid: creds.deviceUuid });
     }
@@ -4800,7 +5825,7 @@
       const hasEmail = UI.emailInput.value.trim();
       const hasPassword = UI.passwordInput.value.trim() || creds.encryptedPassword;
       toggleDisabled(UI.connectBtn, !(hasEmail && hasPassword));
-      toggleElementVisibility(UI.errorBox, false);
+      toggleElementVisibility(UI.errorContainer, false);
       renderButtons();
     }
     function updateSecurityNote(status) {
@@ -4843,15 +5868,19 @@
       }
       toggleDisabled(UI.connectBtn, true);
       UI.connectBtn.textContent = "Connecting\u2026";
-      toggleElementVisibility(UI.errorBox, false);
+      toggleElementVisibility(UI.errorContainer, false);
       try {
         const response = await monarchApi.login(email2, encryptedPassword2, uuid2);
         if (response?.otpRequired) {
-          if (creds.remember) {
-            saveToLocalStorage({ email: email2, encryptedPassword: encryptedPassword2, remember: true });
-          }
+          saveToLocalStorage({
+            email: email2,
+            encryptedPassword: encryptedPassword2,
+            uuid: uuid2,
+            remember: creds.remember,
+            tempForOtp: !creds.remember
+          });
           creds.awaitingOtp = true;
-          return navigate("monarchOtpView");
+          return navigate("/otp");
         }
         if (response?.token) {
           patchState(creds, {
@@ -4865,7 +5894,7 @@
           if (creds.remember) {
             saveToLocalStorage({ email: email2, encryptedPassword: encryptedPassword2, token: response.token, remember: true });
           }
-          return navigate("monarchCompleteView");
+          return navigate("/complete");
         }
         const apiError = response?.detail || response?.error || "Unexpected login response.";
         throw new Error(apiError);
@@ -4884,6 +5913,8 @@
       e.preventDefault();
       clearStorage();
       clearState(creds);
+      creds.deviceUuid = v4_default();
+      saveToLocalStorage({ uuid: creds.deviceUuid });
       UI.emailInput.value = "";
       UI.passwordInput.value = "";
       UI.rememberCheckbox.checked = false;
@@ -4911,11 +5942,11 @@
       toggleElementVisibility(UI.eyeHide, isHidden);
     }
     function onClickBack() {
-      navigate("methodView");
+      goBack();
     }
     function showError(message) {
       UI.errorBox.textContent = message;
-      toggleElementVisibility(UI.errorBox, true);
+      toggleElementVisibility(UI.errorContainer, true);
     }
     UI.form.addEventListener("submit", onSubmitForm);
     UI.connectBtn.addEventListener("click", onClickConnect);
@@ -4932,10 +5963,186 @@
   }
 
   // src/views/MonarchCredentials/monarchCredentials.html
-  var monarchCredentials_default = '<div class="flex flex-col items-center justify-center py-3 px-6 space-y-7 max-w-lg mx-auto">\n\n  <div class="text-center">\n    <h2 class="text-3xl font-bold mb-2">Auto Import: Connect Your Monarch Account</h2>\n    <p class="text-gray-600 text-base max-w-md">\n      Authorize your Monarch account so we can directly import your accounts and transactions.\n    </p>\n  </div>\n\n  <div class="w-full bg-white border border-gray-200 rounded-xl shadow-sm p-8 space-y-6">\n\n    <form id="credentialsForm" class="space-y-4">\n      <!-- Email -->\n      <div>\n        <label class="block font-medium text-sm text-[#111518] mb-1 cursor-pointer" for="email">Email</label>\n        <input id="email" type="email" class="border rounded-lg w-full px-4 py-3 text-sm placeholder-gray-300" placeholder="you@email.com"\n          autocomplete="username">\n      </div>\n\n      <!-- Password -->\n      <div>\n        <label class="block font-medium text-sm text-[#111518] mb-1 cursor-pointer" for="password">Password</label>\n        <div class="relative">\n          <input id="password" type="password" class="border rounded-lg w-full px-4 py-3 text-sm pr-12 placeholder-gray-300"\n            placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" autocomplete="current-password">\n\n          <button type="button" id="togglePassword" aria-label="Toggle password visibility"\n            class="absolute p-2 right-1 top-1/2 transform -translate-y-1/2 focus:outline-none bg-transparent border-none shadow-none hover:shadow-none transform-none hover:transform-none transition-none cursor-pointer">\n            <!-- Show Icon -->\n            <svg id="eyeShow" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"\n              stroke="currentColor" stroke-width="2">\n              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />\n              <path stroke-linecap="round" stroke-linejoin="round"\n                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />\n            </svg>\n\n            <!-- Hide Icon -->\n            <svg id="eyeHide" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 24 24" fill="none"\n              stroke="currentColor" stroke-width="2">\n              <path stroke-linecap="round" stroke-linejoin="round"\n                d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.27-2.945-9.543-7a9.966 9.966 0 012.398-4.442M9.88 9.88a3 3 0 104.24 4.24M6.1 6.1L17.9 17.9" />\n            </svg>\n          </button>\n        </div>\n      </div>\n\n      <!-- Remember Me -->\n      <div id="rememberMe" class="flex items-center gap-2">\n        <input id="rememberCredentials" type="checkbox" class="w-4 h-4 cursor-pointer">\n        <label for="rememberCredentials" class="text-sm text-gray-600 cursor-pointer">Remember me for this\n          session</label>\n      </div>\n\n      <!-- Not You? -->\n      <div id="notYouContainer" class="mt-2 text-sm text-gray-500 hidden">\n        <span id="rememberedEmail">"some@thing.com"</span>\n        <button id="clearCredentialsBtn" class="ml-2 text-blue-600 cursor-pointer hover:underline">Not You?</button>\n      </div>\n\n      <div id="errorBox" class="hidden text-red-500 text-sm mt-4"></div>\n\n    </form>\n\n    <button id="connectBtn" class="ui-button" data-type="primary" data-size="large" data-fullWidth disabled>\n      Connect & Start Import\n    </button>\n\n    <!-- Security Note -->\n    <div class="flex items-center gap-2 mt-1">\n      <div class="w-5 h-5 text-green-600 flex-shrink-0">\n        <svg id="securityNoteIcon" viewBox="0 0 24 24" fill="green">\n          <path\n            d="M12 1a11 11 0 100 22 11 11 0 000-22zm0 20a9 9 0 110-18 9 9 0 010 18zm-1-5h2v2h-2v-2zm0-10h2v8h-2V6z" />\n        </svg>\n      </div>\n      <p id="securityNote" class="text-xs text-gray-500">\n        <!-- Rendered dynamically -->\n      </p>\n    </div>\n\n  </div>\n\n  <div class="flex justify-between w-full max-w-md">\n    <button id="backBtn" class="ui-button" data-type="secondary" data-size="large">\u2190 Back</button>\n  </div>\n\n</div>\n<style>\n  input[type="password"]::-ms-reveal,\n  input[type="password"]::-ms-clear,\n  input[type="password"]::-webkit-credentials-auto-fill-button,\n  input[type="password"]::-webkit-inner-spin-button,\n  input[type="password"]::-webkit-clear-button {\n    display: none !important;\n    appearance: none;\n  }\n\n  input[type="password"]::-webkit-credentials-auto-fill-button {\n    display: none !important;\n    visibility: hidden;\n  }\n\n  #togglePassword, #clearCredentialsBtn {\n    transition: none !important;\n    box-shadow: none !important;\n    transform: none !important;\n  }\n</style>';
+  var monarchCredentials_default = `<div class="container-responsive flex flex-col items-center justify-center py-6 sm:py-8 md:py-12 lg:py-16 space-y-6 sm:space-y-8 min-h-[calc(100vh-200px)]">
+
+  <!-- Header -->
+  <div class="text-center max-w-2xl w-full">
+    <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-gray-900">
+      Auto Import: Connect Your Monarch Account
+    </h2>
+    <p class="text-gray-600 text-sm sm:text-base md:text-lg leading-relaxed">
+      Authorize your Monarch account so we can directly import your accounts and transactions.
+    </p>
+  </div>
+
+  <!-- Main Form Container -->
+  <div class="w-full max-w-md mx-auto bg-white border border-gray-200 rounded-xl shadow-lg p-6 sm:p-8 md:p-10">
+
+    <form id="credentialsForm" class="space-y-4 sm:space-y-6">
+      
+      <!-- Email Field -->
+      <div class="space-y-2">
+        <label class="block font-semibold text-sm sm:text-base text-gray-900 cursor-pointer" for="email">
+          Email Address
+        </label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+            </svg>
+          </div>
+          <input id="email" 
+                 type="email" 
+                 class="block w-full pl-9 sm:pl-10 pr-3 py-2.5 sm:py-3 text-sm sm:text-base 
+                        border border-gray-300 rounded-lg placeholder-gray-400 
+                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+                        transition-colors duration-200" 
+                 placeholder="you@email.com"
+                 autocomplete="username"
+                 required>
+        </div>
+      </div>
+
+      <!-- Password Field -->
+      <div class="space-y-2">
+        <label class="block font-semibold text-sm sm:text-base text-gray-900 cursor-pointer" for="password">
+          Password
+        </label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <input id="password" 
+                 type="password" 
+                 class="block w-full pl-9 sm:pl-10 pr-12 sm:pr-14 py-2.5 sm:py-3 text-sm sm:text-base 
+                        border border-gray-300 rounded-lg placeholder-gray-400 
+                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+                        transition-colors duration-200" 
+                 placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" 
+                 autocomplete="current-password"
+                 required>
+
+          <button type="button" 
+                  id="togglePassword" 
+                  aria-label="Toggle password visibility"
+                  class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer 
+                         text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600 
+                         transition-colors duration-200">
+            <!-- Show Icon -->
+            <svg id="eyeShow" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+
+            <!-- Hide Icon -->
+            <svg id="eyeHide" class="h-4 w-4 sm:h-5 sm:w-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.27-2.945-9.543-7a9.966 9.966 0 012.398-4.442M9.88 9.88a3 3 0 104.24 4.24M6.1 6.1L17.9 17.9" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Remember Me Checkbox -->
+      <div id="rememberMe" class="flex items-start gap-3">
+        <div class="flex items-center h-5">
+          <input id="rememberCredentials" 
+                 type="checkbox" 
+                 class="w-4 h-4 sm:w-5 sm:h-5 cursor-pointer rounded border-gray-300 
+                        text-blue-600 focus:ring-blue-500 focus:ring-2">
+        </div>
+        <div class="text-sm sm:text-base">
+          <label for="rememberCredentials" class="text-gray-700 cursor-pointer leading-relaxed">
+            Remember me for this session
+            <span class="block text-xs text-gray-500 mt-1">
+              We'll securely store your credentials locally for convenience
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Not You? -->
+      <div id="notYouContainer" class="mt-2 text-sm text-gray-500 hidden">
+        <span id="rememberedEmail">"some@thing.com"</span>
+        <button type="button" id="clearCredentialsBtn" class="ml-2 text-blue-600 cursor-pointer hover:underline">Not You?</button>
+      </div>
+
+      <!-- Error Message -->
+      <div id="credentialsError" class="hidden bg-red-50 border border-red-200 rounded-lg p-3">
+        <div class="flex items-start gap-2">
+          <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+          </svg>
+          <p id="errorBox" class="text-sm text-red-800">Error message will appear here</p>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button id="connectBtn" 
+              type="submit" 
+              class="ui-button w-full btn-responsive" 
+              data-type="primary" 
+              data-size="large">
+        <span id="loginBtnText">Connect to Monarch</span>
+        <svg id="loginSpinner" class="hidden animate-spin ml-2 h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </button>
+    </form>
+
+    <!-- Security Note -->
+    <div class="flex items-start gap-3 mt-6 sm:mt-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+      <div class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5">
+        <svg id="securityNoteIcon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+          <path d="M9 12l2 2 4-4" stroke="white" stroke-width="2" fill="none"/>
+        </svg>
+      </div>
+      <div>
+        <p id="securityNote" class="text-xs sm:text-sm text-green-800 leading-relaxed">
+          <strong>Secure Connection:</strong> Your credentials are transmitted using bank-level encryption 
+          and are never stored on our servers. We use the same security standards as major financial institutions.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Navigation will be added here by JavaScript -->
+
+</div>
+
+<style>
+  input[type="password"]::-ms-reveal,
+  input[type="password"]::-ms-clear,
+  input[type="password"]::-webkit-credentials-auto-fill-button,
+  input[type="password"]::-webkit-inner-spin-button,
+  input[type="password"]::-webkit-clear-button {
+    display: none !important;
+    appearance: none;
+  }
+
+  input[type="password"]::-webkit-credentials-auto-fill-button {
+    display: none !important;
+    visibility: hidden;
+  }
+
+  #togglePassword, #clearCredentialsBtn {
+    transition: none !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+</style>
+`;
 
   // src/views/MonarchOtp/monarchOtp.js
   function initMonarchOtpView() {
+    const mainContainer = document.querySelector(".container-responsive");
+    mainContainer.insertAdjacentHTML("beforeend", createSimpleNavigationBar({
+      backText: "Back"
+    }));
     const $ = (id) => document.getElementById(id);
     const UI = {
       otpInput: $("otpInput"),
@@ -4945,13 +6152,20 @@
     };
     renderButtons();
     const { credentials } = state_default;
-    const { email, encryptedPassword, uuid, remember } = getLocalStorage();
+    const storage = getLocalStorage();
+    const { email, encryptedPassword, uuid, remember, tempForOtp } = storage;
     patchState(credentials, {
       email: credentials.email || email,
       encryptedPassword: credentials.encryptedPassword || encryptedPassword,
       deviceUuid: credentials.deviceUuid || uuid,
       remember
     });
+    if (tempForOtp && !remember) {
+    }
+    if (!credentials.email || !credentials.encryptedPassword) {
+      console.warn("Missing credentials for OTP flow, redirecting to login");
+      return navigate("/credentials");
+    }
     async function onClickSubmitOtp(e) {
       console.group("MonarchOtpView");
       e.preventDefault();
@@ -4965,10 +6179,18 @@
             awaitingOtp: false
           });
           if (credentials.remember) {
-            saveToLocalStorage({ token: response.token });
+            saveToLocalStorage({
+              email: credentials.email,
+              encryptedPassword: credentials.encryptedPassword,
+              uuid: credentials.deviceUuid,
+              token: response.token,
+              remember: true
+            });
+          } else {
+            clearStorage();
           }
           console.groupEnd("MonarchOtpView");
-          return navigate("monarchCompleteView");
+          return navigate("/complete");
         }
         throw new Error("Unknown login response.");
       } catch (err) {
@@ -4979,7 +6201,11 @@
       }
     }
     function onClickBack() {
-      navigate("monarchCredentialsView");
+      const storage2 = getLocalStorage();
+      if (storage2.tempForOtp && !storage2.remember) {
+        clearStorage();
+      }
+      goBack();
     }
     function onOtpInput() {
       UI.otpInput.value = UI.otpInput.value.replace(/\D/g, "").slice(0, 6);
@@ -4999,226 +6225,828 @@
   }
 
   // src/views/MonarchOtp/monarchOtp.html
-  var monarchOtp_default = '<div class="flex flex-col items-center justify-center py-16 space-y-10">\n\n  <div class="text-center">\n    <h2 class="text-3xl font-bold mb-2">Enter Your Verification Code</h2>\n    <p class="text-gray-600 text-base max-w-md">\n      Monarch has sent a 6-digit verification code to your email address. Enter it below to continue.\n    </p>\n  </div>\n\n  <div class="flex flex-col items-center space-y-5 w-80">\n\n    <input id="otpInput" type="text" maxlength="6" pattern="[0-9]*" inputmode="numeric"\n      class="border rounded px-4 py-3 text-center text-2xl tracking-widest w-full focus:ring-2 focus:ring-blue-400"\n      placeholder="______">\n\n    <div id="otpError" class="text-red-500 text-sm hidden">Invalid code. Please try again.</div>\n\n    <button id="submitOtpBtn"\n      class="ui-button" data-type="primary" data-size="large" data-fullWidth\n      disabled>\n      Verify & Start Import\n    </button>\n\n  </div>\n\n  <div class="flex justify-between items-center px-4 py-4 w-full max-w-lg">\n    <button id="backBtn"\n      class="ui-button" data-type="secondary" data-size="large">\n      \u2190 Back\n    </button>\n  </div>\n\n</div>\n';
+  var monarchOtp_default = `<div class="container-responsive flex flex-col items-center justify-center py-6 sm:py-8 md:py-12 lg:py-16 space-y-8 sm:space-y-10 md:space-y-12 min-h-[calc(100vh-200px)]">
+
+  <!-- Header -->
+  <div class="text-center max-w-2xl w-full">
+    <div class="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-blue-100 rounded-full mb-4 sm:mb-6">
+      <svg class="w-8 h-8 sm:w-10 sm:h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+    </div>
+    
+    <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-gray-900">
+      Enter Your Verification Code
+    </h2>
+    <p class="text-gray-600 text-sm sm:text-base md:text-lg leading-relaxed">
+      Monarch has sent a 6-digit verification code to your email address. 
+      Enter it below to continue with the secure import process.
+    </p>
+  </div>
+
+  <!-- OTP Input Section -->
+  <div class="flex flex-col items-center space-y-6 sm:space-y-8 w-full max-w-sm mx-auto">
+
+    <!-- OTP Input Field -->
+    <div class="relative w-full">
+      <input id="otpInput" 
+             type="text" 
+             maxlength="6" 
+             pattern="[0-9]*" 
+             inputmode="numeric"
+             class="w-full px-4 py-4 sm:py-5 text-center text-xl sm:text-2xl md:text-3xl 
+                    tracking-widest font-mono border-2 border-gray-300 rounded-xl 
+                    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+                    transition-colors duration-200 bg-gray-50 focus:bg-white"
+             placeholder="\u2022 \u2022 \u2022 \u2022 \u2022 \u2022"
+             autocomplete="one-time-code">
+      
+      <!-- Input hint -->
+      <div class="absolute -bottom-6 left-0 right-0 text-center">
+        <span class="text-xs sm:text-sm text-gray-500">6-digit code from your email</span>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div id="otpError" 
+         class="hidden bg-red-50 border border-red-200 rounded-lg p-3 w-full">
+      <div class="flex items-center gap-2">
+        <svg class="w-5 h-5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+        </svg>
+        <p class="text-sm text-red-800">Invalid code. Please try again.</p>
+      </div>
+    </div>
+
+    <!-- Important Warning -->
+    <div class="w-full bg-amber-50 border border-amber-200 rounded-lg p-3">
+      <div class="flex items-start gap-2">
+        <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+        <div>
+          <p class="text-xs sm:text-sm text-amber-800 leading-relaxed">
+            <strong>Important:</strong> Too many failed attempts will trigger Monarch Money's security system, 
+            temporarily blocking access to your account for up to 24 hours. Please enter the code carefully.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit Button -->
+    <button id="submitOtpBtn"
+            class="ui-button w-full btn-responsive" 
+            data-type="primary" 
+            data-size="large"
+            disabled>
+      <span id="submitOtpBtnText">Verify & Start Import</span>
+      <svg id="submitOtpSpinner" class="hidden animate-spin ml-2 h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+    </button>
+
+  </div>
+
+  <!-- Security Note -->
+  <div class="w-full max-w-md mx-auto">
+    <div class="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+      </svg>
+      <div>
+        <p class="text-xs sm:text-sm text-blue-800 leading-relaxed">
+          <strong>Security Notice:</strong> This verification step ensures your account's security. 
+          The code expires in 10 minutes for your protection.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation will be added here by JavaScript -->
+
+</div>
+`;
 
   // src/views/MonarchComplete/monarchComplete.js
-  function initAutoImportCompleteView() {
-    const list = document.getElementById("accountList");
-    const restartBtn = document.getElementById("restartBtn");
-    const retryAllBtn = document.getElementById("retryAllBtn");
-    const openMonarchBtn = document.getElementById("openMonarchBtn");
-    const backBtn2 = document.getElementById("backBtn");
+  function initMonarchCompleteView() {
+    console.log("MonarchComplete view initialized");
+    if (!state_default.accounts || Object.keys(state_default.accounts).length === 0) {
+      navigate("/upload", true);
+      return;
+    }
+    const resultsContainer = document.getElementById("resultsContainer");
+    const accountList = document.getElementById("accountList");
+    const actionButtonsContainer = document.getElementById("actionButtonsContainer");
     const header = document.getElementById("header");
     const subheader = document.getElementById("subheader");
     const overallStatus = document.getElementById("overallStatus");
-    renderButtons();
-    const accounts = Object.values(state_default.accounts).filter((a) => a.included);
-    const CHUNK_SIZE = 4;
-    const STATUS_MAP = {
-      unprocessed: "queued",
-      processed: "success",
-      failed: "error"
-    };
-    const ICONS = {
-      success: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full text-green-500"><path d="M20 6L9 17l-5-5"></path></svg>`,
-      warning: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full text-orange-500"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`,
-      loading: `<svg class="w-full h-full animate-spin text-blue-500" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>`
-    };
-    const STATUS_PILLS = {
-      queued: { text: "Queued", color: "bg-gray-200 text-gray-800" },
-      processing: { text: "Processing", color: "bg-blue-100 text-blue-700 animate-pulse" },
-      pending: { text: "Pending", color: "bg-yellow-100 text-yellow-700" },
-      success: { text: "\u2714 Complete", color: "bg-green-100 text-green-700" },
-      error: { text: "\u2716 Failed", color: "bg-red-100 text-red-700" }
-    };
-    accounts.forEach((account) => {
-      const container = document.createElement("div");
-      container.id = `status-${account.modifiedName}`;
-      container.className = "flex justify-between items-center py-2 border-b border-gray-100 text-base gap-3";
-      container.setAttribute("aria-label", `Status for ${account.modifiedName}`);
-      const nameSpan = document.createElement("span");
-      nameSpan.className = "font-medium truncate text-gray-900 max-w-[70%] cursor-default";
-      nameSpan.textContent = account.modifiedName;
-      nameSpan.title = account.modifiedName;
-      const statusSpan = document.createElement("span");
-      statusSpan.className = `status-indicator text-sm font-medium rounded-full px-3 py-1 ${STATUS_PILLS.queued.color} cursor-default`;
-      statusSpan.textContent = STATUS_PILLS.queued.text;
-      container.appendChild(nameSpan);
-      container.appendChild(statusSpan);
-      list.appendChild(container);
-      updateStatus(account, STATUS_MAP[account.status] || "queued");
-    });
-    let hasInitiatedProcessing = false;
-    const allUnprocessed = accounts.every((acc) => acc.status === "unprocessed");
-    updateOverallStatus();
-    if (allUnprocessed && !hasInitiatedProcessing) {
-      hasInitiatedProcessing = true;
-      header.textContent = "Migration In Progress...";
-      subheader.innerHTML = "We are importing your accounts now. Please do not refresh the page.";
-      overallStatus.innerHTML = ICONS.loading;
-      retryAllBtn.setAttribute("hidden", "");
-      backBtn2.setAttribute("hidden", "");
-      restartBtn.setAttribute("hidden", "");
-      openMonarchBtn.setAttribute("hidden", "");
-      (async () => {
-        await processChunks(batchAccounts(accounts));
-        updateOverallStatus();
-      })();
+    const loadingContainer = document.getElementById("loadingContainer");
+    if (loadingContainer) {
+      loadingContainer.style.display = "none";
     }
-    function batchAccounts(accts) {
-      return accts.reduce((chunks, account, i) => {
-        const idx = Math.floor(i / CHUNK_SIZE);
-        (chunks[idx] ||= []).push(account);
-        return chunks;
-      }, []);
+    if (resultsContainer) {
+      resultsContainer.style.display = "block";
+      resultsContainer.style.opacity = "1";
     }
-    async function processChunks(chunks) {
-      for (const chunk of chunks) {
-        chunk.forEach((acc) => updateStatus(acc, "processing"));
-        const pollingPromises = [];
-        const response = await monarchApi.createAccounts(state_default.credentials.apiToken, chunk);
-        for (const account of response.success) {
-          const original = accounts.find((a) => a.modifiedName === account.name);
-          updateStatus(original, "pending");
-          for (const key of account.sessionKeys) {
-            pollingPromises.push(pollUntilComplete(original, key));
-          }
+    initializeProcessing();
+    function initializeProcessing() {
+      console.log("Initializing processing with accounts:", state_default.accounts);
+      Object.keys(state_default.accounts).forEach((accountName) => {
+        if (!state_default.accounts[accountName].status) {
+          state_default.accounts[accountName].status = "pending";
         }
-        response.failed.forEach((entry) => {
-          const failedAccount = state_default.accounts[entry.name];
-          failedAccount.status = "failed";
-          updateStatus(failedAccount, "error", entry.error);
+      });
+      updateStatusOverview();
+      updateAccountList();
+      updateActionButtons();
+      processAccountsInBatches();
+    }
+    async function processAccountsInBatches() {
+      const BATCH_SIZE = 5;
+      const token = state_default.credentials.apiToken;
+      console.log("Starting batch processing. Token available:", !!token);
+      if (!token) {
+        console.error("No API token available");
+        Object.keys(state_default.accounts).forEach((accountName) => {
+          if (state_default.accounts[accountName].included) {
+            state_default.accounts[accountName].status = "failed";
+            state_default.accounts[accountName].errorMessage = "Authentication required. Please login again.";
+          }
         });
-        await Promise.all(pollingPromises);
-        await sleep(2e3);
-      }
-    }
-    function sleep(ms) {
-      return new Promise((resolve) => setTimeout(resolve, ms));
-    }
-    function updateStatus(account, status, error = null) {
-      const row = document.getElementById(`status-${account.modifiedName}`);
-      if (!row)
+        updateStatusOverview();
+        updateAccountList();
+        updateActionButtons();
         return;
-      const indicator = row.querySelector(".status-indicator");
-      const statusProps = STATUS_PILLS[status];
-      if (statusProps) {
-        indicator.textContent = statusProps.text;
-        indicator.className = `status-indicator text-sm font-medium rounded-full px-3 py-1 ${statusProps.color}`;
       }
-      if (error) {
-        account.status = "failed";
-      } else {
-        if (status === "success") {
-          account.status = "processed";
-          account.selected = false;
-        }
+      const allAccountsToProcess = Object.entries(state_default.accounts).filter(([accountName, account]) => account.included && account.status !== "completed").map(([accountName, account]) => ({ accountName, ...account }));
+      console.log("Total accounts to process:", allAccountsToProcess.length);
+      if (allAccountsToProcess.length === 0) {
+        console.log("No accounts to process");
+        updateStatusOverview();
+        updateActionButtons();
+        return;
       }
-    }
-    function updateOverallStatus() {
-      const allProcessed = accounts.every((a) => a.status === "processed");
-      const someProcessing = accounts.some((a) => a.status === "processing");
-      const someFailed = accounts.some((a) => a.status === "failed");
-      if (someProcessing) {
-        header.textContent = "Migration In Progress...";
-        subheader.innerHTML = "We are importing your accounts now. Please do not refresh the page.";
-        overallStatus.innerHTML = ICONS.loading;
-        retryAllBtn.setAttribute("hidden", "");
-        backBtn2.setAttribute("hidden", "");
-        restartBtn.setAttribute("hidden", "");
-        openMonarchBtn.setAttribute("hidden", "");
-      } else if (allProcessed) {
-        header.textContent = "Migration Complete!";
-        subheader.textContent = "All accounts were successfully imported.";
-        overallStatus.innerHTML = ICONS.success;
-        retryAllBtn.setAttribute("hidden", "");
-        backBtn2.setAttribute("hidden", "");
-        restartBtn.removeAttribute("hidden");
-        openMonarchBtn.removeAttribute("hidden");
-      } else if (someFailed) {
-        header.textContent = "Migration Incomplete";
-        subheader.textContent = "Some accounts failed to import. You can retry them below.";
-        overallStatus.innerHTML = ICONS.warning;
-        retryAllBtn.removeAttribute("hidden");
-        backBtn2.removeAttribute("hidden");
-        restartBtn.setAttribute("hidden", "");
-        openMonarchBtn.setAttribute("hidden", "");
-        const firstFailed = accounts.find((a) => a.status === "failed");
-        if (firstFailed) {
-          document.getElementById(`status-${firstFailed.modifiedName}`)?.scrollIntoView({ behavior: "smooth" });
-        }
+      const batches = [];
+      for (let i = 0; i < allAccountsToProcess.length; i += BATCH_SIZE) {
+        batches.push(allAccountsToProcess.slice(i, i + BATCH_SIZE));
       }
-    }
-    async function pollUntilComplete(account, sessionKey, maxRetries = 30, interval = 3500) {
-      for (let attempt = 0; attempt < maxRetries; attempt++) {
-        try {
-          const res = await monarchApi.queryUploadStatus(state_default.credentials.apiToken, sessionKey);
-          const session = res.data.uploadStatementSession;
-          if (session.status === "completed") {
-            updateStatus(account, "success");
-            return;
-          } else if (session.status === "failed" || session.status === "errored" || session.errorMessage) {
-            updateStatus(account, "error", session.errorMessage || "Upload failed");
-            return;
+      console.log(`Processing ${allAccountsToProcess.length} accounts in ${batches.length} batches of ${BATCH_SIZE}`);
+      for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+        const batch = batches[batchIndex];
+        console.log(`Processing batch ${batchIndex + 1}/${batches.length} with ${batch.length} accounts`);
+        batch.forEach((account) => {
+          if (state_default.accounts[account.accountName]) {
+            state_default.accounts[account.accountName].status = "processing";
           }
-        } catch (e) {
-          updateStatus(account, "error", e.message);
-          return;
+        });
+        updateStatusOverview();
+        updateAccountList();
+        await processBatch(token, batch, batchIndex + 1, batches.length);
+        if (batchIndex < batches.length - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 1e3));
         }
-        await new Promise((resolve) => setTimeout(resolve, interval));
       }
-      updateStatus(account, "error", "Timeout waiting for Monarch to finish import.");
+      updateStatusOverview();
+      updateAccountList();
+      updateActionButtons();
     }
-    retryAllBtn.addEventListener("click", async () => {
-      retryAllBtn.disabled = true;
-      retryAllBtn.textContent = "Retrying...";
-      const retryAccounts = accounts.filter((a) => a.status === "failed");
-      await processChunks(batchAccounts(retryAccounts));
-      retryAllBtn.disabled = false;
-      retryAllBtn.textContent = "Retry All Failed Accounts";
-      updateOverallStatus();
-    });
-    restartBtn.addEventListener("click", () => {
-      navigate("uploadView");
-    });
-    backBtn2.addEventListener("click", () => {
-      navigate("reviewView");
-    });
+    async function processBatch(token, batch, batchNumber, totalBatches) {
+      try {
+        console.log(`Calling API for batch ${batchNumber}/${totalBatches}...`);
+        const response = await monarchApi.createAccounts(token, batch);
+        console.log(`Batch ${batchNumber} create accounts response:`, response);
+        if (response.success || response.failed) {
+          if (response.failed && response.failed.length > 0) {
+            response.failed.forEach((result) => {
+              const matchingAccount = batch.find((acc) => acc.name === result.name || acc.modifiedName === result.name);
+              if (matchingAccount && state_default.accounts[matchingAccount.accountName]) {
+                console.log(`Batch ${batchNumber}: Marking account as failed: ${matchingAccount.accountName}, error: ${result.error}`);
+                state_default.accounts[matchingAccount.accountName].status = "failed";
+                state_default.accounts[matchingAccount.accountName].errorMessage = result.error || "Account creation failed";
+              }
+            });
+          }
+          if (response.success && response.success.length > 0) {
+            console.log(`Batch ${batchNumber}: Monitoring upload status for ${response.success.length} accounts...`);
+            response.success.forEach((result) => {
+              const matchingAccount = batch.find((acc) => acc.name === result.name || acc.modifiedName === result.name);
+              if (matchingAccount && state_default.accounts[matchingAccount.accountName]) {
+                state_default.accounts[matchingAccount.accountName].status = "uploading";
+                state_default.accounts[matchingAccount.accountName].sessionKeys = result.sessionKeys || [];
+              }
+            });
+            updateStatusOverview();
+            updateAccountList();
+            await Promise.all(response.success.map(async (result) => {
+              const matchingAccount = batch.find((acc) => acc.name === result.name || acc.modifiedName === result.name);
+              if (matchingAccount && state_default.accounts[matchingAccount.accountName] && result.sessionKeys) {
+                try {
+                  await monitorUploadStatus(token, matchingAccount.accountName, result.sessionKeys);
+                  console.log(`Batch ${batchNumber}: Upload completed for account: ${matchingAccount.accountName}`);
+                  state_default.accounts[matchingAccount.accountName].status = "completed";
+                } catch (error) {
+                  console.error(`Batch ${batchNumber}: Upload failed for account: ${matchingAccount.accountName}`, error);
+                  state_default.accounts[matchingAccount.accountName].status = "failed";
+                  state_default.accounts[matchingAccount.accountName].errorMessage = error.message || "Transaction upload failed";
+                }
+              }
+            }));
+          }
+          batch.forEach((account) => {
+            if (state_default.accounts[account.accountName] && state_default.accounts[account.accountName].status === "processing") {
+              console.log(`Batch ${batchNumber}: Account not found in API response, marking as failed: ${account.accountName}`);
+              state_default.accounts[account.accountName].status = "failed";
+              state_default.accounts[account.accountName].errorMessage = "Account not processed by server";
+            }
+          });
+        } else {
+          const errorMessage = response.error || "Failed to create accounts in Monarch Money";
+          console.log(`Batch ${batchNumber} failed, marking all as failed:`, errorMessage);
+          batch.forEach((account) => {
+            if (state_default.accounts[account.accountName]) {
+              state_default.accounts[account.accountName].status = "failed";
+              state_default.accounts[account.accountName].errorMessage = errorMessage;
+            }
+          });
+        }
+      } catch (error) {
+        console.error(`Batch ${batchNumber} error:`, error);
+        batch.forEach((account) => {
+          if (state_default.accounts[account.accountName]) {
+            state_default.accounts[account.accountName].status = "failed";
+            state_default.accounts[account.accountName].errorMessage = "Network error. Please check your connection and try again.";
+          }
+        });
+      }
+    }
+    async function monitorUploadStatus(token, accountName, sessionKeys) {
+      console.log(`Monitoring upload status for account: ${accountName}, sessions: ${sessionKeys.length}`);
+      await Promise.all(sessionKeys.map(async (sessionKey) => {
+        let attempts = 0;
+        const maxAttempts = 60;
+        while (attempts < maxAttempts) {
+          try {
+            const statusResponse = await monarchApi.queryUploadStatus(token, sessionKey);
+            console.log(`Upload status for ${accountName} session ${sessionKey}:`, statusResponse);
+            if (statusResponse.data?.uploadStatementSession) {
+              const session = statusResponse.data.uploadStatementSession;
+              const status = session.status;
+              if (status === "completed") {
+                console.log(`Upload completed for ${accountName} session ${sessionKey}`);
+                return;
+              } else if (status === "failed" || status === "error") {
+                const errorMessage = session.errorMessage || "Transaction upload failed";
+                console.error(`Upload failed for ${accountName} session ${sessionKey}:`, errorMessage);
+                throw new Error(errorMessage);
+              }
+            }
+            await new Promise((resolve) => setTimeout(resolve, 5e3));
+            attempts++;
+          } catch (error) {
+            console.error(`Error checking upload status for ${accountName}:`, error);
+            attempts++;
+            if (attempts >= maxAttempts) {
+              throw error;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 5e3));
+          }
+        }
+        throw new Error(`Upload status check timed out for account ${accountName}`);
+      }));
+    }
+    function updateStatusOverview() {
+      const accounts2 = state_default.accounts || {};
+      const includedAccounts = Object.values(accounts2).filter((acc) => acc.included);
+      const totalAccounts = includedAccounts.length;
+      const completedAccounts = includedAccounts.filter((acc) => acc.status === "completed").length;
+      const failedAccounts = includedAccounts.filter((acc) => acc.status === "failed").length;
+      const processingAccounts = includedAccounts.filter((acc) => acc.status === "processing").length;
+      const uploadingAccounts = includedAccounts.filter((acc) => acc.status === "uploading").length;
+      const pendingAccounts = totalAccounts - completedAccounts - failedAccounts - processingAccounts - uploadingAccounts;
+      let statusText = "Processing...";
+      let statusSubtext = "Please wait while we process your accounts.";
+      let statusIcon = "\u23F3";
+      if (processingAccounts > 0) {
+        statusText = "Creating accounts...";
+        statusSubtext = `Creating ${processingAccounts} account${processingAccounts !== 1 ? "s" : ""}. Please wait.`;
+        statusIcon = "\u23F3";
+      } else if (uploadingAccounts > 0) {
+        statusText = "Uploading transactions...";
+        statusSubtext = `Uploading transactions for ${uploadingAccounts} account${uploadingAccounts !== 1 ? "s" : ""}. Please wait.`;
+        statusIcon = "\u{1F4E4}";
+      } else if (pendingAccounts === 0) {
+        if (failedAccounts === 0) {
+          statusText = "All accounts migrated successfully!";
+          statusSubtext = `Successfully created ${completedAccounts} account${completedAccounts !== 1 ? "s" : ""} in Monarch Money.`;
+          statusIcon = "\u2705";
+        } else if (completedAccounts === 0) {
+          statusText = "Migration failed for all accounts";
+          statusSubtext = "None of your accounts could be migrated. Please try again.";
+          statusIcon = "\u274C";
+        } else {
+          statusText = "Migration completed with some failures";
+          statusSubtext = `${completedAccounts} successful, ${failedAccounts} failed. You can retry the failed accounts.`;
+          statusIcon = "\u26A0\uFE0F";
+        }
+      }
+      if (header) {
+        header.textContent = statusText;
+      }
+      if (subheader) {
+        subheader.textContent = statusSubtext;
+      }
+      if (overallStatus) {
+        overallStatus.innerHTML = `<div class="text-6xl">${statusIcon}</div>`;
+      }
+    }
+    function updateAccountList() {
+      if (!accountList)
+        return;
+      const accounts2 = state_default.accounts || {};
+      accountList.innerHTML = "";
+      Object.entries(accounts2).forEach(([accountId, account]) => {
+        if (!account.included)
+          return;
+        const accountItem = document.createElement("div");
+        accountItem.className = "bg-white border border-gray-200 rounded-lg p-4";
+        let statusIcon = "";
+        let statusClass = "";
+        let statusText = "";
+        switch (account.status) {
+          case "completed":
+            statusIcon = "\u2705";
+            statusClass = "text-green-600";
+            statusText = "Successfully migrated";
+            break;
+          case "failed":
+            statusIcon = "\u274C";
+            statusClass = "text-red-600";
+            statusText = account.errorMessage || "Migration failed";
+            break;
+          case "processing":
+            statusIcon = "\u23F3";
+            statusClass = "text-blue-600";
+            statusText = "Creating account...";
+            break;
+          case "uploading":
+            statusIcon = "\u{1F4E4}";
+            statusClass = "text-purple-600";
+            statusText = "Uploading transactions...";
+            break;
+          default:
+            statusIcon = "\u23F3";
+            statusClass = "text-gray-600";
+            statusText = "Pending";
+        }
+        let accountTypeDisplay = "Unknown Type";
+        console.log(`Account ${accountId} type data:`, {
+          type: account.type,
+          subtype: account.subtype,
+          accountObject: account
+        });
+        if (account.type) {
+          const typeInfo = getAccountTypeByName(account.type);
+          console.log(`Type info for '${account.type}':`, typeInfo);
+          if (typeInfo) {
+            accountTypeDisplay = typeInfo.typeDisplay || typeInfo.displayName || typeInfo.display;
+            if (account.subtype) {
+              const subtypeInfo = getSubtypeByName(account.type, account.subtype);
+              console.log(`Subtype info for '${account.type}' -> '${account.subtype}':`, subtypeInfo);
+              if (subtypeInfo) {
+                accountTypeDisplay = subtypeInfo.display || subtypeInfo.displayName;
+              }
+            }
+          }
+        } else {
+          console.log(`Account ${accountId} has no type property`);
+        }
+        accountItem.innerHTML = `
+        <div class="flex items-start justify-between mb-3">
+          <div class="flex-1 min-w-0 pr-4">
+            <div class="font-medium text-gray-900 mb-1">${account.modifiedName || account.account_name || account.name || "Unknown Account"}</div>
+            <div class="text-sm text-gray-500">${accountTypeDisplay}</div>
+            ${account.monarchAccountId ? `<div class="text-xs text-gray-400 mt-1">Monarch ID: ${account.monarchAccountId}</div>` : ""}
+          </div>
+          <div class="flex-shrink-0">
+            <span class="text-2xl">${statusIcon}</span>
+          </div>
+        </div>
+        <div class="pt-2 border-t border-gray-100">
+          <div class="${statusClass} text-sm font-medium leading-relaxed">${statusText}</div>
+        </div>
+      `;
+        accountList.appendChild(accountItem);
+      });
+    }
+    function updateActionButtons() {
+      if (!actionButtonsContainer)
+        return;
+      const accounts2 = state_default.accounts || {};
+      const failedAccounts = Object.values(accounts2).filter((acc) => acc.included && acc.status === "failed");
+      const completedAccounts = Object.values(accounts2).filter((acc) => acc.included && acc.status === "completed");
+      actionButtonsContainer.innerHTML = "";
+      if (failedAccounts.length > 0) {
+        const retryBtn = document.createElement("button");
+        retryBtn.className = "ui-button";
+        retryBtn.dataset.type = "primary";
+        retryBtn.dataset.size = "medium";
+        retryBtn.textContent = "Retry Failed Accounts";
+        retryBtn.addEventListener("click", () => retryFailedAccounts());
+        actionButtonsContainer.appendChild(retryBtn);
+      }
+      if (completedAccounts.length > 0) {
+        const viewBtn = document.createElement("button");
+        viewBtn.className = "ui-button";
+        viewBtn.dataset.type = "secondary";
+        viewBtn.dataset.size = "medium";
+        viewBtn.textContent = "View in Monarch Money";
+        viewBtn.addEventListener("click", () => window.open("https://app.monarchmoney.com", "_blank"));
+        actionButtonsContainer.appendChild(viewBtn);
+      }
+      const startOverBtn = document.createElement("button");
+      startOverBtn.className = "ui-button";
+      startOverBtn.dataset.type = "secondary";
+      startOverBtn.dataset.size = "medium";
+      startOverBtn.textContent = "Start Over";
+      startOverBtn.addEventListener("click", () => navigate("/upload", true));
+      actionButtonsContainer.appendChild(startOverBtn);
+      renderButtons();
+    }
+    function retryFailedAccounts() {
+      const failedAccounts = Object.entries(state_default.accounts).filter(([accountName, acc]) => acc.included && acc.status === "failed");
+      if (failedAccounts.length === 0)
+        return;
+      failedAccounts.forEach(([accountName, account]) => {
+        state_default.accounts[accountName].status = "pending";
+        delete state_default.accounts[accountName].errorMessage;
+      });
+      updateStatusOverview();
+      updateAccountList();
+      updateActionButtons();
+      processAccountsInBatches();
+    }
   }
+  var monarchComplete_default = initMonarchCompleteView;
 
   // src/views/MonarchComplete/monarchComplete.html
-  var monarchComplete_default = '<div class="flex flex-col items-center justify-center py-24 space-y-10">\n\n  <!-- Progress Container -->\n  <div id="resultsContainer" class="text-center transition-opacity duration-500 ease-in-out">\n    <div id="overallStatus" class="w-20 h-20 mx-auto mb-6">\n      <!-- Updated dynamically -->\n    </div>\n\n    <h2 id="header" class="text-3xl font-bold mb-4">\n      <!-- Updated dynamically -->\n    </h2>\n    <p id="subheader" class="text-gray-600 text-base max-w-md mx-auto mb-6">\n      <!-- Updated dynamically -->\n    </p>\n\n    <!-- Account status list -->\n    <div id="accountList" class="text-left max-w-xl w-full mx-auto space-y-3 transition-all duration-300">\n      <!-- Account rows inserted by JavaScript -->\n    </div>\n\n    <!-- Action buttons Container -->\n    <div class="flex justify-between items-center gap-4 px-4 py-6 mt-6">\n      <button id="backBtn" class="ui-button" data-type="secondary" data-size="large" hidden>\n        \u2190 Back\n      </button>\n\n      <button id="retryAllBtn" class="ui-button" data-type="warning" data-size="large" hidden>\n        Retry All Failed Accounts\n      </button>\n\n      <button id="restartBtn" class="ui-button" data-type="secondary" data-size="large" hidden>\n        Upload More Accounts\n      </button>\n\n      <a id="openMonarchBtn" href="https://app.monarchmoney.com" target="_blank" class="ui-button" data-type="primary"\n        data-size="large" hidden>\n        <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"\n          stroke="currentColor">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n            d="M14 3h7m0 0v7m0-7L10 14M5 5h14v14H5V5z" />\n        </svg>Open Monarch\n      </a>\n    </div>\n  </div>\n\n</div>';
+  var monarchComplete_default2 = `<div class="container-responsive flex flex-col items-center justify-center py-8 sm:py-12 md:py-16 lg:py-24 space-y-8 sm:space-y-10 md:space-y-12 min-h-[calc(100vh-200px)]">
+
+  <!-- Results Container -->
+  <div id="resultsContainer" 
+       class="text-center transition-opacity duration-500 ease-in-out w-full max-w-5xl opacity-0">
+    
+    <!-- Status Icon -->
+    <div id="overallStatus" 
+         class="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 mx-auto mb-6 sm:mb-8 
+                transition-all duration-500 ease-in-out">
+      <!-- Updated dynamically -->
+    </div>
+
+    <!-- Header -->
+    <div class="mb-6 sm:mb-8 md:mb-10">
+      <h2 id="header" 
+          class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-gray-900">
+        <!-- Updated dynamically -->
+      </h2>
+      <p id="subheader" 
+         class="text-gray-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
+        <!-- Updated dynamically -->
+      </p>
+    </div>
+
+    <!-- Account Status List -->
+    <div id="accountList" 
+         class="text-left max-w-3xl w-full mx-auto space-y-3 sm:space-y-4 transition-all duration-300 mb-8 sm:mb-10 md:mb-12">
+      <!-- Account rows inserted by JavaScript -->
+    </div>
+
+    <!-- Action Buttons Container -->
+    <div id="actionButtonsContainer" 
+         class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full max-w-2xl">
+      <!-- Buttons inserted dynamically -->
+    </div>
+
+  </div>
+
+  <!-- Loading State -->
+  <div id="loadingContainer" 
+       class="text-center w-full max-w-md">
+    
+    <div class="mb-6 sm:mb-8">
+      <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6">
+        <svg class="animate-spin w-full h-full text-blue-600" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </div>
+      
+      <h2 class="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 text-gray-900">
+        Processing Your Import
+      </h2>
+      <p class="text-gray-600 text-sm sm:text-base leading-relaxed">
+        We're securely importing your accounts into Monarch Money. This may take a few moments...
+      </p>
+    </div>
+
+    <!-- Progress Steps -->
+    <div class="space-y-3 sm:space-y-4 text-left">
+      <div id="step1" class="flex items-center gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
+        <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+          <svg class="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <span class="text-sm sm:text-base text-blue-800 font-medium">Authenticating with Monarch</span>
+      </div>
+      
+      <div id="step2" class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+        <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-gray-300 flex items-center justify-center flex-shrink-0">
+          <div class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-gray-300"></div>
+        </div>
+        <span class="text-sm sm:text-base text-gray-600">Creating accounts</span>
+      </div>
+      
+      <div id="step3" class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+        <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-gray-300 flex items-center justify-center flex-shrink-0">
+          <div class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-gray-300"></div>
+        </div>
+        <span class="text-sm sm:text-base text-gray-600">Importing transactions</span>
+      </div>
+      
+      <div id="step4" class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+        <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-gray-300 flex items-center justify-center flex-shrink-0">
+          <div class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-gray-300"></div>
+        </div>
+        <span class="text-sm sm:text-base text-gray-600">Finalizing import</span>
+      </div>
+    </div>
+
+    <!-- Security Note -->
+    <div class="mt-6 sm:mt-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+      <div class="flex items-start gap-3">
+        <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+        </svg>
+        <p class="text-xs sm:text-sm text-green-800 leading-relaxed">
+          <strong>Secure Process:</strong> Your data is encrypted during transfer and we never store your Monarch credentials.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Navigation will be added here by JavaScript -->
+
+</div>`;
 
   // src/router.js
   var routes = {
-    uploadView: { template: upload_default, init: initUploadView, scroll: false },
-    reviewView: { template: review_default, init: initAccountReviewView, scroll: true },
-    methodView: { template: method_default, init: initMethodSelectView, scroll: false },
-    manualInstructionsView: { template: manualInstructions_default, init: initManualInstructionsView, scroll: true },
-    monarchCredentialsView: { template: monarchCredentials_default, init: initMonarchCredentialsView, scroll: false },
-    monarchOtpView: { template: monarchOtp_default, init: initMonarchOtpView, scroll: false },
-    monarchCompleteView: { template: monarchComplete_default, init: initAutoImportCompleteView, scroll: false }
+    "/": {
+      template: upload_default,
+      init: initUploadView,
+      scroll: false,
+      title: "Upload - YNAB to Monarch",
+      requiresAuth: false
+    },
+    "/upload": {
+      template: upload_default,
+      init: initUploadView,
+      scroll: false,
+      title: "Upload - YNAB to Monarch",
+      requiresAuth: false
+    },
+    "/review": {
+      template: review_default,
+      init: initAccountReviewView,
+      scroll: true,
+      title: "Review Accounts - YNAB to Monarch",
+      requiresAuth: false,
+      requiresAccounts: true
+    },
+    "/method": {
+      template: method_default,
+      init: initMethodSelectView,
+      scroll: false,
+      title: "Select Method - YNAB to Monarch",
+      requiresAuth: false,
+      requiresAccounts: true
+    },
+    "/manual": {
+      template: manualInstructions_default,
+      init: initManualInstructionsView,
+      scroll: true,
+      title: "Manual Import - YNAB to Monarch",
+      requiresAuth: false,
+      requiresAccounts: true
+    },
+    "/login": {
+      template: monarchCredentials_default,
+      init: initMonarchCredentialsView,
+      scroll: false,
+      title: "Login to Monarch - YNAB to Monarch",
+      requiresAuth: false,
+      requiresAccounts: true
+    },
+    "/otp": {
+      template: monarchOtp_default,
+      init: initMonarchOtpView,
+      scroll: false,
+      title: "Enter OTP - YNAB to Monarch",
+      requiresAuth: false,
+      requiresAccounts: true
+    },
+    "/complete": {
+      template: monarchComplete_default2,
+      init: monarchComplete_default,
+      scroll: false,
+      title: "Migration Complete - YNAB to Monarch",
+      requiresAuth: false,
+      requiresAccounts: true
+    }
   };
-  async function navigate(view) {
-    const app = document.getElementById("app");
-    app.innerHTML = "";
-    const route = routes[view];
-    if (!route) {
-      app.innerHTML = "<p>404 - View not found</p>";
+  var isNavigating = false;
+  var stateLoaded = false;
+  async function navigate(path, replace = false, skipRouteGuards = false) {
+    if (isNavigating)
       return;
+    isNavigating = true;
+    try {
+      if (!path.startsWith("/")) {
+        path = "/" + path;
+      }
+      const route = routes[path];
+      if (!route) {
+        console.error(`Route not found: ${path}`);
+        path = "/upload";
+        return navigate(path, replace);
+      }
+      if (!stateLoaded) {
+        await loadPersistedState();
+        stateLoaded = true;
+      }
+      if (!skipRouteGuards && route.requiresAccounts) {
+        const hasAccounts = state_default.accounts && Object.keys(state_default.accounts).length > 0;
+        if (!hasAccounts) {
+          console.warn(`Route ${path} requires accounts but none found. Redirecting to upload.`);
+          return navigate("/upload", true);
+        }
+      }
+      if (replace) {
+        history.replaceState({ path }, "", path);
+      } else {
+        history.pushState({ path }, "", path);
+      }
+      await renderRoute(path);
+    } catch (error) {
+      console.error("Navigation error:", error);
+      if (path !== "/upload") {
+        return navigate("/upload", true);
+      }
+    } finally {
+      isNavigating = false;
+    }
+  }
+  async function renderRoute(path) {
+    const app = document.getElementById("app");
+    const route = routes[path] || routes["/upload"];
+    document.title = route.title;
+    if (!stateLoaded) {
+      await loadPersistedState();
+      stateLoaded = true;
     }
     if (route.scroll) {
       document.body.classList.add("always-scroll");
     } else {
       document.body.classList.remove("always-scroll");
     }
-    document.getElementById("app").innerHTML = route.template;
-    route.init();
+    app.innerHTML = "";
+    app.innerHTML = route.template;
+    try {
+      await route.init();
+    } catch (error) {
+      console.error(`Error initializing route ${path}:`, error);
+      if (path !== "/upload") {
+        navigate("/upload", true);
+      }
+    }
   }
-
-  // src/main.js
-  window.addEventListener("DOMContentLoaded", () => {
-    navigate("uploadView");
+  function persistState() {
+    try {
+      if (Object.keys(state_default.accounts).length > 0) {
+        sessionStorage.setItem("ynab_accounts", JSON.stringify(state_default.accounts));
+      }
+      if (state_default.monarchAccounts) {
+        sessionStorage.setItem("monarch_accounts", JSON.stringify(state_default.monarchAccounts));
+      }
+      const persistentState = {
+        lastPath: getCurrentPath(),
+        timestamp: Date.now()
+      };
+      localStorage.setItem("app_state", JSON.stringify(persistentState));
+    } catch (error) {
+      console.error("Error persisting state:", error);
+    }
+  }
+  async function loadPersistedState() {
+    try {
+      if (!state_default.accounts) {
+        state_default.accounts = {};
+      }
+      const localStorageData = getLocalStorage();
+      if (localStorageData.email || localStorageData.token) {
+        state_default.credentials.email = localStorageData.email || state_default.credentials.email;
+        state_default.credentials.encryptedPassword = localStorageData.encryptedPassword || state_default.credentials.encryptedPassword;
+        state_default.credentials.apiToken = localStorageData.token || state_default.credentials.apiToken;
+        state_default.credentials.deviceUuid = localStorageData.uuid || state_default.credentials.deviceUuid;
+        state_default.credentials.remember = localStorageData.remember || state_default.credentials.remember;
+      }
+      const accountsData = sessionStorage.getItem("ynab_accounts");
+      if (accountsData) {
+        try {
+          const parsedAccounts = JSON.parse(accountsData);
+          if (parsedAccounts && typeof parsedAccounts === "object") {
+            state_default.accounts = parsedAccounts;
+          }
+        } catch (e) {
+          console.warn("Failed to parse accounts from sessionStorage:", e);
+          sessionStorage.removeItem("ynab_accounts");
+          state_default.accounts = {};
+        }
+      }
+      const monarchAccountsData = sessionStorage.getItem("monarch_accounts");
+      if (monarchAccountsData) {
+        try {
+          const parsedMonarchAccounts = JSON.parse(monarchAccountsData);
+          if (parsedMonarchAccounts && typeof parsedMonarchAccounts === "object") {
+            state_default.monarchAccounts = parsedMonarchAccounts;
+          }
+        } catch (e) {
+          console.warn("Failed to parse monarch accounts from sessionStorage:", e);
+          sessionStorage.removeItem("monarch_accounts");
+          state_default.monarchAccounts = null;
+        }
+      }
+      const appStateData = localStorage.getItem("app_state");
+      if (appStateData) {
+        try {
+          const appState = JSON.parse(appStateData);
+          if (appState.timestamp && Date.now() - appState.timestamp < 24 * 60 * 60 * 1e3) {
+            console.log("Loaded recent app state from localStorage");
+          } else {
+            localStorage.removeItem("app_state");
+          }
+        } catch (e) {
+          console.warn("Failed to parse app state from localStorage:", e);
+          localStorage.removeItem("app_state");
+        }
+      }
+    } catch (error) {
+      console.error("Error loading persisted state:", error);
+      state_default.accounts = {};
+      state_default.monarchAccounts = null;
+    }
+  }
+  function getCurrentPath() {
+    return window.location.pathname;
+  }
+  function goBack() {
+    const currentPath = getCurrentPath();
+    const backRoutes = {
+      "/review": "/upload",
+      "/method": "/review",
+      "/manual": "/method",
+      "/login": "/method",
+      "/otp": "/login",
+      "/complete": "/review"
+    };
+    const backPath = backRoutes[currentPath] || "/upload";
+    navigate(backPath);
+  }
+  window.addEventListener("popstate", async (event) => {
+    if (!isNavigating) {
+      const path = event.state?.path || window.location.pathname;
+      try {
+        await renderRoute(path);
+      } catch (error) {
+        console.error("Error handling popstate:", error);
+        navigate("/upload", true);
+      }
+    }
+  });
+  window.addEventListener("DOMContentLoaded", async () => {
+    const path = window.location.pathname;
+    const route = routes[path];
+    try {
+      if (route) {
+        await renderRoute(path);
+      } else {
+        navigate("/upload", true);
+      }
+    } catch (error) {
+      console.error("Error on initial load:", error);
+      navigate("/upload", true);
+    }
   });
 })();
 /* @license

@@ -1,10 +1,16 @@
 import JSZip from 'jszip';
 import generateCSV from '../../../shared/generateCsv.js';
 import state from '../../state.js';
-import { navigate } from '../../router.js';
+import { navigate, goBack } from '../../router.js';
 import { renderButtons } from '../../components/button.js';
 
 export default function initManualInstructionsView() {
+  // Redirect to upload if no accounts are available
+  if (!state.accounts || Object.keys(state.accounts).length === 0) {
+    navigate('/upload', true);
+    return;
+  }
+
   const countSpan = document.getElementById('accountCount');
   const downloadBtn = document.getElementById('downloadBtn');
   const switchBtn = document.getElementById('switchToAuto');
@@ -14,7 +20,8 @@ export default function initManualInstructionsView() {
   const includedAccounts = Object.values(state.accounts).filter(acc => acc.included);
   countSpan.textContent = `${includedAccounts.length} account${includedAccounts.length !== 1 ? 's' : ''}`;
 
-  downloadBtn.addEventListener('click', async () => {
+  downloadBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
     const zip = new JSZip();
     const MAX_ROWS_PER_FILE = 1000;
 
@@ -51,10 +58,14 @@ export default function initManualInstructionsView() {
   });
 
   switchBtn.addEventListener('click', () => {
-    navigate('monarchCredentialsView');
+    navigate('/login');
   });
 
   backBtn.addEventListener('click', () => {
-    navigate('methodView');
+    goBack();
+  });
+
+  document.getElementById('backToMethodBtn').addEventListener('click', () => {
+    goBack();
   });
 }

@@ -1,42 +1,116 @@
-<div class="flex flex-col items-center justify-center py-10 px-4">
+<div class="container-responsive flex flex-col items-center justify-center py-6 sm:py-8 md:py-12 lg:py-16 min-h-[calc(100vh-200px)]">
 
-  <div class="text-center max-w-1xl w-full">
-    <h2 class="text-3xl font-bold mb-4">Migrate your YNAB data</h2>
-    <p class="text-gray-600 text-base max-w-md mx-auto leading-relaxed">
+  <div class="text-center w-full max-w-3xl mb-8 sm:mb-10 md:mb-12">
+    <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 md:mb-6 text-gray-900">
+      Migrate your YNAB data
+    </h2>
+    <p class="text-gray-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed px-2">
       Upload a YNAB ZIP file to begin the migration process into Monarch Money.
     </p>
 
-    <a id="howItWorksBtn" class="ui-button" data-type="text">How does this work?</a>
+    <a id="howItWorksBtn" class="ui-button mt-4 sm:mt-6 inline-block" data-type="text">
+      How does this work?
+    </a>
   </div>
 
   <!-- Upload Box -->
-  <div id="uploadBox" class="w-full max-w-md border-2 border-dashed border-gray-300 rounded-xl p-10 mt-10 flex flex-col items-center gap-3 transition-all">
-    <p class="text-lg font-semibold">Drag & Drop your Register ZIP file</p>
-    <p class="text-sm text-gray-500">or</p>
-    <input id="fileInput" type="file" accept=".csv,.zip" hidden>
-    <button id="browseButton" class="ui-button" data-type="primary">Browse Files</button>
+  <div id="uploadBox" 
+       class="w-full max-w-sm sm:max-w-md md:max-w-lg border-2 border-dashed border-gray-300 rounded-xl 
+              p-4 sm:p-6 md:p-8 lg:p-10 flex flex-col items-center gap-3 sm:gap-4 
+              transition-all duration-300 hover:border-blue-400 hover:bg-blue-50/30 
+              cursor-pointer focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200">
+    
+    <div class="text-center space-y-2 sm:space-y-3">
+      <div class="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-400 mb-2">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 48 48" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" 
+                d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" />
+        </svg>
+      </div>
+      
+      <p class="text-base sm:text-lg md:text-xl font-semibold text-gray-700">
+        Drag & Drop your YNAB export file
+      </p>
+      <p class="text-sm text-gray-500">or click to browse (ZIP format)</p>
+    </div>
+    
+    <input id="fileInput" type="file" accept=".csv,.zip,.bin,application/zip,application/x-zip-compressed,application/octet-stream,application/binary,*/*" hidden>
+    <button id="browseButton" class="ui-button btn-responsive" data-type="primary" data-size="large">
+      Browse Files
+    </button>
 
-    <p class="text-xs text-gray-400 mt-2">Your file stays local. We never store or transmit your data.</p>
+    <p class="text-xs sm:text-sm text-gray-400 text-center max-w-xs leading-relaxed">
+      <span class="inline-flex items-center gap-1">
+        <svg class="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+        </svg>
+        Secure & Private
+      </span>
+      <br>
+      Your file stays local. We never store or transmit your data.
+      <br><br>
+      <span class="text-xs text-gray-400">
+        On mobile devices, ZIP files may appear as BIN or other formats - we support all common archive types.
+      </span>
+    </p>
   </div>
 
-  <div id="errorMessage" class="hidden text-red-500 text-sm mt-4">Some error</div>
+  <div id="errorMessage" 
+       class="hidden text-red-600 text-sm sm:text-base mt-4 sm:mt-6 text-center px-4 
+              bg-red-50 border border-red-200 rounded-lg py-3 max-w-md mx-auto">
+    Some error
+  </div>
 
 </div>
 
 <!-- Modal -->
-<div id="howItWorksModal" class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300">
+<div id="howItWorksModal" 
+     class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 
+            transition-opacity duration-300 p-3 sm:p-4 md:p-6">
   <!-- Overlay -->
-  <div class="absolute inset-0 bg-[rgba(0,0,0,0.3)] transition-opacity duration-300"></div>
+  <div class="absolute inset-0 bg-black/30 transition-opacity duration-300"></div>
 
   <!-- Modal Content -->
-  <div class="relative z-10 bg-white rounded-lg p-8 max-w-lg w-full shadow-xl transform translate-y-full transition-transform duration-500">
-    <a href="#" id="closeHowItWorksModal" class="absolute top-3 right-3 text-gray-400 text-xl font-bold cursor-pointer hover:text-black">&times;</a>
-    <h3 class="text-xl font-bold mb-4">How does this work?</h3>
-    <ol class="list-decimal pl-5 space-y-2 text-sm text-gray-700">
-      <li>Export your YNAB data.</li>
-      <li>Upload the YNAB ZIP file here.</li>
-      <li>Choose between manual import or guided auto-import into Monarch Money.</li>
+  <div class="relative z-10 bg-white rounded-xl p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md md:max-w-lg w-full 
+              shadow-2xl transform translate-y-full transition-transform duration-500 
+              max-h-[90vh] overflow-y-auto">
+    
+    <button id="closeHowItWorksModal" 
+            class="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 
+                   w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 
+                   transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Close modal">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+    
+    <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 pr-8 text-gray-900">
+      How does this work?
+    </h3>
+    
+    <ol class="list-decimal pl-5 sm:pl-6 space-y-3 sm:space-y-4 text-sm sm:text-base text-gray-700 leading-relaxed">
+      <li class="pl-2">
+        <strong>Export your YNAB data</strong> by going to your YNAB budget settings and downloading the full export.
+      </li>
+      <li class="pl-2">
+        <strong>Upload the YNAB ZIP file</strong> using the drag & drop area above or by clicking "Browse Files".
+      </li>
+      <li class="pl-2">
+        <strong>Choose your import method</strong> - either manual CSV download or guided auto-import into Monarch Money.
+      </li>
     </ol>
-    <p class="mt-4 text-xs text-gray-500">Your files are never uploaded or stored externally.</p>
+    
+    <div class="mt-6 sm:mt-8 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
+      <div class="flex items-start gap-2 sm:gap-3">
+        <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+        </svg>
+        <p class="text-xs sm:text-sm text-green-800 leading-relaxed">
+          <strong>100% Private:</strong> Your files are processed locally in your browser. 
+          Nothing is uploaded to our servers or stored externally.
+        </p>
+      </div>
+    </div>
   </div>
 </div>

@@ -1,9 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
 import state from '../../state.js';
-import { navigate } from '../../router.js';
+import { navigate, goBack } from '../../router.js';
 import { renderButtons } from '../../components/button.js';
 import { monarchApi } from '../../api/monarchApi.js';
 import { toggleElementVisibility, toggleDisabled } from '../../utils/dom.js';
+import { createSimpleNavigationBar } from '../../utils/navigationBar.js';
 import {
   saveToLocalStorage, getLocalStorage, clearStorage
 } from '../../utils/storage.js';
@@ -12,6 +13,12 @@ import { patchState, clearState } from '../../utils/state.js';
 
 
 export default async function initMonarchCredentialsView() {
+  // Add navigation bar at the bottom of the content
+  const mainContainer = document.querySelector('.container-responsive');
+  mainContainer.insertAdjacentHTML('beforeend', createSimpleNavigationBar({
+    backText: "Back"
+  }));
+
   const $ = (id) => document.getElementById(id);
   const UI = {
     emailInput: $('email'),
@@ -20,6 +27,7 @@ export default async function initMonarchCredentialsView() {
     backBtn: $('backBtn'),
     form: $('credentialsForm'),
     errorBox: $('errorBox'),
+    errorContainer: $('credentialsError'),
     rememberCheckbox: $('rememberCredentials'),
     rememberMeContainer: $('rememberMe'),
     notYouContainer: $('notYouContainer'),
@@ -47,7 +55,7 @@ export default async function initMonarchCredentialsView() {
   });
 
   // Generate device UUID once on view load
-  if (!creds.deviceUuid) {
+  if (!creds.deviceUuid || creds.deviceUuid === '') {
     creds.deviceUuid = uuidv4();
     saveToLocalStorage({ uuid: creds.deviceUuid });
   }
@@ -74,7 +82,7 @@ export default async function initMonarchCredentialsView() {
     const hasEmail = UI.emailInput.value.trim();
     const hasPassword = UI.passwordInput.value.trim() || creds.encryptedPassword;
     toggleDisabled(UI.connectBtn, !(hasEmail && hasPassword));
-    toggleElementVisibility(UI.errorBox, false);
+    toggleElementVisibility(UI.errorContainer, false);
     renderButtons();
   }
 
@@ -123,17 +131,24 @@ export default async function initMonarchCredentialsView() {
 
     toggleDisabled(UI.connectBtn, true);
     UI.connectBtn.textContent = 'Connecting…';
-    toggleElementVisibility(UI.errorBox, false);
+    toggleElementVisibility(UI.errorContainer, false);
 
     try {
       const response = await monarchApi.login(email, encryptedPassword, uuid);
  
       if (response?.otpRequired) {
-        if (creds.remember) {
-          saveToLocalStorage({ email, encryptedPassword, remember: true });
-        }
+        // Always store credentials temporarily for OTP flow, regardless of "remember me" setting
+        // We'll handle the permanent storage decision in the OTP page based on the remember flag
+        saveToLocalStorage({ 
+          email, 
+          encryptedPassword, 
+          uuid: uuid,
+          remember: creds.remember,
+          tempForOtp: !creds.remember // Flag to indicate this is temporary storage
+        });
+        
         creds.awaitingOtp = true;
-        return navigate("monarchOtpView");
+        return navigate("/otp");
       }
       
       if (response?.token) {
@@ -150,7 +165,7 @@ export default async function initMonarchCredentialsView() {
           saveToLocalStorage({ email, encryptedPassword, token: response.token, remember: true });
         }
 
-        return navigate('monarchCompleteView');
+        return navigate('/complete');
       }
       
       const apiError = response?.detail || response?.error || "Unexpected login response."
@@ -172,6 +187,10 @@ export default async function initMonarchCredentialsView() {
     e.preventDefault();
     clearStorage();
     clearState(creds);
+
+    // Generate a new device UUID after clearing credentials
+    creds.deviceUuid = uuidv4();
+    saveToLocalStorage({ uuid: creds.deviceUuid });
 
     UI.emailInput.value = '';
     UI.passwordInput.value = '';
@@ -209,12 +228,12 @@ export default async function initMonarchCredentialsView() {
   }
 
   function onClickBack() {
-    navigate('methodView');
+    goBack();
   }
 
   function showError(message) {
     UI.errorBox.textContent = message;
-    toggleElementVisibility(UI.errorBox, true);
+    toggleElementVisibility(UI.errorContainer, true);
   }
 
   UI.form.addEventListener('submit', onSubmitForm);

@@ -4,6 +4,110 @@
   .always-scroll {
     overflow-y: scroll;
   }
+  
+  /* Enhanced responsive text truncation */
+  .truncate-mobile {
+    @media (max-width: 640px) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+  
+  .truncate-tablet {
+    @media (max-width: 1024px) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+  
+  /* Better responsive spacing */
+  .mobile-px {
+    @media (max-width: 640px) {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+  }
+  
+  .tablet-px {
+    @media (min-width: 641px) and (max-width: 1024px) {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+  
+  /* Enhanced responsive flex utilities */
+  .flex-col-mobile {
+    @media (max-width: 640px) {
+      flex-direction: column;
+    }
+  }
+  
+  .flex-col-tablet {
+    @media (max-width: 1024px) {
+      flex-direction: column;
+    }
+  }
+  
+  /* Responsive gap utilities */
+  .gap-responsive {
+    gap: 0.5rem;
+    @media (min-width: 640px) {
+      gap: 1rem;
+    }
+    @media (min-width: 1024px) {
+      gap: 1.5rem;
+    }
+  }
+  
+  /* Responsive container */
+  .container-responsive {
+    width: 100%;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    
+    @media (min-width: 640px) {
+      max-width: 640px;
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+    
+    @media (min-width: 768px) {
+      max-width: 768px;
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+    
+    @media (min-width: 1024px) {
+      max-width: 1024px;
+      padding-left: 2.5rem;
+      padding-right: 2.5rem;
+    }
+    
+    @media (min-width: 1280px) {
+      max-width: 1280px;
+      padding-left: 3rem;
+      padding-right: 3rem;
+    }
+  }
+  
+  /* Enhanced mobile button utilities */
+  .btn-responsive {
+    @media (max-width: 640px) {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+    }
+    
+    @media (min-width: 641px) and (max-width: 1024px) {
+      padding: 0.625rem 1.25rem;
+      font-size: 0.875rem;
+    }
+  }
 }
 
 body {
@@ -15,6 +119,42 @@ button {
 }
 
 button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  @media (hover: hover) {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+}
+
+/* Better focus styles for accessibility */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Improved mobile table scrolling */
+@media (max-width: 768px) {
+  .overflow-x-auto {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f3f4f6;
+  }
+  
+  .overflow-x-auto::-webkit-scrollbar {
+    height: 6px;
+  }
+  
+  .overflow-x-auto::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 3px;
+  }
+  
+  .overflow-x-auto::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+  }
+  
+  .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
 }
