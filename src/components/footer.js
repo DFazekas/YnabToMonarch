@@ -1,47 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
+/**
+ * Reusable App Footer Component
+ * Provides consistent footer across all pages with legal disclaimers and navigation links
+ */
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>YNAB to Monarch Money</title>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-
-  <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" />
-  <link rel="stylesheet" href="/styles.css" />
-</head>
-
-<body class="bg-white text-[#111518] font-inter min-h-screen flex flex-col">
-
-  <!-- App Header -->
-    <!-- App Header -->
-  <header class="border-b border-[#f0f3f4] py-3 sm:py-4 md:py-5 px-3 sm:px-6 lg:px-8 bg-white sticky top-0 z-40">
-    <div class="flex items-center justify-between max-w-7xl mx-auto">
-      <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-        <div class="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-[#005B96] flex-shrink-0">
-          <svg viewBox="0 0 48 48" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-            <path d="M4 4H17.3334V17.3334H30.6666V30.6666H44V44H4V4Z" />
-          </svg>
-        </div>
-        <h1 class="font-bold text-sm sm:text-base md:text-lg truncate">YNAB to Monarch Money</h1>
-      </div>
-      <a href="https://buymeacoffee.com/fazekasdevh" target="_blank" rel="noopener noreferrer" 
-         class="flex-shrink-0 hidden xs:block">
-        <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" 
-             alt="Buy Me A Coffee" 
-             class="h-7 sm:h-8 md:h-10 w-auto">
-      </a>
-    </div>
-  </header>
-
-  <!-- Main App Container -->
-  <main id="app" class="flex-1 flex justify-center min-h-0 py-4 sm:py-6 md:py-8 lg:py-12">
-    <!-- router will inject views here -->
-  </main>
-
-  <!-- App Footer -->
-  <footer class="border-t border-[#f0f3f4] py-3 sm:py-4 px-3 sm:px-6 lg:px-8 text-xs sm:text-sm bg-white">
+/**
+ * Creates and returns the app footer HTML element
+ * @returns {HTMLElement} The footer element
+ */
+export function createFooter() {
+  const footer = document.createElement('footer');
+  footer.className = 'border-t border-[#f0f3f4] py-3 sm:py-4 px-3 sm:px-6 lg:px-8 text-xs sm:text-sm bg-white';
+  
+  footer.innerHTML = `
     <div class="max-w-7xl mx-auto">
       <!-- Main Footer Content -->
       <div class="flex flex-col sm:flex-row justify-between items-center gap-2 mb-3">
@@ -77,10 +47,31 @@
         </p>
       </div>
     </div>
-  </footer>
+  `;
+  
+  return footer;
+}
 
-  <script src="/bundle.js"></script>
+/**
+ * Initializes the footer by appending it to the document body
+ * Call this function on page load to add the footer
+ */
+export function initFooter() {
+  const footer = createFooter();
+  document.body.appendChild(footer);
+}
 
-</body>
-
-</html>
+/**
+ * Replaces an existing footer with the new component
+ * @param {string} existingFooterSelector - CSS selector for the existing footer
+ */
+export function replaceFooter(existingFooterSelector = 'footer') {
+  const existingFooter = document.querySelector(existingFooterSelector);
+  if (existingFooter) {
+    const newFooter = createFooter();
+    existingFooter.parentNode.replaceChild(newFooter, existingFooter);
+  } else {
+    // If no existing footer found, just append to body
+    initFooter();
+  }
+}
