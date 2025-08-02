@@ -51,25 +51,52 @@ export default function initUploadView() {
     const fileName = csvFile.name.toLowerCase();
     const fileType = csvFile.type.toLowerCase();
     
-    const isZipByExtension = fileName.endsWith('.zip') || fileName.endsWith('.bin');
+    console.log('File upload debug:', {
+      name: csvFile.name,
+      type: csvFile.type,
+      size: csvFile.size,
+      fileName: fileName,
+      fileType: fileType
+    });
+    
+    // More permissive extension check - look for common ZIP-related extensions
+    const isZipByExtension = fileName.endsWith('.zip') || 
+                            fileName.endsWith('.bin') || 
+                            fileName.includes('ynab') ||
+                            fileName.includes('register') ||
+                            fileName.includes('export');
+                            
     const isZipByMimeType = [
       'application/zip',
       'application/x-zip-compressed', 
       'application/octet-stream',
       'application/x-zip',
-      'multipart/x-zip'
+      'multipart/x-zip',
+      'application/x-compressed',
+      'application/binary'
     ].includes(fileType);
     
-    // Additional check: if it's a .bin file, it might be a ZIP on Android
-    const isPotentialZip = isZipByExtension || isZipByMimeType || 
-                          (fileName.endsWith('.bin') && csvFile.size > 1000); // Basic size check for .bin files
+    // Very permissive check - if file is larger than 1KB, let's try to parse it
+    // The ZIP parser will ultimately determine if it's valid
+    const isPotentialZip = isZipByExtension || 
+                          isZipByMimeType || 
+                          csvFile.size > 1000; // If it's bigger than 1KB, let the parser decide
+
+    console.log('File validation debug:', {
+      isZipByExtension,
+      isZipByMimeType,
+      isPotentialZip,
+      fileSize: csvFile.size
+    });
 
     if (!isPotentialZip) {
+      console.log('File rejected - not a potential ZIP');
       errorMessage.textContent = 'Please upload a ZIP export from YNAB.';
       errorMessage.classList.remove('hidden');
       return;
     }
 
+    console.log('File accepted, attempting to parse...');
     try {
       const accounts = await parseYNABZip(csvFile);
       state.accounts = accounts;
