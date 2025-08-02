@@ -7,7 +7,7 @@ import { createNavigationBar } from '../../utils/navigationBar.js';
 import { capitalize } from '../../utils/string.js';
 import { currencyFormatter } from '../../utils/format.js';
 import { getAccountTypeByName, getSubtypeByName } from '../../utils/accountTypeUtils.js';
-import { toggleButtonActive, toggleElementVisible, toggleDisabled } from '../../utils/dom.js';
+import { toggleDisabled } from '../../utils/dom.js';
 
 let reviewTableBody, mobileAccountList, importBtn, searchInput;
 let activeFilters = {
