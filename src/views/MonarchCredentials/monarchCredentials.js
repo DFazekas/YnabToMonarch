@@ -137,9 +137,16 @@ export default async function initMonarchCredentialsView() {
       const response = await monarchApi.login(email, encryptedPassword, uuid);
  
       if (response?.otpRequired) {
-        if (creds.remember) {
-          saveToLocalStorage({ email, encryptedPassword, remember: true });
-        }
+        // Always store credentials temporarily for OTP flow, regardless of "remember me" setting
+        // We'll handle the permanent storage decision in the OTP page based on the remember flag
+        saveToLocalStorage({ 
+          email, 
+          encryptedPassword, 
+          uuid: uuid,
+          remember: creds.remember,
+          tempForOtp: !creds.remember // Flag to indicate this is temporary storage
+        });
+        
         creds.awaitingOtp = true;
         return navigate("/otp");
       }
