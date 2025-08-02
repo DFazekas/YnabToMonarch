@@ -29,12 +29,12 @@
       </div>
       
       <p class="text-base sm:text-lg md:text-xl font-semibold text-gray-700">
-        Drag & Drop your Register ZIP file
+        Drag & Drop your YNAB export file
       </p>
-      <p class="text-sm text-gray-500">or click to browse</p>
+      <p class="text-sm text-gray-500">or click to browse (ZIP format)</p>
     </div>
     
-    <input id="fileInput" type="file" accept=".csv,.zip" hidden>
+    <input id="fileInput" type="file" accept=".csv,.zip,.bin,application/zip,application/x-zip-compressed,application/octet-stream" hidden>
     <button id="browseButton" class="ui-button btn-responsive" data-type="primary" data-size="large">
       Browse Files
     </button>
@@ -48,6 +48,10 @@
       </span>
       <br>
       Your file stays local. We never store or transmit your data.
+      <br><br>
+      <span class="text-xs text-gray-400">
+        On mobile devices, ZIP files may appear as BIN or other formats - we support all common archive types.
+      </span>
     </p>
   </div>
 

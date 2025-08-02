@@ -47,9 +47,24 @@ export default function initUploadView() {
   });
 
   async function handleFile(csvFile) {
-    const isZIP = csvFile.name.endsWith('.zip');
+    // Check if file is a ZIP file by extension, MIME type, or common patterns
+    const fileName = csvFile.name.toLowerCase();
+    const fileType = csvFile.type.toLowerCase();
+    
+    const isZipByExtension = fileName.endsWith('.zip') || fileName.endsWith('.bin');
+    const isZipByMimeType = [
+      'application/zip',
+      'application/x-zip-compressed', 
+      'application/octet-stream',
+      'application/x-zip',
+      'multipart/x-zip'
+    ].includes(fileType);
+    
+    // Additional check: if it's a .bin file, it might be a ZIP on Android
+    const isPotentialZip = isZipByExtension || isZipByMimeType || 
+                          (fileName.endsWith('.bin') && csvFile.size > 1000); // Basic size check for .bin files
 
-    if (!isZIP) {
+    if (!isPotentialZip) {
       errorMessage.textContent = 'Please upload a ZIP export from YNAB.';
       errorMessage.classList.remove('hidden');
       return;
@@ -69,7 +84,7 @@ export default function initUploadView() {
         errorMessage.classList.remove('hidden');
       }
     } catch (err) {
-      errorMessage.textContent = 'Failed to parse ZIP file. Please ensure it includes a valid register.csv and plan.csv.';
+      errorMessage.textContent = 'Failed to parse file. Please ensure it\'s a valid YNAB ZIP export with register.csv and plan.csv.';
       errorMessage.classList.remove('hidden');
       console.error(err);
     }
