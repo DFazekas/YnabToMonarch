@@ -1,116 +1,177 @@
-<div class="container-responsive flex flex-col items-center justify-center py-6 sm:py-8 md:py-12 lg:py-16 min-h-[calc(100vh-200px)]">
-
-  <div class="text-center w-full max-w-3xl mb-8 sm:mb-10 md:mb-12">
-    <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 md:mb-6 text-gray-900">
-      Migrate your YNAB data
-    </h2>
-    <p class="text-gray-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed px-2">
-      Upload a YNAB ZIP file to begin the migration process into Monarch Money.
-    </p>
-
-    <a id="howItWorksBtn" class="ui-button mt-4 sm:mt-6 inline-block" data-type="text">
-      How does this work?
-    </a>
-  </div>
-
-  <!-- Upload Box -->
-  <div id="uploadBox" 
-       class="w-full max-w-sm sm:max-w-md md:max-w-lg border-2 border-dashed border-gray-300 rounded-xl 
-              p-4 sm:p-6 md:p-8 lg:p-10 flex flex-col items-center gap-3 sm:gap-4 
-              transition-all duration-300 hover:border-blue-400 hover:bg-blue-50/30 
-              cursor-pointer focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200">
-    
-    <div class="text-center space-y-2 sm:space-y-3">
-      <div class="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-400 mb-2">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 48 48" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" 
-                d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" />
-        </svg>
+<div class="min-h-screen">
+  <main class="container mx-auto px-4 py-8 md:py-16 max-w-6xl">
+    <section class="text-center mb-12 md:mb-16">
+      <div class="inline-flex items-center justify-center gap-2 mb-6">
+        <h1 class="text-3xl font-bold text-slate-900">Step 1: Import YNAB Data</h1>
       </div>
-      
-      <p class="text-base sm:text-lg md:text-xl font-semibold text-gray-700">
-        Drag & Drop your YNAB export file
+
+      <p class="text-gray-600 max-w-2xl mx-auto mb-8">
+        Choose how you'd like to bring your YNAB data into Monarch Money. You can either connect your YNAB account for a
+        seamless transfer or manually upload a file.
       </p>
-      <p class="text-sm text-gray-500">or click to browse (ZIP format)</p>
-    </div>
-    
-    <input id="fileInput" type="file" accept=".csv,.zip,.bin,application/zip,application/x-zip-compressed,application/octet-stream,application/binary,*/*" hidden>
-    <button id="browseButton" class="ui-button btn-responsive" data-type="primary" data-size="large">
-      Browse Files
-    </button>
+    </section>
 
-    <p class="text-xs sm:text-sm text-gray-400 text-center max-w-xs leading-relaxed">
-      <span class="inline-flex items-center gap-1">
-        <svg class="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-        </svg>
-        Secure & Private
-      </span>
-      <br>
-      Your file stays local. We never store or transmit your data.
-      <br><br>
-      <span class="text-xs text-gray-400">
-        On mobile devices, ZIP files may appear as BIN or other formats - we support all common archive types.
-      </span>
-    </p>
-  </div>
+    <section class="mb-12">
+      <div class="grid md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto">
+        <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-lg space-y-4 flex flex-col text-left">
+          <div class="flex items-start gap-4">
+            <span class="bg-blue-50 text-blue-600 rounded-2xl p-3">
+              <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path d="M10 17l-4-4 4-4" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M14 7h6" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M14 17h6" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </span>
+            <div>
+              <p class="text-sm uppercase tracking-[0.4em] text-gray-400">Automatic</p>
+              <h3 class="text-xl font-semibold text-slate-900">Connect to YNAB</h3>
+            </div>
+          </div>
+          <div class="space-y-1 pt-4">
+            <button id="connectButton" class="ui-button w-full" data-type="primary" data-size="large"
+              title="Coming soon" disabled>
+              Connect YNAB Account
+            </button>
+            <p class="text-xs text-gray-400 text-center">Coming Soon</p>
+            <a id="oauthInfoModalButton" data-type="text" class="ui-button">
+              How does this work?
+            </a>
+          </div>
+        </div>
 
-  <div id="errorMessage" 
-       class="hidden text-red-600 text-sm sm:text-base mt-4 sm:mt-6 text-center px-4 
-              bg-red-50 border border-red-200 rounded-lg py-3 max-w-md mx-auto">
-    Some error
-  </div>
-
+        <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-lg space-y-4 flex flex-col text-left">
+          <div class="flex items-start gap-4">
+            <span class="bg-purple-50 text-purple-600 rounded-2xl p-3">
+              <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke-linecap="round" stroke-linejoin="round">
+                </path>
+                <path d="M12 3v12" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M9 10l3-3 3 3" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </span>
+            <div>
+              <p class="text-sm uppercase tracking-[0.4em] text-gray-400">Manual</p>
+              <h3 class="text-xl font-semibold text-slate-900">Upload a File</h3>
+            </div>
+          </div>
+          <div class="space-y-1 pt-4">
+            <button id="manualUploadButton" class="ui-button w-full" data-type="secondary" data-size="large">
+              Choose File to Upload
+            </button>
+            <input id="manualFileInput" type="file"
+              accept=".zip,.bin,application/zip,application/x-zip-compressed,application/octet-stream,application/binary"
+              class="hidden" />
+            <a id="manualImportInfoModalButton" data-type="text" class="ui-button">
+              What's the process?
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
 </div>
 
-<!-- Modal -->
-<div id="howItWorksModal" 
-     class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 
-            transition-opacity duration-300 p-3 sm:p-4 md:p-6">
+<!-- OAuth Info Modal -->
+<div id="oauthInfoModal"
+  class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300 p-3 sm:p-4 md:p-6">
+
   <!-- Overlay -->
   <div class="absolute inset-0 bg-black/30 transition-opacity duration-300"></div>
 
   <!-- Modal Content -->
-  <div class="relative z-10 bg-white rounded-xl p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md md:max-w-lg w-full 
-              shadow-2xl transform translate-y-full transition-transform duration-500 
-              max-h-[90vh] overflow-y-auto">
-    
-    <button id="closeHowItWorksModal" 
-            class="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 
-                   w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 
-                   transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            aria-label="Close modal">
+  <div
+    class="relative z-10 bg-white rounded-xl p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md md:max-w-lg w-full shadow-2xl transform translate-y-full transition-transform duration-500 max-h-[90vh] overflow-y-auto">
+
+    <!-- Close Btn -->
+    <button id="closeOauthInfoModal"
+      class="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      aria-label="Close modal">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
       </svg>
     </button>
-    
+
+    <!-- Title -->
     <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 pr-8 text-gray-900">
-      How does this work?
+      How does connecting my YNAB account work?
     </h3>
-    
-    <ol class="list-decimal pl-5 sm:pl-6 space-y-3 sm:space-y-4 text-sm sm:text-base text-gray-700 leading-relaxed">
-      <li class="pl-2">
-        <strong>Export your YNAB data</strong> by going to your YNAB budget settings and downloading the full export.
-      </li>
-      <li class="pl-2">
-        <strong>Upload the YNAB ZIP file</strong> using the drag & drop area above or by clicking "Browse Files".
-      </li>
-      <li class="pl-2">
-        <strong>Choose your import method</strong> - either manual CSV download or guided auto-import into Monarch Money.
-      </li>
-    </ol>
-    
-    <div class="mt-6 sm:mt-8 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
-      <div class="flex items-start gap-2 sm:gap-3">
-        <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-        </svg>
-        <p class="text-xs sm:text-sm text-green-800 leading-relaxed">
-          <strong>100% Private:</strong> Your files are processed locally in your browser. 
-          Nothing is uploaded to our servers or stored externally.
+
+    <!-- Body -->
+    <div class="space-y-4 text-sm text-gray-600">
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">1: Securely Connect</h4>
+        <p class="text-gray-600 text-sm">Using YNAB's official authentication process, securely connect your account.
         </p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">2: Grant Permissions</h4>
+        <p class="text-gray-600 text-sm">We'll prompt you to authorize access to your YNAB data and thoroughly explain
+          every permission and how it is used.</p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">3: Review & Filter</h4>
+        <p class="text-gray-600 text-sm">Decide which accounts and transactions to migrate.</p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">4: Process</h4>
+        <p class="text-gray-600 text-sm">Decide how to migrate your data.</p>
       </div>
     </div>
   </div>
+</div>
+
+<!-- Manual Import Info Modal -->
+<div id="manualImportInfoModal"
+  class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300 p-3 sm:p-4 md:p-6">
+
+  <!-- Overlay -->
+  <div class="absolute inset-0 bg-black/30 transition-opacity duration-300"></div>
+
+  <!-- Modal Content -->
+  <div
+    class="relative z-10 bg-white rounded-xl p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md md:max-w-lg w-full shadow-2xl transform translate-y-full transition-transform duration-500 max-h-[90vh] overflow-y-auto">
+
+    <!-- Close Btn -->
+    <button id="closeManualImportInfoModal"
+      class="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      aria-label="Close modal">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+
+    <!-- Title -->
+    <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 pr-8 text-gray-900">
+      Where do I find my YNAB data file?
+    </h3>
+
+    <!-- Body -->
+    <div class="space-y-4 text-sm text-gray-600">
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">1: Visit YNAB.com</h4>
+        <p class="text-gray-600 text-sm">Visit <a href="https://www.ynab.com" target="_blank"
+            rel="noopener noreferrer">YNAB.com</a> and log into your account.</p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">2: Export your YNAB Data</h4>
+        <p class="text-gray-600 text-sm">Click on your name in the top-left corner to reveal the menu, then click
+          "Export Plan". This will download a ZIP file containing all your data.</p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">3: Upload the File</h4>
+        <p class="text-gray-600 text-sm">On this page, click the "Choose File to Upload" button, navigate to where the
+          ZIP file was downloaded, and select it.</p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">4: Review & Filter</h4>
+        <p class="text-gray-600 text-sm">Decide which accounts and transactions to migrate.</p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">5: Process</h4>
+        <p class="text-gray-600 text-sm">Decide how to migrate your data.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div>

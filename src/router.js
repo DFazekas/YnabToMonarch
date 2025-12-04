@@ -1,3 +1,6 @@
+import initHomeView from './views/Home/home.js';
+import homeTemplate from './views/Home/home.html';
+
 import initUploadView from './views/Upload/upload.js';
 import uploadTemplate from './views/Upload/upload.html';
 
@@ -19,15 +22,18 @@ import monarchOtpTemplate from './views/MonarchOtp/monarchOtp.html';
 import initMonarchCompleteView from './views/MonarchComplete/monarchComplete.js';
 import monarchCompleteTemplate from './views/MonarchComplete/monarchComplete.html';
 
+import initYnabOauthCallbackView from './views/YnabOauthCallback/ynabOauthCallback.js';
+import ynabOauthCallbackTemplate from './views/YnabOauthCallback/ynabOauthCallback.html';
+
 import state from './state.js';
 import { getLocalStorage } from './utils/storage.js';
 
 const routes = {
   '/': { 
-    template: uploadTemplate, 
-    init: initUploadView, 
+    template: homeTemplate, 
+    init: initHomeView, 
     scroll: false, 
-    title: 'Upload - YNAB to Monarch',
+    title: 'Home - YNAB to Monarch',
     requiresAuth: false
   },
   '/upload': { 
@@ -84,6 +90,13 @@ const routes = {
     title: 'Migration Complete - YNAB to Monarch',
     requiresAuth: false,
     requiresAccounts: true
+  },
+  '/oauth/ynab/callback': {
+    template: ynabOauthCallbackTemplate,
+    init: initYnabOauthCallbackView,
+    scroll: false,
+    title: 'Authorize YNAB - YNAB to Monarch',
+    requiresAuth: false
   }
 };
 

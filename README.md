@@ -57,6 +57,10 @@ Visit the live site at [https://ynab-to-monarch.netlify.app/](https://ynab-to-mo
 4. Map your YNAB accounts to Monarch accounts.
 5. Import accounts and transactions into Monarch.
 
+## YNAB OAuth Redirect
+
+- Authorization callbacks are handled at `/oauth/ynab/callback`, so configure YNAB to redirect to `https://ynab-to-monarch.netlify.app/oauth/ynab/callback` after the user grants access.
+
 ## Privacy & Security
 
 **🔒 Your Data Security is Our Priority**

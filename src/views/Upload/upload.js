@@ -1,47 +1,37 @@
 import state from '../../state.js';
 import { navigate, persistState } from '../../router.js';
 import parseYNABZip from '../../services/ynabParser.js';
+import { startYnabOauth } from '../../api/ynabOauth.js';
 import { openModal, closeModal } from '../../components/modal.js';
 import { renderButtons } from '../../components/button.js';
 
 export default function initUploadView() {
-  const browseButton = document.getElementById('browseButton');
-  const fileInput = document.getElementById('fileInput');
-  const uploadBox = document.getElementById('uploadBox');
   const errorMessage = document.getElementById('errorMessage');
-  const howItWorksBtn = document.getElementById('howItWorksBtn');
-  const closeModalBtn = document.getElementById('closeHowItWorksModal');
+  const connectButton = document.getElementById('connectButton');
+  const manualUploadButton = document.getElementById('manualUploadButton');
+  const manualFileInput = document.getElementById('manualFileInput');
+  const oauthInfoModalButton = document.getElementById('oauthInfoModalButton');
+  const manualImportInfoModalButton = document.getElementById('manualImportInfoModalButton');
+  const closeOauthInfoModal = document.getElementById('closeOauthInfoModal');
+  const closeManualImportInfoModal = document.getElementById('closeManualImportInfoModal');
 
   renderButtons();
 
-  howItWorksBtn.addEventListener('click', () => {
-    openModal('howItWorksModal');
+  connectButton?.addEventListener('click', (event) => {
+    event.preventDefault();
+    startYnabOauth();
   });
 
-  closeModalBtn.addEventListener('click', () => {
-    closeModal('howItWorksModal');
-  });
+  oauthInfoModalButton?.addEventListener('click', () => openModal('oauthInfoModal'));
+  manualImportInfoModalButton?.addEventListener('click', () => openModal('manualImportInfoModal'));
+  closeOauthInfoModal?.addEventListener('click', () => closeModal('oauthInfoModal'));
+  closeManualImportInfoModal?.addEventListener('click', () => closeModal('manualImportInfoModal'));
 
-  // Drag & Drop functionality
-  uploadBox.addEventListener('dragover', (e) => {
+  manualUploadButton?.addEventListener('click', (e) => {
     e.preventDefault();
-    uploadBox.classList.add('border-blue-400', 'bg-blue-50');
+    manualFileInput?.click();
   });
-
-  uploadBox.addEventListener('dragleave', () => {
-    uploadBox.classList.remove('border-blue-400', 'bg-blue-50');
-  });
-
-  uploadBox.addEventListener('drop', async (e) => {
-    e.preventDefault();
-    uploadBox.classList.remove('border-blue-400', 'bg-blue-50');
-    const file = e.dataTransfer.files[0];
-    if (file) await handleFile(file);
-  });
-
-  // File picker click
-  browseButton.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', async (e) => {
+  manualFileInput?.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (file) await handleFile(file);
   });
