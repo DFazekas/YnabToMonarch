@@ -31,7 +31,6 @@ export function updateBackButtonText() {
  * Updates navigation-related button texts across the application
  */
 export function updateNavigationTexts() {
-  updateBackButtonText();
   
   // Update other navigation buttons as needed
   const backToMethodBtn = document.getElementById('backToMethodBtn');

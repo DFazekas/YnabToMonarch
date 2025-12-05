@@ -25,6 +25,9 @@ import monarchCompleteTemplate from './views/MonarchComplete/monarchComplete.htm
 import initYnabOauthCallbackView from './views/YnabOauthCallback/ynabOauthCallback.js';
 import ynabOauthCallbackTemplate from './views/YnabOauthCallback/ynabOauthCallback.html';
 
+import initDataManagementView from './views/DataManagement/dataManagement.js';
+import dataManagementTemplate from './views/DataManagement/dataManagement.html';
+
 import state from './state.js';
 import { getLocalStorage } from './utils/storage.js';
 
@@ -97,11 +100,22 @@ const routes = {
     scroll: false,
     title: 'Authorize YNAB - YNAB to Monarch',
     requiresAuth: false
+  },
+  '/data-management': {
+    template: dataManagementTemplate,
+    init: initDataManagementView,
+    scroll: true,
+    title: 'Data Management - YNAB to Monarch',
+    requiresAuth: false
   }
 };
 
 let isNavigating = false;
 let stateLoaded = false;
+
+// Navigation history stack to track visited pages
+const navigationHistory = [];
+const MAX_HISTORY_SIZE = 50; // Prevent memory issues
 
 export async function navigate(path, replace = false, skipRouteGuards = false) {
   if (isNavigating) return;
@@ -136,10 +150,23 @@ export async function navigate(path, replace = false, skipRouteGuards = false) {
       }
     }
 
-    // Update URL without triggering popstate
+    // Track navigation history
+    const currentPath = getCurrentPath();
+    
+    // Update URL and history state
     if (replace) {
       history.replaceState({ path }, '', path);
+      // When replacing, don't modify our navigation history
     } else {
+      // Only track in our history if this is a real user navigation (not a redirect)
+      if (currentPath && currentPath !== path) {
+        navigationHistory.push(currentPath);
+        
+        // Limit history size
+        if (navigationHistory.length > MAX_HISTORY_SIZE) {
+          navigationHistory.shift();
+        }
+      }
       history.pushState({ path }, '', path);
     }
 
@@ -317,22 +344,26 @@ export function clearAppState() {
   }
 }
 
-// Add a function to programmatically go back
+/**
+ * Navigate to the previous page in the navigation history.
+ * Falls back to '/' if no history exists.
+ */
 export function goBack() {
-  // Get current path to determine appropriate back route
-  const currentPath = getCurrentPath();
+  // Check if we have navigation history
+  if (navigationHistory.length > 0) {
+    const previousPath = navigationHistory.pop();
+    
+    // Validate the previous path is still a valid route
+    if (isValidRoute(previousPath)) {
+      // Navigate directly to the previous path
+      // Using replace=true to avoid adding this back navigation to history
+      navigate(previousPath, true);
+      return;
+    }
+  }
   
-  const backRoutes = {
-    '/review': '/upload',
-    '/method': '/review', 
-    '/manual': '/method',
-    '/login': '/method',
-    '/otp': '/login',
-    '/complete': '/review'
-  };
-  
-  const backPath = backRoutes[currentPath] || '/upload';
-  navigate(backPath);
+  // Fallback: navigate to home page
+  navigate('/', true);
 }
 
 // Handle browser back/forward buttons
@@ -340,6 +371,12 @@ window.addEventListener('popstate', async (event) => {
   if (!isNavigating) {
     const path = event.state?.path || window.location.pathname;
     try {
+      // When browser back is used, remove the last item from our history
+      // since we're going back to a previous state
+      if (navigationHistory.length > 0) {
+        navigationHistory.pop();
+      }
+      
       await renderRoute(path);
     } catch (error) {
       console.error('Error handling popstate:', error);
@@ -355,6 +392,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   
   try {
     if (route) {
+      // Initialize history state for the current page
+      if (!history.state) {
+        history.replaceState({ path }, '', path);
+      }
       await renderRoute(path);
     } else {
       navigate('/upload', true);

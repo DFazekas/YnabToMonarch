@@ -1,17 +1,26 @@
 import state from '../../state.js';
 import { monarchApi } from '../../api/monarchApi.js';
 import { navigate } from '../../router.js';
-import { renderButtons } from '../../components/button.js';
 import { getAccountTypeByName, getSubtypeByName } from '../../utils/accountTypeUtils.js';
+import { renderPageLayout } from '../../components/pageLayout.js';
 
 function initMonarchCompleteView() {
-  console.log('MonarchComplete view initialized');
-  
   // Redirect to upload if no accounts are available
   if (!state.accounts || Object.keys(state.accounts).length === 0) {
     navigate('/upload', true);
     return;
   }
+
+  renderPageLayout({
+    navbar: {
+      showBackButton: true,
+      showDataButton: true
+    },
+    header: {
+      title: 'Migration Status',
+      containerId: 'pageHeader'
+    }
+  });
 
   // Get template elements
   const resultsContainer = document.getElementById('resultsContainer');
@@ -20,7 +29,7 @@ function initMonarchCompleteView() {
   const header = document.getElementById('header');
   const subheader = document.getElementById('subheader');
   const overallStatus = document.getElementById('overallStatus');
-  
+
   // Hide loading container and show results immediately
   const loadingContainer = document.getElementById('loadingContainer');
   if (loadingContainer) {
@@ -35,8 +44,6 @@ function initMonarchCompleteView() {
   initializeProcessing();
 
   function initializeProcessing() {
-    console.log('Initializing processing with accounts:', state.accounts);
-    
     // Set initial status for all accounts
     Object.keys(state.accounts).forEach(accountName => {
       if (!state.accounts[accountName].status) {
@@ -56,9 +63,7 @@ function initMonarchCompleteView() {
   async function processAccountsInBatches() {
     const BATCH_SIZE = 5; // Process 5 accounts at a time
     const token = state.credentials.apiToken;
-    
-    console.log('Starting batch processing. Token available:', !!token);
-    
+
     if (!token) {
       console.error('No API token available');
       // Mark all accounts as failed
@@ -76,10 +81,8 @@ function initMonarchCompleteView() {
 
     // Get all accounts that need processing
     const allAccountsToProcess = Object.entries(state.accounts)
-      .filter(([accountName, account]) => account.included && account.status !== 'completed')
+      .filter(([_, account]) => account.included && account.status !== 'completed')
       .map(([accountName, account]) => ({ accountName, ...account }));
-
-    console.log('Total accounts to process:', allAccountsToProcess.length);
 
     if (allAccountsToProcess.length === 0) {
       console.log('No accounts to process');
@@ -94,27 +97,24 @@ function initMonarchCompleteView() {
       batches.push(allAccountsToProcess.slice(i, i + BATCH_SIZE));
     }
 
-    console.log(`Processing ${allAccountsToProcess.length} accounts in ${batches.length} batches of ${BATCH_SIZE}`);
-
     // Process each batch sequentially
     for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
       const batch = batches[batchIndex];
-      console.log(`Processing batch ${batchIndex + 1}/${batches.length} with ${batch.length} accounts`);
-      
+
       // Set batch accounts to processing
       batch.forEach(account => {
         if (state.accounts[account.accountName]) {
           state.accounts[account.accountName].status = 'processing';
         }
       });
-      
+
       // Update UI to show processing status
       updateStatusOverview();
       updateAccountList();
-      
+
       // Process this batch
       await processBatch(token, batch, batchIndex + 1, batches.length);
-      
+
       // Small delay between batches to be API-friendly
       if (batchIndex < batches.length - 1) {
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -129,12 +129,10 @@ function initMonarchCompleteView() {
 
   async function processBatch(token, batch, batchNumber, totalBatches) {
     try {
-      console.log(`Calling API for batch ${batchNumber}/${totalBatches}...`);
-      
+
       // Step 1: Create accounts and upload transactions
       const response = await monarchApi.createAccounts(token, batch);
-      console.log(`Batch ${batchNumber} create accounts response:`, response);
-      
+
       // Handle the response format: { success: [...], failed: [...] }
       if (response.success || response.failed) {
         // Handle failed accounts first
@@ -142,17 +140,14 @@ function initMonarchCompleteView() {
           response.failed.forEach((result) => {
             const matchingAccount = batch.find(acc => acc.name === result.name || acc.modifiedName === result.name);
             if (matchingAccount && state.accounts[matchingAccount.accountName]) {
-              console.log(`Batch ${batchNumber}: Marking account as failed: ${matchingAccount.accountName}, error: ${result.error}`);
               state.accounts[matchingAccount.accountName].status = 'failed';
               state.accounts[matchingAccount.accountName].errorMessage = result.error || 'Account creation failed';
             }
           });
         }
-        
+
         // Step 2: Monitor upload status for successful accounts
         if (response.success && response.success.length > 0) {
-          console.log(`Batch ${batchNumber}: Monitoring upload status for ${response.success.length} accounts...`);
-          
           // Set accounts to upload monitoring status
           response.success.forEach((result) => {
             const matchingAccount = batch.find(acc => acc.name === result.name || acc.modifiedName === result.name);
@@ -161,42 +156,38 @@ function initMonarchCompleteView() {
               state.accounts[matchingAccount.accountName].sessionKeys = result.sessionKeys || [];
             }
           });
-          
+
           // Update UI to show uploading status
           updateStatusOverview();
           updateAccountList();
-          
+
           // Monitor upload status for each successful account
           await Promise.all(response.success.map(async (result) => {
             const matchingAccount = batch.find(acc => acc.name === result.name || acc.modifiedName === result.name);
             if (matchingAccount && state.accounts[matchingAccount.accountName] && result.sessionKeys) {
               try {
                 await monitorUploadStatus(token, matchingAccount.accountName, result.sessionKeys);
-                console.log(`Batch ${batchNumber}: Upload completed for account: ${matchingAccount.accountName}`);
                 state.accounts[matchingAccount.accountName].status = 'completed';
               } catch (error) {
-                console.error(`Batch ${batchNumber}: Upload failed for account: ${matchingAccount.accountName}`, error);
                 state.accounts[matchingAccount.accountName].status = 'failed';
                 state.accounts[matchingAccount.accountName].errorMessage = error.message || 'Transaction upload failed';
               }
             }
           }));
         }
-        
+
         // Mark any remaining accounts that weren't in success or failed arrays as failed
         batch.forEach(account => {
-          if (state.accounts[account.accountName] && 
-              state.accounts[account.accountName].status === 'processing') {
-            console.log(`Batch ${batchNumber}: Account not found in API response, marking as failed: ${account.accountName}`);
-            state.accounts[account.accountName].status = 'failed';
+          if (state.accounts[account.accountName] &&
+            state.accounts[account.accountName].status === 'processing') {
+            tate.accounts[account.accountName].status = 'failed';
             state.accounts[account.accountName].errorMessage = 'Account not processed by server';
           }
         });
-        
+
       } else {
         // API call failed, mark all batch accounts as failed
         const errorMessage = response.error || 'Failed to create accounts in Monarch Money';
-        console.log(`Batch ${batchNumber} failed, marking all as failed:`, errorMessage);
         batch.forEach(account => {
           if (state.accounts[account.accountName]) {
             state.accounts[account.accountName].status = 'failed';
@@ -205,7 +196,6 @@ function initMonarchCompleteView() {
         });
       }
     } catch (error) {
-      console.error(`Batch ${batchNumber} error:`, error);
       // Network error or other exception
       batch.forEach(account => {
         if (state.accounts[account.accountName]) {
@@ -217,39 +207,33 @@ function initMonarchCompleteView() {
   }
 
   async function monitorUploadStatus(token, accountName, sessionKeys) {
-    console.log(`Monitoring upload status for account: ${accountName}, sessions: ${sessionKeys.length}`);
-    
     // Monitor each session key until all are complete
     await Promise.all(sessionKeys.map(async (sessionKey) => {
       let attempts = 0;
       const maxAttempts = 60; // Maximum 5 minutes (60 * 5 seconds)
-      
+
       while (attempts < maxAttempts) {
         try {
           const statusResponse = await monarchApi.queryUploadStatus(token, sessionKey);
-          console.log(`Upload status for ${accountName} session ${sessionKey}:`, statusResponse);
-          
+
           if (statusResponse.data?.uploadStatementSession) {
             const session = statusResponse.data.uploadStatementSession;
             const status = session.status;
-            
+
             if (status === 'completed') {
-              console.log(`Upload completed for ${accountName} session ${sessionKey}`);
               return; // This session is complete
             } else if (status === 'failed' || status === 'error') {
               const errorMessage = session.errorMessage || 'Transaction upload failed';
-              console.error(`Upload failed for ${accountName} session ${sessionKey}:`, errorMessage);
               throw new Error(errorMessage);
             }
             // Status is still 'processing' or 'pending', continue polling
           }
-          
+
           // Wait 5 seconds before next check
           await new Promise(resolve => setTimeout(resolve, 5000));
           attempts++;
-          
+
         } catch (error) {
-          console.error(`Error checking upload status for ${accountName}:`, error);
           attempts++;
           if (attempts >= maxAttempts) {
             throw error;
@@ -258,7 +242,7 @@ function initMonarchCompleteView() {
           await new Promise(resolve => setTimeout(resolve, 5000));
         }
       }
-      
+
       // If we reach here, we've exceeded max attempts
       throw new Error(`Upload status check timed out for account ${accountName}`);
     }));
@@ -278,7 +262,7 @@ function initMonarchCompleteView() {
     let statusText = 'Processing...';
     let statusSubtext = 'Please wait while we process your accounts.';
     let statusIcon = '⏳';
-    
+
     if (processingAccounts > 0) {
       statusText = 'Creating accounts...';
       statusSubtext = `Creating ${processingAccounts} account${processingAccounts !== 1 ? 's' : ''}. Please wait.`;
@@ -316,21 +300,21 @@ function initMonarchCompleteView() {
 
   function updateAccountList() {
     if (!accountList) return;
-    
+
     const accounts = state.accounts || {};
     accountList.innerHTML = '';
 
     Object.entries(accounts).forEach(([accountId, account]) => {
       // Skip accounts that are not included
       if (!account.included) return;
-      
+
       const accountItem = document.createElement('div');
       accountItem.className = 'bg-white border border-gray-200 rounded-lg p-4';
-      
+
       let statusIcon = '';
       let statusClass = '';
       let statusText = '';
-      
+
       switch (account.status) {
         case 'completed':
           statusIcon = '✅';
@@ -360,20 +344,13 @@ function initMonarchCompleteView() {
 
       // Get account type display name
       let accountTypeDisplay = 'Unknown Type';
-      console.log(`Account ${accountId} type data:`, {
-        type: account.type,
-        subtype: account.subtype,
-        accountObject: account
-      });
-      
+
       if (account.type) {
         const typeInfo = getAccountTypeByName(account.type);
-        console.log(`Type info for '${account.type}':`, typeInfo);
         if (typeInfo) {
           accountTypeDisplay = typeInfo.typeDisplay || typeInfo.displayName || typeInfo.display;
           if (account.subtype) {
             const subtypeInfo = getSubtypeByName(account.type, account.subtype);
-            console.log(`Subtype info for '${account.type}' -> '${account.subtype}':`, subtypeInfo);
             if (subtypeInfo) {
               accountTypeDisplay = subtypeInfo.display || subtypeInfo.displayName;
             }
@@ -405,14 +382,14 @@ function initMonarchCompleteView() {
 
   function updateActionButtons() {
     if (!actionButtonsContainer) return;
-    
+
     const accounts = state.accounts || {};
     const failedAccounts = Object.values(accounts).filter(acc => acc.included && acc.status === 'failed');
     const completedAccounts = Object.values(accounts).filter(acc => acc.included && acc.status === 'completed');
-    
+
     // Clear existing buttons
     actionButtonsContainer.innerHTML = '';
-    
+
     // Create retry button if there are failed accounts
     if (failedAccounts.length > 0) {
       const retryBtn = document.createElement('button');
@@ -423,7 +400,7 @@ function initMonarchCompleteView() {
       retryBtn.addEventListener('click', () => retryFailedAccounts());
       actionButtonsContainer.appendChild(retryBtn);
     }
-    
+
     // Create view in Monarch button if there are completed accounts
     if (completedAccounts.length > 0) {
       const viewBtn = document.createElement('button');
@@ -434,7 +411,7 @@ function initMonarchCompleteView() {
       viewBtn.addEventListener('click', () => window.open('https://app.monarchmoney.com', '_blank'));
       actionButtonsContainer.appendChild(viewBtn);
     }
-    
+
     // Always create start over button
     const startOverBtn = document.createElement('button');
     startOverBtn.className = 'ui-button';
@@ -443,27 +420,24 @@ function initMonarchCompleteView() {
     startOverBtn.textContent = 'Start Over';
     startOverBtn.addEventListener('click', () => navigate('/upload', true));
     actionButtonsContainer.appendChild(startOverBtn);
-
-    // Apply button styling
-    renderButtons();
   }
 
   function retryFailedAccounts() {
     const failedAccounts = Object.entries(state.accounts).filter(([accountName, acc]) => acc.included && acc.status === 'failed');
-    
+
     if (failedAccounts.length === 0) return;
-    
+
     // Reset failed accounts to pending
     failedAccounts.forEach(([accountName, account]) => {
       state.accounts[accountName].status = 'pending';
       delete state.accounts[accountName].errorMessage;
     });
-    
+
     // Update UI and restart batch processing
     updateStatusOverview();
     updateAccountList();
     updateActionButtons();
-    
+
     processAccountsInBatches();
   }
 }

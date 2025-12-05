@@ -1,8 +1,9 @@
-import { navigate, goBack } from '../../router.js';
+import { navigate } from '../../router.js';
 import state from '../../state.js';
 import { renderButtons } from '../../components/button.js';
-import { updateNavigationTexts } from '../../utils/navigation.js';
-import { createSimpleNavigationBar } from '../../utils/navigationBar.js';
+import { renderNavigationBar } from '../../components/navigationBar.js';
+import { renderPageHeader } from '../../components/pageHeader.js';
+import { renderPageLayout } from '../../components/pageLayout.js';
 
 export default function initMethodSelectView() {
   // Redirect to upload if no accounts are available
@@ -11,25 +12,34 @@ export default function initMethodSelectView() {
     return;
   }
 
-  // Add navigation bar at the bottom of the content
-  const mainContainer = document.querySelector('.container-responsive');
-  mainContainer.insertAdjacentHTML('beforeend', createSimpleNavigationBar({
-    backText: "Back"
-  }));
+  // Set up the page layout (wraps existing content)
+  renderPageLayout();
+
+  // Render the navigation component with back and data buttons
+  renderNavigationBar({
+    showBackButton: true,
+    showDataButton: true
+  });
+
+  // Render page header
+  renderPageHeader({
+    title: 'Choose Your Migration Method',
+    description: 'You can either manually import your accounts into Monarch or let us automatically import your data.',
+    containerId: 'pageHeader'
+  });
 
   renderButtons();
-  updateNavigationTexts();
-  const manualBtn = document.getElementById('manualImportBtn');
-  const autoBtn = document.getElementById('autoImportBtn');
-  const backBtn = document.getElementById('backBtn');
-
+  
   const totalCount = Object.keys(state.accounts).length;
   const selectedCount = Object.values(state.accounts).filter(acc => acc.included).length;
 
-  // Set text content
+  // Set text content (elements are already in DOM)
   document.getElementById('totalCountDisplay').textContent = totalCount;
   document.getElementById('filesCountDisplay').textContent = selectedCount;
   document.getElementById('manualFileCount').textContent = selectedCount;
+
+  const manualBtn = document.getElementById('manualImportBtn');
+  const autoBtn = document.getElementById('autoImportBtn');
 
   manualBtn.addEventListener('click', () => {
     navigate('/manual');
@@ -37,10 +47,5 @@ export default function initMethodSelectView() {
 
   autoBtn.addEventListener('click', () => {
     navigate('/login');
-  });
-
-  // Handle back navigation
-  backBtn.addEventListener('click', () => {
-    goBack();
   });
 }

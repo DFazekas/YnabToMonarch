@@ -1,156 +1,146 @@
-<div class="min-h-screen">
-  <main class="container mx-auto px-4 py-8 md:py-16 max-w-6xl">
-    <section class="text-center mb-12 md:mb-16">
-      <div class="inline-flex items-center justify-center gap-2 mb-6">
-        <h1 class="text-3xl font-bold text-slate-900">YNAB to Monarch Migration</h1>
+<div id="pageLayout"></div>
+
+<!-- Get Started Btn -->
+<section class="container-responsive flex flex-col items-center mb-6">
+  <button id="getStartedButton" class="ui-button w-full" data-type="primary" data-size="large">
+    Start Migrating Your Data
+  </button>
+
+  <a id="migrationInfoModalButton" class="ui-button mt-4 sm:mt-6 inline-block" data-type="text">
+    How does this work?
+  </a>
+</section>
+
+<!-- Privacy Info -->
+<section class="text-center">
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 max-w-3xl mx-auto mb-8 text-left">
+    <div class="flex items-start gap-4">
+      <div class="bg-green-100 rounded-full p-3 shrink-0">
+        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M12 3c4.97 0 9 4.03 9 9s-4.03 9-9 9-9-4.03-9-9 4.03-9 9-9z" stroke-linecap="round"
+            stroke-linejoin="round"></path>
+          <path d="M8.5 12.5l1.5 1.5 4-4" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
       </div>
-
-      <p class="text-gray-600 max-w-2xl mx-auto mb-8">
-        Moving your financial data from YNAB to Monarch made simple and secure. Choose the method that works best for
-        you, and we'll guide you through each step.
-      </p>
-
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 max-w-3xl mx-auto mb-8 text-left">
-        <div class="flex items-start gap-4">
-          <div class="bg-green-100 rounded-full p-3 shrink-0">
-            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M12 3c4.97 0 9 4.03 9 9s-4.03 9-9 9-9-4.03-9-9 4.03-9 9-9z" stroke-linecap="round"
-                stroke-linejoin="round"></path>
-              <path d="M8.5 12.5l1.5 1.5 4-4" stroke-linecap="round" stroke-linejoin="round"></path>
-            </svg>
-          </div>
-          <div class="flex-1">
-            <h3 class="text-gray-900 mb-2 text-left text-lg font-semibold">Your data stays yours, always</h3>
-            <p class="text-gray-600 text-sm mb-3">
-              We never store, sell, or share your financial information. You remain in control of your data from start
-              to finish.
-            </p>
-            <button id="privacyInfoModalButton"
-              class="text-blue-600 hover:text-blue-700 transition-colors text-sm underline">
-              Learn more about how we protect your privacy
-            </button>
-          </div>
-        </div>
+      <div class="flex-1">
+        <h3 class="text-gray-900 mb-2 text-left text-lg font-semibold">Your data stays yours, always</h3>
+        <p class="text-gray-600 text-sm mb-3">
+          We never store, sell, or share your financial information. You remain in control of your data from start
+          to finish.
+        </p>
+        <button id="privacyInfoModalButton"
+          class="text-blue-600 hover:text-blue-700 transition-colors text-sm underline">
+          Learn more about how we protect your privacy
+        </button>
       </div>
-    </section>
+    </div>
+  </div>
+</section>
 
-    <!-- Get Started Btn -->
-    <section class="container-responsive flex flex-col items-center">
-      <button id="getStartedButton" class="ui-button w-full" data-type="primary" data-size="large">
-        Start Migrating Your Data
-      </button>
-
-      <a id="migrationInfoModalButton" class="ui-button mt-4 sm:mt-6 inline-block" data-type="text">
-        How does this work?
-      </a>
-    </section>
-
-  </main>
-
-  <div id="privacyInfoModal" class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 
+<!-- Privacy Info Modal -->
+<div id="privacyInfoModal" class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 
             transition-opacity duration-300 p-3 sm:p-4 md:p-6">
-    <!-- Overlay -->
-    <div class="absolute inset-0 bg-black/30 transition-opacity duration-300"></div>
+  <!-- Overlay -->
+  <div class="absolute inset-0 bg-black/30 transition-opacity duration-300"></div>
 
-    <!-- Modal Content -->
-    <div
-      class="relative z-10 bg-white rounded-xl p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md md:max-w-lg w-full shadow-2xl transform translate-y-full transition-transform duration-500 max-h-[90vh] overflow-y-auto">
+  <!-- Modal Content -->
+  <div
+    class="relative z-10 bg-white rounded-xl p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md md:max-w-lg w-full shadow-2xl transform translate-y-full transition-transform duration-500 max-h-[90vh] overflow-y-auto">
 
-      <!-- Close Btn -->
-      <button id="closePrivacyInfoModal"
-        class="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        aria-label="Close modal">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+    <!-- Close Btn -->
+    <button id="closePrivacyInfoModal"
+      class="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      aria-label="Close modal">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
 
-      <!-- Title -->
-      <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 pr-8 text-gray-900">
-        Privacy is our top priority
-      </h3>
+    <!-- Title -->
+    <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 pr-8 text-gray-900">
+      Privacy is our top priority
+    </h3>
 
-      <!-- Body -->
-      <div class="space-y-4 text-sm text-gray-600">
-        <div>
-          <h4 class="text-gray-900 font-semibold mb-1">No Data Collection</h4>
-          <p>We never collect, store, or share your financial data.</p>
-        </div>
-        <div>
-          <h4 class="text-gray-900 font-semibold mb-1">Secure Connections</h4>
-          <p>We use secure, encrypted, and read-only connections when accessing your YNAB data.
-          </p>
-        </div>
-        <div>
-          <h4 class="text-gray-900 font-semibold mb-1">You're in Control</h4>
-          <p>At any point in time you have full control to wipe your data and stop the migration process.</p>
-        </div>
-        <div>
-          <h4 class="text-gray-900 font-semibold mb-1">Open Source & Auditable</h4>
-          <p>Everything is transparent and can be reviewed by security experts. We have nothing to hide because we keep
-            no copies. See <a href="https://github.com/your-repo" class="text-blue-600 hover:underline">our source
-              code</a>.</p>
-        </div>
+    <!-- Body -->
+    <div class="space-y-4 text-sm text-gray-600">
+      <div>
+        <h4 class="text-gray-900 font-semibold mb-1">No Data Collection</h4>
+        <p>We never collect, store, or share your financial data.</p>
       </div>
+      <div>
+        <h4 class="text-gray-900 font-semibold mb-1">Secure Connections</h4>
+        <p>We use secure, encrypted, and read-only connections when accessing your YNAB data.
+        </p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 font-semibold mb-1">You're in Control</h4>
+        <p>At any point in time you have full control to wipe your data and stop the migration process.</p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 font-semibold mb-1">Open Source & Auditable</h4>
+        <p>Everything is transparent and can be reviewed by security experts. We have nothing to hide because we keep
+          no copies. See <a href="https://github.com/your-repo" class="text-blue-600 hover:underline">our source
+            code</a>.</p>
+      </div>
+    </div>
 
-      <div class="mt-6 sm:mt-8 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
-        <div class="flex items-start gap-2 sm:gap-3">
-          <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-              clip-rule="evenodd" />
-          </svg>
-          <p class="text-xs sm:text-sm text-green-800 leading-relaxed">
-            <strong>100% Private:</strong> Your financial data is sensitive, and we treat it that way. You remain the
-            sole owner of every byte.
-          </p>
-        </div>
+    <div class="mt-6 sm:mt-8 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
+      <div class="flex items-start gap-2 sm:gap-3">
+        <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+            clip-rule="evenodd" />
+        </svg>
+        <p class="text-xs sm:text-sm text-green-800 leading-relaxed">
+          <strong>100% Private:</strong> Your financial data is sensitive, and we treat it that way. You remain the
+          sole owner of every byte.
+        </p>
       </div>
     </div>
   </div>
+</div>
 
-  <div id="migrationInfoModal"
-    class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300 p-3 sm:p-4 md:p-6">
+<!-- Migration Info Modal -->
+<div id="migrationInfoModal"
+  class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300 p-3 sm:p-4 md:p-6">
 
-    <!-- Overlay -->
-    <div class="absolute inset-0 bg-black/30 transition-opacity duration-300"></div>
+  <!-- Overlay -->
+  <div class="absolute inset-0 bg-black/30 transition-opacity duration-300"></div>
 
-    <!-- Modal Content -->
-    <div
-      class="relative z-10 bg-white rounded-xl p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md md:max-w-lg w-full shadow-2xl transform translate-y-full transition-transform duration-500 max-h-[90vh] overflow-y-auto">
+  <!-- Modal Content -->
+  <div
+    class="relative z-10 bg-white rounded-xl p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md md:max-w-lg w-full shadow-2xl transform translate-y-full transition-transform duration-500 max-h-[90vh] overflow-y-auto">
 
-      <!-- Close Btn -->
-      <button id="closeMigrationInfoModal"
-        class="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        aria-label="Close modal">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+    <!-- Close Btn -->
+    <button id="closeMigrationInfoModal"
+      class="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      aria-label="Close modal">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
 
-      <!-- Title -->
-      <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 pr-8 text-gray-900">
-        How the Migration Process Works
-      </h3>
+    <!-- Title -->
+    <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 pr-8 text-gray-900">
+      How the Migration Process Works
+    </h3>
 
-      <!-- Body -->
-      <div class="space-y-4 text-sm text-gray-600">
-        <div>
-          <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 1: Access Your Data</h4>
-          <p class="text-gray-600 text-sm">Connect your YNAB account or upload your data manually. We'll retrieve your
-            budgets, transactions, categories, and accounts.</p>
-        </div>
-        <div>
-          <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 2: Filter & Process</h4>
-          <p class="text-gray-600 text-sm">Decide what to migrate and make edits as needed.</p>
-        </div>
-        <div>
-          <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 3: Download or Import</h4>
-          <p class="text-gray-600 text-sm">Decide to receive a ready-to-import file that you can upload into Monarch
-            Money yourself, or connect to your Monarch Money account to automatically migrate your data.</p>
-        </div>
+    <!-- Body -->
+    <div class="space-y-4 text-sm text-gray-600">
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 1: Access Your Data</h4>
+        <p class="text-gray-600 text-sm">Connect your YNAB account or upload your data manually. We'll retrieve your
+          budgets, transactions, categories, and accounts.</p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 2: Filter & Process</h4>
+        <p class="text-gray-600 text-sm">Decide what to migrate and make edits as needed.</p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 3: Download or Import</h4>
+        <p class="text-gray-600 text-sm">Decide to receive a ready-to-import file that you can upload into Monarch
+          Money yourself, or connect to your Monarch Money account to automatically migrate your data.</p>
       </div>
     </div>
   </div>
-
 </div>

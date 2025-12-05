@@ -1,109 +1,112 @@
-<div class="container-responsive flex flex-col items-center justify-center py-8 sm:py-12 md:py-16 lg:py-24 space-y-8 sm:space-y-10 md:space-y-12 min-h-[calc(100vh-200px)]">
+<div id="pageLayout"></div>
 
-  <!-- Results Container -->
-  <div id="resultsContainer" 
-       class="text-center transition-opacity duration-500 ease-in-out w-full max-w-5xl opacity-0">
-    
-    <!-- Status Icon -->
-    <div id="overallStatus" 
-         class="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 mx-auto mb-6 sm:mb-8 
+<!-- Results Container -->
+<div id="resultsContainer" class="text-center transition-opacity duration-500 ease-in-out w-full max-w-5xl opacity-0">
+
+  <!-- Status Icon -->
+  <div id="overallStatus" class="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 mx-auto mb-6 sm:mb-8 
                 transition-all duration-500 ease-in-out">
+    <!-- Updated dynamically -->
+  </div>
+
+  <!-- Header -->
+  <div class="mb-6 sm:mb-8 md:mb-10">
+    <h2 id="header" class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-gray-900">
       <!-- Updated dynamically -->
-    </div>
-
-    <!-- Header -->
-    <div class="mb-6 sm:mb-8 md:mb-10">
-      <h2 id="header" 
-          class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-gray-900">
-        <!-- Updated dynamically -->
-      </h2>
-      <p id="subheader" 
-         class="text-gray-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
-        <!-- Updated dynamically -->
-      </p>
-    </div>
-
-    <!-- Account Status List -->
-    <div id="accountList" 
-         class="text-left max-w-3xl w-full mx-auto space-y-3 sm:space-y-4 transition-all duration-300 mb-8 sm:mb-10 md:mb-12">
-      <!-- Account rows inserted by JavaScript -->
-    </div>
-
-    <!-- Action Buttons Container -->
-    <div id="actionButtonsContainer" 
-         class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full max-w-2xl">
-      <!-- Buttons inserted dynamically -->
-    </div>
-
+    </h2>
+    <p id="subheader" class="text-gray-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
+      <!-- Updated dynamically -->
+    </p>
   </div>
 
-  <!-- Loading State -->
-  <div id="loadingContainer" 
-       class="text-center w-full max-w-md">
-    
-    <div class="mb-6 sm:mb-8">
-      <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6">
-        <svg class="animate-spin w-full h-full text-blue-600" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-      </div>
-      
-      <h2 class="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 text-gray-900">
-        Processing Your Import
-      </h2>
-      <p class="text-gray-600 text-sm sm:text-base leading-relaxed">
-        We're securely importing your accounts into Monarch Money. This may take a few moments...
-      </p>
-    </div>
-
-    <!-- Progress Steps -->
-    <div class="space-y-3 sm:space-y-4 text-left">
-      <div id="step1" class="flex items-center gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
-        <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
-          <svg class="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <span class="text-sm sm:text-base text-blue-800 font-medium">Authenticating with Monarch</span>
-      </div>
-      
-      <div id="step2" class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
-        <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-gray-300 flex items-center justify-center flex-shrink-0">
-          <div class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-gray-300"></div>
-        </div>
-        <span class="text-sm sm:text-base text-gray-600">Creating accounts</span>
-      </div>
-      
-      <div id="step3" class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
-        <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-gray-300 flex items-center justify-center flex-shrink-0">
-          <div class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-gray-300"></div>
-        </div>
-        <span class="text-sm sm:text-base text-gray-600">Importing transactions</span>
-      </div>
-      
-      <div id="step4" class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
-        <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-gray-300 flex items-center justify-center flex-shrink-0">
-          <div class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-gray-300"></div>
-        </div>
-        <span class="text-sm sm:text-base text-gray-600">Finalizing import</span>
-      </div>
-    </div>
-
-    <!-- Security Note -->
-    <div class="mt-6 sm:mt-8 p-4 bg-green-50 border border-green-200 rounded-lg">
-      <div class="flex items-start gap-3">
-        <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-        </svg>
-        <p class="text-xs sm:text-sm text-green-800 leading-relaxed">
-          <strong>Secure Process:</strong> Your data is encrypted during transfer and we never store your Monarch credentials.
-        </p>
-      </div>
-    </div>
-
+  <!-- Account Status List -->
+  <div id="accountList"
+    class="text-left max-w-3xl w-full mx-auto space-y-3 sm:space-y-4 transition-all duration-300 mb-8 sm:mb-10 md:mb-12">
+    <!-- Account rows inserted by JavaScript -->
   </div>
 
-  <!-- Navigation will be added here by JavaScript -->
+  <!-- Action Buttons Container -->
+  <div id="actionButtonsContainer"
+    class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full max-w-2xl">
+    <!-- Buttons inserted dynamically -->
+  </div>
 
 </div>
+
+<!-- Loading State -->
+<div id="loadingContainer" class="text-center w-full max-w-md">
+
+  <div class="mb-6 sm:mb-8">
+    <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6">
+      <svg class="animate-spin w-full h-full text-blue-600" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+        </path>
+      </svg>
+    </div>
+
+    <h2 class="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 text-gray-900">
+      Processing Your Import
+    </h2>
+    <p class="text-gray-600 text-sm sm:text-base leading-relaxed">
+      We're securely importing your accounts into Monarch Money. This may take a few moments...
+    </p>
+  </div>
+
+  <!-- Progress Steps -->
+  <div class="space-y-3 sm:space-y-4 text-left">
+    <div id="step1" class="flex items-center gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
+      <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+        <svg class="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+      <span class="text-sm sm:text-base text-blue-800 font-medium">Authenticating with Monarch</span>
+    </div>
+
+    <div id="step2" class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+      <div
+        class="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-gray-300 flex items-center justify-center flex-shrink-0">
+        <div class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-gray-300"></div>
+      </div>
+      <span class="text-sm sm:text-base text-gray-600">Creating accounts</span>
+    </div>
+
+    <div id="step3" class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+      <div
+        class="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-gray-300 flex items-center justify-center flex-shrink-0">
+        <div class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-gray-300"></div>
+      </div>
+      <span class="text-sm sm:text-base text-gray-600">Importing transactions</span>
+    </div>
+
+    <div id="step4" class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+      <div
+        class="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-gray-300 flex items-center justify-center flex-shrink-0">
+        <div class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-gray-300"></div>
+      </div>
+      <span class="text-sm sm:text-base text-gray-600">Finalizing import</span>
+    </div>
+  </div>
+
+  <!-- Security Note -->
+  <div class="mt-6 sm:mt-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+    <div class="flex items-start gap-3">
+      <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd"
+          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+          clip-rule="evenodd" />
+      </svg>
+      <p class="text-xs sm:text-sm text-green-800 leading-relaxed">
+        <strong>Secure Process:</strong> Your data is encrypted during transfer and we never store your Monarch
+        credentials.
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<button id="continueBtn" class="ui-button">
+  Continue
+</button>

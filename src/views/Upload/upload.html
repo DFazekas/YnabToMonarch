@@ -1,75 +1,100 @@
-<div class="min-h-screen">
-  <main class="container mx-auto px-4 py-8 md:py-16 max-w-6xl">
-    <section class="text-center mb-12 md:mb-16">
-      <div class="inline-flex items-center justify-center gap-2 mb-6">
-        <h1 class="text-3xl font-bold text-slate-900">Step 1: Import YNAB Data</h1>
+<div id="pageLayout"></div>
+
+<!-- Existing Data Alert -->
+<div id="existingDataAlert" class="hidden">
+  <div class="p-4 sm:p-6 bg-green-50 border border-green-200 rounded-lg mb-8">
+    <div class="flex items-start gap-4">
+      <div class="flex-shrink-0">
+        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
       </div>
-
-      <p class="text-gray-600 max-w-2xl mx-auto mb-8">
-        Choose how you'd like to bring your YNAB data into Monarch Money. You can either connect your YNAB account for a
-        seamless transfer or manually upload a file.
-      </p>
-    </section>
-
-    <section class="mb-12">
-      <div class="grid md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto">
-        <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-lg space-y-4 flex flex-col text-left">
-          <div class="flex items-start gap-4">
-            <span class="bg-blue-50 text-blue-600 rounded-2xl p-3">
-              <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-                <path d="M10 17l-4-4 4-4" stroke-linecap="round" stroke-linejoin="round"></path>
-                <path d="M14 7h6" stroke-linecap="round" stroke-linejoin="round"></path>
-                <path d="M14 17h6" stroke-linecap="round" stroke-linejoin="round"></path>
-              </svg>
-            </span>
-            <div>
-              <p class="text-sm uppercase tracking-[0.4em] text-gray-400">Automatic</p>
-              <h3 class="text-xl font-semibold text-slate-900">Connect to YNAB</h3>
-            </div>
-          </div>
-          <div class="space-y-1 pt-4">
-            <button id="connectButton" class="ui-button w-full" data-type="primary" data-size="large"
-              title="Coming soon" disabled>
-              Connect YNAB Account
-            </button>
-            <p class="text-xs text-gray-400 text-center">Coming Soon</p>
-            <a id="oauthInfoModalButton" data-type="text" class="ui-button">
-              How does this work?
-            </a>
-          </div>
-        </div>
-
-        <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-lg space-y-4 flex flex-col text-left">
-          <div class="flex items-start gap-4">
-            <span class="bg-purple-50 text-purple-600 rounded-2xl p-3">
-              <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-                <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke-linecap="round" stroke-linejoin="round">
-                </path>
-                <path d="M12 3v12" stroke-linecap="round" stroke-linejoin="round"></path>
-                <path d="M9 10l3-3 3 3" stroke-linecap="round" stroke-linejoin="round"></path>
-              </svg>
-            </span>
-            <div>
-              <p class="text-sm uppercase tracking-[0.4em] text-gray-400">Manual</p>
-              <h3 class="text-xl font-semibold text-slate-900">Upload a File</h3>
-            </div>
-          </div>
-          <div class="space-y-1 pt-4">
-            <button id="manualUploadButton" class="ui-button w-full" data-type="secondary" data-size="large">
-              Choose File to Upload
-            </button>
-            <input id="manualFileInput" type="file"
-              accept=".zip,.bin,application/zip,application/x-zip-compressed,application/octet-stream,application/binary"
-              class="hidden" />
-            <a id="manualImportInfoModalButton" data-type="text" class="ui-button">
-              What's the process?
-            </a>
-          </div>
-        </div>
+      <div class="flex-1">
+        <h3 class="text-lg font-semibold text-green-900 mb-1">You have existing data</h3>
+        <p class="text-sm text-green-700 mb-4">
+          We found your previously uploaded YNAB accounts, continue where you left off.
+        </p>
+        <button id="continueWithExistingBtn" class="ui-button" data-type="primary" data-size="medium">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+          Continue with Existing Data
+        </button>
       </div>
-    </section>
-  </main>
+    </div>
+  </div>
+
+  <!-- Divider -->
+  <div class="relative mb-8">
+    <div class="absolute inset-0 flex items-center">
+      <div class="w-full border-t border-gray-200"></div>
+    </div>
+    <div class="relative flex justify-center">
+      <div class="px-4 bg-white">
+        <span class="w-5 h-5 text-gray-400">OR</span>
+      </div>
+    </div>
+  </div>
+
 </div>
+
+<!-- Upload Options -->
+<section class="mb-12">
+  <div class="grid md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto">
+    <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-lg space-y-4 flex flex-col text-left">
+      <div class="flex items-start gap-4">
+        <span class="bg-blue-50 text-blue-600 rounded-2xl p-3">
+          <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M10 17l-4-4 4-4" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M14 7h6" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M14 17h6" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </span>
+        <div>
+          <p class="text-sm uppercase tracking-[0.4em] text-gray-400">Automatic</p>
+          <h3 class="text-xl font-semibold text-slate-900">Connect to YNAB</h3>
+        </div>
+      </div>
+      <div class="space-y-1 pt-4">
+        <button id="connectButton" class="ui-button w-full" data-type="primary" data-size="large">
+          Connect YNAB Account
+        </button>
+        <a id="oauthInfoModalButton" data-type="text" class="ui-button">
+          How does this work?
+        </a>
+      </div>
+    </div>
+
+    <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-lg space-y-4 flex flex-col text-left">
+      <div class="flex items-start gap-4">
+        <span class="bg-purple-50 text-purple-600 rounded-2xl p-3">
+          <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke-linecap="round" stroke-linejoin="round">
+            </path>
+            <path d="M12 3v12" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M9 10l3-3 3 3" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </span>
+        <div>
+          <p class="text-sm uppercase tracking-[0.4em] text-gray-400">Manual</p>
+          <h3 class="text-xl font-semibold text-slate-900">Upload a File</h3>
+        </div>
+      </div>
+      <div class="space-y-1 pt-4">
+        <button id="manualUploadButton" class="ui-button w-full" data-type="secondary" data-size="large">
+          Choose File to Upload
+        </button>
+        <input id="manualFileInput" type="file"
+          accept=".zip,.bin,application/zip,application/x-zip-compressed,application/octet-stream,application/binary"
+          class="hidden" />
+        <a id="manualImportInfoModalButton" data-type="text" class="ui-button">
+          What's the process?
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
 
 <!-- OAuth Info Modal -->
 <div id="oauthInfoModal"
@@ -172,6 +197,4 @@
       </div>
     </div>
   </div>
-</div>
-
 </div>

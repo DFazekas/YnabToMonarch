@@ -1,0 +1,131 @@
+<div id="pageLayout"></div>
+
+<!-- Warning Banner -->
+<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-r-lg">
+  <div class="flex items-start">
+    <svg class="w-5 h-5 text-yellow-400 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd"
+        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+        clip-rule="evenodd" />
+    </svg>
+    <div>
+      <h3 class="text-sm font-medium text-yellow-800 mb-1">Privacy Notice</h3>
+      <p class="text-sm text-yellow-700">
+        All data shown below is stored locally in your browser only. No data is sent to our servers or any third-party
+        services.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Data Sections Container -->
+<div class="space-y-6">
+
+  <!-- Application State Section -->
+  <div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-4">
+      <h2 class="text-xl font-semibold text-white flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        Application State
+      </h2>
+      <p class="text-blue-100 text-sm mt-1">Current session data and account information</p>
+    </div>
+    <div id="stateDataSection" class="p-6">
+      <!-- Populated by JavaScript -->
+    </div>
+  </div>
+
+  <!-- Session Storage Section -->
+  <div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="bg-gradient-to-r from-purple-500 to-pink-600 px-6 py-4">
+      <h2 class="text-xl font-semibold text-white flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+        </svg>
+        Session Storage
+      </h2>
+      <p class="text-purple-100 text-sm mt-1">Data cleared when browser tab is closed</p>
+    </div>
+    <div id="sessionStorageSection" class="p-6">
+      <!-- Populated by JavaScript -->
+    </div>
+  </div>
+
+  <!-- Local Storage Section -->
+  <div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="bg-gradient-to-r from-green-500 to-teal-600 px-6 py-4">
+      <h2 class="text-xl font-semibold text-white flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+        </svg>
+        Local Storage
+      </h2>
+      <p class="text-green-100 text-sm mt-1">Persistent data saved across sessions</p>
+    </div>
+    <div id="localStorageSection" class="p-6">
+      <!-- Populated by JavaScript -->
+    </div>
+  </div>
+
+</div>
+
+<!-- Action Buttons -->
+<div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+  <button id="exportDataBtn" class="ui-button" data-type="secondary" data-size="medium">
+    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+    </svg>
+    Export Data (JSON)
+  </button>
+
+  <button id="clearAllDataBtn" class="ui-button" data-type="danger" data-size="medium">
+    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
+    Clear All Data
+  </button>
+</div>
+
+<!-- Info Footer -->
+<div class="mt-8 text-center text-sm text-gray-500">
+  <p>Clearing data will remove all accounts, credentials, and session information.</p>
+  <p class="mt-1">You'll need to re-upload your YNAB data and re-authenticate with Monarch.</p>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmClearModal"
+  class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 pointer-events-none opacity-0 transition-opacity duration-500">
+  <div
+    class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 transform translate-y-full transition-transform duration-500">
+    <div class="flex items-start mb-4">
+      <div class="flex-shrink-0">
+        <svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <div class="ml-4">
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Clear All Data?</h3>
+        <p class="text-sm text-gray-600 mb-4">
+          This action cannot be undone. All your YNAB accounts, Monarch credentials, and session data will be
+          permanently deleted from your browser.
+        </p>
+        <div class="flex gap-3 justify-end">
+          <button id="cancelClearBtn" class="ui-button" data-type="secondary" data-size="small">
+            Cancel
+          </button>
+          <button id="confirmClearBtn" class="ui-button" data-type="danger" data-size="small">
+            Yes, Clear Everything
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

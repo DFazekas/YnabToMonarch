@@ -1,23 +1,28 @@
 import { v4 as uuidv4 } from 'uuid';
 import state from '../../state.js';
-import { navigate, goBack } from '../../router.js';
-import { renderButtons } from '../../components/button.js';
+import { navigate } from '../../router.js';
 import { monarchApi } from '../../api/monarchApi.js';
 import { toggleElementVisibility, toggleDisabled } from '../../utils/dom.js';
-import { createSimpleNavigationBar } from '../../utils/navigationBar.js';
 import {
   saveToLocalStorage, getLocalStorage, clearStorage
 } from '../../utils/storage.js';
 import { encryptPassword } from '../../../shared/crypto.js';
 import { patchState, clearState } from '../../utils/state.js';
+import { renderPageLayout } from '../../components/pageLayout.js';
 
 
 export default async function initMonarchCredentialsView() {
-  // Add navigation bar at the bottom of the content
-  const mainContainer = document.querySelector('.container-responsive');
-  mainContainer.insertAdjacentHTML('beforeend', createSimpleNavigationBar({
-    backText: "Back"
-  }));
+  renderPageLayout({
+    navbar: {
+      showBackButton: true,
+      showDataButton: true
+    },
+    header: {
+      title: 'Auto Import: Connect Your Monarch Account',
+      description: 'Authorize your Monarch account so we can directly import your accounts and transactions.',
+      containerId: 'pageHeader'
+    }
+  });
 
   const $ = (id) => document.getElementById(id);
   const UI = {
@@ -39,8 +44,6 @@ export default async function initMonarchCredentialsView() {
     securityNoteMsg: $('securityNote'),
     securityNoteIcon: $('securityNoteIcon')
   };
-
-  renderButtons();
 
   const { credentials: creds } = state;
 
@@ -83,7 +86,6 @@ export default async function initMonarchCredentialsView() {
     const hasPassword = UI.passwordInput.value.trim() || creds.encryptedPassword;
     toggleDisabled(UI.connectBtn, !(hasEmail && hasPassword));
     toggleElementVisibility(UI.errorContainer, false);
-    renderButtons();
   }
 
   function updateSecurityNote(status) {
@@ -135,22 +137,22 @@ export default async function initMonarchCredentialsView() {
 
     try {
       const response = await monarchApi.login(email, encryptedPassword, uuid);
- 
+
       if (response?.otpRequired) {
         // Always store credentials temporarily for OTP flow, regardless of "remember me" setting
         // We'll handle the permanent storage decision in the OTP page based on the remember flag
-        saveToLocalStorage({ 
-          email, 
-          encryptedPassword, 
+        saveToLocalStorage({
+          email,
+          encryptedPassword,
           uuid: uuid,
           remember: creds.remember,
           tempForOtp: !creds.remember // Flag to indicate this is temporary storage
         });
-        
+
         creds.awaitingOtp = true;
         return navigate("/otp");
       }
-      
+
       if (response?.token) {
         patchState(creds, {
           email,
@@ -160,14 +162,14 @@ export default async function initMonarchCredentialsView() {
           apiToken: response.token,
           awaitingOtp: false
         });
-        
+
         if (creds.remember) {
           saveToLocalStorage({ email, encryptedPassword, token: response.token, remember: true });
         }
 
         return navigate('/complete');
       }
-      
+
       const apiError = response?.detail || response?.error || "Unexpected login response."
       throw new Error(apiError);
     } catch (err) {
@@ -203,7 +205,6 @@ export default async function initMonarchCredentialsView() {
     toggleElementVisibility(UI.notYouContainer, false);
     toggleElementVisibility(UI.rememberMeContainer, true);
     updateSecurityNote();
-    renderButtons();
     UI.emailInput.focus();
   }
 
@@ -227,10 +228,6 @@ export default async function initMonarchCredentialsView() {
     toggleElementVisibility(UI.eyeHide, isHidden);
   }
 
-  function onClickBack() {
-    goBack();
-  }
-
   function showError(message) {
     UI.errorBox.textContent = message;
     toggleElementVisibility(UI.errorContainer, true);
@@ -241,7 +238,6 @@ export default async function initMonarchCredentialsView() {
   UI.clearCredentialsBtn.addEventListener('click', onClickClearCredentials);
   UI.rememberCheckbox.addEventListener('change', onChangeRemember);
   UI.toggleBtn.addEventListener('click', onTogglePassword);
-  UI.backBtn.addEventListener('click', onClickBack);
 
   [UI.emailInput, UI.passwordInput].forEach(input => {
     input.addEventListener('input', validateForm);

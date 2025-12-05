@@ -3190,12 +3190,483 @@
     }
   });
 
+  // src/components/modal.js
+  function openModal(id) {
+    const modal = document.getElementById(id);
+    const content = modal.querySelector(".relative");
+    modal.classList.remove("pointer-events-none", "opacity-0");
+    modal.classList.add("pointer-events-auto", "opacity-100");
+    requestAnimationFrame(() => {
+      content.classList.remove("translate-y-full");
+      content.classList.add("translate-y-0");
+    });
+  }
+  function closeModal(id) {
+    const modal = document.getElementById(id);
+    const content = modal.querySelector(".relative");
+    content.classList.remove("translate-y-0");
+    content.classList.add("translate-y-full");
+    setTimeout(() => {
+      modal.classList.add("pointer-events-none", "opacity-0");
+      modal.classList.remove("pointer-events-auto", "opacity-100");
+    }, 500);
+  }
+
   // src/state.js
   var state_default = {
     credentials: { email: "", encryptedPassword: "", otp: "", remember: false, apiToken: "", awaitingOtp: false, deviceUuid: "" },
     monarchAccounts: null,
-    accounts: {}
+    accounts: {},
+    ynabOauth: { code: null, state: null, error: null }
   };
+
+  // src/utils/storage.js
+  var STORAGE_KEYS = {
+    EMAIL: "monarchEmail",
+    ENCRYPTED_PASSWORD: "monarchPasswordBase64",
+    TOKEN: "monarchApiToken",
+    UUID: "monarchDeviceUuid",
+    REMEMBER: "monarchRememberMe",
+    TEMP_FOR_OTP: "monarchTempForOtp"
+  };
+  function getLocalStorage() {
+    return {
+      email: get(STORAGE_KEYS.EMAIL),
+      encryptedPassword: get(STORAGE_KEYS.ENCRYPTED_PASSWORD),
+      token: get(STORAGE_KEYS.TOKEN),
+      uuid: get(STORAGE_KEYS.UUID),
+      remember: get(STORAGE_KEYS.REMEMBER) === "true",
+      tempForOtp: get(STORAGE_KEYS.TEMP_FOR_OTP) === "true"
+    };
+  }
+  function saveToLocalStorage({ email, encryptedPassword, token, uuid, remember, tempForOtp }) {
+    if (email)
+      set(STORAGE_KEYS.EMAIL, email);
+    if (encryptedPassword)
+      set(STORAGE_KEYS.ENCRYPTED_PASSWORD, encryptedPassword);
+    if (token)
+      set(STORAGE_KEYS.TOKEN, token);
+    if (uuid)
+      set(STORAGE_KEYS.UUID, uuid);
+    if (typeof remember === "boolean")
+      set(STORAGE_KEYS.REMEMBER, remember ? "true" : "false");
+    if (typeof tempForOtp === "boolean")
+      set(STORAGE_KEYS.TEMP_FOR_OTP, tempForOtp ? "true" : "false");
+  }
+  function clearStorage() {
+    Object.values(STORAGE_KEYS).forEach(remove);
+  }
+  function get(key) {
+    return localStorage.getItem(key);
+  }
+  function set(key, value) {
+    localStorage.setItem(key, value);
+  }
+  function remove(key) {
+    localStorage.removeItem(key);
+  }
+
+  // src/components/button.js
+  function renderButtons() {
+    document.querySelectorAll(".ui-button").forEach((button) => {
+      const type = button.dataset.type || "primary";
+      const size = button.dataset.size || "medium";
+      const fixedWidth = button.dataset.fixedWidth;
+      const fullWidth = button.hasAttribute("data-fullwidth");
+      const isDisabled = button.hasAttribute("disabled") || button.disabled;
+      button.className = "ui-button";
+      button.type = "button";
+      button.classList.add("font-semibold", "rounded-lg", "transition-all", "duration-200", "ease-in-out", "flex", "items-center", "justify-center");
+      button.style.transform = "none";
+      switch (size) {
+        case "small":
+          button.classList.add("px-2", "py-1", "text-xs", "sm:px-3", "sm:py-1.5", "sm:text-sm");
+          break;
+        case "large":
+          button.classList.add("px-4", "py-2.5", "text-sm", "sm:px-6", "sm:py-3", "sm:text-base", "md:px-8", "md:py-4");
+          break;
+        case "medium":
+        default:
+          button.classList.add("px-3", "py-2", "text-sm", "sm:px-5", "sm:py-2", "sm:text-sm");
+          break;
+      }
+      if (isDisabled) {
+        button.setAttribute("disabled", "");
+        button.classList.add("opacity-50", "cursor-not-allowed");
+        button.style.boxShadow = "none";
+      } else {
+        button.removeAttribute("disabled");
+        button.classList.add("cursor-pointer");
+      }
+      switch (type) {
+        case "primary":
+          button.classList.add("bg-[#1993e5]", "text-white", "border", "border-[#1993e5]", "shadow-sm");
+          if (!isDisabled) {
+            button.classList.add("hover:bg-blue-600", "hover:border-blue-600", "hover:shadow-md", "focus:ring-2", "focus:ring-blue-500", "focus:ring-offset-2", "active:bg-blue-700", "transform", "hover:scale-105");
+          }
+          break;
+        case "secondary":
+          button.classList.add("bg-white", "text-gray-700", "border", "border-gray-300", "shadow-sm");
+          if (!isDisabled) {
+            button.classList.add("hover:bg-gray-50", "hover:border-gray-400", "hover:text-gray-800", "focus:ring-2", "focus:ring-gray-500", "focus:ring-offset-2", "active:bg-gray-100");
+          }
+          break;
+        case "text":
+          button.classList.remove("px-2", "px-3", "px-4", "px-5", "px-6", "px-8", "py-1", "py-1.5", "py-2", "py-2.5", "py-3", "py-4", "sm:px-3", "sm:px-5", "sm:px-6", "sm:px-8", "sm:py-1.5", "sm:py-2", "sm:py-3", "sm:py-4", "md:px-8", "md:py-4");
+          button.classList.add("bg-transparent", "text-blue-600", "px-2", "py-1", "sm:px-3", "sm:py-1.5");
+          if (!isDisabled) {
+            button.classList.add("hover:underline", "hover:text-blue-700", "focus:ring-2", "focus:ring-blue-500", "focus:ring-offset-2");
+          }
+          break;
+        case "danger":
+          button.classList.add("bg-red-500", "text-white", "border", "border-red-500", "shadow-sm");
+          if (!isDisabled) {
+            button.classList.add("hover:bg-red-600", "hover:border-red-600", "hover:shadow-md", "focus:ring-2", "focus:ring-red-500", "focus:ring-offset-2", "active:bg-red-700", "transform", "hover:scale-105");
+          }
+          break;
+        case "warning":
+          button.classList.add("bg-orange-500", "text-white", "border", "border-orange-500", "shadow-sm");
+          if (!isDisabled) {
+            button.classList.add("hover:bg-orange-600", "hover:border-orange-600", "hover:shadow-md", "focus:ring-2", "focus:ring-orange-500", "focus:ring-offset-2", "active:bg-orange-700", "transform", "hover:scale-105");
+          }
+          break;
+      }
+      if (fixedWidth) {
+        button.style.width = `${fixedWidth}px`;
+      }
+      if (fullWidth) {
+        button.classList.add("w-full");
+      }
+      if (!isDisabled) {
+        button.classList.add("touch-manipulation", "select-none");
+        button.style.minHeight = "44px";
+        button.style.minWidth = "44px";
+      }
+    });
+  }
+
+  // src/components/pageLayout.js
+  function renderPageLayout(options = {}) {
+    const {
+      containerId = "pageLayout",
+      navbar = null,
+      header = null,
+      className = ""
+    } = options;
+    const container = document.getElementById(containerId);
+    if (!container) {
+      console.error(`Page layout container #${containerId} not found`);
+      return;
+    }
+    const pageContent = [];
+    let sibling = container.nextElementSibling;
+    while (sibling) {
+      pageContent.push(sibling);
+      sibling = sibling.nextElementSibling;
+    }
+    container.className = `min-h-screen flex flex-col ${className}`;
+    container.innerHTML = `
+    <main class="flex-1 w-full mx-auto px-4 sm:px-6 md:px-8 py-2 sm:py-4 md:py-6 lg:py-8 max-w-6xl">
+      <div class="flex flex-col space-y-6 sm:space-y-8 md:space-y-10">
+        <!-- Navigation Bar -->
+        <div id="navigationBar"></div>
+
+        <!-- Page Header -->
+        <div id="pageHeader"></div>
+
+        <!-- Page Content Slot -->
+        <div id="pageContent"></div>
+      </div>
+    </main>
+  `;
+    if (navbar != null)
+      renderNavigationBar(navbar);
+    if (header != null)
+      renderPageHeader(header);
+    const contentContainer = document.getElementById("pageContent");
+    if (contentContainer) {
+      pageContent.forEach((element) => {
+        contentContainer.appendChild(element);
+      });
+    }
+    renderButtons();
+  }
+  function renderNavigationBar(options = {}) {
+    const {
+      showBackButton = true,
+      showDataButton = true,
+      backText = "Back",
+      containerId = "navigationBar"
+    } = options;
+    const container = document.getElementById(containerId);
+    if (!container) {
+      console.warn(`Navigation container with id "${containerId}" not found`);
+      return;
+    }
+    const hasData = checkForStoredData();
+    const dataButtonText = hasData ? "Manage your data" : "No data currently stored";
+    let navHTML = '<div class="flex flex-wrap items-center justify-between gap-2 mb-4">';
+    if (showBackButton) {
+      navHTML += `
+      <button 
+        id="navBackBtn" 
+        class="ui-button flex items-center text-sm"
+        data-type="text"
+        data-size="small"
+      >
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        ${backText}
+      </button>
+    `;
+    } else {
+      navHTML += "<div></div>";
+    }
+    if (showDataButton) {
+      navHTML += `
+      <button 
+        id="navDataBtn" 
+        class="ui-button text-xs sm:text-sm"
+        data-type="text"
+        data-size="small"
+        ${!hasData ? 'style="opacity: 0.6; cursor: default;"' : ""}
+      >
+        ${dataButtonText}
+      </button>
+    `;
+    }
+    navHTML += "</div>";
+    container.innerHTML = navHTML;
+    renderButtons();
+    if (showBackButton) {
+      const backBtn = document.getElementById("navBackBtn");
+      backBtn?.addEventListener("click", () => {
+        goBack();
+      });
+    }
+    if (showDataButton) {
+      const dataBtn = document.getElementById("navDataBtn");
+      dataBtn?.addEventListener("click", () => {
+        if (hasData) {
+          navigate("/data-management");
+        }
+      });
+    }
+  }
+  function checkForStoredData() {
+    const hasStateAccounts = state_default.accounts && Object.keys(state_default.accounts).length > 0;
+    const hasMonarchAccounts = state_default.monarchAccounts !== null;
+    const hasSessionAccounts = sessionStorage.getItem("ynab_accounts") !== null;
+    const hasSessionMonarch = sessionStorage.getItem("monarch_accounts") !== null;
+    const localStorage2 = getLocalStorage();
+    const hasLocalStorageData = !!(localStorage2.email || localStorage2.encryptedPassword || localStorage2.token || localStorage2.uuid);
+    return hasStateAccounts || hasMonarchAccounts || hasSessionAccounts || hasSessionMonarch || hasLocalStorageData;
+  }
+  function renderPageHeader(options = {}) {
+    const {
+      title = "",
+      description = "",
+      containerId = "pageHeader",
+      className = ""
+    } = options;
+    const container = document.getElementById(containerId);
+    if (!container) {
+      console.warn(`Page header container with id "${containerId}" not found`);
+      return;
+    }
+    const headerHTML = `
+    <section class="text-center mb-2 ${className}">
+      <div class="inline-flex items-center justify-center gap-2 mb-6">
+        <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
+          ${escapeHtml(title)}
+        </h2>
+      </div>
+
+      <p class="text-gray-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto px-2 leading-relaxed">
+        ${escapeHtml(description)}
+      </p>
+    </section>
+  `;
+    container.innerHTML = headerHTML;
+  }
+  function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // src/views/Home/home.js
+  function initUploadView() {
+    const getStartedButton = document.getElementById("getStartedButton");
+    const privacyInfoModalButton = document.getElementById("privacyInfoModalButton");
+    const migrationInfoModalButton = document.getElementById("migrationInfoModalButton");
+    const closePrivacyInfoModal = document.getElementById("closePrivacyInfoModal");
+    const closeMigrationInfoModal = document.getElementById("closeMigrationInfoModal");
+    renderPageLayout({
+      header: {
+        title: "YNAB to Monarch Migration",
+        description: "Moving your financial data from YNAB to Monarch made simple and secure. Choose the method that works best for you, and we'll guide you through each step.",
+        containerId: "pageHeader"
+      }
+    });
+    getStartedButton?.addEventListener("click", (event) => {
+      event.preventDefault();
+      navigate("/upload");
+    });
+    privacyInfoModalButton?.addEventListener("click", () => openModal("privacyInfoModal"));
+    closePrivacyInfoModal?.addEventListener("click", () => closeModal("privacyInfoModal"));
+    migrationInfoModalButton?.addEventListener("click", () => openModal("migrationInfoModal"));
+    closeMigrationInfoModal?.addEventListener("click", () => closeModal("migrationInfoModal"));
+  }
+
+  // src/views/Home/home.html
+  var home_default = `<div id="pageLayout"></div>
+
+<!-- Get Started Btn -->
+<section class="container-responsive flex flex-col items-center mb-6">
+  <button id="getStartedButton" class="ui-button w-full" data-type="primary" data-size="large">
+    Start Migrating Your Data
+  </button>
+
+  <a id="migrationInfoModalButton" class="ui-button mt-4 sm:mt-6 inline-block" data-type="text">
+    How does this work?
+  </a>
+</section>
+
+<!-- Privacy Info -->
+<section class="text-center">
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 max-w-3xl mx-auto mb-8 text-left">
+    <div class="flex items-start gap-4">
+      <div class="bg-green-100 rounded-full p-3 shrink-0">
+        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M12 3c4.97 0 9 4.03 9 9s-4.03 9-9 9-9-4.03-9-9 4.03-9 9-9z" stroke-linecap="round"
+            stroke-linejoin="round"></path>
+          <path d="M8.5 12.5l1.5 1.5 4-4" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      </div>
+      <div class="flex-1">
+        <h3 class="text-gray-900 mb-2 text-left text-lg font-semibold">Your data stays yours, always</h3>
+        <p class="text-gray-600 text-sm mb-3">
+          We never store, sell, or share your financial information. You remain in control of your data from start
+          to finish.
+        </p>
+        <button id="privacyInfoModalButton"
+          class="text-blue-600 hover:text-blue-700 transition-colors text-sm underline">
+          Learn more about how we protect your privacy
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Privacy Info Modal -->
+<div id="privacyInfoModal" class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 
+            transition-opacity duration-300 p-3 sm:p-4 md:p-6">
+  <!-- Overlay -->
+  <div class="absolute inset-0 bg-black/30 transition-opacity duration-300"></div>
+
+  <!-- Modal Content -->
+  <div
+    class="relative z-10 bg-white rounded-xl p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md md:max-w-lg w-full shadow-2xl transform translate-y-full transition-transform duration-500 max-h-[90vh] overflow-y-auto">
+
+    <!-- Close Btn -->
+    <button id="closePrivacyInfoModal"
+      class="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      aria-label="Close modal">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+
+    <!-- Title -->
+    <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 pr-8 text-gray-900">
+      Privacy is our top priority
+    </h3>
+
+    <!-- Body -->
+    <div class="space-y-4 text-sm text-gray-600">
+      <div>
+        <h4 class="text-gray-900 font-semibold mb-1">No Data Collection</h4>
+        <p>We never collect, store, or share your financial data.</p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 font-semibold mb-1">Secure Connections</h4>
+        <p>We use secure, encrypted, and read-only connections when accessing your YNAB data.
+        </p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 font-semibold mb-1">You're in Control</h4>
+        <p>At any point in time you have full control to wipe your data and stop the migration process.</p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 font-semibold mb-1">Open Source & Auditable</h4>
+        <p>Everything is transparent and can be reviewed by security experts. We have nothing to hide because we keep
+          no copies. See <a href="https://github.com/your-repo" class="text-blue-600 hover:underline">our source
+            code</a>.</p>
+      </div>
+    </div>
+
+    <div class="mt-6 sm:mt-8 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
+      <div class="flex items-start gap-2 sm:gap-3">
+        <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+            clip-rule="evenodd" />
+        </svg>
+        <p class="text-xs sm:text-sm text-green-800 leading-relaxed">
+          <strong>100% Private:</strong> Your financial data is sensitive, and we treat it that way. You remain the
+          sole owner of every byte.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Migration Info Modal -->
+<div id="migrationInfoModal"
+  class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300 p-3 sm:p-4 md:p-6">
+
+  <!-- Overlay -->
+  <div class="absolute inset-0 bg-black/30 transition-opacity duration-300"></div>
+
+  <!-- Modal Content -->
+  <div
+    class="relative z-10 bg-white rounded-xl p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md md:max-w-lg w-full shadow-2xl transform translate-y-full transition-transform duration-500 max-h-[90vh] overflow-y-auto">
+
+    <!-- Close Btn -->
+    <button id="closeMigrationInfoModal"
+      class="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      aria-label="Close modal">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+
+    <!-- Title -->
+    <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 pr-8 text-gray-900">
+      How the Migration Process Works
+    </h3>
+
+    <!-- Body -->
+    <div class="space-y-4 text-sm text-gray-600">
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 1: Access Your Data</h4>
+        <p class="text-gray-600 text-sm">Connect your YNAB account or upload your data manually. We'll retrieve your
+          budgets, transactions, categories, and accounts.</p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 2: Filter & Process</h4>
+        <p class="text-gray-600 text-sm">Decide what to migrate and make edits as needed.</p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 3: Download or Import</h4>
+        <p class="text-gray-600 text-sm">Decide to receive a ready-to-import file that you can upload into Monarch
+          Money yourself, or connect to your Monarch Money account to automatically migrate your data.</p>
+      </div>
+    </div>
+  </div>
+</div>`;
 
   // src/services/ynabParser.js
   var import_papaparse = __toESM(require_papaparse_min(), 1);
@@ -3316,138 +3787,195 @@
     });
   }
 
-  // src/components/modal.js
-  function openModal(id) {
-    const modal = document.getElementById(id);
-    const content = modal.querySelector(".relative");
-    modal.classList.remove("pointer-events-none", "opacity-0");
-    modal.classList.add("pointer-events-auto", "opacity-100");
-    requestAnimationFrame(() => {
-      content.classList.remove("translate-y-full");
-      content.classList.add("translate-y-0");
-    });
+  // src/api/config.js
+  var config = null;
+  async function fetchConfig() {
+    if (config) {
+      return config;
+    }
+    try {
+      const response = await fetch("/.netlify/functions/config");
+      if (!response.ok) {
+        throw new Error("Failed to fetch configuration");
+      }
+      config = await response.json();
+      return config;
+    } catch (error) {
+      console.error("Could not fetch app configuration:", error);
+      return {
+        ynabClientId: "FALLBACK_CLIENT_ID",
+        ynabRedirectUri: "http://localhost:8888/oauth/ynab/callback"
+      };
+    }
   }
-  function closeModal(id) {
-    const modal = document.getElementById(id);
-    const content = modal.querySelector(".relative");
-    content.classList.remove("translate-y-0");
-    content.classList.add("translate-y-full");
-    setTimeout(() => {
-      modal.classList.add("pointer-events-none", "opacity-0");
-      modal.classList.remove("pointer-events-auto", "opacity-100");
-    }, 500);
+  async function getConfig() {
+    return await fetchConfig();
   }
+  var base = location.hostname === "localhost" ? "http://localhost:3000/dev/" : "/.netlify/functions/";
+  var API = {
+    login: base + "monarchLogin",
+    fetchAccounts: base + "fetchMonarchAccounts",
+    createAccounts: base + "createMonarchAccounts",
+    generateStatements: base + "generateStatements",
+    getUploadStatus: base + "getUploadStatus"
+  };
 
-  // src/components/button.js
-  function renderButtons() {
-    document.querySelectorAll(".ui-button").forEach((button) => {
-      const type = button.dataset.type || "primary";
-      const size = button.dataset.size || "medium";
-      const fixedWidth = button.dataset.fixedWidth;
-      const fullWidth = button.hasAttribute("data-fullwidth");
-      const isDisabled = button.hasAttribute("disabled") || button.disabled;
-      button.className = "ui-button";
-      button.type = "button";
-      button.classList.add("font-semibold", "rounded-lg", "transition-all", "duration-200", "ease-in-out", "flex", "items-center", "justify-center");
-      button.style.transform = "none";
-      switch (size) {
-        case "small":
-          button.classList.add("px-2", "py-1", "text-xs", "sm:px-3", "sm:py-1.5", "sm:text-sm");
-          break;
-        case "large":
-          button.classList.add("px-4", "py-2.5", "text-sm", "sm:px-6", "sm:py-3", "sm:text-base", "md:px-8", "md:py-4");
-          break;
-        case "medium":
-        default:
-          button.classList.add("px-3", "py-2", "text-sm", "sm:px-5", "sm:py-2", "sm:text-sm");
-          break;
+  // src/api/ynabApi.js
+  var YNAB_API_BASE_URL = "https://api.ynab.com/v1";
+  function generateCsrfToken() {
+    const randomBytes = new Uint8Array(32);
+    window.crypto.getRandomValues(randomBytes);
+    return Array.from(randomBytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+  async function redirectToYnabOauth() {
+    const { ynabClientId, ynabRedirectUri } = await getConfig();
+    console.log("Redirecting to YNAB OAuth with Client ID:", ynabClientId);
+    console.log("Redirect URI:", ynabRedirectUri);
+    const csrfToken = generateCsrfToken();
+    sessionStorage.setItem("ynab_csrf_token", csrfToken);
+    const authUrl = new URL("https://app.ynab.com/oauth/authorize");
+    authUrl.searchParams.append("client_id", ynabClientId);
+    authUrl.searchParams.append("redirect_uri", ynabRedirectUri);
+    authUrl.searchParams.append("response_type", "code");
+    authUrl.searchParams.append("scope", "read-only");
+    authUrl.searchParams.append("state", csrfToken);
+    window.location.href = authUrl.toString();
+  }
+  async function getAccounts(accessToken, budgetId) {
+    const url = new URL(`${YNAB_API_BASE_URL}/${budgetId}/accounts`);
+    try {
+      const response = await fetch(url, {
+        headers: {
+          "Authorization": `Bearer ${accessToken}`
+        }
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error fetching YNAB accounts:", errorData);
+        throw new Error(`Failed to fetch YNAB accounts. Status: ${response.status}`);
       }
-      if (isDisabled) {
-        button.setAttribute("disabled", "");
-        button.classList.add("opacity-50", "cursor-not-allowed");
-        button.style.boxShadow = "none";
+      const data2 = await response.json();
+      return data2.data.accounts;
+    } catch (error) {
+      console.error("YNAB API call failed:", error);
+      navigate("/upload");
+      return null;
+    }
+  }
+  async function exchangeCodeForToken(code) {
+    try {
+      const response = await fetch("/.netlify/functions/ynabTokenExchange", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          grant_type: "authorization_code",
+          code
+        })
+      });
+      const data2 = await response.json();
+      if (!response.ok) {
+        console.error("YNAB token exchange failed:", data2);
+        throw new Error("Failed to exchange authorization code for a token.");
+      }
+      return data2;
+    } catch (error) {
+      console.error("Error during token exchange:", error);
+      return null;
+    }
+  }
+  async function handleOauthCallback() {
+    const queryParams = new URLSearchParams(window.location.search);
+    const code = queryParams.get("code");
+    const stateToken = queryParams.get("state");
+    const storedState = sessionStorage.getItem("ynab_csrf_token");
+    sessionStorage.removeItem("ynab_csrf_token");
+    if (!stateToken || stateToken !== storedState) {
+      console.error("Invalid CSRF token on OAuth callback.");
+      alert("Security error. Please try connecting to YNAB again.");
+      navigate("/upload", true);
+      return;
+    }
+    if (!code) {
+      console.error("OAuth callback did not contain an authorization code.");
+      alert("Could not authenticate with YNAB. Please try again.");
+      navigate("/upload", true);
+      return;
+    }
+    const tokenData = await exchangeCodeForToken(code);
+    if (tokenData && tokenData.access_token) {
+      state_default.ynab_access_token = tokenData.access_token;
+      sessionStorage.setItem("ynab_access_token", tokenData.access_token);
+      sessionStorage.setItem("ynab_refresh_token", tokenData.refresh_token);
+      sessionStorage.setItem("ynab_token_expires_at", Date.now() + tokenData.expires_in * 1e3);
+      const accounts2 = await getAccounts(tokenData.access_token);
+      if (accounts2 && accounts2.length > 0) {
+        state_default.accounts = accounts2.reduce((acc, account) => {
+          if (!account.deleted) {
+            acc[account.id] = {
+              ...account,
+              selected: true,
+              transactions: []
+            };
+          }
+          return acc;
+        }, {});
+        console.table(state_default.accounts);
+        navigate("/review");
       } else {
-        button.removeAttribute("disabled");
-        button.classList.add("cursor-pointer");
+        alert("No budgets found in your YNAB account.");
+        navigate("/upload");
       }
-      switch (type) {
-        case "primary":
-          button.classList.add("bg-[#1993e5]", "text-white", "border", "border-[#1993e5]", "shadow-sm");
-          if (!isDisabled) {
-            button.classList.add("hover:bg-blue-600", "hover:border-blue-600", "hover:shadow-md", "focus:ring-2", "focus:ring-blue-500", "focus:ring-offset-2", "active:bg-blue-700", "transform", "hover:scale-105");
-          }
-          break;
-        case "secondary":
-          button.classList.add("bg-white", "text-gray-700", "border", "border-gray-300", "shadow-sm");
-          if (!isDisabled) {
-            button.classList.add("hover:bg-gray-50", "hover:border-gray-400", "hover:text-gray-800", "focus:ring-2", "focus:ring-gray-500", "focus:ring-offset-2", "active:bg-gray-100");
-          }
-          break;
-        case "text":
-          button.classList.remove("px-2", "px-3", "px-4", "px-5", "px-6", "px-8", "py-1", "py-1.5", "py-2", "py-2.5", "py-3", "py-4", "sm:px-3", "sm:px-5", "sm:px-6", "sm:px-8", "sm:py-1.5", "sm:py-2", "sm:py-3", "sm:py-4", "md:px-8", "md:py-4");
-          button.classList.add("bg-transparent", "text-blue-600", "px-2", "py-1", "sm:px-3", "sm:py-1.5");
-          if (!isDisabled) {
-            button.classList.add("hover:underline", "hover:text-blue-700", "focus:ring-2", "focus:ring-blue-500", "focus:ring-offset-2");
-          }
-          break;
-        case "danger":
-          button.classList.add("bg-red-500", "text-white", "border", "border-red-500", "shadow-sm");
-          if (!isDisabled) {
-            button.classList.add("hover:bg-red-600", "hover:border-red-600", "hover:shadow-md", "focus:ring-2", "focus:ring-red-500", "focus:ring-offset-2", "active:bg-red-700", "transform", "hover:scale-105");
-          }
-          break;
-        case "warning":
-          button.classList.add("bg-orange-500", "text-white", "border", "border-orange-500", "shadow-sm");
-          if (!isDisabled) {
-            button.classList.add("hover:bg-orange-600", "hover:border-orange-600", "hover:shadow-md", "focus:ring-2", "focus:ring-orange-500", "focus:ring-offset-2", "active:bg-orange-700", "transform", "hover:scale-105");
-          }
-          break;
-      }
-      if (fixedWidth) {
-        button.style.width = `${fixedWidth}px`;
-      }
-      if (fullWidth) {
-        button.classList.add("w-full");
-      }
-      if (!isDisabled) {
-        button.classList.add("touch-manipulation", "select-none");
-        button.style.minHeight = "44px";
-        button.style.minWidth = "44px";
-      }
-    });
+    } else {
+      alert("Failed to get access token from YNAB. Please try again.");
+      navigate("/upload", true);
+    }
   }
 
   // src/views/Upload/upload.js
-  function initUploadView() {
-    const browseButton = document.getElementById("browseButton");
-    const fileInput = document.getElementById("fileInput");
-    const uploadBox = document.getElementById("uploadBox");
-    const errorMessage = document.getElementById("errorMessage");
-    const howItWorksBtn = document.getElementById("howItWorksBtn");
-    const closeModalBtn = document.getElementById("closeHowItWorksModal");
-    renderButtons();
-    howItWorksBtn.addEventListener("click", () => {
-      openModal("howItWorksModal");
+  function initUploadView2() {
+    const hasExistingAccounts = state_default.accounts && Object.keys(state_default.accounts).length > 0;
+    renderPageLayout({
+      navbar: {
+        showBackButton: hasExistingAccounts,
+        showDataButton: true
+      },
+      header: {
+        title: "Step 1: Import YNAB Data",
+        description: "Choose how you'd like to bring your YNAB data into Monarch Money. You can either connect your YNAB account for a seamless transfer or manually upload a file.",
+        containerId: "pageHeader"
+      }
     });
-    closeModalBtn.addEventListener("click", () => {
-      closeModal("howItWorksModal");
+    const existingDataAlert = document.getElementById("existingDataAlert");
+    if (hasExistingAccounts && existingDataAlert) {
+      existingDataAlert.classList.remove("hidden");
+    }
+    const continueWithExistingBtn = document.getElementById("continueWithExistingBtn");
+    const connectButton = document.getElementById("connectButton");
+    const manualUploadButton = document.getElementById("manualUploadButton");
+    const manualFileInput = document.getElementById("manualFileInput");
+    const oauthInfoModalButton = document.getElementById("oauthInfoModalButton");
+    const manualImportInfoModalButton = document.getElementById("manualImportInfoModalButton");
+    const closeOauthInfoModal = document.getElementById("closeOauthInfoModal");
+    const closeManualImportInfoModal = document.getElementById("closeManualImportInfoModal");
+    continueWithExistingBtn?.addEventListener("click", (event) => {
+      event.preventDefault();
+      navigate("/review", false, true);
     });
-    uploadBox.addEventListener("dragover", (e) => {
+    connectButton?.addEventListener("click", (event) => {
+      event.preventDefault();
+      redirectToYnabOauth();
+    });
+    oauthInfoModalButton?.addEventListener("click", () => openModal("oauthInfoModal"));
+    manualImportInfoModalButton?.addEventListener("click", () => openModal("manualImportInfoModal"));
+    closeOauthInfoModal?.addEventListener("click", () => closeModal("oauthInfoModal"));
+    closeManualImportInfoModal?.addEventListener("click", () => closeModal("manualImportInfoModal"));
+    manualUploadButton?.addEventListener("click", (e) => {
       e.preventDefault();
-      uploadBox.classList.add("border-blue-400", "bg-blue-50");
+      manualFileInput?.click();
     });
-    uploadBox.addEventListener("dragleave", () => {
-      uploadBox.classList.remove("border-blue-400", "bg-blue-50");
-    });
-    uploadBox.addEventListener("drop", async (e) => {
-      e.preventDefault();
-      uploadBox.classList.remove("border-blue-400", "bg-blue-50");
-      const file = e.dataTransfer.files[0];
-      if (file)
-        await handleFile(file);
-    });
-    browseButton.addEventListener("click", () => fileInput.click());
-    fileInput.addEventListener("change", async (e) => {
+    manualFileInput?.addEventListener("change", async (e) => {
       const file = e.target.files[0];
       if (file)
         await handleFile(file);
@@ -3505,7 +4033,206 @@
   }
 
   // src/views/Upload/upload.html
-  var upload_default = '<div class="container-responsive flex flex-col items-center justify-center py-6 sm:py-8 md:py-12 lg:py-16 min-h-[calc(100vh-200px)]">\n\n  <div class="text-center w-full max-w-3xl mb-8 sm:mb-10 md:mb-12">\n    <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 md:mb-6 text-gray-900">\n      Migrate your YNAB data\n    </h2>\n    <p class="text-gray-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed px-2">\n      Upload a YNAB ZIP file to begin the migration process into Monarch Money.\n    </p>\n\n    <a id="howItWorksBtn" class="ui-button mt-4 sm:mt-6 inline-block" data-type="text">\n      How does this work?\n    </a>\n  </div>\n\n  <!-- Upload Box -->\n  <div id="uploadBox" \n       class="w-full max-w-sm sm:max-w-md md:max-w-lg border-2 border-dashed border-gray-300 rounded-xl \n              p-4 sm:p-6 md:p-8 lg:p-10 flex flex-col items-center gap-3 sm:gap-4 \n              transition-all duration-300 hover:border-blue-400 hover:bg-blue-50/30 \n              cursor-pointer focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200">\n    \n    <div class="text-center space-y-2 sm:space-y-3">\n      <div class="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-400 mb-2">\n        <svg fill="none" stroke="currentColor" viewBox="0 0 48 48" aria-hidden="true">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" \n                d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" />\n        </svg>\n      </div>\n      \n      <p class="text-base sm:text-lg md:text-xl font-semibold text-gray-700">\n        Drag & Drop your YNAB export file\n      </p>\n      <p class="text-sm text-gray-500">or click to browse (ZIP format)</p>\n    </div>\n    \n    <input id="fileInput" type="file" accept=".csv,.zip,.bin,application/zip,application/x-zip-compressed,application/octet-stream,application/binary,*/*" hidden>\n    <button id="browseButton" class="ui-button btn-responsive" data-type="primary" data-size="large">\n      Browse Files\n    </button>\n\n    <p class="text-xs sm:text-sm text-gray-400 text-center max-w-xs leading-relaxed">\n      <span class="inline-flex items-center gap-1">\n        <svg class="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">\n          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />\n        </svg>\n        Secure & Private\n      </span>\n      <br>\n      Your file stays local. We never store or transmit your data.\n      <br><br>\n      <span class="text-xs text-gray-400">\n        On mobile devices, ZIP files may appear as BIN or other formats - we support all common archive types.\n      </span>\n    </p>\n  </div>\n\n  <div id="errorMessage" \n       class="hidden text-red-600 text-sm sm:text-base mt-4 sm:mt-6 text-center px-4 \n              bg-red-50 border border-red-200 rounded-lg py-3 max-w-md mx-auto">\n    Some error\n  </div>\n\n</div>\n\n<!-- Modal -->\n<div id="howItWorksModal" \n     class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 \n            transition-opacity duration-300 p-3 sm:p-4 md:p-6">\n  <!-- Overlay -->\n  <div class="absolute inset-0 bg-black/30 transition-opacity duration-300"></div>\n\n  <!-- Modal Content -->\n  <div class="relative z-10 bg-white rounded-xl p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md md:max-w-lg w-full \n              shadow-2xl transform translate-y-full transition-transform duration-500 \n              max-h-[90vh] overflow-y-auto">\n    \n    <button id="closeHowItWorksModal" \n            class="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 \n                   w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 \n                   transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n            aria-label="Close modal">\n      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />\n      </svg>\n    </button>\n    \n    <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 pr-8 text-gray-900">\n      How does this work?\n    </h3>\n    \n    <ol class="list-decimal pl-5 sm:pl-6 space-y-3 sm:space-y-4 text-sm sm:text-base text-gray-700 leading-relaxed">\n      <li class="pl-2">\n        <strong>Export your YNAB data</strong> by going to your YNAB budget settings and downloading the full export.\n      </li>\n      <li class="pl-2">\n        <strong>Upload the YNAB ZIP file</strong> using the drag & drop area above or by clicking "Browse Files".\n      </li>\n      <li class="pl-2">\n        <strong>Choose your import method</strong> - either manual CSV download or guided auto-import into Monarch Money.\n      </li>\n    </ol>\n    \n    <div class="mt-6 sm:mt-8 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">\n      <div class="flex items-start gap-2 sm:gap-3">\n        <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">\n          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />\n        </svg>\n        <p class="text-xs sm:text-sm text-green-800 leading-relaxed">\n          <strong>100% Private:</strong> Your files are processed locally in your browser. \n          Nothing is uploaded to our servers or stored externally.\n        </p>\n      </div>\n    </div>\n  </div>\n</div>\n';
+  var upload_default = `<div id="pageLayout"></div>
+
+<!-- Existing Data Alert -->
+<div id="existingDataAlert" class="hidden">
+  <div class="p-4 sm:p-6 bg-green-50 border border-green-200 rounded-lg mb-8">
+    <div class="flex items-start gap-4">
+      <div class="flex-shrink-0">
+        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div class="flex-1">
+        <h3 class="text-lg font-semibold text-green-900 mb-1">You have existing data</h3>
+        <p class="text-sm text-green-700 mb-4">
+          We found your previously uploaded YNAB accounts, continue where you left off.
+        </p>
+        <button id="continueWithExistingBtn" class="ui-button" data-type="primary" data-size="medium">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+          Continue with Existing Data
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Divider -->
+  <div class="relative mb-8">
+    <div class="absolute inset-0 flex items-center">
+      <div class="w-full border-t border-gray-200"></div>
+    </div>
+    <div class="relative flex justify-center">
+      <div class="px-4 bg-white">
+        <span class="w-5 h-5 text-gray-400">OR</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Upload Options -->
+<section class="mb-12">
+  <div class="grid md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto">
+    <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-lg space-y-4 flex flex-col text-left">
+      <div class="flex items-start gap-4">
+        <span class="bg-blue-50 text-blue-600 rounded-2xl p-3">
+          <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M10 17l-4-4 4-4" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M14 7h6" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M14 17h6" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </span>
+        <div>
+          <p class="text-sm uppercase tracking-[0.4em] text-gray-400">Automatic</p>
+          <h3 class="text-xl font-semibold text-slate-900">Connect to YNAB</h3>
+        </div>
+      </div>
+      <div class="space-y-1 pt-4">
+        <button id="connectButton" class="ui-button w-full" data-type="primary" data-size="large">
+          Connect YNAB Account
+        </button>
+        <a id="oauthInfoModalButton" data-type="text" class="ui-button">
+          How does this work?
+        </a>
+      </div>
+    </div>
+
+    <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-lg space-y-4 flex flex-col text-left">
+      <div class="flex items-start gap-4">
+        <span class="bg-purple-50 text-purple-600 rounded-2xl p-3">
+          <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke-linecap="round" stroke-linejoin="round">
+            </path>
+            <path d="M12 3v12" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M9 10l3-3 3 3" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </span>
+        <div>
+          <p class="text-sm uppercase tracking-[0.4em] text-gray-400">Manual</p>
+          <h3 class="text-xl font-semibold text-slate-900">Upload a File</h3>
+        </div>
+      </div>
+      <div class="space-y-1 pt-4">
+        <button id="manualUploadButton" class="ui-button w-full" data-type="secondary" data-size="large">
+          Choose File to Upload
+        </button>
+        <input id="manualFileInput" type="file"
+          accept=".zip,.bin,application/zip,application/x-zip-compressed,application/octet-stream,application/binary"
+          class="hidden" />
+        <a id="manualImportInfoModalButton" data-type="text" class="ui-button">
+          What's the process?
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- OAuth Info Modal -->
+<div id="oauthInfoModal"
+  class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300 p-3 sm:p-4 md:p-6">
+
+  <!-- Overlay -->
+  <div class="absolute inset-0 bg-black/30 transition-opacity duration-300"></div>
+
+  <!-- Modal Content -->
+  <div
+    class="relative z-10 bg-white rounded-xl p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md md:max-w-lg w-full shadow-2xl transform translate-y-full transition-transform duration-500 max-h-[90vh] overflow-y-auto">
+
+    <!-- Close Btn -->
+    <button id="closeOauthInfoModal"
+      class="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      aria-label="Close modal">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+
+    <!-- Title -->
+    <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 pr-8 text-gray-900">
+      How does connecting my YNAB account work?
+    </h3>
+
+    <!-- Body -->
+    <div class="space-y-4 text-sm text-gray-600">
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">1: Securely Connect</h4>
+        <p class="text-gray-600 text-sm">Using YNAB's official authentication process, securely connect your account.
+        </p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">2: Grant Permissions</h4>
+        <p class="text-gray-600 text-sm">We'll prompt you to authorize access to your YNAB data and thoroughly explain
+          every permission and how it is used.</p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">3: Review & Filter</h4>
+        <p class="text-gray-600 text-sm">Decide which accounts and transactions to migrate.</p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">4: Process</h4>
+        <p class="text-gray-600 text-sm">Decide how to migrate your data.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Manual Import Info Modal -->
+<div id="manualImportInfoModal"
+  class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300 p-3 sm:p-4 md:p-6">
+
+  <!-- Overlay -->
+  <div class="absolute inset-0 bg-black/30 transition-opacity duration-300"></div>
+
+  <!-- Modal Content -->
+  <div
+    class="relative z-10 bg-white rounded-xl p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md md:max-w-lg w-full shadow-2xl transform translate-y-full transition-transform duration-500 max-h-[90vh] overflow-y-auto">
+
+    <!-- Close Btn -->
+    <button id="closeManualImportInfoModal"
+      class="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      aria-label="Close modal">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+
+    <!-- Title -->
+    <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 pr-8 text-gray-900">
+      Where do I find my YNAB data file?
+    </h3>
+
+    <!-- Body -->
+    <div class="space-y-4 text-sm text-gray-600">
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">1: Visit YNAB.com</h4>
+        <p class="text-gray-600 text-sm">Visit <a href="https://www.ynab.com" target="_blank"
+            rel="noopener noreferrer">YNAB.com</a> and log into your account.</p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">2: Export your YNAB Data</h4>
+        <p class="text-gray-600 text-sm">Click on your name in the top-left corner to reveal the menu, then click
+          "Export Plan". This will download a ZIP file containing all your data.</p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">3: Upload the File</h4>
+        <p class="text-gray-600 text-sm">On this page, click the "Choose File to Upload" button, navigate to where the
+          ZIP file was downloaded, and select it.</p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">4: Review & Filter</h4>
+        <p class="text-gray-600 text-sm">Decide which accounts and transactions to migrate.</p>
+      </div>
+      <div>
+        <h4 class="text-gray-900 text-sm font-semibold mb-1">5: Process</h4>
+        <p class="text-gray-600 text-sm">Decide how to migrate your data.</p>
+      </div>
+    </div>
+  </div>
+</div>`;
 
   // public/static-data/monarchAccountTypes.json
   var generatedAt = "2025-06-02T06:26:29.704Z";
@@ -3921,110 +4648,6 @@
     data
   };
 
-  // src/utils/navigation.js
-  function updateBackButtonText() {
-    const currentPath = getCurrentPath();
-    const backBtn = document.getElementById("backBtn");
-    if (!backBtn)
-      return;
-    const backButtonTexts = {
-      "/review": "Back to Upload",
-      "/method": "Back to Review",
-      "/manual": "Back to Method",
-      "/login": "Back to Method",
-      "/otp": "Back to Login",
-      "/complete": "Back to Review"
-    };
-    const text = backButtonTexts[currentPath] || "Back";
-    backBtn.innerHTML = `
-    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-    </svg>
-    ${text}
-  `;
-  }
-  function updateNavigationTexts() {
-    updateBackButtonText();
-    const backToMethodBtn = document.getElementById("backToMethodBtn");
-    if (backToMethodBtn) {
-      backToMethodBtn.innerHTML = `
-      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-      </svg>
-      Back to Method
-    `;
-    }
-  }
-
-  // src/utils/navigationBar.js
-  function createNavigationBar(config = {}) {
-    const {
-      backText = "Back",
-      nextText = "Continue",
-      backId = "backBtn",
-      nextId = "continueBtn",
-      showBack = true,
-      showNext = false,
-      nextType = "primary",
-      nextDisabled = false,
-      containerClass = ""
-    } = config;
-    const backButton = showBack ? `
-    <button id="${backId}" class="ui-button order-2 sm:order-1 w-full sm:w-auto whitespace-nowrap" data-type="secondary" data-size="large">
-      <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-      </svg>
-      ${backText}
-    </button>
-  ` : "<div></div>";
-    const nextButton = showNext ? `
-    <button id="${nextId}" 
-            class="ui-button order-1 sm:order-2 w-full sm:w-auto whitespace-nowrap" 
-            data-type="${nextType}" 
-            data-size="large"
-            ${nextDisabled ? "disabled" : ""}>
-      <span class="hidden sm:inline truncate">${nextText}</span>
-      <span class="sm:hidden truncate">${nextText.split(" ")[0]}</span>
-      <svg class="w-4 h-4 ml-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-      </svg>
-    </button>
-  ` : "<div></div>";
-    return `
-    <!-- Navigation Bar -->
-    <div class="bg-white border-t border-gray-200 mt-8 sm:mt-12">
-      <div class="container-responsive">
-        <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center py-6 sm:py-8 gap-4 sm:gap-6 ${containerClass}">
-          ${backButton}
-          ${nextButton}
-        </div>
-      </div>
-    </div>
-  `;
-  }
-  function createSimpleNavigationBar(config = {}) {
-    const {
-      backText = "Back",
-      backId = "backBtn",
-      containerClass = ""
-    } = config;
-    return `
-    <!-- Navigation Bar -->
-    <div class="bg-white border-t border-gray-200 mt-8 sm:mt-12">
-      <div class="container-responsive">
-        <div class="flex justify-center items-center py-6 sm:py-8 ${containerClass}">
-          <button id="${backId}" class="ui-button w-full sm:w-auto sm:max-w-xs whitespace-nowrap" data-type="secondary" data-size="large">
-            <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-            ${backText}
-          </button>
-        </div>
-      </div>
-    </div>
-  `;
-  }
-
   // src/utils/string.js
   function capitalize(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
@@ -4089,22 +4712,21 @@
       navigate("/upload", true);
       return;
     }
-    const mainContainer = document.querySelector(".flex.flex-col.max-w-7xl");
-    const navigationConfig = {
-      backText: "Back",
-      showBack: true,
-      showNext: true,
-      nextText: "Continue",
-      nextId: "continueBtn",
-      nextType: "primary"
-    };
-    mainContainer.insertAdjacentHTML("beforeend", createNavigationBar(navigationConfig));
+    renderPageLayout({
+      navbar: {
+        showBackButton: true,
+        showDataButton: true
+      },
+      header: {
+        title: "Step 2: Review Accounts",
+        description: "Review detected accounts and adjust their Monarch types before importing.",
+        containerId: "pageHeader"
+      }
+    });
     reviewTableBody = document.getElementById("reviewTableBody");
     mobileAccountList = document.getElementById("mobileAccountList");
     importBtn = document.getElementById("continueBtn");
     searchInput = document.getElementById("searchInput");
-    renderButtons();
-    updateNavigationTexts();
     renderAccountTable();
     setTimeout(() => {
       initializeFiltersModal();
@@ -4185,7 +4807,6 @@
       masterCheckboxMobile.addEventListener("change", masterCheckboxChange);
     }
     document.getElementById("continueBtn").addEventListener("click", () => navigate("/method"));
-    document.getElementById("backBtn").addEventListener("click", () => goBack());
     renderAccountTable();
   }
   function updateSelection(shouldSelect) {
@@ -4240,7 +4861,6 @@
     } else {
       importBtn.textContent = "Continue";
     }
-    renderButtons();
   }
   function isIncludedAndUnprocessed(account) {
     return account.included && account.status !== "processed";
@@ -5141,7 +5761,115 @@
   }
 
   // src/views/AccountReview/review.html
-  var review_default = '<div class="container-responsive flex flex-1 justify-center py-3 sm:py-5 md:py-6">\n  <div class="flex flex-col max-w-7xl flex-1 w-full">\n    \n    <!-- Page Header -->\n    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center p-3 sm:p-4 md:p-6 gap-3 sm:gap-4 bg-white rounded-lg mb-4 sm:mb-6 border border-gray-100 shadow-sm">\n      <div>\n        <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1">Review Accounts</h2>\n        <p class="text-gray-600 text-sm sm:text-base">\n          Review detected accounts and adjust their Monarch types before importing.\n        </p>\n      </div>\n    </div>\n\n    <!-- Control Bar -->\n    <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between \n                p-4 sm:p-6 gap-4 lg:gap-6 bg-white rounded-lg mb-4 sm:mb-6 \n                border border-gray-100 shadow-sm">\n      \n      <!-- Filters, Search and Account Summary -->\n      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 flex-1">\n        <!-- Filters Button -->\n        <div class="flex-shrink-0">\n          <button id="filtersBtn" \n                  class="flex items-center gap-2 px-4 py-2 sm:py-3 text-sm sm:text-base\n                         border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer \n                         transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500\n                         relative whitespace-nowrap"\n                  title="Open advanced filters"\n                  onclick="window.openFiltersModal && window.openFiltersModal()">\n            <!-- Notification Badge -->\n            <div id="filterNotificationBadge" class="hidden"></div>\n            \n            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z" />\n            </svg>\n            <span>Filters</span>\n          </button>\n        </div>\n        \n        <!-- Search Input -->\n        <div class="flex-1 max-w-md">\n          <div class="relative">\n            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">\n              <svg class="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />\n              </svg>\n            </div>\n            <input id="searchInput" \n                   type="text" \n                   placeholder="Search accounts..." \n                   style="padding-left: 2.75rem !important;"\n                   class="block w-full pr-3 py-2 sm:py-3 text-sm sm:text-base\n                          border border-gray-300 rounded-lg placeholder-gray-400 \n                          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 \n                          transition-colors duration-200">\n          </div>\n        </div>\n        \n        <!-- Account Count Summary -->\n        <div id="filterResultsSummary" class="text-sm text-gray-600 whitespace-nowrap">\n          Showing <span id="visibleAccountCount" class="font-medium text-gray-900">0</span> \n          of <span id="totalAccountCount" class="font-medium text-gray-900">0</span> accounts\n        </div>\n      </div>\n\n      <!-- Clear Filter Controls -->\n      <div class="flex items-center gap-3">\n        <!-- Clear All Filters Button (only shown when filters are active) -->\n        <button id="clearFiltersBtn" \n                class="hidden px-3 py-2 sm:py-3 text-sm text-red-600 hover:text-red-800 \n                       hover:bg-red-50 rounded-lg transition-colors duration-200 \n                       focus:outline-none focus:ring-2 focus:ring-red-500"\n                title="Clear all filters"\n                onclick="window.clearAllFilters && window.clearAllFilters()">\n          Clear\n        </button>\n      </div>\n    </div>\n\n    <!-- Table Container -->\n    <div class="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">\n      \n      <!-- Mobile Card View (hidden on larger screens) -->\n      <div id="mobileView" class="block lg:hidden">\n        <!-- Mobile Header with Master Checkbox -->\n        <div class="border-b border-gray-200 bg-gray-50 p-4">\n          <div class="flex items-center justify-between">\n            <label class="custom-checkbox-container">\n              <input type="checkbox" \n                     id="masterCheckboxMobile" \n                     class="custom-checkbox-input">\n              <span class="custom-checkbox-visual"></span>\n              <span class="text-sm font-medium text-gray-700 pl-2">Select All</span>\n            </label>\n            <div class="text-xs text-gray-500 font-medium" id="mobileSelectionCount">0 selected</div>\n          </div>\n        </div>\n        \n        <div id="mobileAccountList" class="divide-y divide-gray-100">\n          <!-- populated dynamically for mobile -->\n        </div>\n      </div>\n\n      <!-- Desktop Table View (hidden on mobile) -->\n      <div class="hidden lg:block overflow-x-auto">\n        <table class="w-full min-w-[800px]" role="grid">\n          <thead>\n            <tr class="bg-gray-50 border-b border-gray-200" role="row">\n              <th class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 w-[50px] sm:w-[60px]">\n                <input type="checkbox" \n                       id="masterCheckbox" \n                       class="w-4 h-4 sm:w-5 sm:h-5 cursor-pointer rounded border-gray-300 \n                              text-blue-600 focus:ring-blue-500 focus:ring-2">\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[200px]">\n                Account Name\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[150px]">\n                Type\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[150px]">\n                Subtype\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[100px] text-center">\n                Transactions\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[120px] text-right">\n                Balance\n              </th>\n              <th scope="col" class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[100px] text-center">\n                Include\n              </th>\n            </tr>\n          </thead>\n          <tbody id="reviewTableBody" class="divide-y divide-gray-100">\n            <!-- populated dynamically -->\n          </tbody>\n        </table>\n      </div>\n    </div>\n\n    <!-- Bulk Action Bar -->\n    <div id="bulkActionBar"\n         class="hidden fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300">\n      \n      <!-- Mobile Bulk Actions (visible on mobile/tablet) -->\n      <div class="block lg:hidden bg-white shadow-2xl rounded-xl border border-gray-200 w-[calc(100vw-2rem)] max-w-md mx-auto">\n        <div class="p-4">\n          <div class="flex flex-col gap-3">\n            <!-- Selection Info -->\n            <div class="flex items-center justify-between">\n              <span class="text-sm font-medium text-gray-900">\n                <span id="selectedCountMobile">0</span> selected\n              </span>\n              <button id="unselectAllBtnMobile"\n                      class="text-xs font-medium px-3 py-1.5 border border-gray-300 text-gray-700 \n                             bg-white rounded-md hover:bg-gray-50 cursor-pointer transition-colors \n                             duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n                      title="Unselect all accounts">\n                Clear\n              </button>\n            </div>\n            \n            <!-- Action Buttons Grid -->\n            <div class="grid grid-cols-2 gap-2">\n              <button id="bulkRenameBtnMobile"\n                      class="flex items-center justify-center gap-2 px-3 py-3 border border-gray-300 \n                             bg-white rounded-lg hover:bg-gray-50 cursor-pointer transition-colors \n                             duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n                      title="Bulk rename accounts">\n                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />\n                </svg>\n                <span class="text-sm font-medium">Rename</span>\n              </button>\n\n              <button id="bulkTypeBtnMobile"\n                      class="flex items-center justify-center gap-2 px-3 py-3 border border-gray-300 \n                             bg-white rounded-lg hover:bg-gray-50 cursor-pointer transition-colors \n                             duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n                      title="Bulk edit account types">\n                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />\n                </svg>\n                <span class="text-sm font-medium">Edit Type</span>\n              </button>\n\n              <button id="bulkIncludeBtnMobile"\n                      class="flex items-center justify-center gap-2 px-3 py-3 border border-green-300 \n                             text-green-700 bg-green-50 rounded-lg hover:bg-green-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500"\n                      title="Include selected accounts">\n                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />\n                </svg>\n                <span class="text-sm font-medium">Include</span>\n              </button>\n\n              <button id="bulkExcludeBtnMobile"\n                      class="flex items-center justify-center gap-2 px-3 py-3 border border-red-300 \n                             text-red-700 bg-red-50 rounded-lg hover:bg-red-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"\n                      title="Exclude selected accounts">\n                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />\n                </svg>\n                <span class="text-sm font-medium">Exclude</span>\n              </button>\n            </div>\n          </div>\n        </div>\n      </div>\n\n      <!-- Desktop Bulk Actions (visible on desktop) -->\n      <div class="hidden lg:block bg-white shadow-2xl rounded-xl border border-gray-200">\n        <div class="px-6 py-4">\n          <div class="flex items-center gap-6">\n            <!-- Selection Count -->\n            <button id="unselectAllBtnDesktop"\n                    class="text-sm font-medium px-4 py-2 border border-gray-300 \n                           rounded-lg hover:bg-gray-50 cursor-pointer whitespace-nowrap transition-colors \n                           duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n                    title="Unselect all accounts">\n              <span id="selectedCountDesktop">0</span> selected\n            </button>\n\n            <!-- Separator -->\n            <div class="h-6 border-l border-gray-300"></div>\n\n            <!-- Action Buttons -->\n            <div class="flex items-center gap-3">\n              <button id="bulkRenameBtnDesktop"\n                      class="text-sm font-medium px-4 py-2 border border-gray-300 \n                             rounded-lg hover:bg-gray-50 cursor-pointer transition-colors duration-200\n                             focus:outline-none focus:ring-2 focus:ring-blue-500"\n                      title="Bulk rename accounts">\n                Rename\n              </button>\n\n              <button id="bulkTypeBtnDesktop"\n                      class="text-sm font-medium px-4 py-2 border border-gray-300 \n                             rounded-lg hover:bg-gray-50 cursor-pointer transition-colors duration-200\n                             focus:outline-none focus:ring-2 focus:ring-blue-500"\n                      title="Bulk edit account types">\n                Edit Type\n              </button>\n\n              <button id="bulkIncludeBtnDesktop"\n                      class="text-sm font-medium px-4 py-2 border border-green-300 \n                             text-green-700 bg-green-50 rounded-lg hover:bg-green-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500"\n                      title="Include selected accounts">\n                Include\n              </button>\n\n              <button id="bulkExcludeBtnDesktop"\n                      class="text-sm font-medium px-4 py-2 border border-red-300 \n                             text-red-700 bg-red-50 rounded-lg hover:bg-red-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"\n                      title="Exclude selected accounts">\n                Exclude\n              </button>\n            </div>\n          </div>\n        </div>\n      </div>\n    </div>\n\n    <!-- Navigation will be added here by JavaScript -->\n\n  </div>\n</div>\n\n<div id="bulkRenameModal" class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 hidden p-3 sm:p-4">\n  <div class="bg-white rounded-lg shadow-lg w-full max-w-lg p-4 sm:p-6 relative max-h-[90vh] overflow-y-auto">\n\n    <h2 class="text-lg sm:text-xl font-bold mb-4">Bulk Rename Accounts</h2>\n\n    <label for="renamePattern" class="font-medium text-sm">Pattern:</label>\n    <input id="renamePattern" name="renamePattern" type="text" \n           class="border rounded w-full px-3 py-2 mb-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"\n           placeholder="e.g. {{YNAB}} - {{Index}}">\n\n    <!-- Token shortcuts -->\n    <div class="grid grid-cols-2 gap-2 mb-4">\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{YNAB}}">YNAB Name</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{Index}}">Index</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{Upper}}">Uppercase YNAB</button>\n      <button class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{Date}}">Today (YYYY-MM-DD)</button>\n    </div>\n\n    <!-- Index start -->\n    <div class="flex items-center gap-3 mb-4">\n      <label for="indexStart" class="text-sm">Index Start:</label>\n      <input id="indexStart" type="number" \n             class="border rounded px-3 py-2 w-20 sm:w-24 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" \n             value="1" />\n    </div>\n\n    <!-- Preview -->\n    <div class="border rounded p-3 bg-gray-50 mb-4">\n      <div class="font-medium text-sm mb-2">Preview:</div>\n      <div id="renamePreview" class="text-xs sm:text-sm text-gray-700 space-y-1 max-h-32 overflow-y-auto" aria-live="polite"></div>\n    </div>\n\n    <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">\n      <button id="renameCancel" class="ui-button order-2 sm:order-1 w-full sm:w-auto" data-type="secondary">Cancel</button>\n      <button id="renameApply" class="ui-button order-1 sm:order-2 w-full sm:w-auto" data-type="primary">Apply</button>\n    </div>\n\n  </div>\n</div>\n\n<div id="bulkTypeModal" class="fixed inset-0 bg-black bg-opacity-40 hidden z-50 flex items-center justify-center p-3 sm:p-4">\n  <div class="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">\n    <h2 class="text-lg font-bold mb-4">Bulk Edit Account Type</h2>\n\n    <div class="mb-4">\n      <label for="bulkTypeSelect" class="block mb-2 font-medium text-sm">Account Type</label>\n      <select id="bulkTypeSelect" name="bulkSubtypeSelect" \n              class="border rounded w-full px-3 py-2 cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></select>\n    </div>\n\n    <div class="mb-6">\n      <label for="bulkSubtypeSelect" class="block mb-2 font-medium text-sm">Subtype</label>\n      <select id="bulkSubtypeSelect" \n              class="border rounded w-full px-3 py-2 cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></select>\n    </div>\n\n    <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">\n      <button id="bulkTypeCancel" class="ui-button order-2 sm:order-1 w-full sm:w-auto" data-type="secondary">Cancel</button>\n      <button id="bulkTypeApply" class="ui-button order-1 sm:order-2 w-full sm:w-auto" data-type="primary">Apply</button>\n    </div>\n  </div>\n</div>\n\n<!-- Advanced Filters Modal -->\n<div id="filtersModal" class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 hidden p-3 sm:p-4">\n  <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] flex flex-col relative">\n    \n    <!-- Modal Header -->\n    <div class="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 flex-shrink-0 rounded-t-lg">\n      <h2 class="text-lg sm:text-xl font-bold text-gray-900">Advanced Filters</h2>\n      <button id="filtersModalClose" \n              class="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-1"\n              title="Close filters"\n              onclick="window.closeFiltersModal && window.closeFiltersModal()">\n        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />\n        </svg>\n      </button>\n    </div>\n\n    <!-- Modal Content - Scrollable -->\n    <div class="p-4 sm:p-6 space-y-6 overflow-y-auto flex-1 min-h-0">\n      \n      <!-- Active Filters Display -->\n      <div id="activeFiltersSection" class="hidden">\n        <div class="flex items-center justify-between mb-3">\n          <h3 class="text-sm font-medium text-gray-700">Active Filters</h3>\n          <button id="clearAllFilters" \n                  class="text-xs text-blue-600 hover:text-blue-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"\n                  onclick="window.clearAllFilters && window.clearAllFilters()">\n            Clear All\n          </button>\n        </div>\n        <div id="activeFiltersContainer" class="flex flex-wrap gap-2"></div>\n        <hr class="mt-4">\n      </div>\n\n      <!-- Account Name Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Account Name</h3>\n        <div class="space-y-3">\n          <input id="filterAccountName" \n                 type="text" \n                 placeholder="Enter account name..."\n                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          \n          <div class="flex flex-wrap gap-4">\n            <label class="flex items-center">\n              <input type="radio" name="nameMatchType" value="contains" checked \n                     class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n              <span class="ml-2 text-sm text-gray-700">Contains</span>\n            </label>\n            <label class="flex items-center">\n              <input type="radio" name="nameMatchType" value="exact" \n                     class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n              <span class="ml-2 text-sm text-gray-700">Exact match</span>\n            </label>\n            <label class="flex items-center">\n              <input type="checkbox" id="nameCaseSensitive" \n                     class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">\n              <span class="ml-2 text-sm text-gray-700">Case sensitive</span>\n            </label>\n          </div>\n        </div>\n      </div>\n\n      <!-- Account Type Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Account Type</h3>\n        <div class="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">\n          <div id="typeFiltersContainer" class="space-y-2">\n            <!-- Populated dynamically -->\n          </div>\n        </div>\n      </div>\n\n      <!-- Account Subtype Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Account Subtype</h3>\n        <div class="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">\n          <div id="subtypeFiltersContainer" class="space-y-2">\n            <!-- Populated dynamically -->\n          </div>\n        </div>\n      </div>\n\n      <!-- Transactions Count Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Transaction Count</h3>\n        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">\n          <div>\n            <label class="block text-xs text-gray-600 mb-1">Minimum</label>\n            <input id="filterTransactionsMin" \n                   type="number" \n                   placeholder="0"\n                   min="0"\n                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          </div>\n          <div>\n            <label class="block text-xs text-gray-600 mb-1">Maximum</label>\n            <input id="filterTransactionsMax" \n                   type="number" \n                   placeholder="999999"\n                   min="0"\n                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          </div>\n        </div>\n      </div>\n\n      <!-- Balance Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Balance</h3>\n        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">\n          <div>\n            <label class="block text-xs text-gray-600 mb-1">Minimum ($)</label>\n            <input id="filterBalanceMin" \n                   type="number" \n                   placeholder="0.00"\n                   step="0.01"\n                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          </div>\n          <div>\n            <label class="block text-xs text-gray-600 mb-1">Maximum ($)</label>\n            <input id="filterBalanceMax" \n                   type="number" \n                   placeholder="999999.99"\n                   step="0.01"\n                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          </div>\n        </div>\n      </div>\n\n      <!-- Inclusion Status Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Include Status</h3>\n        <div class="flex flex-wrap gap-4">\n          <label class="flex items-center">\n            <input type="radio" name="inclusionFilter" value="all" checked \n                   class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n            <span class="ml-2 text-sm text-gray-700">All accounts</span>\n          </label>\n          <label class="flex items-center">\n            <input type="radio" name="inclusionFilter" value="included" \n                   class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n            <span class="ml-2 text-sm text-gray-700">Included only</span>\n          </label>\n          <label class="flex items-center">\n            <input type="radio" name="inclusionFilter" value="excluded" \n                   class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n            <span class="ml-2 text-sm text-gray-700">Excluded only</span>\n          </label>\n        </div>\n      </div>\n    </div>\n\n    <!-- Modal Footer - Fixed at bottom -->\n    <div class="flex flex-col sm:flex-row justify-end gap-3 p-4 sm:p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg flex-shrink-0">\n      <button id="filtersReset" \n              class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-lg hover:bg-gray-50 \n                     cursor-pointer transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n              onclick="window.resetFilters && window.resetFilters()">\n        Reset Filters\n      </button>\n      <button id="filtersApply" \n              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer \n                     transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n              onclick="window.applyFilters && window.applyFilters()">\n        Apply Filters\n      </button>\n    </div>\n  </div>\n</div>\n\n<style>\n  /* Filter chip styles */\n  .filter-chip {\n    display: inline-flex;\n    align-items: center;\n    gap: 0.5rem;\n    background-color: #dbeafe;\n    color: #1e40af;\n    padding: 0.25rem 0.75rem;\n    border-radius: 9999px;\n    font-size: 0.75rem;\n    font-weight: 500;\n    max-width: 250px;\n  }\n\n  .filter-chip span {\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n\n  /* Mini filter chips for status bar */\n  .filter-chip-mini {\n    display: inline-flex;\n    align-items: center;\n    background-color: #1e40af;\n    color: white;\n    padding: 0.125rem 0.5rem;\n    border-radius: 9999px;\n    font-size: 0.625rem;\n    font-weight: 500;\n    max-width: 120px;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n\n  /* Filter results summary styling */\n  #filterResultsSummary {\n    transition: all 0.3s ease;\n  }\n\n  #filterResultsSummary.filtered {\n    color: #1e40af;\n    font-weight: 500;\n  }\n\n  /* Filter notification badge */\n  #filtersBtn {\n    position: relative;\n  }\n\n  #filterNotificationBadge {\n    position: absolute;\n    top: -8px;\n    right: -8px;\n    background-color: #dc2626;\n    color: white;\n    border-radius: 50%;\n    width: 20px;\n    height: 20px;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 0.75rem;\n    font-weight: 600;\n    line-height: 1;\n    border: 2px solid white;\n    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);\n    transition: all 0.2s ease;\n    z-index: 10;\n  }\n\n  #filterNotificationBadge.hidden {\n    display: none;\n  }\n\n  /* Clear filters button animation */\n  #clearFiltersBtn {\n    transition: all 0.3s ease;\n    transform: scale(0.95);\n    opacity: 0;\n  }\n\n  #clearFiltersBtn:not(.hidden) {\n    transform: scale(1);\n    opacity: 1;\n  }\n\n  .filter-chip button {\n    background: none;\n    border: none;\n    color: inherit;\n    cursor: pointer;\n    padding: 0;\n    margin-left: 0.25rem;\n    border-radius: 50%;\n    width: 1rem;\n    height: 1rem;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: background-color 0.2s;\n  }\n\n  .filter-chip button:hover {\n    background-color: rgba(59, 130, 246, 0.2);\n  }\n\n  .filter-chip svg {\n    width: 0.75rem;\n    height: 0.75rem;\n  }\n\n  /* Modal animation and layout */\n  #filtersModal {\n    transition: opacity 0.3s ease;\n    opacity: 0;\n  }\n\n  #filtersModal.show {\n    opacity: 1;\n  }\n\n  #filtersModal.hide {\n    opacity: 0;\n  }\n\n  /* Ensure proper modal sizing and scrolling */\n  #filtersModal .max-w-2xl {\n    min-height: 300px;\n  }\n\n  /* Improve mobile modal experience */\n  @media (max-width: 640px) {\n    #filtersModal .max-w-2xl {\n      max-width: calc(100vw - 1.5rem);\n      margin: 0.75rem;\n    }\n    \n    #filtersModal .max-h-\\[90vh\\] {\n      max-height: calc(100vh - 1.5rem);\n    }\n\n    /* Ensure footer buttons are properly sized on mobile */\n    #filtersModal .flex-col.sm\\:flex-row button {\n      min-height: 44px;\n    }\n  }\n\n  /* Bulk action bar styling */\n  #bulkActionBar {\n    transition: opacity 0.3s ease, transform 0.3s ease;\n  }\n\n  #bulkActionBar:not(.active) {\n    opacity: 0;\n    transform: translateY(-10px);\n    pointer-events: none;\n  }\n\n  #bulkActionBar.active {\n    opacity: 1;\n    transform: translateY(0);\n    pointer-events: auto;\n  }\n\n  /* Enhanced button hover effects */\n  #bulkActionBar button:hover {\n    transform: translateY(-1px);\n    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);\n  }\n\n  #bulkActionBar button:active {\n    transform: translateY(0);\n  }\n\n  /* Mobile grid button sizing */\n  @media (max-width: 1024px) {\n    #bulkActionBar .grid button {\n      min-height: 48px;\n    }\n  }\n\n  /* Mobile card styles for accounts */\n  .mobile-account-card {\n    padding: 1rem;\n    border-bottom: 1px solid #f3f4f6;\n    position: relative;\n    display: flex;\n    align-items: flex-start;\n    gap: 0.75rem;\n  }\n\n  .mobile-account-card:last-child {\n    border-bottom: none;\n  }\n\n  .mobile-account-card .card-content {\n    flex: 1;\n    min-width: 0;\n  }\n\n  .mobile-account-card .account-name {\n    font-weight: 500;\n    color: #111827;\n    margin-bottom: 0.5rem;\n    word-wrap: break-word;\n  }\n\n  .mobile-account-card .account-details {\n    font-size: 0.875rem;\n    color: #6b7280;\n  }\n\n  .mobile-account-card .account-details > div {\n    margin-bottom: 0.5rem;\n  }\n\n  .mobile-account-card .account-balance {\n    font-weight: 500;\n    text-align: right;\n  }\n\n  /* Custom checkbox styling */\n  .custom-checkbox-container {\n    display: flex;\n    align-items: center;\n    cursor: pointer;\n    user-select: none;\n    position: relative;\n  }\n\n  .custom-checkbox-input {\n    position: absolute;\n    opacity: 0;\n    cursor: pointer;\n    height: 0;\n    width: 0;\n  }\n\n  .custom-checkbox-visual {\n    position: relative;\n    height: 20px;\n    width: 20px;\n    background-color: #ffffff;\n    border: 2px solid #d1d5db;\n    border-radius: 4px;\n    transition: all 0.2s ease;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n  }\n\n  .custom-checkbox-visual::after {\n    content: "";\n    position: absolute;\n    display: none;\n    left: 6px;\n    top: 2px;\n    width: 4px;\n    height: 8px;\n    border: solid white;\n    border-width: 0 2px 2px 0;\n    transform: rotate(45deg);\n  }\n\n  .custom-checkbox-input:checked + .custom-checkbox-visual {\n    background-color: #3b82f6;\n    border-color: #3b82f6;\n  }\n\n  .custom-checkbox-input:checked + .custom-checkbox-visual::after {\n    display: block;\n  }\n\n  .custom-checkbox-input:focus + .custom-checkbox-visual {\n    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);\n    outline: none;\n  }\n\n  .custom-checkbox-input:disabled + .custom-checkbox-visual {\n    background-color: #f3f4f6;\n    border-color: #e5e7eb;\n    cursor: not-allowed;\n  }\n\n  .custom-checkbox-container:hover .custom-checkbox-input:not(:disabled) + .custom-checkbox-visual {\n    border-color: #3b82f6;\n  }\n\n  /* Mobile specific enhancements */\n  @media (max-width: 1024px) {\n    .custom-checkbox-visual {\n      height: 24px;\n      width: 24px;\n      min-width: 24px;\n      min-height: 24px;\n    }\n\n    .custom-checkbox-visual::after {\n      left: 8px;\n      top: 3px;\n      width: 5px;\n      height: 10px;\n    }\n\n    button, select {\n      min-height: 44px;\n      padding: 0.75rem;\n    }\n    \n    .token-btn {\n      min-height: 44px;\n    }\n\n    input[type="text"], input[type="number"] {\n      min-height: 44px;\n      padding: 0.75rem;\n    }\n  }\n</style>\n';
+  var review_default = '<div id="pageLayout"></div>\n\n<!-- Control Bar -->\n<div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between \n                p-4 sm:p-6 gap-4 lg:gap-6 bg-white rounded-lg mb-4 sm:mb-6 \n                border border-gray-100 shadow-sm">\n\n  <!-- Filters, Search and Account Summary -->\n  <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 flex-1">\n    <!-- Filters Button -->\n    <div class="flex-shrink-0">\n      <button id="filtersBtn" class="flex items-center gap-2 px-4 py-2 sm:py-3 text-sm sm:text-base\n                         border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer \n                         transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500\n                         relative whitespace-nowrap" title="Open advanced filters"\n        onclick="window.openFiltersModal && window.openFiltersModal()">\n        <!-- Notification Badge -->\n        <div id="filterNotificationBadge" class="hidden"></div>\n\n        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z" />\n        </svg>\n        <span>Filters</span>\n      </button>\n    </div>\n\n    <!-- Search Input -->\n    <div class="flex-1 max-w-md">\n      <div class="relative">\n        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">\n          <svg class="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />\n          </svg>\n        </div>\n        <input id="searchInput" type="text" placeholder="Search accounts..." style="padding-left: 2.75rem !important;"\n          class="block w-full pr-3 py-2 sm:py-3 text-sm sm:text-base\n                          border border-gray-300 rounded-lg placeholder-gray-400 \n                          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 \n                          transition-colors duration-200">\n      </div>\n    </div>\n\n    <!-- Account Count Summary -->\n    <div id="filterResultsSummary" class="text-sm text-gray-600 whitespace-nowrap">\n      Showing <span id="visibleAccountCount" class="font-medium text-gray-900">0</span>\n      of <span id="totalAccountCount" class="font-medium text-gray-900">0</span> accounts\n    </div>\n  </div>\n\n  <!-- Clear Filter Controls -->\n  <div class="flex items-center gap-3">\n    <!-- Clear All Filters Button (only shown when filters are active) -->\n    <button id="clearFiltersBtn" class="hidden px-3 py-2 sm:py-3 text-sm text-red-600 hover:text-red-800 \n                       hover:bg-red-50 rounded-lg transition-colors duration-200 \n                       focus:outline-none focus:ring-2 focus:ring-red-500" title="Clear all filters"\n      onclick="window.clearAllFilters && window.clearAllFilters()">\n      Clear\n    </button>\n  </div>\n</div>\n\n<!-- Table Container -->\n<div class="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">\n\n  <!-- Mobile Card View (hidden on larger screens) -->\n  <div id="mobileView" class="block lg:hidden">\n    <!-- Mobile Header with Master Checkbox -->\n    <div class="border-b border-gray-200 bg-gray-50 p-4">\n      <div class="flex items-center justify-between">\n        <label class="custom-checkbox-container">\n          <input type="checkbox" id="masterCheckboxMobile" class="custom-checkbox-input">\n          <span class="custom-checkbox-visual"></span>\n          <span class="text-sm font-medium text-gray-700 pl-2">Select All</span>\n        </label>\n        <div class="text-xs text-gray-500 font-medium" id="mobileSelectionCount">0 selected</div>\n      </div>\n    </div>\n\n    <div id="mobileAccountList" class="divide-y divide-gray-100">\n      <!-- populated dynamically for mobile -->\n    </div>\n  </div>\n\n  <!-- Desktop Table View (hidden on mobile) -->\n  <div class="hidden lg:block overflow-x-auto">\n    <table class="w-full min-w-[800px]" role="grid">\n      <thead>\n        <tr class="bg-gray-50 border-b border-gray-200" role="row">\n          <th\n            class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 w-[50px] sm:w-[60px]">\n            <input type="checkbox" id="masterCheckbox" class="w-4 h-4 sm:w-5 sm:h-5 cursor-pointer rounded border-gray-300 \n                              text-blue-600 focus:ring-blue-500 focus:ring-2">\n          </th>\n          <th scope="col"\n            class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[200px]">\n            Account Name\n          </th>\n          <th scope="col"\n            class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[150px]">\n            Type\n          </th>\n          <th scope="col"\n            class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[150px]">\n            Subtype\n          </th>\n          <th scope="col"\n            class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[100px] text-center">\n            Transactions\n          </th>\n          <th scope="col"\n            class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[120px] text-right">\n            Balance\n          </th>\n          <th scope="col"\n            class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[100px] text-center">\n            Include\n          </th>\n        </tr>\n      </thead>\n      <tbody id="reviewTableBody" class="divide-y divide-gray-100">\n        <!-- populated dynamically -->\n      </tbody>\n    </table>\n  </div>\n</div>\n\n<button id="continueBtn" class="ui-button">\n  Continue\n</button>\n\n<!-- Bulk Action Bar -->\n<div id="bulkActionBar"\n  class="hidden fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300">\n\n  <!-- Mobile Bulk Actions (visible on mobile/tablet) -->\n  <div\n    class="block lg:hidden bg-white shadow-2xl rounded-xl border border-gray-200 w-[calc(100vw-2rem)] max-w-md mx-auto">\n    <div class="p-4">\n      <div class="flex flex-col gap-3">\n        <!-- Selection Info -->\n        <div class="flex items-center justify-between">\n          <span class="text-sm font-medium text-gray-900">\n            <span id="selectedCountMobile">0</span> selected\n          </span>\n          <button id="unselectAllBtnMobile" class="text-xs font-medium px-3 py-1.5 border border-gray-300 text-gray-700 \n                             bg-white rounded-md hover:bg-gray-50 cursor-pointer transition-colors \n                             duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n            title="Unselect all accounts">\n            Clear\n          </button>\n        </div>\n\n        <!-- Action Buttons Grid -->\n        <div class="grid grid-cols-2 gap-2">\n          <button id="bulkRenameBtnMobile" class="flex items-center justify-center gap-2 px-3 py-3 border border-gray-300 \n                             bg-white rounded-lg hover:bg-gray-50 cursor-pointer transition-colors \n                             duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n            title="Bulk rename accounts">\n            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />\n            </svg>\n            <span class="text-sm font-medium">Rename</span>\n          </button>\n\n          <button id="bulkTypeBtnMobile" class="flex items-center justify-center gap-2 px-3 py-3 border border-gray-300 \n                             bg-white rounded-lg hover:bg-gray-50 cursor-pointer transition-colors \n                             duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n            title="Bulk edit account types">\n            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />\n            </svg>\n            <span class="text-sm font-medium">Edit Type</span>\n          </button>\n\n          <button id="bulkIncludeBtnMobile" class="flex items-center justify-center gap-2 px-3 py-3 border border-green-300 \n                             text-green-700 bg-green-50 rounded-lg hover:bg-green-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500"\n            title="Include selected accounts">\n            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />\n            </svg>\n            <span class="text-sm font-medium">Include</span>\n          </button>\n\n          <button id="bulkExcludeBtnMobile" class="flex items-center justify-center gap-2 px-3 py-3 border border-red-300 \n                             text-red-700 bg-red-50 rounded-lg hover:bg-red-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"\n            title="Exclude selected accounts">\n            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />\n            </svg>\n            <span class="text-sm font-medium">Exclude</span>\n          </button>\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <!-- Desktop Bulk Actions (visible on desktop) -->\n  <div class="hidden lg:block bg-white shadow-2xl rounded-xl border border-gray-200">\n    <div class="px-6 py-4">\n      <div class="flex items-center gap-6">\n        <!-- Selection Count -->\n        <button id="unselectAllBtnDesktop" class="text-sm font-medium px-4 py-2 border border-gray-300 \n                           rounded-lg hover:bg-gray-50 cursor-pointer whitespace-nowrap transition-colors \n                           duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n          title="Unselect all accounts">\n          <span id="selectedCountDesktop">0</span> selected\n        </button>\n\n        <!-- Separator -->\n        <div class="h-6 border-l border-gray-300"></div>\n\n        <!-- Action Buttons -->\n        <div class="flex items-center gap-3">\n          <button id="bulkRenameBtnDesktop" class="text-sm font-medium px-4 py-2 border border-gray-300 \n                             rounded-lg hover:bg-gray-50 cursor-pointer transition-colors duration-200\n                             focus:outline-none focus:ring-2 focus:ring-blue-500" title="Bulk rename accounts">\n            Rename\n          </button>\n\n          <button id="bulkTypeBtnDesktop" class="text-sm font-medium px-4 py-2 border border-gray-300 \n                             rounded-lg hover:bg-gray-50 cursor-pointer transition-colors duration-200\n                             focus:outline-none focus:ring-2 focus:ring-blue-500" title="Bulk edit account types">\n            Edit Type\n          </button>\n\n          <button id="bulkIncludeBtnDesktop" class="text-sm font-medium px-4 py-2 border border-green-300 \n                             text-green-700 bg-green-50 rounded-lg hover:bg-green-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500"\n            title="Include selected accounts">\n            Include\n          </button>\n\n          <button id="bulkExcludeBtnDesktop" class="text-sm font-medium px-4 py-2 border border-red-300 \n                             text-red-700 bg-red-50 rounded-lg hover:bg-red-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"\n            title="Exclude selected accounts">\n            Exclude\n          </button>\n        </div>\n      </div>\n    </div>\n  </div>\n</div>\n\n<!-- Bulk Rename Modal -->\n<div id="bulkRenameModal"\n  class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 hidden p-3 sm:p-4">\n  <div class="bg-white rounded-lg shadow-lg w-full max-w-lg p-4 sm:p-6 relative max-h-[90vh] overflow-y-auto">\n\n    <h2 class="text-lg sm:text-xl font-bold mb-4">Bulk Rename Accounts</h2>\n\n    <label for="renamePattern" class="font-medium text-sm">Pattern:</label>\n    <input id="renamePattern" name="renamePattern" type="text"\n      class="border rounded w-full px-3 py-2 mb-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"\n      placeholder="e.g. {{YNAB}} - {{Index}}">\n\n    <!-- Token shortcuts -->\n    <div class="grid grid-cols-2 gap-2 mb-4">\n      <button\n        class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{YNAB}}">YNAB Name</button>\n      <button\n        class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{Index}}">Index</button>\n      <button\n        class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{Upper}}">Uppercase YNAB</button>\n      <button\n        class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{Date}}">Today (YYYY-MM-DD)</button>\n    </div>\n\n    <!-- Index start -->\n    <div class="flex items-center gap-3 mb-4">\n      <label for="indexStart" class="text-sm">Index Start:</label>\n      <input id="indexStart" type="number"\n        class="border rounded px-3 py-2 w-20 sm:w-24 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"\n        value="1" />\n    </div>\n\n    <!-- Preview -->\n    <div class="border rounded p-3 bg-gray-50 mb-4">\n      <div class="font-medium text-sm mb-2">Preview:</div>\n      <div id="renamePreview" class="text-xs sm:text-sm text-gray-700 space-y-1 max-h-32 overflow-y-auto"\n        aria-live="polite"></div>\n    </div>\n\n    <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">\n      <button id="renameCancel" class="ui-button order-2 sm:order-1 w-full sm:w-auto"\n        data-type="secondary">Cancel</button>\n      <button id="renameApply" class="ui-button order-1 sm:order-2 w-full sm:w-auto" data-type="primary">Apply</button>\n    </div>\n\n  </div>\n</div>\n\n<!-- Bulk Type Edit Modal -->\n<div id="bulkTypeModal"\n  class="fixed inset-0 bg-black bg-opacity-40 hidden z-50 flex items-center justify-center p-3 sm:p-4">\n  <div class="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">\n    <h2 class="text-lg font-bold mb-4">Bulk Edit Account Type</h2>\n\n    <div class="mb-4">\n      <label for="bulkTypeSelect" class="block mb-2 font-medium text-sm">Account Type</label>\n      <select id="bulkTypeSelect" name="bulkSubtypeSelect"\n        class="border rounded w-full px-3 py-2 cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></select>\n    </div>\n\n    <div class="mb-6">\n      <label for="bulkSubtypeSelect" class="block mb-2 font-medium text-sm">Subtype</label>\n      <select id="bulkSubtypeSelect"\n        class="border rounded w-full px-3 py-2 cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></select>\n    </div>\n\n    <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">\n      <button id="bulkTypeCancel" class="ui-button order-2 sm:order-1 w-full sm:w-auto"\n        data-type="secondary">Cancel</button>\n      <button id="bulkTypeApply" class="ui-button order-1 sm:order-2 w-full sm:w-auto"\n        data-type="primary">Apply</button>\n    </div>\n  </div>\n</div>\n\n<!-- Advanced Filters Modal -->\n<div id="filtersModal"\n  class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 hidden p-3 sm:p-4">\n  <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] flex flex-col relative">\n\n    <!-- Modal Header -->\n    <div class="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 flex-shrink-0 rounded-t-lg">\n      <h2 class="text-lg sm:text-xl font-bold text-gray-900">Advanced Filters</h2>\n      <button id="filtersModalClose"\n        class="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-1"\n        title="Close filters" onclick="window.closeFiltersModal && window.closeFiltersModal()">\n        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />\n        </svg>\n      </button>\n    </div>\n\n    <!-- Modal Content - Scrollable -->\n    <div class="p-4 sm:p-6 space-y-6 overflow-y-auto flex-1 min-h-0">\n\n      <!-- Active Filters Display -->\n      <div id="activeFiltersSection" class="hidden">\n        <div class="flex items-center justify-between mb-3">\n          <h3 class="text-sm font-medium text-gray-700">Active Filters</h3>\n          <button id="clearAllFilters"\n            class="text-xs text-blue-600 hover:text-blue-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"\n            onclick="window.clearAllFilters && window.clearAllFilters()">\n            Clear All\n          </button>\n        </div>\n        <div id="activeFiltersContainer" class="flex flex-wrap gap-2"></div>\n        <hr class="mt-4">\n      </div>\n\n      <!-- Account Name Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Account Name</h3>\n        <div class="space-y-3">\n          <input id="filterAccountName" type="text" placeholder="Enter account name..."\n            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n\n          <div class="flex flex-wrap gap-4">\n            <label class="flex items-center">\n              <input type="radio" name="nameMatchType" value="contains" checked\n                class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n              <span class="ml-2 text-sm text-gray-700">Contains</span>\n            </label>\n            <label class="flex items-center">\n              <input type="radio" name="nameMatchType" value="exact"\n                class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n              <span class="ml-2 text-sm text-gray-700">Exact match</span>\n            </label>\n            <label class="flex items-center">\n              <input type="checkbox" id="nameCaseSensitive"\n                class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">\n              <span class="ml-2 text-sm text-gray-700">Case sensitive</span>\n            </label>\n          </div>\n        </div>\n      </div>\n\n      <!-- Account Type Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Account Type</h3>\n        <div class="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">\n          <div id="typeFiltersContainer" class="space-y-2">\n            <!-- Populated dynamically -->\n          </div>\n        </div>\n      </div>\n\n      <!-- Account Subtype Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Account Subtype</h3>\n        <div class="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">\n          <div id="subtypeFiltersContainer" class="space-y-2">\n            <!-- Populated dynamically -->\n          </div>\n        </div>\n      </div>\n\n      <!-- Transactions Count Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Transaction Count</h3>\n        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">\n          <div>\n            <label class="block text-xs text-gray-600 mb-1">Minimum</label>\n            <input id="filterTransactionsMin" type="number" placeholder="0" min="0"\n              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          </div>\n          <div>\n            <label class="block text-xs text-gray-600 mb-1">Maximum</label>\n            <input id="filterTransactionsMax" type="number" placeholder="999999" min="0"\n              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          </div>\n        </div>\n      </div>\n\n      <!-- Balance Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Balance</h3>\n        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">\n          <div>\n            <label class="block text-xs text-gray-600 mb-1">Minimum ($)</label>\n            <input id="filterBalanceMin" type="number" placeholder="0.00" step="0.01"\n              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          </div>\n          <div>\n            <label class="block text-xs text-gray-600 mb-1">Maximum ($)</label>\n            <input id="filterBalanceMax" type="number" placeholder="999999.99" step="0.01"\n              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          </div>\n        </div>\n      </div>\n\n      <!-- Inclusion Status Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Include Status</h3>\n        <div class="flex flex-wrap gap-4">\n          <label class="flex items-center">\n            <input type="radio" name="inclusionFilter" value="all" checked\n              class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n            <span class="ml-2 text-sm text-gray-700">All accounts</span>\n          </label>\n          <label class="flex items-center">\n            <input type="radio" name="inclusionFilter" value="included"\n              class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n            <span class="ml-2 text-sm text-gray-700">Included only</span>\n          </label>\n          <label class="flex items-center">\n            <input type="radio" name="inclusionFilter" value="excluded"\n              class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n            <span class="ml-2 text-sm text-gray-700">Excluded only</span>\n          </label>\n        </div>\n      </div>\n    </div>\n\n    <!-- Modal Footer - Fixed at bottom -->\n    <div\n      class="flex flex-col sm:flex-row justify-end gap-3 p-4 sm:p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg flex-shrink-0">\n      <button id="filtersReset" class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-lg hover:bg-gray-50 \n                     cursor-pointer transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n        onclick="window.resetFilters && window.resetFilters()">\n        Reset Filters\n      </button>\n      <button id="filtersApply" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer \n                     transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n        onclick="window.applyFilters && window.applyFilters()">\n        Apply Filters\n      </button>\n    </div>\n  </div>\n</div>\n\n<style>\n  /* Filter chip styles */\n  .filter-chip {\n    display: inline-flex;\n    align-items: center;\n    gap: 0.5rem;\n    background-color: #dbeafe;\n    color: #1e40af;\n    padding: 0.25rem 0.75rem;\n    border-radius: 9999px;\n    font-size: 0.75rem;\n    font-weight: 500;\n    max-width: 250px;\n  }\n\n  .filter-chip span {\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n\n  /* Mini filter chips for status bar */\n  .filter-chip-mini {\n    display: inline-flex;\n    align-items: center;\n    background-color: #1e40af;\n    color: white;\n    padding: 0.125rem 0.5rem;\n    border-radius: 9999px;\n    font-size: 0.625rem;\n    font-weight: 500;\n    max-width: 120px;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n\n  /* Filter results summary styling */\n  #filterResultsSummary {\n    transition: all 0.3s ease;\n  }\n\n  #filterResultsSummary.filtered {\n    color: #1e40af;\n    font-weight: 500;\n  }\n\n  /* Filter notification badge */\n  #filtersBtn {\n    position: relative;\n  }\n\n  #filterNotificationBadge {\n    position: absolute;\n    top: -8px;\n    right: -8px;\n    background-color: #dc2626;\n    color: white;\n    border-radius: 50%;\n    width: 20px;\n    height: 20px;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 0.75rem;\n    font-weight: 600;\n    line-height: 1;\n    border: 2px solid white;\n    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);\n    transition: all 0.2s ease;\n    z-index: 10;\n  }\n\n  #filterNotificationBadge.hidden {\n    display: none;\n  }\n\n  /* Clear filters button animation */\n  #clearFiltersBtn {\n    transition: all 0.3s ease;\n    transform: scale(0.95);\n    opacity: 0;\n  }\n\n  #clearFiltersBtn:not(.hidden) {\n    transform: scale(1);\n    opacity: 1;\n  }\n\n  .filter-chip button {\n    background: none;\n    border: none;\n    color: inherit;\n    cursor: pointer;\n    padding: 0;\n    margin-left: 0.25rem;\n    border-radius: 50%;\n    width: 1rem;\n    height: 1rem;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: background-color 0.2s;\n  }\n\n  .filter-chip button:hover {\n    background-color: rgba(59, 130, 246, 0.2);\n  }\n\n  .filter-chip svg {\n    width: 0.75rem;\n    height: 0.75rem;\n  }\n\n  /* Modal animation and layout */\n  #filtersModal {\n    transition: opacity 0.3s ease;\n    opacity: 0;\n  }\n\n  #filtersModal.show {\n    opacity: 1;\n  }\n\n  #filtersModal.hide {\n    opacity: 0;\n  }\n\n  /* Ensure proper modal sizing and scrolling */\n  #filtersModal .max-w-2xl {\n    min-height: 300px;\n  }\n\n  /* Improve mobile modal experience */\n  @media (max-width: 640px) {\n    #filtersModal .max-w-2xl {\n      max-width: calc(100vw - 1.5rem);\n      margin: 0.75rem;\n    }\n\n    #filtersModal .max-h-\\[90vh\\] {\n      max-height: calc(100vh - 1.5rem);\n    }\n\n    /* Ensure footer buttons are properly sized on mobile */\n    #filtersModal .flex-col.sm\\:flex-row button {\n      min-height: 44px;\n    }\n  }\n\n  /* Bulk action bar styling */\n  #bulkActionBar {\n    transition: opacity 0.3s ease, transform 0.3s ease;\n  }\n\n  #bulkActionBar:not(.active) {\n    opacity: 0;\n    transform: translateY(-10px);\n    pointer-events: none;\n  }\n\n  #bulkActionBar.active {\n    opacity: 1;\n    transform: translateY(0);\n    pointer-events: auto;\n  }\n\n  /* Enhanced button hover effects */\n  #bulkActionBar button:hover {\n    transform: translateY(-1px);\n    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);\n  }\n\n  #bulkActionBar button:active {\n    transform: translateY(0);\n  }\n\n  /* Mobile grid button sizing */\n  @media (max-width: 1024px) {\n    #bulkActionBar .grid button {\n      min-height: 48px;\n    }\n  }\n\n  /* Mobile card styles for accounts */\n  .mobile-account-card {\n    padding: 1rem;\n    border-bottom: 1px solid #f3f4f6;\n    position: relative;\n    display: flex;\n    align-items: flex-start;\n    gap: 0.75rem;\n  }\n\n  .mobile-account-card:last-child {\n    border-bottom: none;\n  }\n\n  .mobile-account-card .card-content {\n    flex: 1;\n    min-width: 0;\n  }\n\n  .mobile-account-card .account-name {\n    font-weight: 500;\n    color: #111827;\n    margin-bottom: 0.5rem;\n    word-wrap: break-word;\n  }\n\n  .mobile-account-card .account-details {\n    font-size: 0.875rem;\n    color: #6b7280;\n  }\n\n  .mobile-account-card .account-details>div {\n    margin-bottom: 0.5rem;\n  }\n\n  .mobile-account-card .account-balance {\n    font-weight: 500;\n    text-align: right;\n  }\n\n  /* Custom checkbox styling */\n  .custom-checkbox-container {\n    display: flex;\n    align-items: center;\n    cursor: pointer;\n    user-select: none;\n    position: relative;\n  }\n\n  .custom-checkbox-input {\n    position: absolute;\n    opacity: 0;\n    cursor: pointer;\n    height: 0;\n    width: 0;\n  }\n\n  .custom-checkbox-visual {\n    position: relative;\n    height: 20px;\n    width: 20px;\n    background-color: #ffffff;\n    border: 2px solid #d1d5db;\n    border-radius: 4px;\n    transition: all 0.2s ease;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n  }\n\n  .custom-checkbox-visual::after {\n    content: "";\n    position: absolute;\n    display: none;\n    left: 6px;\n    top: 2px;\n    width: 4px;\n    height: 8px;\n    border: solid white;\n    border-width: 0 2px 2px 0;\n    transform: rotate(45deg);\n  }\n\n  .custom-checkbox-input:checked+.custom-checkbox-visual {\n    background-color: #3b82f6;\n    border-color: #3b82f6;\n  }\n\n  .custom-checkbox-input:checked+.custom-checkbox-visual::after {\n    display: block;\n  }\n\n  .custom-checkbox-input:focus+.custom-checkbox-visual {\n    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);\n    outline: none;\n  }\n\n  .custom-checkbox-input:disabled+.custom-checkbox-visual {\n    background-color: #f3f4f6;\n    border-color: #e5e7eb;\n    cursor: not-allowed;\n  }\n\n  .custom-checkbox-container:hover .custom-checkbox-input:not(:disabled)+.custom-checkbox-visual {\n    border-color: #3b82f6;\n  }\n\n  /* Mobile specific enhancements */\n  @media (max-width: 1024px) {\n    .custom-checkbox-visual {\n      height: 24px;\n      width: 24px;\n      min-width: 24px;\n      min-height: 24px;\n    }\n\n    .custom-checkbox-visual::after {\n      left: 8px;\n      top: 3px;\n      width: 5px;\n      height: 10px;\n    }\n\n    button,\n    select {\n      min-height: 44px;\n      padding: 0.75rem;\n    }\n\n    .token-btn {\n      min-height: 44px;\n    }\n\n    input[type="text"],\n    input[type="number"] {\n      min-height: 44px;\n      padding: 0.75rem;\n    }\n  }\n</style>';
+
+  // src/components/navigationBar.js
+  function renderNavigationBar2(options = {}) {
+    const {
+      showBackButton = true,
+      showDataButton = true,
+      backText = "Back",
+      containerId = "navigationBar"
+    } = options;
+    const container = document.getElementById(containerId);
+    if (!container) {
+      console.warn(`Navigation container with id "${containerId}" not found`);
+      return;
+    }
+    const hasData = checkForStoredData2();
+    const dataButtonText = hasData ? "Manage your data" : "No data currently stored";
+    let navHTML = '<div class="flex flex-wrap items-center justify-between gap-2 mb-4">';
+    if (showBackButton) {
+      navHTML += `
+      <button 
+        id="navBackBtn" 
+        class="ui-button flex items-center text-sm"
+        data-type="text"
+        data-size="small"
+      >
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        ${backText}
+      </button>
+    `;
+    } else {
+      navHTML += "<div></div>";
+    }
+    if (showDataButton) {
+      navHTML += `
+      <button 
+        id="navDataBtn" 
+        class="ui-button text-xs sm:text-sm"
+        data-type="text"
+        data-size="small"
+        ${!hasData ? 'style="opacity: 0.6; cursor: default;"' : ""}
+      >
+        ${dataButtonText}
+      </button>
+    `;
+    }
+    navHTML += "</div>";
+    container.innerHTML = navHTML;
+    renderButtons();
+    if (showBackButton) {
+      const backBtn = document.getElementById("navBackBtn");
+      backBtn?.addEventListener("click", () => {
+        goBack();
+      });
+    }
+    if (showDataButton) {
+      const dataBtn = document.getElementById("navDataBtn");
+      dataBtn?.addEventListener("click", () => {
+        if (hasData) {
+          navigate("/data-management");
+        }
+      });
+    }
+  }
+  function checkForStoredData2() {
+    const hasStateAccounts = state_default.accounts && Object.keys(state_default.accounts).length > 0;
+    const hasMonarchAccounts = state_default.monarchAccounts !== null;
+    const hasSessionAccounts = sessionStorage.getItem("ynab_accounts") !== null;
+    const hasSessionMonarch = sessionStorage.getItem("monarch_accounts") !== null;
+    const localStorage2 = getLocalStorage();
+    const hasLocalStorageData = !!(localStorage2.email || localStorage2.encryptedPassword || localStorage2.token || localStorage2.uuid);
+    return hasStateAccounts || hasMonarchAccounts || hasSessionAccounts || hasSessionMonarch || hasLocalStorageData;
+  }
+
+  // src/components/pageHeader.js
+  function renderPageHeader2(options = {}) {
+    const {
+      title = "",
+      description = "",
+      containerId = "pageHeader",
+      className = ""
+    } = options;
+    const container = document.getElementById(containerId);
+    if (!container) {
+      console.warn(`Page header container with id "${containerId}" not found`);
+      return;
+    }
+    const headerHTML = `
+    <section class="text-center mb-5 ${className}">
+      <div class="inline-flex items-center justify-center gap-2 mb-6">
+        <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
+          ${escapeHtml2(title)}
+        </h2>
+      </div>
+
+      <p class="text-gray-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto px-2 leading-relaxed">
+        ${escapeHtml2(description)}
+      </p>
+    </section>
+  `;
+    container.innerHTML = headerHTML;
+  }
+  function escapeHtml2(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+  }
 
   // src/views/MethodSelect/method.js
   function initMethodSelectView() {
@@ -5149,80 +5877,71 @@
       navigate("/upload", true);
       return;
     }
-    const mainContainer = document.querySelector(".container-responsive");
-    mainContainer.insertAdjacentHTML("beforeend", createSimpleNavigationBar({
-      backText: "Back"
-    }));
+    renderPageLayout();
+    renderNavigationBar2({
+      showBackButton: true,
+      showDataButton: true
+    });
+    renderPageHeader2({
+      title: "Choose Your Migration Method",
+      description: "You can either manually import your accounts into Monarch or let us automatically import your data.",
+      containerId: "pageHeader"
+    });
     renderButtons();
-    updateNavigationTexts();
-    const manualBtn = document.getElementById("manualImportBtn");
-    const autoBtn = document.getElementById("autoImportBtn");
-    const backBtn = document.getElementById("backBtn");
     const totalCount = Object.keys(state_default.accounts).length;
     const selectedCount = Object.values(state_default.accounts).filter((acc) => acc.included).length;
     document.getElementById("totalCountDisplay").textContent = totalCount;
     document.getElementById("filesCountDisplay").textContent = selectedCount;
     document.getElementById("manualFileCount").textContent = selectedCount;
+    const manualBtn = document.getElementById("manualImportBtn");
+    const autoBtn = document.getElementById("autoImportBtn");
     manualBtn.addEventListener("click", () => {
       navigate("/manual");
     });
     autoBtn.addEventListener("click", () => {
       navigate("/login");
     });
-    backBtn.addEventListener("click", () => {
-      goBack();
-    });
   }
 
   // src/views/MethodSelect/method.html
-  var method_default = `<div class="container-responsive flex flex-col items-center justify-center py-6 sm:py-8 md:py-12 lg:py-16 space-y-6 sm:space-y-8 md:space-y-10 min-h-[calc(100vh-200px)]">
+  var method_default = `<div id="pageLayout"></div>
 
-  <!-- Header -->
-  <div class="text-center space-y-3 sm:space-y-4 max-w-4xl w-full">
-    <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
-      Choose Your Migration Method
-    </h2>
-    <p class="text-gray-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto px-2 leading-relaxed">
-      You can either manually import your accounts into Monarch or let us automatically import your data.
-    </p>
+<!-- Summary Counts -->
+<div class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 md:gap-10 
+          bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 md:p-8 
+          border border-blue-100 w-full max-w-2xl mx-auto shadow-sm">
+
+  <div class="text-center">
+    <div class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-800" id="totalCountDisplay">0</div>
+    <div class="text-gray-600 text-xs sm:text-sm md:text-base font-medium">Total Accounts</div>
   </div>
 
-  <!-- Summary Counts -->
-  <div class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 md:gap-10 
-              bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 md:p-8 
-              border border-blue-100 w-full max-w-2xl shadow-sm">
+  <div class="hidden sm:block w-px h-12 bg-gray-300"></div>
+  <div class="sm:hidden w-full h-px bg-gray-300"></div>
 
-    <div class="text-center">
-      <div class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-800" id="totalCountDisplay">0</div>
-      <div class="text-gray-600 text-xs sm:text-sm md:text-base font-medium">Total Accounts</div>
-    </div>
-
-    <div class="hidden sm:block w-px h-12 bg-gray-300"></div>
-    <div class="sm:hidden w-full h-px bg-gray-300"></div>
-
-    <div class="text-center">
-      <div class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-green-600" id="filesCountDisplay">0</div>
-      <div class="text-gray-600 text-xs sm:text-sm md:text-base font-medium">Accounts To Migrate</div>
-    </div>
+  <div class="text-center">
+    <div class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-green-600" id="filesCountDisplay">0</div>
+    <div class="text-gray-600 text-xs sm:text-sm md:text-base font-medium">Accounts To Migrate</div>
   </div>
+</div>
 
-  <!-- Migration Options -->
-  <div class="flex flex-col lg:flex-row gap-4 sm:gap-6 md:gap-8 w-full max-w-5xl">
+<!-- Migration Options -->
+<div class="flex flex-col lg:flex-row gap-4 sm:gap-6 md:gap-8 w-full max-w-5xl mx-auto">
 
-    <!-- Manual Import -->
-    <div class="w-full lg:flex-1 group cursor-pointer" id="manualImportBtn">
+  <!-- Manual Import -->
+  <div class="w-full lg:flex-1 group cursor-pointer" id="manualImportBtn">
       <div class="h-full p-4 sm:p-6 md:p-8 border-2 border-gray-200 rounded-xl shadow-sm 
-                  hover:shadow-lg hover:border-blue-300 transition-all duration-300 
-                  bg-white group-hover:bg-blue-50/30 relative overflow-hidden">
-        
-        <!-- Background decoration -->
+                hover:shadow-lg hover:border-blue-300 transition-all duration-300 
+                bg-white group-hover:bg-blue-50/30 relative overflow-hidden">
+
         <div class="absolute top-0 right-0 w-20 h-20 bg-blue-100 rounded-full -translate-y-10 translate-x-10 opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
-        
+
         <div class="relative z-10">
           <div class="flex items-start justify-between mb-4">
             <div class="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
               <svg class="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
               </svg>
             </div>
             <div class="text-blue-600 group-hover:text-blue-700 transition-colors duration-300">
@@ -5231,13 +5950,12 @@
               </svg>
             </div>
           </div>
-          
+
           <h3 class="text-lg sm:text-xl md:text-2xl font-semibold mb-3 text-gray-900">Manual Import</h3>
           <p class="text-gray-600 text-sm sm:text-base mb-6 leading-relaxed min-h-[3rem]">
-            Download <span id="manualFileCount" class="font-semibold text-blue-600">0</span> CSV files and upload them directly
-            into Monarch yourself. Perfect for users who prefer full control.
+            Download <span id="manualFileCount" class="font-semibold text-blue-600">0</span> CSV files and upload them directly into Monarch yourself. Perfect for users who prefer full control.
           </p>
-          
+
           <div class="flex items-center text-blue-600 font-semibold text-sm sm:text-base group-hover:text-blue-700 transition-colors duration-300">
             Select Manual Import
             <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -5251,22 +5969,21 @@
     <!-- Auto Import -->
     <div class="w-full lg:flex-1 group cursor-pointer" id="autoImportBtn">
       <div class="h-full p-4 sm:p-6 md:p-8 border-2 border-gray-200 rounded-xl shadow-sm 
-                  hover:shadow-lg hover:border-green-300 transition-all duration-300 
-                  bg-white group-hover:bg-green-50/30 relative overflow-hidden">
-        
-        <!-- Background decoration -->
+                hover:shadow-lg hover:border-green-300 transition-all duration-300 
+                bg-white group-hover:bg-green-50/30 relative overflow-hidden">
+
         <div class="absolute top-0 right-0 w-20 h-20 bg-green-100 rounded-full -translate-y-10 translate-x-10 opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
-        
-        <!-- "Recommended" badge -->
+
         <div class="absolute top-4 left-4 bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-full">
           Recommended
         </div>
-        
+
         <div class="relative z-10 pt-6">
           <div class="flex items-start justify-between mb-4">
             <div class="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300">
               <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
             <div class="text-green-600 group-hover:text-green-700 transition-colors duration-300">
@@ -5275,13 +5992,12 @@
               </svg>
             </div>
           </div>
-          
+
           <h3 class="text-lg sm:text-xl md:text-2xl font-semibold mb-3 text-gray-900">Auto Import</h3>
           <p class="text-gray-600 text-sm sm:text-base mb-6 leading-relaxed min-h-[3rem]">
-            We'll connect to Monarch and automatically import your selected accounts on
-            your behalf. Fast, secure, and hassle-free.
+            We'll connect to Monarch and automatically import your selected accounts on your behalf. Fast, secure, and hassle-free.
           </p>
-          
+
           <div class="flex items-center text-green-600 font-semibold text-sm sm:text-base group-hover:text-green-700 transition-colors duration-300">
             Select Auto Import
             <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -5291,10 +6007,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Navigation will be added here by JavaScript -->
-
-  </div>
 
 </div>`;
 
@@ -5314,11 +6026,19 @@
       navigate("/upload", true);
       return;
     }
-    const countSpan = document.getElementById("accountCount");
+    renderPageLayout({
+      navbar: {
+        showBackButton: true,
+        showDataButton: true
+      },
+      header: {
+        title: "You're Ready to Import",
+        description: "Choose how you'd like to bring your YNAB data into Monarch Money. You can either connect your YNAB account for a seamless transfer or manually upload a file.",
+        containerId: "pageHeader"
+      }
+    });
     const downloadBtn = document.getElementById("downloadBtn");
     const switchBtn = document.getElementById("switchToAuto");
-    const backBtn = document.getElementById("backBtn");
-    renderButtons();
     const includedAccounts = Object.values(state_default.accounts).filter((acc) => acc.included);
     countSpan.textContent = `${includedAccounts.length} account${includedAccounts.length !== 1 ? "s" : ""}`;
     downloadBtn.addEventListener("click", async (e) => {
@@ -5357,210 +6077,198 @@
     switchBtn.addEventListener("click", () => {
       navigate("/login");
     });
-    backBtn.addEventListener("click", () => {
-      goBack();
-    });
-    document.getElementById("backToMethodBtn").addEventListener("click", () => {
-      goBack();
-    });
   }
 
   // src/views/ManualInstructions/manualInstructions.html
-  var manualInstructions_default = `<div class="container-responsive flex flex-col items-center justify-center py-6 sm:py-8 md:py-12 lg:py-16 space-y-8 sm:space-y-10 md:space-y-12 min-h-[calc(100vh-200px)]">
+  var manualInstructions_default = `<div id="pageLayout"></div>
 
-  <!-- Progress Header -->
-  <div class="text-center space-y-3 sm:space-y-4 w-full max-w-3xl">
-    <div class="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full mb-4">
-      <svg class="w-8 h-8 sm:w-10 sm:h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-      </svg>
+<!-- Main Instructions Card -->
+<div
+  class="w-full max-w-4xl bg-white border border-gray-200 rounded-xl shadow-lg p-6 sm:p-8 md:p-10 space-y-8 sm:space-y-10">
+
+  <!-- Step 1: Download -->
+  <div class="relative">
+    <!-- Step Number -->
+    <div class="flex items-center mb-4 sm:mb-6">
+      <div
+        class="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 text-blue-600 rounded-full font-bold text-sm sm:text-base mr-3 sm:mr-4">
+        1
+      </div>
+      <h3 class="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900">Download Files</h3>
     </div>
-    <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">You're Ready to Import</h2>
-    <p class="text-gray-600 text-sm sm:text-base md:text-lg">
-      <span id="accountCount" class="font-semibold text-green-600">0 accounts</span> prepared for migration.
+
+    <div class="ml-11 sm:ml-14">
+      <p class="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base leading-relaxed">
+        Download a ZIP file containing one CSV per account. Each CSV is formatted
+        specifically for Monarch Money import.
+      </p>
+
+      <a id="downloadBtn" class="ui-button inline-flex items-center btn-responsive" data-type="primary"
+        data-size="large" href="#">
+        <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 10l5 5 5-5M12 4v12" />
+        </svg>
+        Download CSV Bundle
+      </a>
+    </div>
+  </div>
+
+  <!-- Divider -->
+  <div class="relative">
+    <div class="absolute inset-0 flex items-center">
+      <div class="w-full border-t border-gray-200"></div>
+    </div>
+    <div class="relative flex justify-center">
+      <div class="px-4 bg-white">
+        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Import Instructions -->
+  <div class="relative">
+    <!-- Step Number -->
+    <div class="flex items-center mb-4 sm:mb-6">
+      <div
+        class="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-green-100 text-green-600 rounded-full font-bold text-sm sm:text-base mr-3 sm:mr-4">
+        2
+      </div>
+      <h3 class="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900">Import into Monarch</h3>
+    </div>
+
+    <div class="ml-11 sm:ml-14">
+      <p class="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base leading-relaxed">
+        Follow these steps in your Monarch Money account to import each CSV file:
+      </p>
+
+      <div class="bg-gray-50 rounded-lg p-4 sm:p-6 border border-gray-100">
+        <ol class="space-y-3 sm:space-y-4">
+          <li class="flex items-start gap-3">
+            <span
+              class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+              a
+            </span>
+            <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+              Go to <strong class="text-gray-900">Accounts \u2192 Add account</strong>
+            </div>
+          </li>
+
+          <li class="flex items-start gap-3">
+            <span
+              class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+              b
+            </span>
+            <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+              Choose <strong class="text-gray-900">Add manual account</strong>
+            </div>
+          </li>
+
+          <li class="flex items-start gap-3">
+            <span
+              class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+              c
+            </span>
+            <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+              Select your desired <strong class="text-gray-900">account type</strong>
+            </div>
+          </li>
+
+          <li class="flex items-start gap-3">
+            <span
+              class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+              d
+            </span>
+            <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+              Give it a name and starting balance of <strong
+                class="text-gray-900 bg-yellow-100 px-1 rounded">$0.00</strong>
+            </div>
+          </li>
+
+          <li class="flex items-start gap-3">
+            <span
+              class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+              e
+            </span>
+            <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+              Go to <strong class="text-gray-900">Edit \u2192 Upload transactions</strong>
+            </div>
+          </li>
+
+          <li class="flex items-start gap-3">
+            <span
+              class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+              f
+            </span>
+            <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+              Upload your account CSV file
+            </div>
+          </li>
+
+          <li class="flex items-start gap-3">
+            <span
+              class="flex items-center justify-center w-6 h-6 bg-green-100 text-green-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+              g
+            </span>
+            <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+              <strong class="text-green-700">Enable</strong>
+              <em>"Adjust account's balances based on these transactions"</em>
+            </div>
+          </li>
+
+          <li class="flex items-start gap-3">
+            <span
+              class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+              h
+            </span>
+            <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+              Click <strong class="text-gray-900">Add to account</strong>
+            </div>
+          </li>
+
+          <li class="flex items-start gap-3">
+            <span
+              class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+              i
+            </span>
+            <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
+              <strong class="text-blue-600">Repeat for all your accounts</strong>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Auto Import Promotion -->
+<div
+  class="flex flex-col items-center text-center gap-4 sm:gap-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 sm:p-8 md:p-10 border border-blue-100 w-full max-w-4xl shadow-sm">
+
+  <div class="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center">
+    <svg class="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+    </svg>
+  </div>
+
+  <div>
+    <h3 class="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 mb-2">
+      Want us to do this automatically?
+    </h3>
+    <p class="text-gray-600 text-sm sm:text-base md:text-lg leading-relaxed max-w-2xl">
+      Skip the manual work! Our auto-import feature can handle all of this for you
+      securely and automatically.
     </p>
   </div>
 
-  <!-- Main Instructions Card -->
-  <div class="w-full max-w-4xl bg-white border border-gray-200 rounded-xl shadow-lg p-6 sm:p-8 md:p-10 space-y-8 sm:space-y-10">
-
-    <!-- Step 1: Download -->
-    <div class="relative">
-      <!-- Step Number -->
-      <div class="flex items-center mb-4 sm:mb-6">
-        <div class="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 text-blue-600 rounded-full font-bold text-sm sm:text-base mr-3 sm:mr-4">
-          1
-        </div>
-        <h3 class="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900">Download Files</h3>
-      </div>
-      
-      <div class="ml-11 sm:ml-14">
-        <p class="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base leading-relaxed">
-          Download a ZIP file containing one CSV per account. Each CSV is formatted 
-          specifically for Monarch Money import.
-        </p>
-
-        <a id="downloadBtn" 
-           class="ui-button inline-flex items-center btn-responsive" 
-           data-type="primary" 
-           data-size="large" 
-           href="#">
-          <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 10l5 5 5-5M12 4v12" />
-          </svg>
-          Download CSV Bundle
-        </a>
-      </div>
-    </div>
-
-    <!-- Divider -->
-    <div class="relative">
-      <div class="absolute inset-0 flex items-center">
-        <div class="w-full border-t border-gray-200"></div>
-      </div>
-      <div class="relative flex justify-center">
-        <div class="px-4 bg-white">
-          <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-          </svg>
-        </div>
-      </div>
-    </div>
-
-    <!-- Step 2: Import Instructions -->
-    <div class="relative">
-      <!-- Step Number -->
-      <div class="flex items-center mb-4 sm:mb-6">
-        <div class="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-green-100 text-green-600 rounded-full font-bold text-sm sm:text-base mr-3 sm:mr-4">
-          2
-        </div>
-        <h3 class="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900">Import into Monarch</h3>
-      </div>
-      
-      <div class="ml-11 sm:ml-14">
-        <p class="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base leading-relaxed">
-          Follow these steps in your Monarch Money account to import each CSV file:
-        </p>
-
-        <div class="bg-gray-50 rounded-lg p-4 sm:p-6 border border-gray-100">
-          <ol class="space-y-3 sm:space-y-4">
-            <li class="flex items-start gap-3">
-              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
-                a
-              </span>
-              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
-                Go to <strong class="text-gray-900">Accounts \u2192 Add account</strong>
-              </div>
-            </li>
-            
-            <li class="flex items-start gap-3">
-              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
-                b
-              </span>
-              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
-                Choose <strong class="text-gray-900">Add manual account</strong>
-              </div>
-            </li>
-            
-            <li class="flex items-start gap-3">
-              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
-                c
-              </span>
-              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
-                Select your desired <strong class="text-gray-900">account type</strong>
-              </div>
-            </li>
-            
-            <li class="flex items-start gap-3">
-              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
-                d
-              </span>
-              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
-                Give it a name and starting balance of <strong class="text-gray-900 bg-yellow-100 px-1 rounded">$0.00</strong>
-              </div>
-            </li>
-            
-            <li class="flex items-start gap-3">
-              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
-                e
-              </span>
-              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
-                Go to <strong class="text-gray-900">Edit \u2192 Upload transactions</strong>
-              </div>
-            </li>
-            
-            <li class="flex items-start gap-3">
-              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
-                f
-              </span>
-              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
-                Upload your account CSV file
-              </div>
-            </li>
-            
-            <li class="flex items-start gap-3">
-              <span class="flex items-center justify-center w-6 h-6 bg-green-100 text-green-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
-                g
-              </span>
-              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
-                <strong class="text-green-700">Enable</strong> 
-                <em>"Adjust account's balances based on these transactions"</em>
-              </div>
-            </li>
-            
-            <li class="flex items-start gap-3">
-              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
-                h
-              </span>
-              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
-                Click <strong class="text-gray-900">Add to account</strong>
-              </div>
-            </li>
-            
-            <li class="flex items-start gap-3">
-              <span class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
-                i
-              </span>
-              <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
-                <strong class="text-blue-600">Repeat for all your accounts</strong>
-              </div>
-            </li>
-          </ol>
-        </div>
-      </div>
-    </div>
+  <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+    <button id="switchToAuto" class="ui-button btn-responsive" data-type="primary" data-size="large">
+      Try Auto Import Instead
+    </button>
   </div>
-
-  <!-- Auto Import Promotion -->
-  <div class="flex flex-col items-center text-center gap-4 sm:gap-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 sm:p-8 md:p-10 border border-blue-100 w-full max-w-4xl shadow-sm">
-    
-    <div class="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center">
-      <svg class="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-      </svg>
-    </div>
-    
-    <div>
-      <h3 class="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 mb-2">
-        Want us to do this automatically?
-      </h3>
-      <p class="text-gray-600 text-sm sm:text-base md:text-lg leading-relaxed max-w-2xl">
-        Skip the manual work! Our auto-import feature can handle all of this for you 
-        securely and automatically.
-      </p>
-    </div>
-    
-    <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
-      <button id="switchToAuto" class="ui-button btn-responsive" data-type="primary" data-size="large">
-        Try Auto Import Instead
-      </button>
-    </div>
-  </div>
-
-  <!-- Navigation will be added here by JavaScript -->
-
-</div>
-`;
+</div>`;
 
   // node_modules/uuid/dist/esm-browser/stringify.js
   var byteToHex = [];
@@ -5614,16 +6322,6 @@
   }
   var v4_default = v4;
 
-  // src/api/config.js
-  var base = location.hostname === "localhost" ? "http://localhost:3000/dev/" : "/.netlify/functions/";
-  var API = {
-    login: base + "monarchLogin",
-    fetchAccounts: base + "fetchMonarchAccounts",
-    createAccounts: base + "createMonarchAccounts",
-    generateStatements: base + "generateStatements",
-    getUploadStatus: base + "getUploadStatus"
-  };
-
   // src/api/utils.js
   async function postJson(url, body) {
     const res = await fetch(url, {
@@ -5650,52 +6348,6 @@
     }),
     queryUploadStatus: (token, sessionKey) => postJson(API.getUploadStatus, { token, sessionKey })
   };
-
-  // src/utils/storage.js
-  var STORAGE_KEYS = {
-    EMAIL: "monarchEmail",
-    ENCRYPTED_PASSWORD: "monarchPasswordBase64",
-    TOKEN: "monarchApiToken",
-    UUID: "monarchDeviceUuid",
-    REMEMBER: "monarchRememberMe",
-    TEMP_FOR_OTP: "monarchTempForOtp"
-  };
-  function getLocalStorage() {
-    return {
-      email: get(STORAGE_KEYS.EMAIL),
-      encryptedPassword: get(STORAGE_KEYS.ENCRYPTED_PASSWORD),
-      token: get(STORAGE_KEYS.TOKEN),
-      uuid: get(STORAGE_KEYS.UUID),
-      remember: get(STORAGE_KEYS.REMEMBER) === "true",
-      tempForOtp: get(STORAGE_KEYS.TEMP_FOR_OTP) === "true"
-    };
-  }
-  function saveToLocalStorage({ email, encryptedPassword, token, uuid, remember, tempForOtp }) {
-    if (email)
-      set(STORAGE_KEYS.EMAIL, email);
-    if (encryptedPassword)
-      set(STORAGE_KEYS.ENCRYPTED_PASSWORD, encryptedPassword);
-    if (token)
-      set(STORAGE_KEYS.TOKEN, token);
-    if (uuid)
-      set(STORAGE_KEYS.UUID, uuid);
-    if (typeof remember === "boolean")
-      set(STORAGE_KEYS.REMEMBER, remember ? "true" : "false");
-    if (typeof tempForOtp === "boolean")
-      set(STORAGE_KEYS.TEMP_FOR_OTP, tempForOtp ? "true" : "false");
-  }
-  function clearStorage() {
-    Object.values(STORAGE_KEYS).forEach(remove);
-  }
-  function get(key) {
-    return localStorage.getItem(key);
-  }
-  function set(key, value) {
-    localStorage.setItem(key, value);
-  }
-  function remove(key) {
-    localStorage.removeItem(key);
-  }
 
   // shared/cryptoSpec.js
   var SALT = "monarch-app-salt";
@@ -5768,10 +6420,17 @@
 
   // src/views/MonarchCredentials/monarchCredentials.js
   async function initMonarchCredentialsView() {
-    const mainContainer = document.querySelector(".container-responsive");
-    mainContainer.insertAdjacentHTML("beforeend", createSimpleNavigationBar({
-      backText: "Back"
-    }));
+    renderPageLayout({
+      navbar: {
+        showBackButton: true,
+        showDataButton: true
+      },
+      header: {
+        title: "Auto Import: Connect Your Monarch Account",
+        description: "Authorize your Monarch account so we can directly import your accounts and transactions.",
+        containerId: "pageHeader"
+      }
+    });
     const $ = (id) => document.getElementById(id);
     const UI = {
       emailInput: $("email"),
@@ -5792,7 +6451,6 @@
       securityNoteMsg: $("securityNote"),
       securityNoteIcon: $("securityNoteIcon")
     };
-    renderButtons();
     const { credentials: creds } = state_default;
     const { token, email, encryptedPassword, uuid, remember } = getLocalStorage();
     patchState(creds, {
@@ -5826,7 +6484,6 @@
       const hasPassword = UI.passwordInput.value.trim() || creds.encryptedPassword;
       toggleDisabled(UI.connectBtn, !(hasEmail && hasPassword));
       toggleElementVisibility(UI.errorContainer, false);
-      renderButtons();
     }
     function updateSecurityNote(status) {
       const COLOR = {
@@ -5925,7 +6582,6 @@
       toggleElementVisibility(UI.notYouContainer, false);
       toggleElementVisibility(UI.rememberMeContainer, true);
       updateSecurityNote();
-      renderButtons();
       UI.emailInput.focus();
     }
     function onChangeRemember() {
@@ -5941,9 +6597,6 @@
       toggleElementVisibility(UI.eyeShow, !isHidden);
       toggleElementVisibility(UI.eyeHide, isHidden);
     }
-    function onClickBack() {
-      goBack();
-    }
     function showError(message) {
       UI.errorBox.textContent = message;
       toggleElementVisibility(UI.errorContainer, true);
@@ -5953,7 +6606,6 @@
     UI.clearCredentialsBtn.addEventListener("click", onClickClearCredentials);
     UI.rememberCheckbox.addEventListener("change", onChangeRemember);
     UI.toggleBtn.addEventListener("click", onTogglePassword);
-    UI.backBtn.addEventListener("click", onClickBack);
     [UI.emailInput, UI.passwordInput].forEach((input) => {
       input.addEventListener("input", validateForm);
       input.addEventListener("focus", () => input.classList.add("ring-2", "ring-blue-500", "outline-none"));
@@ -5963,154 +6615,132 @@
   }
 
   // src/views/MonarchCredentials/monarchCredentials.html
-  var monarchCredentials_default = `<div class="container-responsive flex flex-col items-center justify-center py-6 sm:py-8 md:py-12 lg:py-16 space-y-6 sm:space-y-8 min-h-[calc(100vh-200px)]">
+  var monarchCredentials_default = `<div id="pageLayout"></div>
 
-  <!-- Header -->
-  <div class="text-center max-w-2xl w-full">
-    <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-gray-900">
-      Auto Import: Connect Your Monarch Account
-    </h2>
-    <p class="text-gray-600 text-sm sm:text-base md:text-lg leading-relaxed">
-      Authorize your Monarch account so we can directly import your accounts and transactions.
-    </p>
-  </div>
+<!-- Main Form Container -->
+<div class="w-full max-w-md mx-auto bg-white border border-gray-200 rounded-xl shadow-lg p-6 sm:p-8 md:p-10">
 
-  <!-- Main Form Container -->
-  <div class="w-full max-w-md mx-auto bg-white border border-gray-200 rounded-xl shadow-lg p-6 sm:p-8 md:p-10">
+  <form id="credentialsForm" class="space-y-4 sm:space-y-6">
 
-    <form id="credentialsForm" class="space-y-4 sm:space-y-6">
-      
-      <!-- Email Field -->
-      <div class="space-y-2">
-        <label class="block font-semibold text-sm sm:text-base text-gray-900 cursor-pointer" for="email">
-          Email Address
-        </label>
-        <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg class="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-            </svg>
-          </div>
-          <input id="email" 
-                 type="email" 
-                 class="block w-full pl-9 sm:pl-10 pr-3 py-2.5 sm:py-3 text-sm sm:text-base 
-                        border border-gray-300 rounded-lg placeholder-gray-400 
-                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
-                        transition-colors duration-200" 
-                 placeholder="you@email.com"
-                 autocomplete="username"
-                 required>
-        </div>
-      </div>
-
-      <!-- Password Field -->
-      <div class="space-y-2">
-        <label class="block font-semibold text-sm sm:text-base text-gray-900 cursor-pointer" for="password">
-          Password
-        </label>
-        <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg class="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
-          <input id="password" 
-                 type="password" 
-                 class="block w-full pl-9 sm:pl-10 pr-12 sm:pr-14 py-2.5 sm:py-3 text-sm sm:text-base 
-                        border border-gray-300 rounded-lg placeholder-gray-400 
-                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
-                        transition-colors duration-200" 
-                 placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" 
-                 autocomplete="current-password"
-                 required>
-
-          <button type="button" 
-                  id="togglePassword" 
-                  aria-label="Toggle password visibility"
-                  class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer 
-                         text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600 
-                         transition-colors duration-200">
-            <!-- Show Icon -->
-            <svg id="eyeShow" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-
-            <!-- Hide Icon -->
-            <svg id="eyeHide" class="h-4 w-4 sm:h-5 sm:w-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.27-2.945-9.543-7a9.966 9.966 0 012.398-4.442M9.88 9.88a3 3 0 104.24 4.24M6.1 6.1L17.9 17.9" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- Remember Me Checkbox -->
-      <div id="rememberMe" class="flex items-start gap-3">
-        <div class="flex items-center h-5">
-          <input id="rememberCredentials" 
-                 type="checkbox" 
-                 class="w-4 h-4 sm:w-5 sm:h-5 cursor-pointer rounded border-gray-300 
-                        text-blue-600 focus:ring-blue-500 focus:ring-2">
-        </div>
-        <div class="text-sm sm:text-base">
-          <label for="rememberCredentials" class="text-gray-700 cursor-pointer leading-relaxed">
-            Remember me for this session
-            <span class="block text-xs text-gray-500 mt-1">
-              We'll securely store your credentials locally for convenience
-            </span>
-          </label>
-        </div>
-      </div>
-
-      <!-- Not You? -->
-      <div id="notYouContainer" class="mt-2 text-sm text-gray-500 hidden">
-        <span id="rememberedEmail">"some@thing.com"</span>
-        <button type="button" id="clearCredentialsBtn" class="ml-2 text-blue-600 cursor-pointer hover:underline">Not You?</button>
-      </div>
-
-      <!-- Error Message -->
-      <div id="credentialsError" class="hidden bg-red-50 border border-red-200 rounded-lg p-3">
-        <div class="flex items-start gap-2">
-          <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+    <!-- Email Field -->
+    <div class="space-y-2">
+      <label class="block font-semibold text-sm sm:text-base text-gray-900 cursor-pointer" for="email">
+        Email Address
+      </label>
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <svg class="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
           </svg>
-          <p id="errorBox" class="text-sm text-red-800">Error message will appear here</p>
         </div>
-      </div>
-
-      <!-- Submit Button -->
-      <button id="connectBtn" 
-              type="submit" 
-              class="ui-button w-full btn-responsive" 
-              data-type="primary" 
-              data-size="large">
-        <span id="loginBtnText">Connect to Monarch</span>
-        <svg id="loginSpinner" class="hidden animate-spin ml-2 h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-      </button>
-    </form>
-
-    <!-- Security Note -->
-    <div class="flex items-start gap-3 mt-6 sm:mt-8 p-4 bg-green-50 border border-green-200 rounded-lg">
-      <div class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5">
-        <svg id="securityNoteIcon" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
-          <path d="M9 12l2 2 4-4" stroke="white" stroke-width="2" fill="none"/>
-        </svg>
-      </div>
-      <div>
-        <p id="securityNote" class="text-xs sm:text-sm text-green-800 leading-relaxed">
-          <strong>Secure Connection:</strong> Your credentials are transmitted using bank-level encryption 
-          and are never stored on our servers. We use the same security standards as major financial institutions.
-        </p>
+        <input id="email" type="email" class="block w-full pl-9 sm:pl-10 pr-3 py-2.5 sm:py-3 text-sm sm:text-base 
+                        border border-gray-300 rounded-lg placeholder-gray-400 
+                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+                        transition-colors duration-200" placeholder="you@email.com" autocomplete="username" required>
       </div>
     </div>
 
-  </div>
+    <!-- Password Field -->
+    <div class="space-y-2">
+      <label class="block font-semibold text-sm sm:text-base text-gray-900 cursor-pointer" for="password">
+        Password
+      </label>
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <svg class="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <input id="password" type="password" class="block w-full pl-9 sm:pl-10 pr-12 sm:pr-14 py-2.5 sm:py-3 text-sm sm:text-base 
+                        border border-gray-300 rounded-lg placeholder-gray-400 
+                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+                        transition-colors duration-200" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" autocomplete="current-password"
+          required>
 
-  <!-- Navigation will be added here by JavaScript -->
+        <button type="button" id="togglePassword" aria-label="Toggle password visibility" class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer 
+                         text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600 
+                         transition-colors duration-200">
+          <!-- Show Icon -->
+          <svg id="eyeShow" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+
+          <!-- Hide Icon -->
+          <svg id="eyeHide" class="h-4 w-4 sm:h-5 sm:w-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.27-2.945-9.543-7a9.966 9.966 0 012.398-4.442M9.88 9.88a3 3 0 104.24 4.24M6.1 6.1L17.9 17.9" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Remember Me Checkbox -->
+    <div id="rememberMe" class="flex items-start gap-3">
+      <div class="flex items-center h-5">
+        <input id="rememberCredentials" type="checkbox" class="w-4 h-4 sm:w-5 sm:h-5 cursor-pointer rounded border-gray-300 
+                        text-blue-600 focus:ring-blue-500 focus:ring-2">
+      </div>
+      <div class="text-sm sm:text-base">
+        <label for="rememberCredentials" class="text-gray-700 cursor-pointer leading-relaxed">
+          Remember me for this session
+          <span class="block text-xs text-gray-500 mt-1">
+            We'll securely store your credentials locally for convenience
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Not You? -->
+    <div id="notYouContainer" class="mt-2 text-sm text-gray-500 hidden">
+      <span id="rememberedEmail">"some@thing.com"</span>
+      <button type="button" id="clearCredentialsBtn" class="ml-2 text-blue-600 cursor-pointer hover:underline">Not
+        You?</button>
+    </div>
+
+    <!-- Error Message -->
+    <div id="credentialsError" class="hidden bg-red-50 border border-red-200 rounded-lg p-3">
+      <div class="flex items-start gap-2">
+        <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+            clip-rule="evenodd" />
+        </svg>
+        <p id="errorBox" class="text-sm text-red-800">Error message will appear here</p>
+      </div>
+    </div>
+
+    <!-- Submit Button -->
+    <button id="connectBtn" type="submit" class="ui-button w-full btn-responsive" data-type="primary" data-size="large">
+      <span id="loginBtnText">Connect to Monarch</span>
+      <svg id="loginSpinner" class="hidden animate-spin ml-2 h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+        </path>
+      </svg>
+    </button>
+  </form>
+
+  <!-- Security Note -->
+  <div class="flex items-start gap-3 mt-6 sm:mt-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+    <div class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5">
+      <svg id="securityNoteIcon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />
+        <path d="M9 12l2 2 4-4" stroke="white" stroke-width="2" fill="none" />
+      </svg>
+    </div>
+    <div>
+      <p id="securityNote" class="text-xs sm:text-sm text-green-800 leading-relaxed">
+        <strong>Secure Connection:</strong> Your credentials are transmitted using bank-level encryption
+        and are never stored on our servers. We use the same security standards as major financial institutions.
+      </p>
+    </div>
+  </div>
 
 </div>
 
@@ -6129,20 +6759,27 @@
     visibility: hidden;
   }
 
-  #togglePassword, #clearCredentialsBtn {
+  #togglePassword,
+  #clearCredentialsBtn {
     transition: none !important;
     box-shadow: none !important;
     transform: none !important;
   }
-</style>
-`;
+</style>`;
 
   // src/views/MonarchOtp/monarchOtp.js
   function initMonarchOtpView() {
-    const mainContainer = document.querySelector(".container-responsive");
-    mainContainer.insertAdjacentHTML("beforeend", createSimpleNavigationBar({
-      backText: "Back"
-    }));
+    renderPageLayout({
+      navbar: {
+        showBackButton: true,
+        showDataButton: true
+      },
+      header: {
+        title: "Enter Your Verification Code",
+        description: "Monarch has sent a 6-digit verification code to your email address. Enter it below to continue with the secure import process.",
+        containerId: "pageHeader"
+      }
+    });
     const $ = (id) => document.getElementById(id);
     const UI = {
       otpInput: $("otpInput"),
@@ -6150,7 +6787,6 @@
       otpError: $("otpError"),
       backBtn: $("backBtn")
     };
-    renderButtons();
     const { credentials } = state_default;
     const storage = getLocalStorage();
     const { email, encryptedPassword, uuid, remember, tempForOtp } = storage;
@@ -6210,7 +6846,6 @@
     function onOtpInput() {
       UI.otpInput.value = UI.otpInput.value.replace(/\D/g, "").slice(0, 6);
       toggleDisabled(UI.submitOtpBtn, UI.otpInput.value.length !== 6);
-      renderButtons();
     }
     function onOtpKeyDown(e) {
       if (e.key === "Enter" && UI.otpInput.value.length === 6) {
@@ -6225,116 +6860,100 @@
   }
 
   // src/views/MonarchOtp/monarchOtp.html
-  var monarchOtp_default = `<div class="container-responsive flex flex-col items-center justify-center py-6 sm:py-8 md:py-12 lg:py-16 space-y-8 sm:space-y-10 md:space-y-12 min-h-[calc(100vh-200px)]">
+  var monarchOtp_default = `<div id="pageLayout"></div>
 
-  <!-- Header -->
-  <div class="text-center max-w-2xl w-full">
-    <div class="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-blue-100 rounded-full mb-4 sm:mb-6">
-      <svg class="w-8 h-8 sm:w-10 sm:h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-      </svg>
-    </div>
-    
-    <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-gray-900">
-      Enter Your Verification Code
-    </h2>
-    <p class="text-gray-600 text-sm sm:text-base md:text-lg leading-relaxed">
-      Monarch has sent a 6-digit verification code to your email address. 
-      Enter it below to continue with the secure import process.
-    </p>
-  </div>
+<!-- OTP Input Section -->
+<div class="flex flex-col items-center space-y-6 sm:space-y-8 w-full max-w-sm mx-auto">
 
-  <!-- OTP Input Section -->
-  <div class="flex flex-col items-center space-y-6 sm:space-y-8 w-full max-w-sm mx-auto">
-
-    <!-- OTP Input Field -->
-    <div class="relative w-full">
-      <input id="otpInput" 
-             type="text" 
-             maxlength="6" 
-             pattern="[0-9]*" 
-             inputmode="numeric"
-             class="w-full px-4 py-4 sm:py-5 text-center text-xl sm:text-2xl md:text-3xl 
+  <!-- OTP Input Field -->
+  <div class="relative w-full">
+    <input id="otpInput" type="text" maxlength="6" pattern="[0-9]*" inputmode="numeric" class="w-full px-4 py-4 sm:py-5 text-center text-xl sm:text-2xl md:text-3xl 
                     tracking-widest font-mono border-2 border-gray-300 rounded-xl 
                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
-                    transition-colors duration-200 bg-gray-50 focus:bg-white"
-             placeholder="\u2022 \u2022 \u2022 \u2022 \u2022 \u2022"
-             autocomplete="one-time-code">
-      
-      <!-- Input hint -->
-      <div class="absolute -bottom-6 left-0 right-0 text-center">
-        <span class="text-xs sm:text-sm text-gray-500">6-digit code from your email</span>
-      </div>
+                    transition-colors duration-200 bg-gray-50 focus:bg-white" placeholder="\u2022 \u2022 \u2022 \u2022 \u2022 \u2022"
+      autocomplete="one-time-code">
+
+    <!-- Input hint -->
+    <div class="absolute -bottom-6 left-0 right-0 text-center">
+      <span class="text-xs sm:text-sm text-gray-500">6-digit code from your email</span>
     </div>
-
-    <!-- Error Message -->
-    <div id="otpError" 
-         class="hidden bg-red-50 border border-red-200 rounded-lg p-3 w-full">
-      <div class="flex items-center gap-2">
-        <svg class="w-5 h-5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-        </svg>
-        <p class="text-sm text-red-800">Invalid code. Please try again.</p>
-      </div>
-    </div>
-
-    <!-- Important Warning -->
-    <div class="w-full bg-amber-50 border border-amber-200 rounded-lg p-3">
-      <div class="flex items-start gap-2">
-        <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-        </svg>
-        <div>
-          <p class="text-xs sm:text-sm text-amber-800 leading-relaxed">
-            <strong>Important:</strong> Too many failed attempts will trigger Monarch Money's security system, 
-            temporarily blocking access to your account for up to 24 hours. Please enter the code carefully.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Submit Button -->
-    <button id="submitOtpBtn"
-            class="ui-button w-full btn-responsive" 
-            data-type="primary" 
-            data-size="large"
-            disabled>
-      <span id="submitOtpBtnText">Verify & Start Import</span>
-      <svg id="submitOtpSpinner" class="hidden animate-spin ml-2 h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-    </button>
-
   </div>
 
-  <!-- Security Note -->
-  <div class="w-full max-w-md mx-auto">
-    <div class="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-      <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+  <!-- Error Message -->
+  <div id="otpError" class="hidden bg-red-50 border border-red-200 rounded-lg p-3 w-full">
+    <div class="flex items-center gap-2">
+      <svg class="w-5 h-5 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd"
+          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+          clip-rule="evenodd" />
+      </svg>
+      <p class="text-sm text-red-800">Invalid code. Please try again.</p>
+    </div>
+  </div>
+
+  <!-- Important Warning -->
+  <div class="w-full bg-amber-50 border border-amber-200 rounded-lg p-3">
+    <div class="flex items-start gap-2">
+      <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd"
+          d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+          clip-rule="evenodd" />
       </svg>
       <div>
-        <p class="text-xs sm:text-sm text-blue-800 leading-relaxed">
-          <strong>Security Notice:</strong> This verification step ensures your account's security. 
-          The code expires in 10 minutes for your protection.
+        <p class="text-xs sm:text-sm text-amber-800 leading-relaxed">
+          <strong>Important:</strong> Too many failed attempts will trigger Monarch Money's security system,
+          temporarily blocking access to your account for up to 24 hours. Please enter the code carefully.
         </p>
       </div>
     </div>
   </div>
 
-  <!-- Navigation will be added here by JavaScript -->
+  <!-- Submit Button -->
+  <button id="submitOtpBtn" class="ui-button w-full btn-responsive" data-type="primary" data-size="large" disabled>
+    <span id="submitOtpBtnText">Verify & Start Import</span>
+    <svg id="submitOtpSpinner" class="hidden animate-spin ml-2 h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+      </path>
+    </svg>
+  </button>
 
 </div>
-`;
+
+<!-- Security Note -->
+<div class="w-full max-w-md mx-auto">
+  <div class="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+    <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd"
+        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+        clip-rule="evenodd" />
+    </svg>
+    <div>
+      <p class="text-xs sm:text-sm text-blue-800 leading-relaxed">
+        <strong>Security Notice:</strong> This verification step ensures your account's security.
+        The code expires in 10 minutes for your protection.
+      </p>
+    </div>
+  </div>
+</div>`;
 
   // src/views/MonarchComplete/monarchComplete.js
   function initMonarchCompleteView() {
-    console.log("MonarchComplete view initialized");
     if (!state_default.accounts || Object.keys(state_default.accounts).length === 0) {
       navigate("/upload", true);
       return;
     }
+    renderPageLayout({
+      navbar: {
+        showBackButton: true,
+        showDataButton: true
+      },
+      header: {
+        title: "Migration Status",
+        containerId: "pageHeader"
+      }
+    });
     const resultsContainer = document.getElementById("resultsContainer");
     const accountList = document.getElementById("accountList");
     const actionButtonsContainer = document.getElementById("actionButtonsContainer");
@@ -6351,7 +6970,6 @@
     }
     initializeProcessing();
     function initializeProcessing() {
-      console.log("Initializing processing with accounts:", state_default.accounts);
       Object.keys(state_default.accounts).forEach((accountName) => {
         if (!state_default.accounts[accountName].status) {
           state_default.accounts[accountName].status = "pending";
@@ -6365,7 +6983,6 @@
     async function processAccountsInBatches() {
       const BATCH_SIZE = 5;
       const token = state_default.credentials.apiToken;
-      console.log("Starting batch processing. Token available:", !!token);
       if (!token) {
         console.error("No API token available");
         Object.keys(state_default.accounts).forEach((accountName) => {
@@ -6379,8 +6996,7 @@
         updateActionButtons();
         return;
       }
-      const allAccountsToProcess = Object.entries(state_default.accounts).filter(([accountName, account]) => account.included && account.status !== "completed").map(([accountName, account]) => ({ accountName, ...account }));
-      console.log("Total accounts to process:", allAccountsToProcess.length);
+      const allAccountsToProcess = Object.entries(state_default.accounts).filter(([_, account]) => account.included && account.status !== "completed").map(([accountName, account]) => ({ accountName, ...account }));
       if (allAccountsToProcess.length === 0) {
         console.log("No accounts to process");
         updateStatusOverview();
@@ -6391,10 +7007,8 @@
       for (let i = 0; i < allAccountsToProcess.length; i += BATCH_SIZE) {
         batches.push(allAccountsToProcess.slice(i, i + BATCH_SIZE));
       }
-      console.log(`Processing ${allAccountsToProcess.length} accounts in ${batches.length} batches of ${BATCH_SIZE}`);
       for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
         const batch = batches[batchIndex];
-        console.log(`Processing batch ${batchIndex + 1}/${batches.length} with ${batch.length} accounts`);
         batch.forEach((account) => {
           if (state_default.accounts[account.accountName]) {
             state_default.accounts[account.accountName].status = "processing";
@@ -6413,22 +7027,18 @@
     }
     async function processBatch(token, batch, batchNumber, totalBatches) {
       try {
-        console.log(`Calling API for batch ${batchNumber}/${totalBatches}...`);
         const response = await monarchApi.createAccounts(token, batch);
-        console.log(`Batch ${batchNumber} create accounts response:`, response);
         if (response.success || response.failed) {
           if (response.failed && response.failed.length > 0) {
             response.failed.forEach((result) => {
               const matchingAccount = batch.find((acc) => acc.name === result.name || acc.modifiedName === result.name);
               if (matchingAccount && state_default.accounts[matchingAccount.accountName]) {
-                console.log(`Batch ${batchNumber}: Marking account as failed: ${matchingAccount.accountName}, error: ${result.error}`);
                 state_default.accounts[matchingAccount.accountName].status = "failed";
                 state_default.accounts[matchingAccount.accountName].errorMessage = result.error || "Account creation failed";
               }
             });
           }
           if (response.success && response.success.length > 0) {
-            console.log(`Batch ${batchNumber}: Monitoring upload status for ${response.success.length} accounts...`);
             response.success.forEach((result) => {
               const matchingAccount = batch.find((acc) => acc.name === result.name || acc.modifiedName === result.name);
               if (matchingAccount && state_default.accounts[matchingAccount.accountName]) {
@@ -6443,10 +7053,8 @@
               if (matchingAccount && state_default.accounts[matchingAccount.accountName] && result.sessionKeys) {
                 try {
                   await monitorUploadStatus(token, matchingAccount.accountName, result.sessionKeys);
-                  console.log(`Batch ${batchNumber}: Upload completed for account: ${matchingAccount.accountName}`);
                   state_default.accounts[matchingAccount.accountName].status = "completed";
                 } catch (error) {
-                  console.error(`Batch ${batchNumber}: Upload failed for account: ${matchingAccount.accountName}`, error);
                   state_default.accounts[matchingAccount.accountName].status = "failed";
                   state_default.accounts[matchingAccount.accountName].errorMessage = error.message || "Transaction upload failed";
                 }
@@ -6455,23 +7063,20 @@
           }
           batch.forEach((account) => {
             if (state_default.accounts[account.accountName] && state_default.accounts[account.accountName].status === "processing") {
-              console.log(`Batch ${batchNumber}: Account not found in API response, marking as failed: ${account.accountName}`);
-              state_default.accounts[account.accountName].status = "failed";
+              tate.accounts[account.accountName].status = "failed";
               state_default.accounts[account.accountName].errorMessage = "Account not processed by server";
             }
           });
         } else {
-          const errorMessage = response.error || "Failed to create accounts in Monarch Money";
-          console.log(`Batch ${batchNumber} failed, marking all as failed:`, errorMessage);
+          const errorMessage2 = response.error || "Failed to create accounts in Monarch Money";
           batch.forEach((account) => {
             if (state_default.accounts[account.accountName]) {
               state_default.accounts[account.accountName].status = "failed";
-              state_default.accounts[account.accountName].errorMessage = errorMessage;
+              state_default.accounts[account.accountName].errorMessage = errorMessage2;
             }
           });
         }
       } catch (error) {
-        console.error(`Batch ${batchNumber} error:`, error);
         batch.forEach((account) => {
           if (state_default.accounts[account.accountName]) {
             state_default.accounts[account.accountName].status = "failed";
@@ -6481,30 +7086,25 @@
       }
     }
     async function monitorUploadStatus(token, accountName, sessionKeys) {
-      console.log(`Monitoring upload status for account: ${accountName}, sessions: ${sessionKeys.length}`);
       await Promise.all(sessionKeys.map(async (sessionKey) => {
         let attempts = 0;
         const maxAttempts = 60;
         while (attempts < maxAttempts) {
           try {
             const statusResponse = await monarchApi.queryUploadStatus(token, sessionKey);
-            console.log(`Upload status for ${accountName} session ${sessionKey}:`, statusResponse);
             if (statusResponse.data?.uploadStatementSession) {
               const session = statusResponse.data.uploadStatementSession;
               const status = session.status;
               if (status === "completed") {
-                console.log(`Upload completed for ${accountName} session ${sessionKey}`);
                 return;
               } else if (status === "failed" || status === "error") {
-                const errorMessage = session.errorMessage || "Transaction upload failed";
-                console.error(`Upload failed for ${accountName} session ${sessionKey}:`, errorMessage);
-                throw new Error(errorMessage);
+                const errorMessage2 = session.errorMessage || "Transaction upload failed";
+                throw new Error(errorMessage2);
               }
             }
             await new Promise((resolve) => setTimeout(resolve, 5e3));
             attempts++;
           } catch (error) {
-            console.error(`Error checking upload status for ${accountName}:`, error);
             attempts++;
             if (attempts >= maxAttempts) {
               throw error;
@@ -6600,19 +7200,12 @@
             statusText = "Pending";
         }
         let accountTypeDisplay = "Unknown Type";
-        console.log(`Account ${accountId} type data:`, {
-          type: account.type,
-          subtype: account.subtype,
-          accountObject: account
-        });
         if (account.type) {
           const typeInfo = getAccountTypeByName(account.type);
-          console.log(`Type info for '${account.type}':`, typeInfo);
           if (typeInfo) {
             accountTypeDisplay = typeInfo.typeDisplay || typeInfo.displayName || typeInfo.display;
             if (account.subtype) {
               const subtypeInfo = getSubtypeByName(account.type, account.subtype);
-              console.log(`Subtype info for '${account.type}' -> '${account.subtype}':`, subtypeInfo);
               if (subtypeInfo) {
                 accountTypeDisplay = subtypeInfo.display || subtypeInfo.displayName;
               }
@@ -6671,7 +7264,6 @@
       startOverBtn.textContent = "Start Over";
       startOverBtn.addEventListener("click", () => navigate("/upload", true));
       actionButtonsContainer.appendChild(startOverBtn);
-      renderButtons();
     }
     function retryFailedAccounts() {
       const failedAccounts = Object.entries(state_default.accounts).filter(([accountName, acc]) => acc.included && acc.status === "failed");
@@ -6690,128 +7282,552 @@
   var monarchComplete_default = initMonarchCompleteView;
 
   // src/views/MonarchComplete/monarchComplete.html
-  var monarchComplete_default2 = `<div class="container-responsive flex flex-col items-center justify-center py-8 sm:py-12 md:py-16 lg:py-24 space-y-8 sm:space-y-10 md:space-y-12 min-h-[calc(100vh-200px)]">
+  var monarchComplete_default2 = `<div id="pageLayout"></div>
 
-  <!-- Results Container -->
-  <div id="resultsContainer" 
-       class="text-center transition-opacity duration-500 ease-in-out w-full max-w-5xl opacity-0">
-    
-    <!-- Status Icon -->
-    <div id="overallStatus" 
-         class="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 mx-auto mb-6 sm:mb-8 
+<!-- Results Container -->
+<div id="resultsContainer" class="text-center transition-opacity duration-500 ease-in-out w-full max-w-5xl opacity-0">
+
+  <!-- Status Icon -->
+  <div id="overallStatus" class="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 mx-auto mb-6 sm:mb-8 
                 transition-all duration-500 ease-in-out">
+    <!-- Updated dynamically -->
+  </div>
+
+  <!-- Header -->
+  <div class="mb-6 sm:mb-8 md:mb-10">
+    <h2 id="header" class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-gray-900">
       <!-- Updated dynamically -->
-    </div>
-
-    <!-- Header -->
-    <div class="mb-6 sm:mb-8 md:mb-10">
-      <h2 id="header" 
-          class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 text-gray-900">
-        <!-- Updated dynamically -->
-      </h2>
-      <p id="subheader" 
-         class="text-gray-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
-        <!-- Updated dynamically -->
-      </p>
-    </div>
-
-    <!-- Account Status List -->
-    <div id="accountList" 
-         class="text-left max-w-3xl w-full mx-auto space-y-3 sm:space-y-4 transition-all duration-300 mb-8 sm:mb-10 md:mb-12">
-      <!-- Account rows inserted by JavaScript -->
-    </div>
-
-    <!-- Action Buttons Container -->
-    <div id="actionButtonsContainer" 
-         class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full max-w-2xl">
-      <!-- Buttons inserted dynamically -->
-    </div>
-
+    </h2>
+    <p id="subheader" class="text-gray-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
+      <!-- Updated dynamically -->
+    </p>
   </div>
 
-  <!-- Loading State -->
-  <div id="loadingContainer" 
-       class="text-center w-full max-w-md">
-    
-    <div class="mb-6 sm:mb-8">
-      <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6">
-        <svg class="animate-spin w-full h-full text-blue-600" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-      </div>
-      
-      <h2 class="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 text-gray-900">
-        Processing Your Import
-      </h2>
-      <p class="text-gray-600 text-sm sm:text-base leading-relaxed">
-        We're securely importing your accounts into Monarch Money. This may take a few moments...
-      </p>
+  <!-- Account Status List -->
+  <div id="accountList"
+    class="text-left max-w-3xl w-full mx-auto space-y-3 sm:space-y-4 transition-all duration-300 mb-8 sm:mb-10 md:mb-12">
+    <!-- Account rows inserted by JavaScript -->
+  </div>
+
+  <!-- Action Buttons Container -->
+  <div id="actionButtonsContainer"
+    class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full max-w-2xl">
+    <!-- Buttons inserted dynamically -->
+  </div>
+
+</div>
+
+<!-- Loading State -->
+<div id="loadingContainer" class="text-center w-full max-w-md">
+
+  <div class="mb-6 sm:mb-8">
+    <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6">
+      <svg class="animate-spin w-full h-full text-blue-600" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+        </path>
+      </svg>
     </div>
 
-    <!-- Progress Steps -->
-    <div class="space-y-3 sm:space-y-4 text-left">
-      <div id="step1" class="flex items-center gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
-        <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
-          <svg class="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+    <h2 class="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 text-gray-900">
+      Processing Your Import
+    </h2>
+    <p class="text-gray-600 text-sm sm:text-base leading-relaxed">
+      We're securely importing your accounts into Monarch Money. This may take a few moments...
+    </p>
+  </div>
+
+  <!-- Progress Steps -->
+  <div class="space-y-3 sm:space-y-4 text-left">
+    <div id="step1" class="flex items-center gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
+      <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+        <svg class="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+      <span class="text-sm sm:text-base text-blue-800 font-medium">Authenticating with Monarch</span>
+    </div>
+
+    <div id="step2" class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+      <div
+        class="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-gray-300 flex items-center justify-center flex-shrink-0">
+        <div class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-gray-300"></div>
+      </div>
+      <span class="text-sm sm:text-base text-gray-600">Creating accounts</span>
+    </div>
+
+    <div id="step3" class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+      <div
+        class="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-gray-300 flex items-center justify-center flex-shrink-0">
+        <div class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-gray-300"></div>
+      </div>
+      <span class="text-sm sm:text-base text-gray-600">Importing transactions</span>
+    </div>
+
+    <div id="step4" class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+      <div
+        class="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-gray-300 flex items-center justify-center flex-shrink-0">
+        <div class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-gray-300"></div>
+      </div>
+      <span class="text-sm sm:text-base text-gray-600">Finalizing import</span>
+    </div>
+  </div>
+
+  <!-- Security Note -->
+  <div class="mt-6 sm:mt-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+    <div class="flex items-start gap-3">
+      <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd"
+          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+          clip-rule="evenodd" />
+      </svg>
+      <p class="text-xs sm:text-sm text-green-800 leading-relaxed">
+        <strong>Secure Process:</strong> Your data is encrypted during transfer and we never store your Monarch
+        credentials.
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<button id="continueBtn" class="ui-button">
+  Continue
+</button>`;
+
+  // src/views/YnabOauthCallback/ynabOauthCallback.js
+  async function initYnabOauthCallbackView() {
+    const heroMessage = document.querySelector("[data-ynab-oauth-message]");
+    if (heroMessage) {
+      heroMessage.textContent = "Processing YNAB authorization...";
+    }
+    await handleOauthCallback();
+  }
+
+  // src/views/YnabOauthCallback/ynabOauthCallback.html
+  var ynabOauthCallback_default = '<div class="container-responsive flex flex-col items-center justify-center space-y-6 py-8 sm:py-10 lg:py-14 min-h-[calc(100vh-220px)]">\n  <section class="w-full max-w-4xl space-y-6">\n    <header class="bg-gradient-to-r from-blue-50 via-white to-indigo-50 border border-transparent rounded-3xl shadow-2xl p-6 sm:p-8">\n      <div class="flex items-start gap-4">\n        <div class="flex-shrink-0 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-blue-100 text-blue-600" data-ynab-oauth-icon>\n          <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 10-14 0 7 7 0 0014 0z" />\n          </svg>\n        </div>\n        <div class="flex-1 space-y-2">\n          <p class="text-xs sm:text-sm uppercase tracking-[0.3em] text-blue-500 font-semibold">Authorization flow</p>\n          <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">Finish connecting YNAB</h1>\n          <p class="text-sm sm:text-base text-gray-600 leading-relaxed">We returned here immediately after you granted access inside YNAB. This page safely captures the authorization code so the app can continue.</p>\n        </div>\n        <span class="text-xs font-semibold px-3 py-1 rounded-full bg-white/70 text-blue-700 border border-blue-100">Secure</span>\n      </div>\n    </header>\n\n    <article class="bg-white border border-gray-200 rounded-3xl shadow-xl p-6 sm:p-8 space-y-6">\n      <div class="flex items-start justify-between gap-4">\n        <div class="flex items-center gap-3">\n          <div class="flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-50 text-blue-600" data-ynab-oauth-hero-icon>\n            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">\n              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5s-3 1.343-3 3 1.343 3 3 3zm0 2c-3.866 0-7 1.79-7 4v1h14v-1c0-2.21-3.134-4-7-4z" />\n            </svg>\n          </div>\n          <div>\n            <p class="text-xs uppercase tracking-[0.2em] text-gray-400 font-semibold">Callback status</p>\n            <p class="text-lg font-bold text-gray-900 leading-tight" data-ynab-oauth-message>Receiving the authorization code\u2026</p>\n            <p class="text-sm text-gray-500 leading-relaxed" data-ynab-oauth-subtext aria-live="polite">Hang tight while we confirm the details sent back from YNAB.</p>\n          </div>\n        </div>\n        <span class="rounded-full px-3 py-1 text-xs font-semibold bg-gray-100 text-gray-600" data-ynab-oauth-badge>Pending</span>\n      </div>\n\n      <div class="rounded-2xl border border-dashed border-blue-100 bg-blue-50/60 p-4 text-sm text-blue-800" data-ynab-oauth-callout>\n        We are securely capturing the authorization code so you can continue the import without typing credentials again.\n      </div>\n\n      <div class="flex flex-wrap gap-3" aria-live="polite">\n        <button class="ui-button btn-responsive" data-type="primary" data-size="large" data-ynab-oauth-continue>\n          Return to the app\n        </button>\n        <a class="ui-button" data-type="text" data-size="medium" data-ynab-oauth-open href="https://app.youneedabudget.com" target="_blank" rel="noopener noreferrer">\n          Open YNAB in a new tab\n        </a>\n      </div>\n\n      <div class="space-y-2" aria-live="polite">\n        <label for="ynabOauthCode" class="text-xs font-semibold uppercase tracking-[0.3em] text-gray-500">Authorization code</label>\n        <div class="flex gap-3">\n          <input id="ynabOauthCode" class="flex-1 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700" type="text" value="" readonly placeholder="Awaiting code" data-ynab-oauth-code>\n          <button class="ui-button" data-type="secondary" data-size="small" data-ynab-oauth-copy disabled>\n            Copy code\n          </button>\n          <span class="text-xs font-semibold text-green-600 hidden" data-ynab-oauth-copy-status>Copied!</span>\n        </div>\n      </div>\n    </article>\n\n    <div class="grid gap-4 sm:grid-cols-3">\n      <article class="border border-gray-200 rounded-3xl bg-white p-4 space-y-2" data-ynab-oauth-step="request">\n        <div class="flex items-center gap-2">\n          <span class="inline-flex items-center justify-center w-8 h-8 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-600" data-ynab-oauth-step-indicator data-step-index="1">1</span>\n          <h3 class="text-sm font-semibold text-gray-900">Request issued</h3>\n        </div>\n        <p class="text-xs text-gray-500 leading-relaxed">You clicked continue inside YNAB to begin the OAuth handshake.</p>\n      </article>\n      <article class="border border-gray-200 rounded-3xl bg-white p-4 space-y-2" data-ynab-oauth-step="approval">\n        <div class="flex items-center gap-2">\n          <span class="inline-flex items-center justify-center w-8 h-8 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-600" data-ynab-oauth-step-indicator data-step-index="2">2</span>\n          <h3 class="text-sm font-semibold text-gray-900">Authorization granted</h3>\n        </div>\n        <p class="text-xs text-gray-500 leading-relaxed">YNAB verified your identity and confirmed we can access your budget.</p>\n      </article>\n      <article class="border border-gray-200 rounded-3xl bg-white p-4 space-y-2" data-ynab-oauth-step="storage">\n        <div class="flex items-center gap-2">\n          <span class="inline-flex items-center justify-center w-8 h-8 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-600" data-ynab-oauth-step-indicator data-step-index="3">3</span>\n          <h3 class="text-sm font-semibold text-gray-900">Code captured</h3>\n        </div>\n        <p class="text-xs text-gray-500 leading-relaxed">We store the code in sessionStorage so the SPA can finalize the login flow.</p>\n      </article>\n    </div>\n  </section>\n</div>\n';
+
+  // src/views/DataManagement/dataManagement.js
+  function initDataManagementView() {
+    renderPageLayout({
+      navbar: {
+        showBackButton: true,
+        showDataButton: true
+      },
+      header: {
+        title: "Data Management",
+        description: "View and manage all data stored in your browser. This includes session data, local storage, and application state.",
+        containerId: "pageHeader"
+      }
+    });
+    displayStateData();
+    displaySessionStorageData();
+    displayLocalStorageData();
+    const exportBtn = document.getElementById("exportDataBtn");
+    const clearBtn = document.getElementById("clearAllDataBtn");
+    const confirmClearBtn = document.getElementById("confirmClearBtn");
+    const cancelClearBtn = document.getElementById("cancelClearBtn");
+    exportBtn?.addEventListener("click", handleExportData);
+    clearBtn?.addEventListener("click", () => openModal("confirmClearModal"));
+    confirmClearBtn?.addEventListener("click", handleClearAllData);
+    cancelClearBtn?.addEventListener("click", () => closeModal("confirmClearModal"));
+    window.toggleCollapse = toggleCollapse;
+  }
+  function toggleCollapse(id) {
+    const element = document.getElementById(id);
+    const button = element?.previousElementSibling;
+    const icon = button?.querySelector(".collapse-icon");
+    if (element && icon) {
+      const isHidden = element.classList.contains("hidden");
+      if (isHidden) {
+        element.classList.remove("hidden");
+        icon.style.transform = "rotate(90deg)";
+      } else {
+        element.classList.add("hidden");
+        icon.style.transform = "rotate(0deg)";
+      }
+    }
+  }
+  function displayStateData() {
+    const container = document.getElementById("stateDataSection");
+    if (!container)
+      return;
+    const stateData = {
+      credentials: {
+        email: state_default.credentials.email || "(not set)",
+        hasEncryptedPassword: !!state_default.credentials.encryptedPassword,
+        hasApiToken: !!state_default.credentials.apiToken,
+        hasDeviceUuid: !!state_default.credentials.deviceUuid,
+        remember: state_default.credentials.remember,
+        awaitingOtp: state_default.credentials.awaitingOtp
+      },
+      accounts: state_default.accounts,
+      monarchAccounts: state_default.monarchAccounts,
+      ynabOauth: state_default.ynabOauth
+    };
+    const accountCount = state_default.accounts ? Object.keys(state_default.accounts).length : 0;
+    const monarchCount = state_default.monarchAccounts ? Array.isArray(state_default.monarchAccounts) ? state_default.monarchAccounts.length : Object.keys(state_default.monarchAccounts).length : 0;
+    const summary = `${accountCount} YNAB accounts, ${monarchCount} Monarch accounts, ${state_default.credentials.email ? "logged in" : "not logged in"}`;
+    const html = `
+    <div class="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+      <p class="text-sm text-blue-800 font-medium">Summary: ${summary}</p>
+    </div>
+    ${renderDataObject(stateData, "state")}
+  `;
+    container.innerHTML = html || '<p class="text-gray-500 text-sm italic">No application state data</p>';
+  }
+  function displaySessionStorageData() {
+    const container = document.getElementById("sessionStorageSection");
+    if (!container)
+      return;
+    const sessionData = {};
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      try {
+        const value = sessionStorage.getItem(key);
+        sessionData[key] = JSON.parse(value);
+      } catch {
+        sessionData[key] = sessionStorage.getItem(key);
+      }
+    }
+    const itemCount = sessionStorage.length;
+    const summary = itemCount > 0 ? `${itemCount} item${itemCount !== 1 ? "s" : ""} stored` : "No items stored";
+    const html = itemCount > 0 ? `
+    <div class="mb-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
+      <p class="text-sm text-purple-800 font-medium">Summary: ${summary}</p>
+    </div>
+    ${renderDataObject(sessionData, "session")}
+  ` : '<p class="text-gray-500 text-sm italic">No session storage data</p>';
+    container.innerHTML = html;
+  }
+  function displayLocalStorageData() {
+    const container = document.getElementById("localStorageSection");
+    if (!container)
+      return;
+    const localData = getLocalStorage();
+    const appStateRaw = localStorage.getItem("app_state");
+    if (appStateRaw) {
+      try {
+        localData.app_state = JSON.parse(appStateRaw);
+      } catch {
+        localData.app_state = appStateRaw;
+      }
+    }
+    const sanitizedData = {
+      email: localData.email || "(not set)",
+      hasEncryptedPassword: !!localData.encryptedPassword,
+      hasToken: !!localData.token,
+      hasUuid: !!localData.uuid,
+      remember: localData.remember,
+      tempForOtp: localData.tempForOtp,
+      app_state: localData.app_state
+    };
+    const hasData = localData.email || localData.encryptedPassword || localData.token || localData.uuid;
+    const summary = hasData ? `Credentials stored (${localData.email || "no email"}), Remember: ${localData.remember ? "Yes" : "No"}` : "No credentials stored";
+    const html = hasData ? `
+    <div class="mb-3 p-3 bg-green-50 rounded-lg border border-green-200">
+      <p class="text-sm text-green-800 font-medium">Summary: ${summary}</p>
+    </div>
+    ${renderDataObject(sanitizedData, "local")}
+  ` : '<p class="text-gray-500 text-sm italic">No local storage data</p>';
+    container.innerHTML = html;
+  }
+  function renderDataObject(data2, prefix = "", depth = 0) {
+    if (data2 === null || data2 === void 0) {
+      return `<span class="text-gray-400 italic">null</span>`;
+    }
+    if (typeof data2 === "boolean") {
+      return `<span class="font-mono text-${data2 ? "green" : "red"}-600">${data2}</span>`;
+    }
+    if (typeof data2 === "number" || typeof data2 === "string") {
+      const displayValue = String(data2).length > 100 ? String(data2).substring(0, 100) + "..." : String(data2);
+      return `<span class="font-mono text-gray-700">${escapeHtml3(displayValue)}</span>`;
+    }
+    if (Array.isArray(data2)) {
+      if (data2.length === 0) {
+        return `<span class="text-gray-400 italic">[ ] (empty array)</span>`;
+      }
+      const collapsibleId = `collapse_${prefix}_${Math.random().toString(36).substr(2, 9)}`;
+      return `
+      <div class="ml-2">
+        <button 
+          class="collapsible-toggle text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm font-medium mb-1"
+          onclick="toggleCollapse('${collapsibleId}')"
+        >
+          <svg class="collapse-icon w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
           </svg>
+          Array (${data2.length} items)
+        </button>
+        <div id="${collapsibleId}" class="collapsible-content hidden ml-4 space-y-2">
+          ${data2.map((item, index) => `
+            <div class="border-l-2 border-gray-200 pl-3">
+              <span class="text-gray-500 font-medium">[${index}]:</span>
+              ${renderDataObject(item, `${prefix}_${index}`, depth + 1)}
+            </div>
+          `).join("")}
         </div>
-        <span class="text-sm sm:text-base text-blue-800 font-medium">Authenticating with Monarch</span>
       </div>
-      
-      <div id="step2" class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
-        <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-gray-300 flex items-center justify-center flex-shrink-0">
-          <div class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-gray-300"></div>
+    `;
+    }
+    if (typeof data2 === "object") {
+      const entries = Object.entries(data2);
+      if (entries.length === 0) {
+        return `<span class="text-gray-400 italic">{ } (empty object)</span>`;
+      }
+      const collapsibleId = `collapse_${prefix}_${Math.random().toString(36).substr(2, 9)}`;
+      const hasNestedObjects = entries.some(([_, value]) => typeof value === "object" && value !== null);
+      if (hasNestedObjects || depth === 0) {
+        return `
+        <div class="${depth > 0 ? "ml-2 mt-2" : ""}">
+          <button 
+            class="collapsible-toggle text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm font-medium mb-1"
+            onclick="toggleCollapse('${collapsibleId}')"
+          >
+            <svg class="collapse-icon w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            Object (${entries.length} properties)
+          </button>
+          <div id="${collapsibleId}" class="collapsible-content hidden ml-4 space-y-2">
+            ${entries.map(([key, value]) => {
+          const isNested = typeof value === "object" && value !== null;
+          return `
+                <div class="border-l-2 ${depth === 0 ? "border-blue-300" : "border-gray-200"} pl-3 py-1">
+                  <div class="flex items-start">
+                    <span class="font-semibold text-gray-700 mr-2">${escapeHtml3(key)}:</span>
+                    ${!isNested ? renderDataObject(value, `${prefix}_${key}`, depth + 1) : ""}
+                  </div>
+                  ${isNested ? renderDataObject(value, `${prefix}_${key}`, depth + 1) : ""}
+                </div>
+              `;
+        }).join("")}
+          </div>
         </div>
-        <span class="text-sm sm:text-base text-gray-600">Creating accounts</span>
+      `;
+      }
+      return `
+      <div class="space-y-2 ${depth > 0 ? "ml-4 mt-1" : ""}">
+        ${entries.map(([key, value]) => `
+          <div class="border-l-2 border-gray-200 pl-3 py-1">
+            <span class="font-semibold text-gray-700 mr-2">${escapeHtml3(key)}:</span>
+            ${renderDataObject(value, `${prefix}_${key}`, depth + 1)}
+          </div>
+        `).join("")}
       </div>
-      
-      <div id="step3" class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
-        <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-gray-300 flex items-center justify-center flex-shrink-0">
-          <div class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-gray-300"></div>
-        </div>
-        <span class="text-sm sm:text-base text-gray-600">Importing transactions</span>
-      </div>
-      
-      <div id="step4" class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
-        <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-gray-300 flex items-center justify-center flex-shrink-0">
-          <div class="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-gray-300"></div>
-        </div>
-        <span class="text-sm sm:text-base text-gray-600">Finalizing import</span>
-      </div>
-    </div>
+    `;
+    }
+    return `<span class="text-gray-400 italic">(unknown type)</span>`;
+  }
+  function handleExportData() {
+    const allData = {
+      exportedAt: new Date().toISOString(),
+      state: state_default,
+      sessionStorage: {},
+      localStorage: {}
+    };
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      try {
+        allData.sessionStorage[key] = JSON.parse(sessionStorage.getItem(key));
+      } catch {
+        allData.sessionStorage[key] = sessionStorage.getItem(key);
+      }
+    }
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      try {
+        allData.localStorage[key] = JSON.parse(localStorage.getItem(key));
+      } catch {
+        allData.localStorage[key] = localStorage.getItem(key);
+      }
+    }
+    const jsonString = JSON.stringify(allData, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `ynab-monarch-data-${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+  function handleClearAllData() {
+    try {
+      clearStorage();
+      clearAppState();
+      sessionStorage.clear();
+      state_default.credentials = {
+        email: "",
+        encryptedPassword: "",
+        otp: "",
+        remember: false,
+        apiToken: "",
+        awaitingOtp: false,
+        deviceUuid: ""
+      };
+      state_default.monarchAccounts = null;
+      state_default.accounts = {};
+      state_default.ynabOauth = { code: null, state: null, error: null };
+      closeModal("confirmClearModal");
+      console.log("All data cleared successfully");
+    } catch (error) {
+      console.error("Error clearing data:", error);
+      alert("An error occurred while clearing data. Please try again.");
+    }
+  }
+  function escapeHtml3(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+  }
 
-    <!-- Security Note -->
-    <div class="mt-6 sm:mt-8 p-4 bg-green-50 border border-green-200 rounded-lg">
-      <div class="flex items-start gap-3">
-        <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+  // src/views/DataManagement/dataManagement.html
+  var dataManagement_default = `<div id="pageLayout"></div>
+
+<!-- Warning Banner -->
+<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-r-lg">
+  <div class="flex items-start">
+    <svg class="w-5 h-5 text-yellow-400 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd"
+        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+        clip-rule="evenodd" />
+    </svg>
+    <div>
+      <h3 class="text-sm font-medium text-yellow-800 mb-1">Privacy Notice</h3>
+      <p class="text-sm text-yellow-700">
+        All data shown below is stored locally in your browser only. No data is sent to our servers or any third-party
+        services.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Data Sections Container -->
+<div class="space-y-6">
+
+  <!-- Application State Section -->
+  <div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-4">
+      <h2 class="text-xl font-semibold text-white flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
-        <p class="text-xs sm:text-sm text-green-800 leading-relaxed">
-          <strong>Secure Process:</strong> Your data is encrypted during transfer and we never store your Monarch credentials.
-        </p>
-      </div>
+        Application State
+      </h2>
+      <p class="text-blue-100 text-sm mt-1">Current session data and account information</p>
     </div>
-
+    <div id="stateDataSection" class="p-6">
+      <!-- Populated by JavaScript -->
+    </div>
   </div>
 
-  <!-- Navigation will be added here by JavaScript -->
+  <!-- Session Storage Section -->
+  <div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="bg-gradient-to-r from-purple-500 to-pink-600 px-6 py-4">
+      <h2 class="text-xl font-semibold text-white flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+        </svg>
+        Session Storage
+      </h2>
+      <p class="text-purple-100 text-sm mt-1">Data cleared when browser tab is closed</p>
+    </div>
+    <div id="sessionStorageSection" class="p-6">
+      <!-- Populated by JavaScript -->
+    </div>
+  </div>
 
+  <!-- Local Storage Section -->
+  <div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="bg-gradient-to-r from-green-500 to-teal-600 px-6 py-4">
+      <h2 class="text-xl font-semibold text-white flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+        </svg>
+        Local Storage
+      </h2>
+      <p class="text-green-100 text-sm mt-1">Persistent data saved across sessions</p>
+    </div>
+    <div id="localStorageSection" class="p-6">
+      <!-- Populated by JavaScript -->
+    </div>
+  </div>
+
+</div>
+
+<!-- Action Buttons -->
+<div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+  <button id="exportDataBtn" class="ui-button" data-type="secondary" data-size="medium">
+    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+    </svg>
+    Export Data (JSON)
+  </button>
+
+  <button id="clearAllDataBtn" class="ui-button" data-type="danger" data-size="medium">
+    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
+    Clear All Data
+  </button>
+</div>
+
+<!-- Info Footer -->
+<div class="mt-8 text-center text-sm text-gray-500">
+  <p>Clearing data will remove all accounts, credentials, and session information.</p>
+  <p class="mt-1">You'll need to re-upload your YNAB data and re-authenticate with Monarch.</p>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmClearModal"
+  class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 pointer-events-none opacity-0 transition-opacity duration-500">
+  <div
+    class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 transform translate-y-full transition-transform duration-500">
+    <div class="flex items-start mb-4">
+      <div class="flex-shrink-0">
+        <svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <div class="ml-4">
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Clear All Data?</h3>
+        <p class="text-sm text-gray-600 mb-4">
+          This action cannot be undone. All your YNAB accounts, Monarch credentials, and session data will be
+          permanently deleted from your browser.
+        </p>
+        <div class="flex gap-3 justify-end">
+          <button id="cancelClearBtn" class="ui-button" data-type="secondary" data-size="small">
+            Cancel
+          </button>
+          <button id="confirmClearBtn" class="ui-button" data-type="danger" data-size="small">
+            Yes, Clear Everything
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>`;
 
   // src/router.js
   var routes = {
     "/": {
-      template: upload_default,
+      template: home_default,
       init: initUploadView,
       scroll: false,
-      title: "Upload - YNAB to Monarch",
+      title: "Home - YNAB to Monarch",
       requiresAuth: false
     },
     "/upload": {
       template: upload_default,
-      init: initUploadView,
+      init: initUploadView2,
       scroll: false,
       title: "Upload - YNAB to Monarch",
       requiresAuth: false
@@ -6863,10 +7879,26 @@
       title: "Migration Complete - YNAB to Monarch",
       requiresAuth: false,
       requiresAccounts: true
+    },
+    "/oauth/ynab/callback": {
+      template: ynabOauthCallback_default,
+      init: initYnabOauthCallbackView,
+      scroll: false,
+      title: "Authorize YNAB - YNAB to Monarch",
+      requiresAuth: false
+    },
+    "/data-management": {
+      template: dataManagement_default,
+      init: initDataManagementView,
+      scroll: true,
+      title: "Data Management - YNAB to Monarch",
+      requiresAuth: false
     }
   };
   var isNavigating = false;
   var stateLoaded = false;
+  var navigationHistory = [];
+  var MAX_HISTORY_SIZE = 50;
   async function navigate(path, replace = false, skipRouteGuards = false) {
     if (isNavigating)
       return;
@@ -6892,9 +7924,16 @@
           return navigate("/upload", true);
         }
       }
+      const currentPath = getCurrentPath();
       if (replace) {
         history.replaceState({ path }, "", path);
       } else {
+        if (currentPath && currentPath !== path) {
+          navigationHistory.push(currentPath);
+          if (navigationHistory.length > MAX_HISTORY_SIZE) {
+            navigationHistory.shift();
+          }
+        }
         history.pushState({ path }, "", path);
       }
       await renderRoute(path);
@@ -7010,23 +8049,38 @@
   function getCurrentPath() {
     return window.location.pathname;
   }
+  function isValidRoute(path) {
+    return routes.hasOwnProperty(path);
+  }
+  function clearAppState() {
+    try {
+      sessionStorage.removeItem("ynab_accounts");
+      sessionStorage.removeItem("monarch_accounts");
+      localStorage.removeItem("app_state");
+      state_default.accounts = {};
+      state_default.monarchAccounts = null;
+      console.log("Application state cleared");
+    } catch (error) {
+      console.error("Error clearing app state:", error);
+    }
+  }
   function goBack() {
-    const currentPath = getCurrentPath();
-    const backRoutes = {
-      "/review": "/upload",
-      "/method": "/review",
-      "/manual": "/method",
-      "/login": "/method",
-      "/otp": "/login",
-      "/complete": "/review"
-    };
-    const backPath = backRoutes[currentPath] || "/upload";
-    navigate(backPath);
+    if (navigationHistory.length > 0) {
+      const previousPath = navigationHistory.pop();
+      if (isValidRoute(previousPath)) {
+        navigate(previousPath, true);
+        return;
+      }
+    }
+    navigate("/", true);
   }
   window.addEventListener("popstate", async (event) => {
     if (!isNavigating) {
       const path = event.state?.path || window.location.pathname;
       try {
+        if (navigationHistory.length > 0) {
+          navigationHistory.pop();
+        }
         await renderRoute(path);
       } catch (error) {
         console.error("Error handling popstate:", error);
@@ -7039,6 +8093,9 @@
     const route = routes[path];
     try {
       if (route) {
+        if (!history.state) {
+          history.replaceState({ path }, "", path);
+        }
         await renderRoute(path);
       } else {
         navigate("/upload", true);

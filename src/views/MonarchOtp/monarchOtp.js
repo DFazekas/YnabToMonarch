@@ -1,20 +1,25 @@
 import { navigate, goBack } from '../../router.js';
 import state from '../../state.js';
 import { monarchApi } from '../../api/monarchApi.js';
-import { renderButtons } from '../../components/button.js';
-import { createSimpleNavigationBar } from '../../utils/navigationBar.js';
 import {
   saveToLocalStorage, getLocalStorage, clearStorage
 } from '../../utils/storage.js';
 import { toggleDisabled, toggleElementVisibility } from '../../utils/dom.js';
 import { patchState } from '../../utils/state.js';
+import { renderPageLayout } from '../../components/pageLayout.js';
 
 export default function initMonarchOtpView() {
-  // Add navigation bar at the bottom of the content
-  const mainContainer = document.querySelector('.container-responsive');
-  mainContainer.insertAdjacentHTML('beforeend', createSimpleNavigationBar({
-    backText: "Back"
-  }));
+  renderPageLayout({
+    navbar: {
+      showBackButton: true,
+      showDataButton: true
+    },
+    header: {
+      title: 'Enter Your Verification Code',
+      description: 'Monarch has sent a 6-digit verification code to your email address. Enter it below to continue with the secure import process.',
+      containerId: 'pageHeader'
+    }
+  });
 
   const $ = (id) => document.getElementById(id);
   const UI = {
@@ -24,12 +29,10 @@ export default function initMonarchOtpView() {
     backBtn: $('backBtn')
   };
 
-  renderButtons();
-
   const { credentials } = state;
   const storage = getLocalStorage();
   const { email, encryptedPassword, uuid, remember, tempForOtp } = storage;
-  
+
   patchState(credentials, {
     email: credentials.email || email,
     encryptedPassword: credentials.encryptedPassword || encryptedPassword,
@@ -72,12 +75,12 @@ export default function initMonarchOtpView() {
 
         if (credentials.remember) {
           // User wants to remember credentials - save permanently
-          saveToLocalStorage({ 
+          saveToLocalStorage({
             email: credentials.email,
             encryptedPassword: credentials.encryptedPassword,
             uuid: credentials.deviceUuid,
             token: response.token,
-            remember: true 
+            remember: true
           });
         } else {
           // User doesn't want to remember - clear temporary credentials
@@ -109,7 +112,6 @@ export default function initMonarchOtpView() {
   function onOtpInput() {
     UI.otpInput.value = UI.otpInput.value.replace(/\D/g, '').slice(0, 6);
     toggleDisabled(UI.submitOtpBtn, UI.otpInput.value.length !== 6);
-    renderButtons();
   }
 
   function onOtpKeyDown(e) {

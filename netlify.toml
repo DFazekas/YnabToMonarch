@@ -5,6 +5,7 @@
 
 [dev]
   publish = "public"
+  port = 3000
 
 [functions]
   node_bundler = "esbuild"

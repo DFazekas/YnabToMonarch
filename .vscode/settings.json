@@ -9,8 +9,6 @@
         "editor.defaultFormatter": "yzhang.markdown-all-in-one",
         "editor.tabSize": 4
     },
-    "markdown.extension.toc.unorderedList.marker": "-",
-    "markdown.extension.toc.updateOnSave": false,
     "[yaml]": {
         "editor.defaultFormatter": "redhat.vscode-yaml"
     },
@@ -19,5 +17,10 @@
     },
     "[shellscript]": {
         "files.eol": "\n"
+    },
+    "[javascript]": {
+        "editor.insertSpaces": true,
+        "editor.tabSize": 2,
+        "editor.detectIndentation": false
     }
 }

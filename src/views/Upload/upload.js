@@ -1,12 +1,34 @@
 import state from '../../state.js';
 import { navigate, persistState } from '../../router.js';
 import parseYNABZip from '../../services/ynabParser.js';
-import { startYnabOauth } from '../../api/ynabOauth.js';
+import { redirectToYnabOauth } from '../../api/ynabApi.js';
 import { openModal, closeModal } from '../../components/modal.js';
-import { renderButtons } from '../../components/button.js';
+import { renderPageLayout } from '../../components/pageLayout.js';
 
 export default function initUploadView() {
-  const errorMessage = document.getElementById('errorMessage');
+  // Check if we have existing accounts data
+  const hasExistingAccounts = state.accounts && Object.keys(state.accounts).length > 0;
+
+  renderPageLayout({
+    navbar: {
+      showBackButton: hasExistingAccounts,
+      showDataButton: true
+    },
+    header: {
+      title: 'Step 1: Import YNAB Data',
+      description: 'Choose how you\'d like to bring your YNAB data into Monarch Money. You can either connect your YNAB account for a seamless transfer or manually upload a file.',
+      containerId: 'pageHeader'
+    }
+  });
+
+  // Show existing data alert if needed
+  const existingDataAlert = document.getElementById('existingDataAlert');
+  if (hasExistingAccounts && existingDataAlert) {
+    existingDataAlert.classList.remove('hidden');
+  }
+
+  // Query all elements (they're already in the DOM)
+  const continueWithExistingBtn = document.getElementById('continueWithExistingBtn');
   const connectButton = document.getElementById('connectButton');
   const manualUploadButton = document.getElementById('manualUploadButton');
   const manualFileInput = document.getElementById('manualFileInput');
@@ -15,11 +37,16 @@ export default function initUploadView() {
   const closeOauthInfoModal = document.getElementById('closeOauthInfoModal');
   const closeManualImportInfoModal = document.getElementById('closeManualImportInfoModal');
 
-  renderButtons();
+  // Continue with existing data
+  continueWithExistingBtn?.addEventListener('click', (event) => {
+    event.preventDefault();
+    // Skip route guards since we already have accounts
+    navigate('/review', false, true);
+  });
 
   connectButton?.addEventListener('click', (event) => {
     event.preventDefault();
-    startYnabOauth();
+    redirectToYnabOauth();
   });
 
   oauthInfoModalButton?.addEventListener('click', () => openModal('oauthInfoModal'));
@@ -40,7 +67,7 @@ export default function initUploadView() {
     // Check if file is a ZIP file by extension, MIME type, or common patterns
     const fileName = csvFile.name.toLowerCase();
     const fileType = csvFile.type.toLowerCase();
-    
+
     console.log('File upload debug:', {
       name: csvFile.name,
       type: csvFile.type,
@@ -48,29 +75,29 @@ export default function initUploadView() {
       fileName: fileName,
       fileType: fileType
     });
-    
+
     // More permissive extension check - look for common ZIP-related extensions
-    const isZipByExtension = fileName.endsWith('.zip') || 
-                            fileName.endsWith('.bin') || 
-                            fileName.includes('ynab') ||
-                            fileName.includes('register') ||
-                            fileName.includes('export');
-                            
+    const isZipByExtension = fileName.endsWith('.zip') ||
+      fileName.endsWith('.bin') ||
+      fileName.includes('ynab') ||
+      fileName.includes('register') ||
+      fileName.includes('export');
+
     const isZipByMimeType = [
       'application/zip',
-      'application/x-zip-compressed', 
+      'application/x-zip-compressed',
       'application/octet-stream',
       'application/x-zip',
       'multipart/x-zip',
       'application/x-compressed',
       'application/binary'
     ].includes(fileType);
-    
+
     // Very permissive check - if file is larger than 1KB, let's try to parse it
     // The ZIP parser will ultimately determine if it's valid
-    const isPotentialZip = isZipByExtension || 
-                          isZipByMimeType || 
-                          csvFile.size > 1000; // If it's bigger than 1KB, let the parser decide
+    const isPotentialZip = isZipByExtension ||
+      isZipByMimeType ||
+      csvFile.size > 1000; // If it's bigger than 1KB, let the parser decide
 
     console.log('File validation debug:', {
       isZipByExtension,

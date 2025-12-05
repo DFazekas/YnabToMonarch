@@ -1,8 +1,8 @@
 import JSZip from 'jszip';
 import generateCSV from '../../../shared/generateCsv.js';
 import state from '../../state.js';
-import { navigate, goBack } from '../../router.js';
-import { renderButtons } from '../../components/button.js';
+import { navigate } from '../../router.js';
+import { renderPageLayout } from '../../components/pageLayout.js';
 
 export default function initManualInstructionsView() {
   // Redirect to upload if no accounts are available
@@ -11,11 +11,20 @@ export default function initManualInstructionsView() {
     return;
   }
 
-  const countSpan = document.getElementById('accountCount');
+  renderPageLayout({
+    navbar: {
+      showBackButton: true,
+      showDataButton: true
+    },
+    header: {
+      title: 'You\'re Ready to Import',
+      description: 'Choose how you\'d like to bring your YNAB data into Monarch Money. You can either connect your YNAB account for a seamless transfer or manually upload a file.',
+      containerId: 'pageHeader'
+    }
+  });
+
   const downloadBtn = document.getElementById('downloadBtn');
   const switchBtn = document.getElementById('switchToAuto');
-  const backBtn = document.getElementById('backBtn');
-  renderButtons();
 
   const includedAccounts = Object.values(state.accounts).filter(acc => acc.included);
   countSpan.textContent = `${includedAccounts.length} account${includedAccounts.length !== 1 ? 's' : ''}`;
@@ -59,13 +68,5 @@ export default function initManualInstructionsView() {
 
   switchBtn.addEventListener('click', () => {
     navigate('/login');
-  });
-
-  backBtn.addEventListener('click', () => {
-    goBack();
-  });
-
-  document.getElementById('backToMethodBtn').addEventListener('click', () => {
-    goBack();
   });
 }
