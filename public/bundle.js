@@ -4131,7 +4131,7 @@
   // src/views/Home/home.html
   var home_default = `<div id="pageLayout"></div>
 
-<section class="flex flex-col items-center mb-6 max-w-md mx-auto">
+<section class="flex flex-col items-center mb-6 max-w-md mx-auto gap-2">
 
   <!-- Get Started Btn -->
   <ui-button id="getStartedButton" data-size="large">
@@ -4187,7 +4187,7 @@
 
         <!-- Privacy Info Modal -->
         <ui-modal id="privacyInfoModal">
-          <ui-button slot="trigger" data-type="text" class="">
+          <ui-button slot="trigger" data-type="text">
             Learn more about how we protect your privacy
           </ui-button>
 
@@ -6115,20 +6115,20 @@
       this.className = "ui-table-container bg-white rounded-lg shadow-sm overflow-hidden";
       this.innerHTML = `
       <!-- Mobile Card View -->
-      <div class="mobile-view block ${this._mobileBreakpoint}:hidden">
+      <div class="mobile-view block ${this._mobileBreakpoint}:hidden bg-gray-50">
         ${this._enableSelection ? `
-        <div class="border-b border-gray-200 bg-gray-50 p-4">
+        <div class="border-b border-gray-200 bg-white p-3 sm:p-4">
           <div class="flex items-center justify-between">
-            <label class="custom-checkbox-container">
+            <label class="custom-checkbox-container flex items-center">
               <input id="masterCheckboxMobile" type="checkbox" class="master-checkbox-mobile custom-checkbox-input">
               <span class="custom-checkbox-visual"></span>
               <span class="text-sm font-medium text-gray-700 pl-2">Select All</span>
             </label>
-            <div class="text-xs text-gray-500 font-medium selection-count-mobile">0 selected</div>
+            <div class="text-xs text-gray-500 font-semibold selection-count-mobile">0 selected</div>
           </div>
         </div>
         ` : ""}
-        <div class="mobile-list divide-y divide-gray-100"></div>
+        <div class="mobile-list space-y-2 p-3 sm:p-4"></div>
       </div>
       
       <!-- Desktop Table View -->
@@ -6208,38 +6208,100 @@
       mobileList.innerHTML = "";
       data2.forEach((row) => {
         const card = document.createElement("div");
-        card.className = "mobile-card p-4 flex items-start gap-3";
+        card.className = "mobile-card overflow-hidden";
         if (row._isModified) {
           card.classList.add("bg-amber-50", "border-l-4", "border-l-amber-300");
+        } else {
+          card.classList.add("bg-white", "border", "border-gray-100");
         }
         card.dataset.rowId = this._getRowId(row);
+        const wrapper = document.createElement("div");
+        wrapper.className = "p-3 sm:p-4";
+        const headerDiv = document.createElement("div");
+        headerDiv.className = "flex items-center gap-3 mb-3 pb-3 border-b border-gray-100";
         const selectCol = columns.find((c) => c.type === "checkbox" && c.masterCheckbox);
         if (selectCol && this._enableSelection) {
           const checkboxContainer = this._createMobileCheckbox(row);
-          card.appendChild(checkboxContainer);
+          checkboxContainer.className = "flex-shrink-0";
+          headerDiv.appendChild(checkboxContainer);
         }
-        const contentDiv = document.createElement("div");
-        contentDiv.className = "flex-1 min-w-0 space-y-2";
+        const primaryCol = columns.find((c) => c.key === "modifiedName");
+        if (primaryCol && !primaryCol.mobileHidden) {
+          const primaryDiv = document.createElement("div");
+          primaryDiv.className = "flex-1 min-w-0";
+          const nameValue = document.createElement("div");
+          nameValue.className = "text-sm font-semibold text-gray-900 truncate";
+          nameValue.textContent = row[primaryCol.key] || "";
+          if (primaryCol.clickable) {
+            nameValue.className += " cursor-pointer hover:text-blue-600 transition-colors";
+            if (primaryCol.onClick) {
+              nameValue.addEventListener("click", () => primaryCol.onClick(row));
+            }
+          }
+          primaryDiv.appendChild(nameValue);
+          headerDiv.appendChild(primaryDiv);
+        }
+        wrapper.appendChild(headerDiv);
+        const bodyDiv = document.createElement("div");
+        bodyDiv.className = "grid grid-cols-2 gap-3 sm:gap-4 text-sm";
+        let fieldCount = 0;
         columns.forEach((col) => {
           if (col.type === "checkbox" && col.masterCheckbox)
             return;
+          if (col.key === "modifiedName")
+            return;
           if (col.mobileHidden)
             return;
+          if (col.type === "custom" && col.key === "undo")
+            return;
+          if (col.type === "button")
+            return;
+          if (col.mobileLayout === "full")
+            return;
+          fieldCount++;
           const fieldDiv = document.createElement("div");
-          fieldDiv.className = col.mobileClass || "flex items-center gap-2";
+          if (col.mobileLayout === "full") {
+            fieldDiv.className = "col-span-2 flex flex-col gap-1";
+          } else {
+            fieldDiv.className = "flex flex-col gap-1";
+          }
           if (col.mobileLabel !== false) {
             const label = document.createElement("span");
-            label.className = "text-xs font-medium text-gray-500 flex-shrink-0";
-            label.textContent = col.mobileLabel || col.header + ":";
+            label.className = "text-xs font-semibold text-gray-500 uppercase tracking-wide";
+            label.textContent = col.mobileLabel || col.header;
             fieldDiv.appendChild(label);
           }
           const valueContainer = document.createElement("div");
-          valueContainer.className = "flex-1 min-w-0";
+          valueContainer.className = "min-w-0";
           this._renderCell(valueContainer, col, row, true);
           fieldDiv.appendChild(valueContainer);
-          contentDiv.appendChild(fieldDiv);
+          bodyDiv.appendChild(fieldDiv);
         });
-        card.appendChild(contentDiv);
+        wrapper.appendChild(bodyDiv);
+        let hasActions = false;
+        const actionButtons = [];
+        columns.forEach((col) => {
+          if (col.type === "button" || col.type === "custom" && col.key === "undo") {
+            hasActions = true;
+            actionButtons.push(col);
+          }
+        });
+        if (hasActions) {
+          const footerDiv = document.createElement("div");
+          footerDiv.className = "mt-3 pt-3 border-t border-gray-100 flex items-center gap-2 flex-wrap";
+          actionButtons.forEach((col) => {
+            const container = document.createElement("div");
+            if (col.type === "button") {
+              container.className = "flex-1 min-w-[120px]";
+            } else {
+              container.className = "flex-shrink-0";
+            }
+            this._renderCell(container, col, row, true);
+            footerDiv.appendChild(container);
+          });
+          wrapper.appendChild(footerDiv);
+        }
+        card.appendChild(wrapper);
         mobileList.appendChild(card);
       });
     }
@@ -6302,12 +6364,15 @@
           break;
         case "select":
           const select = document.createElement("select");
-          select.className = (isMobile ? "text-xs " : "") + "border border-gray-300 rounded-lg px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white";
+          const baseClasses = "border border-gray-300 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium";
+          const mobileClasses = "text-xs px-2 py-1.5";
+          const desktopClasses = "text-sm px-2 py-1";
+          select.className = baseClasses + " " + (isMobile ? mobileClasses : desktopClasses);
           select.disabled = isDisabled;
           if (isDisabled) {
-            select.className += " text-gray-300 bg-gray-50 cursor-not-allowed";
+            select.className += " text-gray-400 bg-gray-50 cursor-not-allowed";
           } else {
-            select.className += " cursor-pointer";
+            select.className += " cursor-pointer text-gray-900";
           }
           const currentValue = col.getValue ? col.getValue(row) : row[col.key];
           const options = col.options ? typeof col.options === "function" ? col.options(row) : col.options : [];
@@ -6507,7 +6572,7 @@
       },
       header: {
         title: "Step 2: Review Accounts",
-        description: "Review detected accounts and adjust their Monarch types before importing.",
+        description: "Review and adjust your accounts. Next, we'll choose how to migrate to Monarch.",
         containerId: "pageHeader"
       }
     });
@@ -6739,7 +6804,8 @@
           persistState();
           renderAccountTable();
         },
-        mobileLabel: "Type"
+        mobileLabel: "Type",
+        mobileLayout: "default"
       },
       {
         key: "subtype",
@@ -6764,7 +6830,8 @@
           persistState();
           renderAccountTable();
         },
-        mobileLabel: "Subtype"
+        mobileLabel: "Subtype",
+        mobileLayout: "default"
       },
       {
         key: "transactionCount",
@@ -6775,8 +6842,8 @@
         cellClass: "px-2 py-2 text-center text-[#637988] cursor-default",
         tooltip: (row) => `${row.transactionCount} transaction${row.transactionCount !== 1 ? "s" : ""}`,
         cellStyle: (row) => row.status === "processed" ? { color: "#9ca3af" } : {},
-        mobileLabel: "Transactions",
-        mobileClass: "text-sm text-gray-600"
+        mobileLabel: "Txns",
+        mobileLayout: "default"
       },
       {
         key: "balance",
@@ -6789,7 +6856,7 @@
         tooltip: (row) => `Balance: ${currencyFormatter.format(row.balance)}`,
         cellStyle: (row) => row.status === "processed" ? { color: "#9ca3af" } : {},
         mobileLabel: "Balance",
-        mobileClass: "text-sm font-medium"
+        mobileLayout: "default"
       },
       {
         key: "undo",
@@ -6819,7 +6886,8 @@
           return container;
         },
         mobileLabel: "",
-        mobileClass: "flex items-center justify-center"
+        mobileLayout: "full",
+        mobileHidden: true
       },
       {
         key: "included",
@@ -6847,8 +6915,8 @@
             }
           };
         },
-        mobileLabel: "Migrate?",
-        mobileClass: "flex items-center justify-center"
+        mobileLabel: "Migrate",
+        mobileLayout: "full"
       }
     ];
   }

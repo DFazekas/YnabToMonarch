@@ -35,7 +35,7 @@ export default function initAccountReviewView() {
     },
     header: {
       title: 'Step 2: Review Accounts',
-      description: 'Review detected accounts and adjust their Monarch types before importing.',
+      description: 'Review and adjust your accounts. Next, we\'ll choose how to migrate to Monarch.',
       containerId: 'pageHeader'
     }
   });
@@ -332,7 +332,8 @@ function setupTableColumns() {
         persistState();
         renderAccountTable();
       },
-      mobileLabel: 'Type'
+      mobileLabel: 'Type',
+      mobileLayout: 'default'
     },
     {
       key: 'subtype',
@@ -357,7 +358,8 @@ function setupTableColumns() {
         persistState();
         renderAccountTable();
       },
-      mobileLabel: 'Subtype'
+      mobileLabel: 'Subtype',
+      mobileLayout: 'default'
     },
     {
       key: 'transactionCount',
@@ -368,8 +370,8 @@ function setupTableColumns() {
       cellClass: 'px-2 py-2 text-center text-[#637988] cursor-default',
       tooltip: (row) => `${row.transactionCount} transaction${row.transactionCount !== 1 ? 's' : ''}`,
       cellStyle: (row) => row.status === 'processed' ? { color: '#9ca3af' } : {},
-      mobileLabel: 'Transactions',
-      mobileClass: 'text-sm text-gray-600'
+      mobileLabel: 'Txns',
+      mobileLayout: 'default'
     },
     {
       key: 'balance',
@@ -382,7 +384,7 @@ function setupTableColumns() {
       tooltip: (row) => `Balance: ${currencyFormatter.format(row.balance)}`,
       cellStyle: (row) => row.status === 'processed' ? { color: '#9ca3af' } : {},
       mobileLabel: 'Balance',
-      mobileClass: 'text-sm font-medium'
+      mobileLayout: 'default'
     },
     {
       key: 'undo',
@@ -414,7 +416,8 @@ function setupTableColumns() {
         return container;
       },
       mobileLabel: '',
-      mobileClass: 'flex items-center justify-center'
+      mobileLayout: 'full',
+      mobileHidden: true
     },
     {
       key: 'included',
@@ -445,8 +448,8 @@ function setupTableColumns() {
           }
         };
       },
-      mobileLabel: 'Migrate?',
-      mobileClass: 'flex items-center justify-center'
+      mobileLabel: 'Migrate',
+      mobileLayout: 'full'
     }
   ];
 }
