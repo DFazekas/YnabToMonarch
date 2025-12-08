@@ -1,15 +1,33 @@
-const AUTHORIZE_BASE_URL = 'https://app.youneedabudget.com/oauth/authorize';
+const AUTHORIZE_BASE_URL = 'https://app.ynab.com/oauth/authorize';
 const CALLBACK_PATH = '/oauth/ynab/callback';
 const EXPECTED_STATE_KEY = 'ynab_oauth_expected_state';
 
-const ALERT_MESSAGE = 'Please provide your YNAB OAuth client ID via window.YNAB_OAUTH_CLIENT_ID before using the login button.';
+const ALERT_MESSAGE = 'Could not retrieve YNAB OAuth client ID. Please try again.';
+
+let cachedClientId = null;
 
 function getRedirectUri() {
   return `${location.origin}${CALLBACK_PATH}`;
 }
 
-function getClientId() {
-  return (window.YNAB_OAUTH_CLIENT_ID || '').trim();
+async function getClientId() {
+  // Return cached value if available
+  if (cachedClientId) {
+    return cachedClientId;
+  }
+
+  try {
+    const response = await fetch('/.netlify/functions/config');
+    if (!response.ok) {
+      throw new Error('Failed to fetch config');
+    }
+    const config = await response.json();
+    cachedClientId = config.ynabClientId;
+    return cachedClientId;
+  } catch (error) {
+    console.error('Error fetching YNAB client ID:', error);
+    return null;
+  }
 }
 
 function safeSessionStorage() {
@@ -54,17 +72,17 @@ function buildState() {
   return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
 }
 
-function buildAuthorizeUrl(stateValue) {
+function buildAuthorizeUrl(clientId, stateValue) {
   const base = new URL(AUTHORIZE_BASE_URL);
-  base.searchParams.set('client_id', getClientId());
+  base.searchParams.set('client_id', clientId);
   base.searchParams.set('response_type', 'code');
   base.searchParams.set('redirect_uri', getRedirectUri());
   base.searchParams.set('state', stateValue);
   return base.toString();
 }
 
-export function startYnabOauth() {
-  const clientId = getClientId();
+export async function startYnabOauth() {
+  const clientId = await getClientId();
   if (!clientId) {
     window.alert(ALERT_MESSAGE);
     return null;
@@ -73,7 +91,11 @@ export function startYnabOauth() {
   const state = buildState();
   persistExpectedState(state);
 
-  const url = buildAuthorizeUrl(state);
+  const redirectUri = getRedirectUri();
+  console.log('Starting YNAB OAuth:', { clientId, state, redirectUri });
+
+  const url = buildAuthorizeUrl(clientId, state);
+  console.log('Redirecting to:', url);
   window.location.assign(url);
   return url;
 }

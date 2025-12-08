@@ -1,14 +1,10 @@
 import { navigate } from '../../router.js';
-import { openModal, closeModal } from '../../components/modal.js';
 import { renderPageLayout } from '../../components/pageLayout.js';
+import '../../components/AutoStyledButton.js';
+import '../../components/ReusableModal.js';
 
-export default function initUploadView() {
-  const getStartedButton = document.getElementById('getStartedButton');
-  const privacyInfoModalButton = document.getElementById('privacyInfoModalButton');
-  const migrationInfoModalButton = document.getElementById('migrationInfoModalButton');
-  const closePrivacyInfoModal = document.getElementById('closePrivacyInfoModal');
-  const closeMigrationInfoModal = document.getElementById('closeMigrationInfoModal');
-
+export default function initHomeView() {
+  // Render layout - components auto-style themselves
   renderPageLayout({
     header: {
       title: 'YNAB to Monarch Migration',
@@ -17,13 +13,9 @@ export default function initUploadView() {
     }
   });
 
-  getStartedButton?.addEventListener('click', (event) => {
-    event.preventDefault();
+  // Query elements and attach event listeners
+  document.getElementById('getStartedButton')?.addEventListener('click', (e) => {
+    e.preventDefault();
     navigate('/upload');
   });
-
-  privacyInfoModalButton?.addEventListener('click', () => openModal('privacyInfoModal'));
-  closePrivacyInfoModal?.addEventListener('click', () => closeModal('privacyInfoModal'));
-  migrationInfoModalButton?.addEventListener('click', () => openModal('migrationInfoModal'));
-  closeMigrationInfoModal?.addEventListener('click', () => closeModal('migrationInfoModal'));
 }

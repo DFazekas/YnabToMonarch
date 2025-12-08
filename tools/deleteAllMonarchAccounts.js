@@ -39,7 +39,6 @@ async function loginToMonarch() {
       'device-uuid': DEVICE_UUID,
     };
 
-    console.log(`🌐 Sending login request${OTP_CODE ? ' with OTP' : ''}...`);
     const response = await fetch(LOGIN_URL, {
       method: 'POST',
       headers: headers,
@@ -51,19 +50,6 @@ async function loginToMonarch() {
     // Handle OTP requirement
     if (response.status === 403 && data.error_code === 'EMAIL_OTP_REQUIRED') {
       console.groupEnd("🔐 Logging into Monarch Money");
-      console.log("");
-      console.log("🔐 OTP REQUIRED!");
-      console.log("================");
-      console.log(`📧 ${data.detail}`);
-      console.log("");
-      console.log("📝 INSTRUCTIONS:");
-      console.log("1. Check your email for the OTP code");
-      console.log("2. Edit this script and set: const OTP_CODE = 'your-otp-code';");
-      console.log("3. Save the file and run the script again");
-      console.log("");
-      console.log("Example:");
-      console.log("const OTP_CODE = '123456'; // Replace with your actual OTP");
-      console.log("");
       throw new Error("❌ OTP required. Please follow the instructions above.");
     }
 
@@ -79,16 +65,6 @@ async function loginToMonarch() {
 
       // If we tried with OTP but it was wrong
       if (OTP_CODE && response.status === 403) {
-        console.log("");
-        console.log("❌ OTP AUTHENTICATION FAILED!");
-        console.log("================================");
-        console.log("The OTP code you provided appears to be incorrect or expired.");
-        console.log("");
-        console.log("📝 NEXT STEPS:");
-        console.log("1. Request a new OTP code from Monarch");
-        console.log("2. Update the OTP_CODE variable with the new code");
-        console.log("3. Run the script again");
-        console.log("");
         throw new Error(`❌ Invalid OTP code. ${data.detail || 'Please try again with a new code.'}`);
       }
 
@@ -101,7 +77,6 @@ async function loginToMonarch() {
       throw new Error("❌ Login succeeded but no token received");
     }
 
-    console.log(`✅ Login successful! Token: ${data.token.slice(0, 8)}...`);
     if (OTP_CODE) {
       console.log("🔐 OTP verification successful!");
     }
@@ -135,8 +110,6 @@ async function fetchAllAccounts(token) {
 
     const json = await response.json();
 
-    console.log("🔍 Fetching all accounts response:", json);
-
     if (json.errors) {
       console.error("❌ GraphQL returned errors:");
       console.error(JSON.stringify(json.errors, null, 2));
@@ -152,10 +125,6 @@ async function fetchAllAccounts(token) {
     }
 
     const accounts = json.data.accounts;
-    console.log(`✅ Found ${accounts.length} accounts`);
-    accounts.forEach((account, index) => {
-      console.log(`  ${index + 1}. ${account.displayName} (${account.accountType?.display || 'Unknown'}) - ID: ${account.id}`);
-    });
 
     console.groupEnd("🔍 Fetching all accounts");
     return accounts;
@@ -251,24 +220,6 @@ async function deleteAccount(token, accountId, accountName) {
 }
 
 async function deleteAllAccounts() {
-  console.log("🚨 DANGER: This will delete ALL accounts from your Monarch Money account!");
-  console.log("⚠️  This action cannot be undone!");
-  console.log("⏱️  Starting deletion process in 5 seconds...");
-  console.log("");
-
-  // Display device UUID for future reference
-  if (!DEVICE_UUID_PROVIDED) {
-    console.log("📱 Generated new device UUID for this session:");
-    console.log(`   ${DEVICE_UUID}`);
-    console.log("");
-    console.log("💡 To avoid OTP requests in future runs, set:");
-    console.log(`   const DEVICE_UUID_PROVIDED = '${DEVICE_UUID}';`);
-    console.log("");
-  } else {
-    console.log(`📱 Using provided device UUID: ${DEVICE_UUID}`);
-    console.log("");
-  }
-
   // Wait 5 seconds to give user a chance to cancel
   await new Promise(resolve => setTimeout(resolve, 5000));
 
@@ -285,10 +236,6 @@ async function deleteAllAccounts() {
       return;
     }
 
-    console.log("");
-    console.log(`🗑️  Starting deletion of ${accounts.length} accounts...`);
-    console.log("");
-
     // Step 3: Delete each account with progress tracking
     const results = {
       total: accounts.length,
@@ -299,7 +246,6 @@ async function deleteAllAccounts() {
 
     for (let i = 0; i < accounts.length; i++) {
       const account = accounts[i];
-      console.log(`🗑️  [${i + 1}/${accounts.length}] Deleting "${account.displayName}"...`);
 
       const result = await deleteAccount(token, account.id, account.displayName);
 
@@ -320,35 +266,14 @@ async function deleteAllAccounts() {
       }
     }
 
-    // Step 4: Print summary
-    console.log("");
-    console.log("=".repeat(60));
-    console.log("📊 DELETION SUMMARY");
-    console.log("=".repeat(60));
-    console.log(`Total accounts: ${results.total}`);
-    console.log(`✅ Successfully deleted: ${results.successful}`);
-    console.log(`❌ Failed to delete: ${results.failed}`);
-
     if (results.errors.length > 0) {
-      console.log("");
       console.log("❌ Failed deletions:");
       results.errors.forEach((error, index) => {
         console.log(`  ${index + 1}. "${error.account}" (${error.id})`);
         console.log(`     Error: ${typeof error.error === 'string' ? error.error : JSON.stringify(error.error)}`);
       });
     }
-
-    console.log("");
-    if (results.successful === results.total) {
-      console.log("🎉 All accounts successfully deleted!");
-    } else if (results.successful > 0) {
-      console.log("⚠️  Some accounts were deleted, but some failed. Check the errors above.");
-    } else {
-      console.log("💥 No accounts were successfully deleted. Check your credentials and permissions.");
-    }
-
   } catch (error) {
-    console.log("");
     console.error("💥 Fatal error during deletion process:", error.message);
     process.exit(1);
   }

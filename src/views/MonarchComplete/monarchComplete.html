@@ -107,6 +107,15 @@
 
 </div>
 
-<button id="continueBtn" class="ui-button">
-  Continue
-</button>
+<section class="flex items-center justify-center gap-4 sm:gap-6 mt-8 sm:mt-10 mb-12">
+  <ui-button id="visitMonarchBtn" data-type="secondary" data-size="large" hidden>
+    <span class="inline-flex items-center gap-2 mr-1">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+      </svg>
+    </span>
+    Visit Monarch Money
+  </ui-button>
+  <ui-button id="retryFailedBtn" data-type="solid" data-size="large" hidden>Retry Failed Accounts</ui-button>
+</section>

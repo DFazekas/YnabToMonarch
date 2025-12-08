@@ -1,4 +1,5 @@
 <div id="pageLayout"></div>
+<!-- TODO: Fix the Filters modal, the content isn't loading. -->
 
 <!-- Control Bar -->
 <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between 
@@ -9,20 +10,17 @@
   <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 flex-1">
     <!-- Filters Button -->
     <div class="flex-shrink-0">
-      <button id="filtersBtn" class="flex items-center gap-2 px-4 py-2 sm:py-3 text-sm sm:text-base
-                         border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer 
-                         transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500
-                         relative whitespace-nowrap" title="Open advanced filters"
+      <ui-button id="filtersBtn" title="Open advanced filters" data-type="secondary" data-size="medium"
         onclick="window.openFiltersModal && window.openFiltersModal()">
         <!-- Notification Badge -->
         <div id="filterNotificationBadge" class="hidden"></div>
 
-        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z" />
         </svg>
         <span>Filters</span>
-      </button>
+      </ui-button>
     </div>
 
     <!-- Search Input -->
@@ -42,93 +40,44 @@
       </div>
     </div>
 
-    <!-- Account Count Summary -->
-    <div id="filterResultsSummary" class="text-sm text-gray-600 whitespace-nowrap">
-      Showing <span id="visibleAccountCount" class="font-medium text-gray-900">0</span>
-      of <span id="totalAccountCount" class="font-medium text-gray-900">0</span> accounts
+    <!-- Undo All Button (Hidden by default) -->
+    <div id="undoAllContainer" class="hidden flex-shrink-0">
+      <ui-button id="undoAllBtn" data-type="solid" data-size="medium" data-color="yellow" title="Undo all changes">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+        </svg>
+        <span>Undo All Changes</span>
+      </ui-button>
     </div>
-  </div>
 
-  <!-- Clear Filter Controls -->
-  <div class="flex items-center gap-3">
-    <!-- Clear All Filters Button (only shown when filters are active) -->
-    <button id="clearFiltersBtn" class="hidden px-3 py-2 sm:py-3 text-sm text-red-600 hover:text-red-800 
-                       hover:bg-red-50 rounded-lg transition-colors duration-200 
-                       focus:outline-none focus:ring-2 focus:ring-red-500" title="Clear all filters"
-      onclick="window.clearAllFilters && window.clearAllFilters()">
-      Clear
-    </button>
+  </div>
+  <!-- Account Count Summary -->
+  <div id="filterResultsSummary" class="text-sm text-gray-600 whitespace-nowrap">
+    Showing <span id="visibleAccountCount" class="font-medium text-gray-900">0</span>
+    of <span id="totalAccountCount" class="font-medium text-gray-900">0</span> accounts
   </div>
 </div>
 
 <!-- Table Container -->
-<div class="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
+<ui-table id="accountsTable" data-mobile-breakpoint="lg" data-enable-selection="true" data-row-id-key="id">
+</ui-table>
 
-  <!-- Mobile Card View (hidden on larger screens) -->
-  <div id="mobileView" class="block lg:hidden">
-    <!-- Mobile Header with Master Checkbox -->
-    <div class="border-b border-gray-200 bg-gray-50 p-4">
-      <div class="flex items-center justify-between">
-        <label class="custom-checkbox-container">
-          <input type="checkbox" id="masterCheckboxMobile" class="custom-checkbox-input">
-          <span class="custom-checkbox-visual"></span>
-          <span class="text-sm font-medium text-gray-700 pl-2">Select All</span>
-        </label>
-        <div class="text-xs text-gray-500 font-medium" id="mobileSelectionCount">0 selected</div>
-      </div>
-    </div>
+<!-- Continue Button with Hint -->
+<div class="flex flex-col sm:flex-row sm:items-center gap-4 mt-4">
+  <!-- Label set programmatically -->
+  <ui-button id="continueBtn"></ui-button>
 
-    <div id="mobileAccountList" class="divide-y divide-gray-100">
-      <!-- populated dynamically for mobile -->
-    </div>
-  </div>
-
-  <!-- Desktop Table View (hidden on mobile) -->
-  <div class="hidden lg:block overflow-x-auto">
-    <table class="w-full min-w-[800px]" role="grid">
-      <thead>
-        <tr class="bg-gray-50 border-b border-gray-200" role="row">
-          <th
-            class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 w-[50px] sm:w-[60px]">
-            <input type="checkbox" id="masterCheckbox" class="w-4 h-4 sm:w-5 sm:h-5 cursor-pointer rounded border-gray-300 
-                              text-blue-600 focus:ring-blue-500 focus:ring-2">
-          </th>
-          <th scope="col"
-            class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[200px]">
-            Account Name
-          </th>
-          <th scope="col"
-            class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[150px]">
-            Type
-          </th>
-          <th scope="col"
-            class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[150px]">
-            Subtype
-          </th>
-          <th scope="col"
-            class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[100px] text-center">
-            Transactions
-          </th>
-          <th scope="col"
-            class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[120px] text-right">
-            Balance
-          </th>
-          <th scope="col"
-            class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[100px] text-center">
-            Include
-          </th>
-        </tr>
-      </thead>
-      <tbody id="reviewTableBody" class="divide-y divide-gray-100">
-        <!-- populated dynamically -->
-      </tbody>
-    </table>
-  </div>
+  <!-- Hint Text -->
+  <p class="text-xs sm:text-sm text-gray-600">
+    <span class="inline-flex items-center gap-1.5">
+      <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span>At least one account must be included to continue</span>
+    </span>
+  </p>
 </div>
-
-<button id="continueBtn" class="ui-button">
-  Continue
-</button>
 
 <!-- Bulk Action Bar -->
 <div id="bulkActionBar"
@@ -136,112 +85,104 @@
 
   <!-- Mobile Bulk Actions (visible on mobile/tablet) -->
   <div
-    class="block lg:hidden bg-white shadow-2xl rounded-xl border border-gray-200 w-[calc(100vw-2rem)] max-w-md mx-auto">
+    class="block lg:hidden bg-blue-900 shadow-2xl rounded-xl border border-gray-200 w-[calc(100vw-2rem)] max-w-md mx-auto">
     <div class="p-4">
       <div class="flex flex-col gap-3">
-        <!-- Selection Info -->
-        <div class="flex items-center justify-between">
-          <span class="text-sm font-medium text-gray-900">
-            <span id="selectedCountMobile">0</span> selected
-          </span>
-          <button id="unselectAllBtnMobile" class="text-xs font-medium px-3 py-1.5 border border-gray-300 text-gray-700 
-                             bg-white rounded-md hover:bg-gray-50 cursor-pointer transition-colors 
-                             duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            title="Unselect all accounts">
-            Clear
-          </button>
-        </div>
+        <!-- Selection Count -->
+        <ui-button id="unselectAllBtnMobile" data-type="outline" data-color="transparent" title="Unselect all accounts">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          <span id="selectedCountMobile" class="mr-1">0</span> <span id="selectCountMobileLabel">Accounts</span>
+        </ui-button>
 
         <!-- Action Buttons Grid -->
         <div class="grid grid-cols-2 gap-2">
-          <button id="bulkRenameBtnMobile" class="flex items-center justify-center gap-2 px-3 py-3 border border-gray-300 
-                             bg-white rounded-lg hover:bg-gray-50 cursor-pointer transition-colors 
-                             duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            title="Bulk rename accounts">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <ui-button id="bulkRenameBtnMobile" data-type="outline" data-color="transparent" title="Bulk rename accounts">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
-            <span class="text-sm font-medium">Rename</span>
-          </button>
+            <span>Rename</span>
+          </ui-button>
 
-          <button id="bulkTypeBtnMobile" class="flex items-center justify-center gap-2 px-3 py-3 border border-gray-300 
-                             bg-white rounded-lg hover:bg-gray-50 cursor-pointer transition-colors 
-                             duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            title="Bulk edit account types">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <ui-button id="bulkTypeBtnMobile" data-type="outline" data-color="transparent" title="Bulk edit account types">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
             </svg>
-            <span class="text-sm font-medium">Edit Type</span>
-          </button>
+            <span>Edit Type</span>
+          </ui-button>
 
-          <button id="bulkIncludeBtnMobile" class="flex items-center justify-center gap-2 px-3 py-3 border border-green-300 
-                             text-green-700 bg-green-50 rounded-lg hover:bg-green-100 cursor-pointer 
-                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500"
-            title="Include selected accounts">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <ui-button id="bulkIncludeBtnMobile" data-type="outline" data-color="transparent" title="Include selected accounts">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
-            <span class="text-sm font-medium">Include</span>
-          </button>
+            <span>Include</span>
+          </ui-button>
 
-          <button id="bulkExcludeBtnMobile" class="flex items-center justify-center gap-2 px-3 py-3 border border-red-300 
-                             text-red-700 bg-red-50 rounded-lg hover:bg-red-100 cursor-pointer 
-                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"
-            title="Exclude selected accounts">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <ui-button id="bulkExcludeBtnMobile" data-type="outline" data-color="transparent" title="Exclude selected accounts">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
-            <span class="text-sm font-medium">Exclude</span>
-          </button>
+            <span>Exclude</span>
+          </ui-button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Desktop Bulk Actions (visible on desktop) -->
-  <div class="hidden lg:block bg-white shadow-2xl rounded-xl border border-gray-200">
-    <div class="px-6 py-4">
-      <div class="flex items-center gap-6">
+  <div class="hidden lg:block bg-blue-900 shadow-2xl rounded-xl border border-gray-200">
+    <div class="px-2 py-2">
+      <div class="flex items-center gap-2">
         <!-- Selection Count -->
-        <button id="unselectAllBtnDesktop" class="text-sm font-medium px-4 py-2 border border-gray-300 
-                           rounded-lg hover:bg-gray-50 cursor-pointer whitespace-nowrap transition-colors 
-                           duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          title="Unselect all accounts">
-          <span id="selectedCountDesktop">0</span> selected
-        </button>
+        <ui-button id="unselectAllBtnDesktop" data-type="solid" data-color="transparent" data-size="small" title="Unselect all accounts">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          <span id="selectedCountDesktop" class="mr-1">0</span> <span id="selectCountDesktopLabel">Accounts</span>
+        </ui-button>
 
         <!-- Separator -->
         <div class="h-6 border-l border-gray-300"></div>
 
         <!-- Action Buttons -->
-        <div class="flex items-center gap-3">
-          <button id="bulkRenameBtnDesktop" class="text-sm font-medium px-4 py-2 border border-gray-300 
-                             rounded-lg hover:bg-gray-50 cursor-pointer transition-colors duration-200
-                             focus:outline-none focus:ring-2 focus:ring-blue-500" title="Bulk rename accounts">
+        <div class="flex items-center">
+
+          <!-- Bulk Rename -->
+          <ui-button id="bulkRenameBtnDesktop" data-type="solid" data-color="transparent" data-size="small" title="Bulk rename accounts">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
             Rename
-          </button>
+          </ui-button>
 
-          <button id="bulkTypeBtnDesktop" class="text-sm font-medium px-4 py-2 border border-gray-300 
-                             rounded-lg hover:bg-gray-50 cursor-pointer transition-colors duration-200
-                             focus:outline-none focus:ring-2 focus:ring-blue-500" title="Bulk edit account types">
+          <!-- Bulk Edit Account Types -->
+          <ui-button id="bulkTypeBtnDesktop" data-type="solid" data-color="transparent" data-size="small" title="Bulk edit account types">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
             Edit Type
-          </button>
+          </ui-button>
 
-          <button id="bulkIncludeBtnDesktop" class="text-sm font-medium px-4 py-2 border border-green-300 
-                             text-green-700 bg-green-50 rounded-lg hover:bg-green-100 cursor-pointer 
-                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500"
-            title="Include selected accounts">
+          <!-- Bulk Include -->
+          <ui-button id="bulkIncludeBtnDesktop" data-type="solid" data-color="transparent" data-size="small" title="Include selected accounts">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
             Include
-          </button>
+          </ui-button>
 
-          <button id="bulkExcludeBtnDesktop" class="text-sm font-medium px-4 py-2 border border-red-300 
-                             text-red-700 bg-red-50 rounded-lg hover:bg-red-100 cursor-pointer 
-                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"
-            title="Exclude selected accounts">
+          <!-- Bulk Exclude -->
+          <ui-button id="bulkExcludeBtnDesktop" data-type="solid" data-color="transparent" data-size="small" title="Exclude selected accounts">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
             Exclude
-          </button>
+          </ui-button>
         </div>
       </div>
     </div>
@@ -249,35 +190,33 @@
 </div>
 
 <!-- Bulk Rename Modal -->
-<div id="bulkRenameModal"
-  class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 hidden p-3 sm:p-4">
-  <div class="bg-white rounded-lg shadow-lg w-full max-w-lg p-4 sm:p-6 relative max-h-[90vh] overflow-y-auto">
-
-    <h2 class="text-lg sm:text-xl font-bold mb-4">Bulk Rename Accounts</h2>
-
-    <label for="renamePattern" class="font-medium text-sm">Pattern:</label>
-    <input id="renamePattern" name="renamePattern" type="text"
-      class="border rounded w-full px-3 py-2 mb-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-      placeholder="e.g. {{YNAB}} - {{Index}}">
+<ui-modal id="bulkRenameModal">
+  <h3 slot="title">Bulk Rename Accounts</h3>
+  <div slot="content" class="space-y-4">
+    <div>
+      <label for="renamePattern" class="font-medium text-sm block mb-2">Pattern:</label>
+      <input id="renamePattern" name="renamePattern" type="text"
+        class="border rounded w-full px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        placeholder="e.g. {{YNAB}} - {{Index}}">
+    </div>
 
     <!-- Token shortcuts -->
-    <div class="grid grid-cols-2 gap-2 mb-4">
-      <button
-        class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"
-        data-token="{{YNAB}}">YNAB Name</button>
-      <button
-        class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"
-        data-token="{{Index}}">Index</button>
-      <button
-        class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"
-        data-token="{{Upper}}">Uppercase YNAB</button>
-      <button
-        class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"
-        data-token="{{Date}}">Today (YYYY-MM-DD)</button>
+    <div>
+      <label class="font-medium text-sm block mb-2">Token Shortcuts:</label>
+      <div class="grid grid-cols-2 gap-2">
+        <ui-button data-type="secondary" data-size="small" class="token-btn" data-token="{{YNAB}}">YNAB Name</ui-button>
+        <ui-button data-type="secondary" data-size="small" class="token-btn" data-token="{{Index}}">Index</ui-button>
+        <ui-button data-type="secondary" data-size="small" class="token-btn" data-token="{{Upper}}">
+          Uppercase YNAB
+        </ui-button>
+        <ui-button data-type="secondary" data-size="small" class="token-btn" data-token="{{Date}}">
+          Today (YYYY-MM-DD)
+        </ui-button>
+      </div>
     </div>
 
     <!-- Index start -->
-    <div class="flex items-center gap-3 mb-4">
+    <div class="flex items-center gap-3">
       <label for="indexStart" class="text-sm">Index Start:</label>
       <input id="indexStart" type="number"
         class="border rounded px-3 py-2 w-20 sm:w-24 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -285,248 +224,192 @@
     </div>
 
     <!-- Preview -->
-    <div class="border rounded p-3 bg-gray-50 mb-4">
+    <div class="border rounded p-3 bg-gray-50">
       <div class="font-medium text-sm mb-2">Preview:</div>
       <div id="renamePreview" class="text-xs sm:text-sm text-gray-700 space-y-1 max-h-32 overflow-y-auto"
         aria-live="polite"></div>
     </div>
-
-    <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
-      <button id="renameCancel" class="ui-button order-2 sm:order-1 w-full sm:w-auto"
-        data-type="secondary">Cancel</button>
-      <button id="renameApply" class="ui-button order-1 sm:order-2 w-full sm:w-auto" data-type="primary">Apply</button>
-    </div>
-
   </div>
-</div>
+  <div slot="footer" class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+    <ui-button id="renameCancel" data-type="outline" data-color="black">Cancel</ui-button>
+    <ui-button id="renameApply" data-type="solid">Apply</ui-button>
+  </div>
+</ui-modal>
 
 <!-- Bulk Type Edit Modal -->
-<div id="bulkTypeModal"
-  class="fixed inset-0 bg-black bg-opacity-40 hidden z-50 flex items-center justify-center p-3 sm:p-4">
-  <div class="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">
-    <h2 class="text-lg font-bold mb-4">Bulk Edit Account Type</h2>
-
-    <div class="mb-4">
+<ui-modal id="bulkTypeModal">
+  <h3 slot="title">Bulk Edit Account Type</h3>
+  <div slot="content" class="space-y-4">
+    <div>
       <label for="bulkTypeSelect" class="block mb-2 font-medium text-sm">Account Type</label>
       <select id="bulkTypeSelect" name="bulkSubtypeSelect"
         class="border rounded w-full px-3 py-2 cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></select>
     </div>
 
-    <div class="mb-6">
+    <div>
       <label for="bulkSubtypeSelect" class="block mb-2 font-medium text-sm">Subtype</label>
       <select id="bulkSubtypeSelect"
         class="border rounded w-full px-3 py-2 cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></select>
     </div>
-
-    <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
-      <button id="bulkTypeCancel" class="ui-button order-2 sm:order-1 w-full sm:w-auto"
-        data-type="secondary">Cancel</button>
-      <button id="bulkTypeApply" class="ui-button order-1 sm:order-2 w-full sm:w-auto"
-        data-type="primary">Apply</button>
-    </div>
   </div>
-</div>
+  <div slot="footer" class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+    <ui-button id="bulkTypeCancel" data-type="outline" data-color="black">Cancel</ui-button>
+    <ui-button id="bulkTypeApply" data-type="solid">Apply</ui-button>
+  </div>
+</ui-modal>
 
 <!-- Advanced Filters Modal -->
-<div id="filtersModal"
-  class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 hidden p-3 sm:p-4">
-  <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] flex flex-col relative">
+<ui-modal id="filtersModal">
+  <h3 slot="title">Advanced Filters</h3>
+  <div slot="content" class="space-y-6">
 
-    <!-- Modal Header -->
-    <div class="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 flex-shrink-0 rounded-t-lg">
-      <h2 class="text-lg sm:text-xl font-bold text-gray-900">Advanced Filters</h2>
-      <button id="filtersModalClose"
-        class="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-1"
-        title="Close filters" onclick="window.closeFiltersModal && window.closeFiltersModal()">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+    <!-- Active Filters Display -->
+    <div id="activeFiltersSection" class="hidden">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-medium text-gray-700">Active Filters</h3>
+        <!-- TODO: Move event handling into .js file -->
+        <!-- TODO: Set color to red -->
+        <ui-button id="clearAllFilters" data-type="text" onclick="window.clearAllFilters && window.clearAllFilters()">
+          Clear All
+        </ui-button>
+      </div>
+      <div id="activeFiltersContainer" class="flex flex-wrap gap-2"></div>
+      <hr class="mt-4">
     </div>
 
-    <!-- Modal Content - Scrollable -->
-    <div class="p-4 sm:p-6 space-y-6 overflow-y-auto flex-1 min-h-0">
-
-      <!-- Active Filters Display -->
-      <div id="activeFiltersSection" class="hidden">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-medium text-gray-700">Active Filters</h3>
-          <button id="clearAllFilters"
-            class="text-xs text-blue-600 hover:text-blue-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
-            onclick="window.clearAllFilters && window.clearAllFilters()">
-            Clear All
-          </button>
-        </div>
-        <div id="activeFiltersContainer" class="flex flex-wrap gap-2"></div>
-        <hr class="mt-4">
-      </div>
-
-      <!-- Account Name Filter -->
+    <!-- Account Name Filter -->
+    <div class="space-y-3">
       <div class="space-y-3">
-        <h3 class="text-sm font-medium text-gray-900">Account Name</h3>
-        <div class="space-y-3">
-          <input id="filterAccountName" type="text" placeholder="Enter account name..."
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        <label for="filterAccountName" class="block text-sm font-medium text-gray-900">Account Name</label>
+        <input id="filterAccountName" name="filterAccountName" type="text" placeholder="Enter account name..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
 
-          <div class="flex flex-wrap gap-4">
-            <label class="flex items-center">
-              <input type="radio" name="nameMatchType" value="contains" checked
-                class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
-              <span class="ml-2 text-sm text-gray-700">Contains</span>
-            </label>
-            <label class="flex items-center">
-              <input type="radio" name="nameMatchType" value="exact"
-                class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
-              <span class="ml-2 text-sm text-gray-700">Exact match</span>
-            </label>
-            <label class="flex items-center">
-              <input type="checkbox" id="nameCaseSensitive"
-                class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-              <span class="ml-2 text-sm text-gray-700">Case sensitive</span>
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <!-- Account Type Filter -->
-      <div class="space-y-3">
-        <h3 class="text-sm font-medium text-gray-900">Account Type</h3>
-        <div class="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">
-          <div id="typeFiltersContainer" class="space-y-2">
-            <!-- Populated dynamically -->
-          </div>
-        </div>
-      </div>
-
-      <!-- Account Subtype Filter -->
-      <div class="space-y-3">
-        <h3 class="text-sm font-medium text-gray-900">Account Subtype</h3>
-        <div class="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">
-          <div id="subtypeFiltersContainer" class="space-y-2">
-            <!-- Populated dynamically -->
-          </div>
-        </div>
-      </div>
-
-      <!-- Transactions Count Filter -->
-      <div class="space-y-3">
-        <h3 class="text-sm font-medium text-gray-900">Transaction Count</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs text-gray-600 mb-1">Minimum</label>
-            <input id="filterTransactionsMin" type="number" placeholder="0" min="0"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-          </div>
-          <div>
-            <label class="block text-xs text-gray-600 mb-1">Maximum</label>
-            <input id="filterTransactionsMax" type="number" placeholder="999999" min="0"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-          </div>
-        </div>
-      </div>
-
-      <!-- Balance Filter -->
-      <div class="space-y-3">
-        <h3 class="text-sm font-medium text-gray-900">Balance</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs text-gray-600 mb-1">Minimum ($)</label>
-            <input id="filterBalanceMin" type="number" placeholder="0.00" step="0.01"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-          </div>
-          <div>
-            <label class="block text-xs text-gray-600 mb-1">Maximum ($)</label>
-            <input id="filterBalanceMax" type="number" placeholder="999999.99" step="0.01"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-          </div>
-        </div>
-      </div>
-
-      <!-- Inclusion Status Filter -->
-      <div class="space-y-3">
-        <h3 class="text-sm font-medium text-gray-900">Include Status</h3>
         <div class="flex flex-wrap gap-4">
           <label class="flex items-center">
-            <input type="radio" name="inclusionFilter" value="all" checked
+            <input id="nameMatchTypeContains" type="radio" name="nameMatchType" value="contains" checked
               class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
-            <span class="ml-2 text-sm text-gray-700">All accounts</span>
+            <span class="ml-2 text-sm text-gray-700">Contains</span>
           </label>
           <label class="flex items-center">
-            <input type="radio" name="inclusionFilter" value="included"
+            <input id="nameMatchTypeExact" type="radio" name="nameMatchType" value="exact"
               class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
-            <span class="ml-2 text-sm text-gray-700">Included only</span>
+            <span class="ml-2 text-sm text-gray-700">Exact match</span>
           </label>
           <label class="flex items-center">
-            <input type="radio" name="inclusionFilter" value="excluded"
-              class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
-            <span class="ml-2 text-sm text-gray-700">Excluded only</span>
+            <input id="nameCaseSensitive" name="nameCaseSensitive" type="checkbox"
+              class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+            <span class="ml-2 text-sm text-gray-700">Case sensitive</span>
           </label>
         </div>
       </div>
     </div>
 
-    <!-- Modal Footer - Fixed at bottom -->
-    <div
-      class="flex flex-col sm:flex-row justify-end gap-3 p-4 sm:p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg flex-shrink-0">
-      <button id="filtersReset" class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-lg hover:bg-gray-50 
-                     cursor-pointer transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        onclick="window.resetFilters && window.resetFilters()">
-        Reset Filters
-      </button>
-      <button id="filtersApply" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer 
-                     transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        onclick="window.applyFilters && window.applyFilters()">
-        Apply Filters
-      </button>
+    <!-- Account Type Filter -->
+    <div class="space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-medium text-gray-900">Account Type</h3>
+        <div class="flex gap-1">
+          <ui-button id="accountTypeSelectAllBtn" data-type="text" data-size="small">Select All</ui-button>
+          <ui-button id="accountTypeDeselectAllBtn" data-type="text" data-size="small">Deselect All</ui-button>
+        </div>
+      </div>
+      <div class="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">
+        <div id="typeFiltersContainer" class="space-y-2">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Account Subtype Filter -->
+    <div class="space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-medium text-gray-900">Account Subtype</h3>
+        <div class="flex gap-1">
+          <ui-button id="accountSubtypeSelectAllBtn" data-type="text" data-size="small">Select All</ui-button>
+          <ui-button id="accountSubtypeDeselectAllBtn" data-type="text" data-size="small">Deselect All</ui-button>
+        </div>
+      </div>
+      <div class="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">
+        <div id="subtypeFiltersContainer" class="space-y-2">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Transactions Count Filter -->
+    <div class="space-y-3">
+      <h3 class="text-sm font-medium text-gray-900">Transaction Count</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label for="filterTransactionsMin" class="block text-xs text-gray-600 mb-1">Minimum</label>
+          <input id="filterTransactionsMin" name="filterTransactionsMin" type="number" placeholder="0" min="0"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+        <div>
+          <label for="filterTransactionsMax" class="block text-xs text-gray-600 mb-1">Maximum</label>
+          <input id="filterTransactionsMax" name="filterTransactionsMax" type="number" placeholder="999999" min="0"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+      </div>
+    </div>
+
+    <!-- Balance Filter -->
+    <div class="space-y-3">
+      <h3 class="text-sm font-medium text-gray-900">Balance</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label for="filterBalanceMin" class="block text-xs text-gray-600 mb-1">Minimum ($)</label>
+          <input id="filterBalanceMin" name="filterBalanceMin" type="number" placeholder="0.00" step="0.01"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+        <div>
+          <label for="filterBalanceMax" class="block text-xs text-gray-600 mb-1">Maximum ($)</label>
+          <input id="filterBalanceMax" name="filterBalanceMax" type="number" placeholder="999999.99" step="0.01"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+      </div>
+    </div>
+
+    <!-- Inclusion Status Filter -->
+    <div class="space-y-3">
+      <h3 class="text-sm font-medium text-gray-900">Include Status</h3>
+      <div class="flex flex-wrap gap-4">
+        <label class="flex items-center">
+          <input id="inclusionFilterAll" type="radio" name="inclusionFilter" value="all" checked
+            class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+          <span class="ml-2 text-sm text-gray-700">All accounts</span>
+        </label>
+        <label class="flex items-center">
+          <input id="inclusionFilterIncluded" type="radio" name="inclusionFilter" value="included"
+            class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+          <span class="ml-2 text-sm text-gray-700">Included only</span>
+        </label>
+        <label class="flex items-center">
+          <input id="inclusionFilterExcluded" type="radio" name="inclusionFilter" value="excluded"
+            class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+          <span class="ml-2 text-sm text-gray-700">Excluded only</span>
+        </label>
+      </div>
     </div>
   </div>
-</div>
+  </div>
+
+  <div slot="footer" class="flex flex-col sm:flex-row justify-end gap-3">
+    <!-- TODO: Move logic into .js file -->
+    <ui-button id="filtersReset" data-type="secondary" onclick="window.resetFilters && window.resetFilters()">
+      Reset Filters
+    </ui-button>
+    <!-- TODO: Move logic into .js file -->
+    <ui-button id="filtersApply" data-type="primary" onclick="window.applyFilters && window.applyFilters()">
+      Apply Filters
+    </ui-button>
+  </div>
+</ui-modal>
 
 <style>
-  /* Filter chip styles */
-  .filter-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    background-color: #dbeafe;
-    color: #1e40af;
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    max-width: 250px;
-  }
-
-  .filter-chip span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  /* Mini filter chips for status bar */
-  .filter-chip-mini {
-    display: inline-flex;
-    align-items: center;
-    background-color: #1e40af;
-    color: white;
-    padding: 0.125rem 0.5rem;
-    border-radius: 9999px;
-    font-size: 0.625rem;
-    font-weight: 500;
-    max-width: 120px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
   /* Filter results summary styling */
   #filterResultsSummary {
     transition: all 0.3s ease;
-  }
-
-  #filterResultsSummary.filtered {
-    color: #1e40af;
-    font-weight: 500;
   }
 
   /* Filter notification badge */
@@ -557,79 +440,6 @@
 
   #filterNotificationBadge.hidden {
     display: none;
-  }
-
-  /* Clear filters button animation */
-  #clearFiltersBtn {
-    transition: all 0.3s ease;
-    transform: scale(0.95);
-    opacity: 0;
-  }
-
-  #clearFiltersBtn:not(.hidden) {
-    transform: scale(1);
-    opacity: 1;
-  }
-
-  .filter-chip button {
-    background: none;
-    border: none;
-    color: inherit;
-    cursor: pointer;
-    padding: 0;
-    margin-left: 0.25rem;
-    border-radius: 50%;
-    width: 1rem;
-    height: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s;
-  }
-
-  .filter-chip button:hover {
-    background-color: rgba(59, 130, 246, 0.2);
-  }
-
-  .filter-chip svg {
-    width: 0.75rem;
-    height: 0.75rem;
-  }
-
-  /* Modal animation and layout */
-  #filtersModal {
-    transition: opacity 0.3s ease;
-    opacity: 0;
-  }
-
-  #filtersModal.show {
-    opacity: 1;
-  }
-
-  #filtersModal.hide {
-    opacity: 0;
-  }
-
-  /* Ensure proper modal sizing and scrolling */
-  #filtersModal .max-w-2xl {
-    min-height: 300px;
-  }
-
-  /* Improve mobile modal experience */
-  @media (max-width: 640px) {
-    #filtersModal .max-w-2xl {
-      max-width: calc(100vw - 1.5rem);
-      margin: 0.75rem;
-    }
-
-    #filtersModal .max-h-\[90vh\] {
-      max-height: calc(100vh - 1.5rem);
-    }
-
-    /* Ensure footer buttons are properly sized on mobile */
-    #filtersModal .flex-col.sm\:flex-row button {
-      min-height: 44px;
-    }
   }
 
   /* Bulk action bar styling */
@@ -756,6 +566,24 @@
 
   .custom-checkbox-input:checked+.custom-checkbox-visual::after {
     display: block;
+  }
+
+  .custom-checkbox-input:indeterminate+.custom-checkbox-visual {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+  }
+
+  .custom-checkbox-input:indeterminate+.custom-checkbox-visual::after {
+    content: "";
+    position: absolute;
+    display: block;
+    left: 4px;
+    top: 50%;
+    width: 12px;
+    height: 2px;
+    background-color: white;
+    border: none;
+    transform: translateY(-50%);
   }
 
   .custom-checkbox-input:focus+.custom-checkbox-visual {

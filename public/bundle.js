@@ -3190,28 +3190,6 @@
     }
   });
 
-  // src/components/modal.js
-  function openModal(id) {
-    const modal = document.getElementById(id);
-    const content = modal.querySelector(".relative");
-    modal.classList.remove("pointer-events-none", "opacity-0");
-    modal.classList.add("pointer-events-auto", "opacity-100");
-    requestAnimationFrame(() => {
-      content.classList.remove("translate-y-full");
-      content.classList.add("translate-y-0");
-    });
-  }
-  function closeModal(id) {
-    const modal = document.getElementById(id);
-    const content = modal.querySelector(".relative");
-    content.classList.remove("translate-y-0");
-    content.classList.add("translate-y-full");
-    setTimeout(() => {
-      modal.classList.add("pointer-events-none", "opacity-0");
-      modal.classList.remove("pointer-events-auto", "opacity-100");
-    }, 500);
-  }
-
   // src/state.js
   var state_default = {
     credentials: { email: "", encryptedPassword: "", otp: "", remember: false, apiToken: "", awaitingOtp: false, deviceUuid: "" },
@@ -3266,85 +3244,6 @@
     localStorage.removeItem(key);
   }
 
-  // src/components/button.js
-  function renderButtons() {
-    document.querySelectorAll(".ui-button").forEach((button) => {
-      const type = button.dataset.type || "primary";
-      const size = button.dataset.size || "medium";
-      const fixedWidth = button.dataset.fixedWidth;
-      const fullWidth = button.hasAttribute("data-fullwidth");
-      const isDisabled = button.hasAttribute("disabled") || button.disabled;
-      button.className = "ui-button";
-      button.type = "button";
-      button.classList.add("font-semibold", "rounded-lg", "transition-all", "duration-200", "ease-in-out", "flex", "items-center", "justify-center");
-      button.style.transform = "none";
-      switch (size) {
-        case "small":
-          button.classList.add("px-2", "py-1", "text-xs", "sm:px-3", "sm:py-1.5", "sm:text-sm");
-          break;
-        case "large":
-          button.classList.add("px-4", "py-2.5", "text-sm", "sm:px-6", "sm:py-3", "sm:text-base", "md:px-8", "md:py-4");
-          break;
-        case "medium":
-        default:
-          button.classList.add("px-3", "py-2", "text-sm", "sm:px-5", "sm:py-2", "sm:text-sm");
-          break;
-      }
-      if (isDisabled) {
-        button.setAttribute("disabled", "");
-        button.classList.add("opacity-50", "cursor-not-allowed");
-        button.style.boxShadow = "none";
-      } else {
-        button.removeAttribute("disabled");
-        button.classList.add("cursor-pointer");
-      }
-      switch (type) {
-        case "primary":
-          button.classList.add("bg-[#1993e5]", "text-white", "border", "border-[#1993e5]", "shadow-sm");
-          if (!isDisabled) {
-            button.classList.add("hover:bg-blue-600", "hover:border-blue-600", "hover:shadow-md", "focus:ring-2", "focus:ring-blue-500", "focus:ring-offset-2", "active:bg-blue-700", "transform", "hover:scale-105");
-          }
-          break;
-        case "secondary":
-          button.classList.add("bg-white", "text-gray-700", "border", "border-gray-300", "shadow-sm");
-          if (!isDisabled) {
-            button.classList.add("hover:bg-gray-50", "hover:border-gray-400", "hover:text-gray-800", "focus:ring-2", "focus:ring-gray-500", "focus:ring-offset-2", "active:bg-gray-100");
-          }
-          break;
-        case "text":
-          button.classList.remove("px-2", "px-3", "px-4", "px-5", "px-6", "px-8", "py-1", "py-1.5", "py-2", "py-2.5", "py-3", "py-4", "sm:px-3", "sm:px-5", "sm:px-6", "sm:px-8", "sm:py-1.5", "sm:py-2", "sm:py-3", "sm:py-4", "md:px-8", "md:py-4");
-          button.classList.add("bg-transparent", "text-blue-600", "px-2", "py-1", "sm:px-3", "sm:py-1.5");
-          if (!isDisabled) {
-            button.classList.add("hover:underline", "hover:text-blue-700", "focus:ring-2", "focus:ring-blue-500", "focus:ring-offset-2");
-          }
-          break;
-        case "danger":
-          button.classList.add("bg-red-500", "text-white", "border", "border-red-500", "shadow-sm");
-          if (!isDisabled) {
-            button.classList.add("hover:bg-red-600", "hover:border-red-600", "hover:shadow-md", "focus:ring-2", "focus:ring-red-500", "focus:ring-offset-2", "active:bg-red-700", "transform", "hover:scale-105");
-          }
-          break;
-        case "warning":
-          button.classList.add("bg-orange-500", "text-white", "border", "border-orange-500", "shadow-sm");
-          if (!isDisabled) {
-            button.classList.add("hover:bg-orange-600", "hover:border-orange-600", "hover:shadow-md", "focus:ring-2", "focus:ring-orange-500", "focus:ring-offset-2", "active:bg-orange-700", "transform", "hover:scale-105");
-          }
-          break;
-      }
-      if (fixedWidth) {
-        button.style.width = `${fixedWidth}px`;
-      }
-      if (fullWidth) {
-        button.classList.add("w-full");
-      }
-      if (!isDisabled) {
-        button.classList.add("touch-manipulation", "select-none");
-        button.style.minHeight = "44px";
-        button.style.minWidth = "44px";
-      }
-    });
-  }
-
   // src/components/pageLayout.js
   function renderPageLayout(options = {}) {
     const {
@@ -3364,18 +3263,18 @@
       pageContent.push(sibling);
       sibling = sibling.nextElementSibling;
     }
-    container.className = `min-h-screen flex flex-col ${className}`;
+    container.className = `min-h-screen flex flex-col w-full max-w-full mx-auto ${className}`;
     container.innerHTML = `
-    <main class="flex-1 w-full mx-auto px-4 sm:px-6 md:px-8 py-2 sm:py-4 md:py-6 lg:py-8 max-w-6xl">
-      <div class="flex flex-col space-y-6 sm:space-y-8 md:space-y-10">
+    <main class="flex-1 w-full max-w-full mx-auto px-4 py-2 overflow-x-hidden">
+      <div class="max-w-6xl mx-auto w-full min-w-0 flex flex-col space-y-6 ">
         <!-- Navigation Bar -->
-        <div id="navigationBar"></div>
+        <div id="navigationBar" class="min-w-0"></div>
 
         <!-- Page Header -->
-        <div id="pageHeader"></div>
+        <div id="pageHeader" class="min-w-0 mx-auto"></div>
 
         <!-- Page Content Slot -->
-        <div id="pageContent"></div>
+        <div id="pageContent" class="min-w-0 mx-auto"></div>
       </div>
     </main>
   `;
@@ -3389,7 +3288,6 @@
         contentContainer.appendChild(element);
       });
     }
-    renderButtons();
   }
   function renderNavigationBar(options = {}) {
     const {
@@ -3408,37 +3306,32 @@
     let navHTML = '<div class="flex flex-wrap items-center justify-between gap-2 mb-4">';
     if (showBackButton) {
       navHTML += `
-      <button 
+      <ui-button 
         id="navBackBtn" 
-        class="ui-button flex items-center text-sm"
         data-type="text"
-        data-size="small"
       >
         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
         ${backText}
-      </button>
+      </ui-button>
     `;
     } else {
       navHTML += "<div></div>";
     }
     if (showDataButton) {
       navHTML += `
-      <button 
+      <ui-button 
         id="navDataBtn" 
-        class="ui-button text-xs sm:text-sm"
         data-type="text"
-        data-size="small"
-        ${!hasData ? 'style="opacity: 0.6; cursor: default;"' : ""}
+        ${!hasData ? 'style="opacity: 0.6;"' : ""}
       >
         ${dataButtonText}
-      </button>
+      </ui-button>
     `;
     }
     navHTML += "</div>";
     container.innerHTML = navHTML;
-    renderButtons();
     if (showBackButton) {
       const backBtn = document.getElementById("navBackBtn");
       backBtn?.addEventListener("click", () => {
@@ -3448,9 +3341,7 @@
     if (showDataButton) {
       const dataBtn = document.getElementById("navDataBtn");
       dataBtn?.addEventListener("click", () => {
-        if (hasData) {
-          navigate("/data-management");
-        }
+        navigate("/data-management");
       });
     }
   }
@@ -3496,13 +3387,734 @@
     return div.innerHTML;
   }
 
+  // src/components/AutoStyledButton.js
+  var buttonStyles = {
+    base: [
+      "font-semibold",
+      "rounded-lg",
+      "transition-all",
+      "duration-200",
+      "ease-in-out",
+      "flex",
+      "items-center",
+      "justify-center"
+    ],
+    sizes: {
+      small: ["px-2", "py-1", "text-xs", "sm:px-3", "sm:py-1.5", "sm:text-sm"],
+      medium: ["px-3", "py-2", "text-sm", "sm:px-5", "sm:py-2", "sm:text-sm"],
+      large: ["px-4", "py-2.5", "text-sm", "sm:px-6", "sm:py-3", "sm:text-base", "md:px-8", "md:py-4"]
+    },
+    colors: {
+      blue: {
+        solid: {
+          base: ["bg-[#1993e5]", "text-white", "shadow-sm"],
+          hover: [
+            "hover:bg-blue-600",
+            "hover:shadow-md",
+            "focus:ring-2",
+            "focus:ring-blue-500",
+            "focus:ring-offset-2",
+            "active:bg-blue-700"
+          ]
+        },
+        outline: {
+          base: ["bg-transparent", "text-blue-600", "border", "border-blue-600", "shadow-none"],
+          hover: [
+            "hover:bg-blue-50",
+            "hover:border-blue-700",
+            "hover:text-blue-700",
+            "focus:ring-2",
+            "focus:ring-blue-500",
+            "focus:ring-offset-2",
+            "active:bg-blue-100"
+          ]
+        },
+        text: {
+          base: ["bg-transparent", "text-blue-600", "border-none", "shadow-none"],
+          hover: [
+            "hover:underline",
+            "hover:text-blue-700",
+            "focus:ring-2",
+            "focus:ring-blue-500",
+            "focus:ring-offset-2"
+          ]
+        }
+      },
+      red: {
+        solid: {
+          base: ["bg-red-500", "text-white", "shadow-sm"],
+          hover: [
+            "hover:bg-red-600",
+            "hover:shadow-md",
+            "focus:ring-2",
+            "focus:ring-red-500",
+            "focus:ring-offset-2",
+            "active:bg-red-700"
+          ]
+        },
+        outline: {
+          base: ["bg-transparent", "text-red-600", "border", "border-red-600", "shadow-none"],
+          hover: [
+            "hover:bg-red-50",
+            "hover:border-red-700",
+            "hover:text-red-700",
+            "focus:ring-2",
+            "focus:ring-red-500",
+            "focus:ring-offset-2",
+            "active:bg-red-100"
+          ]
+        },
+        text: {
+          base: ["bg-transparent", "text-red-600", "border-none", "shadow-none"],
+          hover: [
+            "hover:underline",
+            "hover:text-red-700",
+            "focus:ring-2",
+            "focus:ring-red-500",
+            "focus:ring-offset-2"
+          ]
+        }
+      },
+      black: {
+        solid: {
+          base: ["bg-gray-800", "text-white", "shadow-sm"],
+          hover: [
+            "hover:bg-gray-700",
+            "hover:shadow-md",
+            "focus:ring-2",
+            "focus:ring-black",
+            "focus:ring-offset-2",
+            "active:bg-gray-800"
+          ]
+        },
+        outline: {
+          base: ["bg-transparent", "text-black", "border", "border-black", "shadow-none"],
+          hover: [
+            "hover:bg-gray-100",
+            "hover:border-gray-700",
+            "hover:text-gray-700",
+            "focus:ring-2",
+            "focus:ring-black",
+            "focus:ring-offset-2",
+            "active:bg-gray-200"
+          ]
+        },
+        text: {
+          base: ["bg-transparent", "text-black", "border-none", "shadow-none"],
+          hover: [
+            "hover:underline",
+            "hover:text-gray-700",
+            "focus:ring-2",
+            "focus:ring-black",
+            "focus:ring-offset-2"
+          ]
+        }
+      },
+      yellow: {
+        solid: {
+          base: ["bg-yellow-500", "text-white", "shadow-sm"],
+          hover: [
+            "hover:bg-yellow-600",
+            "hover:shadow-md",
+            "focus:ring-2",
+            "focus:ring-yellow-500",
+            "focus:ring-offset-2",
+            "active:bg-yellow-700"
+          ]
+        },
+        outline: {
+          base: ["bg-transparent", "text-yellow-600", "border", "border-yellow-600", "shadow-none"],
+          hover: [
+            "hover:bg-yellow-50",
+            "hover:border-yellow-700",
+            "hover:text-yellow-700",
+            "focus:ring-2",
+            "focus:ring-yellow-500",
+            "focus:ring-offset-2",
+            "active:bg-yellow-100"
+          ]
+        },
+        text: {
+          base: ["bg-transparent", "text-yellow-600", "border-none", "shadow-none"],
+          hover: [
+            "hover:underline",
+            "hover:text-yellow-700",
+            "focus:ring-2",
+            "focus:ring-yellow-500",
+            "focus:ring-offset-2"
+          ]
+        }
+      },
+      grey: {
+        solid: {
+          base: ["bg-gray-500", "text-white", "shadow-sm"],
+          hover: [
+            "hover:bg-gray-600",
+            "hover:shadow-md",
+            "focus:ring-2",
+            "focus:ring-gray-500",
+            "focus:ring-offset-2",
+            "active:bg-gray-700"
+          ]
+        },
+        outline: {
+          base: ["bg-transparent", "text-gray-700", "border", "border-gray-300", "shadow-none"],
+          hover: [
+            "hover:bg-gray-50",
+            "hover:border-gray-400",
+            "hover:text-gray-800",
+            "focus:ring-2",
+            "focus:ring-gray-500",
+            "focus:ring-offset-2",
+            "active:bg-gray-100"
+          ]
+        },
+        text: {
+          base: ["bg-transparent", "text-gray-600", "border-none", "shadow-none"],
+          hover: [
+            "hover:underline",
+            "hover:text-gray-700",
+            "focus:ring-2",
+            "focus:ring-gray-500",
+            "focus:ring-offset-2"
+          ]
+        }
+      },
+      white: {
+        solid: {
+          base: ["bg-white", "text-gray-700", "border", "border-gray-300", "shadow-sm"],
+          hover: [
+            "hover:bg-gray-50",
+            "hover:border-gray-400",
+            "hover:text-gray-800",
+            "focus:ring-2",
+            "focus:ring-gray-500",
+            "focus:ring-offset-2",
+            "active:bg-gray-100"
+          ]
+        },
+        outline: {
+          base: ["bg-transparent", "text-gray-700", "border", "border-gray-300", "shadow-none"],
+          hover: [
+            "hover:bg-gray-50",
+            "hover:border-gray-400",
+            "hover:text-gray-800",
+            "focus:ring-2",
+            "focus:ring-gray-500",
+            "focus:ring-offset-2",
+            "active:bg-gray-100"
+          ]
+        },
+        text: {
+          base: ["bg-transparent", "text-white", "border-none", "shadow-none"],
+          hover: [
+            "hover:underline",
+            "hover:text-white",
+            "focus:ring-2",
+            "focus:ring-gray-500",
+            "focus:ring-offset-2"
+          ]
+        }
+      },
+      purple: {
+        solid: {
+          base: ["bg-purple-500", "text-white", "shadow-sm"],
+          hover: [
+            "hover:bg-purple-600",
+            "hover:shadow-md",
+            "focus:ring-2",
+            "focus:ring-purple-500",
+            "focus:ring-offset-2",
+            "active:bg-purple-700"
+          ]
+        },
+        outline: {
+          base: ["bg-transparent", "text-purple-600", "border", "border-purple-600", "shadow-none"],
+          hover: [
+            "hover:bg-purple-50",
+            "hover:border-purple-700",
+            "hover:text-purple-700",
+            "focus:ring-2",
+            "focus:ring-purple-500",
+            "focus:ring-offset-2",
+            "active:bg-purple-100"
+          ]
+        },
+        text: {
+          base: ["bg-transparent", "text-purple-600", "border-none", "shadow-none"],
+          hover: [
+            "hover:underline",
+            "hover:text-purple-700",
+            "focus:ring-2",
+            "focus:ring-purple-500",
+            "focus:ring-offset-2"
+          ]
+        }
+      },
+      green: {
+        solid: {
+          base: ["bg-green-500", "text-white", "shadow-sm"],
+          hover: [
+            "hover:bg-green-600",
+            "hover:shadow-md",
+            "focus:ring-2",
+            "focus:ring-green-500",
+            "focus:ring-offset-2",
+            "active:bg-green-700"
+          ]
+        },
+        outline: {
+          base: ["bg-transparent", "text-green-600", "border", "border-green-600", "shadow-none"],
+          hover: [
+            "hover:bg-green-50",
+            "hover:border-green-700",
+            "hover:text-green-700",
+            "focus:ring-2",
+            "focus:ring-green-500",
+            "focus:ring-offset-2",
+            "active:bg-green-100"
+          ]
+        },
+        text: {
+          base: ["bg-transparent", "text-green-600", "border-none", "shadow-none"],
+          hover: [
+            "hover:underline",
+            "hover:text-green-700",
+            "focus:ring-2",
+            "focus:ring-green-500",
+            "focus:ring-offset-2"
+          ]
+        }
+      },
+      amber: {
+        solid: {
+          base: ["bg-amber-500", "text-white", "shadow-sm"],
+          hover: [
+            "hover:bg-amber-600",
+            "hover:shadow-md",
+            "focus:ring-2",
+            "focus:ring-amber-500",
+            "focus:ring-offset-2",
+            "active:bg-amber-700"
+          ]
+        },
+        outline: {
+          base: ["bg-transparent", "text-amber-600", "border", "border-amber-600", "shadow-none"],
+          hover: [
+            "hover:bg-amber-50",
+            "hover:border-amber-700",
+            "hover:text-amber-700",
+            "focus:ring-2",
+            "focus:ring-amber-500",
+            "focus:ring-offset-2",
+            "active:bg-amber-100"
+          ]
+        },
+        text: {
+          base: ["bg-transparent", "text-amber-600", "border-none", "shadow-none"],
+          hover: [
+            "hover:underline",
+            "hover:text-amber-700",
+            "focus:ring-2",
+            "focus:ring-amber-500",
+            "focus:ring-offset-2"
+          ]
+        }
+      },
+      transparent: {
+        solid: {
+          base: ["bg-transparent", "text-white"],
+          hover: [
+            "hover:bg-white/10",
+            "hover:shadow-md",
+            "focus:ring-2",
+            "focus:ring-gray-500",
+            "focus:ring-offset-2",
+            "active:bg-gray-700"
+          ]
+        },
+        outline: {
+          base: ["bg-transparent", "text-white", "border", "border-gray-300", "shadow-none"],
+          hover: [
+            "hover:bg-gray-50",
+            "hover:border-gray-400",
+            "hover:text-gray-800",
+            "focus:ring-2",
+            "focus:ring-gray-500",
+            "focus:ring-offset-2",
+            "active:bg-gray-100"
+          ]
+        },
+        text: {
+          base: ["bg-transparent", "text-gray-600", "border-none", "shadow-none"],
+          hover: [
+            "hover:underline",
+            "hover:text-gray-700",
+            "focus:ring-2",
+            "focus:ring-gray-500",
+            "focus:ring-offset-2"
+          ]
+        }
+      }
+    }
+  };
+  var AutoStyledButton = class extends HTMLElement {
+    constructor() {
+      super();
+      this._initialized = false;
+    }
+    connectedCallback() {
+      if (!this._initialized) {
+        this.applyStyles();
+        this._initialized = true;
+        this._observer = new MutationObserver(() => this.applyStyles());
+        this._observer.observe(this, {
+          attributes: true,
+          attributeFilter: ["data-type", "data-color", "data-size", "disabled", "data-fullwidth"]
+        });
+      }
+    }
+    disconnectedCallback() {
+      if (this._observer) {
+        this._observer.disconnect();
+      }
+    }
+    applyStyles() {
+      const type = this.dataset.type || "solid";
+      const color = this.dataset.color || "blue";
+      const size = this.dataset.size || "medium";
+      const isDisabled = this.hasAttribute("disabled") || this.disabled;
+      const fullWidth = this.hasAttribute("data-fullwidth");
+      this.className = "ui-button";
+      this.classList.add(...buttonStyles.base);
+      if (type !== "text") {
+        this.classList.add(...buttonStyles.sizes[size] || buttonStyles.sizes.medium);
+      }
+      const colorStyles = buttonStyles.colors[color] || buttonStyles.colors.blue;
+      const typeStyle = colorStyles[type] || colorStyles.solid;
+      this.classList.add(...typeStyle.base);
+      if (!isDisabled) {
+        this.classList.add("cursor-pointer", ...typeStyle.hover);
+      } else {
+        this.classList.add("opacity-50", "cursor-not-allowed");
+        this.setAttribute("disabled", "");
+      }
+      if (fullWidth) {
+        this.classList.add("w-full");
+      }
+      if (!this.hasAttribute("type")) {
+        this.setAttribute("type", "button");
+      }
+    }
+    updateStyle() {
+      this.applyStyles();
+    }
+  };
+  customElements.define("ui-button", AutoStyledButton);
+
+  // src/core/reactiveState.js
+  var Signal = class {
+    constructor(initialValue) {
+      this._value = initialValue;
+      this._subscribers = /* @__PURE__ */ new Set();
+    }
+    get value() {
+      return this._value;
+    }
+    set value(newValue) {
+      if (this._value !== newValue) {
+        this._value = newValue;
+        this._notify();
+      }
+    }
+    subscribe(callback) {
+      this._subscribers.add(callback);
+      return () => this._subscribers.delete(callback);
+    }
+    _notify() {
+      this._subscribers.forEach((callback) => {
+        try {
+          callback(this._value);
+        } catch (error) {
+          console.error("Signal callback error:", error);
+        }
+      });
+    }
+  };
+  function signal(initialValue) {
+    return new Signal(initialValue);
+  }
+  function computed(compute) {
+    const result = new Signal(compute());
+    const update = () => {
+      result.value = compute();
+    };
+    return { ...result, update };
+  }
+
+  // src/components/ReusableModal.js
+  var ReusableModal = class extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" });
+      this.isOpen = signal(false);
+      this.isOpen.subscribe((open) => {
+        this._updateModalState(open);
+      });
+    }
+    connectedCallback() {
+      this._render();
+      this._setupEventListeners();
+    }
+    _render() {
+      this.shadowRoot.innerHTML = `
+      <style>
+        ::slotted([slot="trigger"]) {
+          cursor: pointer;
+        }
+      </style>
+      <slot name="trigger"></slot>
+    `;
+      this._modalOverlay = document.createElement("div");
+      this._modalOverlay.className = "ui-modal-overlay";
+      this._modalOverlay.setAttribute("role", "dialog");
+      this._modalOverlay.setAttribute("aria-modal", "true");
+      this._modalOverlay.innerHTML = `
+      <style>
+        .ui-modal-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 999999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.75rem;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 500ms cubic-bezier(0.4, 0, 0.2, 1);
+          background-color: transparent;
+        }
+
+        .ui-modal-overlay.open {
+          pointer-events: auto;
+          opacity: 1;
+        }
+
+        .ui-modal-backdrop {
+          position: absolute;
+          inset: 0;
+          background-color: rgba(0, 0, 0, 0.5);
+          transition: background-color 500ms cubic-bezier(0.4, 0, 0.2, 1);
+          z-index: -1;
+        }
+
+        .ui-modal-content {
+          position: relative;
+          z-index: 100;
+          background-color: white;
+          border-radius: 0.75rem;
+          padding: 1.5rem;
+          margin: 1rem;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+          max-width: 85vw;
+          width: auto;
+          min-width: min(85vw, 500px);
+          transform: translateY(100%);
+          transition: transform 500ms cubic-bezier(0.4, 0, 0.2, 1);
+          max-height: 90vh;
+          overflow-y: auto;
+          flex-shrink: 0;
+        }
+
+        @media (min-width: 640px) {
+          .ui-modal-content {
+            padding: 2rem;
+            max-width: 70vw;
+            margin: 1.5rem;
+          }
+        }
+
+        @media (min-width: 768px) {
+          .ui-modal-content {
+            padding: 2.5rem;
+            max-width: 40vw;
+            margin: 2rem;
+          }
+        }
+
+        .ui-modal-overlay.open .ui-modal-content {
+          transform: translateY(0);
+        }
+
+        .ui-modal-header {
+          display: relative;
+          margin-bottom: 1rem;
+          gap: 1rem;
+        }
+
+        .ui-modal-title {
+          flex: 1;
+          padding-right: 1rem;
+          font-size: 1.125rem;
+          font-weight: 700;
+          color: #111827;
+          line-height: 1.5;
+        }
+
+        @media (min-width: 640px) {
+          .ui-modal-title {
+            font-size: 1.25rem;
+          }
+        }
+
+        @media (min-width: 768px) {
+          .ui-modal-title {
+            font-size: 1.5rem;
+          }
+        }
+
+        .ui-modal-close-btn {
+          position: absolute;
+          top: 0.75rem;
+          right: 0.75rem;
+          width: 2rem;
+          height: 2rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background-color: transparent;
+          border: none;
+          color: #9ca3af;
+          cursor: pointer;
+          border-radius: 9999px;
+          transition: all 200ms;
+          flex-shrink: 0;
+        }
+
+        .ui-modal-close-btn:hover {
+          background-color: #f3f4f6;
+          color: #4b5563;
+        }
+
+        .ui-modal-close-btn:focus {
+          outline: none;
+          ring: 2px;
+          ring-color: #3b82f6;
+        }
+
+        .ui-modal-body {
+          color: #4b5563;
+          font-size: 0.875rem;
+          line-height: 1.5;
+        }
+
+        .ui-modal-footer {
+          margin-top: 1.5rem;
+          display: flex;
+          justify-content: flex-end;
+          gap: 0.75rem;
+        }
+      </style>
+      
+      <div class="ui-modal-backdrop"></div>
+      
+      <div class="ui-modal-content">
+        <div class="ui-modal-header">
+          <div class="ui-modal-title"></div>
+          <button class="ui-modal-close-btn" aria-label="Close modal">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="ui-modal-body"></div>
+        <div class="ui-modal-footer"></div>
+      </div>
+    `;
+      this._updateModalContent();
+    }
+    _updateModalContent() {
+      const titleSlot = this.querySelector('[slot="title"]');
+      const contentSlot = this.querySelector('[slot="content"]');
+      const footerSlot = this.querySelector('[slot="footer"]');
+      const titleContainer = this._modalOverlay.querySelector(".ui-modal-title");
+      const bodyContainer = this._modalOverlay.querySelector(".ui-modal-body");
+      const footerContainer = this._modalOverlay.querySelector(".ui-modal-footer");
+      if (titleSlot && titleContainer) {
+        titleContainer.innerHTML = titleSlot.innerHTML;
+      }
+      if (contentSlot && bodyContainer) {
+        bodyContainer.innerHTML = contentSlot.innerHTML;
+      }
+      if (footerSlot && footerContainer) {
+        footerContainer.innerHTML = Array.from(footerSlot.children).map((child) => child.outerHTML).join("");
+      }
+    }
+    querySelector(selector) {
+      const element = super.querySelector(selector);
+      if (element)
+        return element;
+      if (this._modalOverlay) {
+        return this._modalOverlay.querySelector(selector);
+      }
+      return null;
+    }
+    _setupEventListeners() {
+      const backdrop = this._modalOverlay.querySelector(".ui-modal-backdrop");
+      const closeBtn = this._modalOverlay.querySelector(".ui-modal-close-btn");
+      const trigger = this.querySelector('[slot="trigger"]');
+      if (trigger) {
+        trigger.addEventListener("click", () => this.open());
+      }
+      closeBtn.addEventListener("click", () => this.close());
+      backdrop.addEventListener("click", () => this.close());
+      this._handleEscape = (e) => {
+        if (e.key === "Escape" && this.isOpen.value) {
+          this.close();
+        }
+      };
+    }
+    _updateModalState(open) {
+      if (open) {
+        document.body.appendChild(this._modalOverlay);
+        this._modalOverlay.offsetHeight;
+        this._modalOverlay.classList.add("open");
+        document.body.style.overflow = "hidden";
+        document.addEventListener("keydown", this._handleEscape);
+      } else {
+        this._modalOverlay.classList.remove("open");
+        setTimeout(() => {
+          if (this._modalOverlay.parentNode) {
+            this._modalOverlay.parentNode.removeChild(this._modalOverlay);
+          }
+        }, 500);
+        document.body.style.overflow = "";
+        document.removeEventListener("keydown", this._handleEscape);
+      }
+    }
+    open() {
+      this.isOpen.value = true;
+    }
+    close() {
+      this.isOpen.value = false;
+    }
+    toggle() {
+      this.isOpen.value = !this.isOpen.value;
+    }
+    disconnectedCallback() {
+      document.removeEventListener("keydown", this._handleEscape);
+      if (this._modalOverlay && this._modalOverlay.parentNode) {
+        this._modalOverlay.parentNode.removeChild(this._modalOverlay);
+      }
+    }
+  };
+  if (!customElements.get("ui-modal")) {
+    customElements.define("ui-modal", ReusableModal);
+  }
+
   // src/views/Home/home.js
-  function initUploadView() {
-    const getStartedButton = document.getElementById("getStartedButton");
-    const privacyInfoModalButton = document.getElementById("privacyInfoModalButton");
-    const migrationInfoModalButton = document.getElementById("migrationInfoModalButton");
-    const closePrivacyInfoModal = document.getElementById("closePrivacyInfoModal");
-    const closeMigrationInfoModal = document.getElementById("closeMigrationInfoModal");
+  function initHomeView() {
     renderPageLayout({
       header: {
         title: "YNAB to Monarch Migration",
@@ -3510,28 +4122,49 @@
         containerId: "pageHeader"
       }
     });
-    getStartedButton?.addEventListener("click", (event) => {
-      event.preventDefault();
+    document.getElementById("getStartedButton")?.addEventListener("click", (e) => {
+      e.preventDefault();
       navigate("/upload");
     });
-    privacyInfoModalButton?.addEventListener("click", () => openModal("privacyInfoModal"));
-    closePrivacyInfoModal?.addEventListener("click", () => closeModal("privacyInfoModal"));
-    migrationInfoModalButton?.addEventListener("click", () => openModal("migrationInfoModal"));
-    closeMigrationInfoModal?.addEventListener("click", () => closeModal("migrationInfoModal"));
   }
 
   // src/views/Home/home.html
   var home_default = `<div id="pageLayout"></div>
 
-<!-- Get Started Btn -->
-<section class="container-responsive flex flex-col items-center mb-6">
-  <button id="getStartedButton" class="ui-button w-full" data-type="primary" data-size="large">
-    Start Migrating Your Data
-  </button>
+<section class="flex flex-col items-center mb-6 max-w-md mx-auto">
 
-  <a id="migrationInfoModalButton" class="ui-button mt-4 sm:mt-6 inline-block" data-type="text">
-    How does this work?
-  </a>
+  <!-- Get Started Btn -->
+  <ui-button id="getStartedButton" data-size="large">
+    Start Migrating Your Data
+  </ui-button>
+
+  <!-- Migration Info Modal -->
+  <ui-modal id="migrationInfoModal">
+    <ui-button slot="trigger" data-type="text">
+      How does this work?
+    </ui-button>
+
+    <h3 slot="title">How the Migration Process Works</h3>
+
+    <div slot="content">
+      <div class="space-y-4 text-sm text-gray-600">
+        <div>
+          <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 1: Access Your Data</h4>
+          <p class="text-gray-600 text-sm">Connect your YNAB account or upload your data manually. We'll retrieve your
+            budgets, transactions, categories, and accounts.</p>
+        </div>
+        <div>
+          <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 2: Filter & Process</h4>
+          <p class="text-gray-600 text-sm">Decide what to migrate and make edits as needed.</p>
+        </div>
+        <div>
+          <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 3: Download or Import</h4>
+          <p class="text-gray-600 text-sm">Decide to receive a ready-to-import file that you can upload into Monarch
+            Money yourself, or connect to your Monarch Money account to automatically migrate your data.</p>
+        </div>
+      </div>
+    </div>
+  </ui-modal>
 </section>
 
 <!-- Privacy Info -->
@@ -3551,129 +4184,154 @@
           We never store, sell, or share your financial information. You remain in control of your data from start
           to finish.
         </p>
-        <button id="privacyInfoModalButton"
-          class="text-blue-600 hover:text-blue-700 transition-colors text-sm underline">
-          Learn more about how we protect your privacy
-        </button>
+
+        <!-- Privacy Info Modal -->
+        <ui-modal id="privacyInfoModal">
+          <ui-button slot="trigger" data-type="text" class="">
+            Learn more about how we protect your privacy
+          </ui-button>
+
+          <h3 slot="title">Privacy is our top priority</h3>
+
+          <div slot="content">
+            <div class="space-y-4 text-sm text-gray-600">
+              <div>
+                <h4 class="text-gray-900 font-semibold mb-1">No Data Collection</h4>
+                <p>We never collect, store, or share your financial data.</p>
+              </div>
+              <div>
+                <h4 class="text-gray-900 font-semibold mb-1">Secure Connections</h4>
+                <p>We use secure, encrypted, and read-only connections when accessing your YNAB data.</p>
+              </div>
+              <div>
+                <h4 class="text-gray-900 font-semibold mb-1">You're in Control</h4>
+                <p>At any point in time you have full control to wipe your data and stop the migration process.</p>
+              </div>
+              <div>
+                <h4 class="text-gray-900 font-semibold mb-1">Open Source & Auditable</h4>
+                <p>Everything is transparent and can be reviewed by security experts. We have nothing to hide because we
+                  keep no copies. See <a href="https://github.com/your-repo" class="text-blue-600 hover:underline">our
+                    source code</a>.</p>
+              </div>
+            </div>
+
+            <div class="mt-6 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div class="flex items-start gap-2 sm:gap-3">
+                <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clip-rule="evenodd" />
+                </svg>
+                <p class="text-xs sm:text-sm text-green-800 leading-relaxed">
+                  <strong>100% Private:</strong> Your financial data is sensitive, and we treat it that way. You remain
+                  the sole owner of every byte.
+                </p>
+              </div>
+            </div>
+          </div>
+        </ui-modal>
       </div>
     </div>
   </div>
-</section>
-
-<!-- Privacy Info Modal -->
-<div id="privacyInfoModal" class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 
-            transition-opacity duration-300 p-3 sm:p-4 md:p-6">
-  <!-- Overlay -->
-  <div class="absolute inset-0 bg-black/30 transition-opacity duration-300"></div>
-
-  <!-- Modal Content -->
-  <div
-    class="relative z-10 bg-white rounded-xl p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md md:max-w-lg w-full shadow-2xl transform translate-y-full transition-transform duration-500 max-h-[90vh] overflow-y-auto">
-
-    <!-- Close Btn -->
-    <button id="closePrivacyInfoModal"
-      class="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-      aria-label="Close modal">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    </button>
-
-    <!-- Title -->
-    <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 pr-8 text-gray-900">
-      Privacy is our top priority
-    </h3>
-
-    <!-- Body -->
-    <div class="space-y-4 text-sm text-gray-600">
-      <div>
-        <h4 class="text-gray-900 font-semibold mb-1">No Data Collection</h4>
-        <p>We never collect, store, or share your financial data.</p>
-      </div>
-      <div>
-        <h4 class="text-gray-900 font-semibold mb-1">Secure Connections</h4>
-        <p>We use secure, encrypted, and read-only connections when accessing your YNAB data.
-        </p>
-      </div>
-      <div>
-        <h4 class="text-gray-900 font-semibold mb-1">You're in Control</h4>
-        <p>At any point in time you have full control to wipe your data and stop the migration process.</p>
-      </div>
-      <div>
-        <h4 class="text-gray-900 font-semibold mb-1">Open Source & Auditable</h4>
-        <p>Everything is transparent and can be reviewed by security experts. We have nothing to hide because we keep
-          no copies. See <a href="https://github.com/your-repo" class="text-blue-600 hover:underline">our source
-            code</a>.</p>
-      </div>
-    </div>
-
-    <div class="mt-6 sm:mt-8 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
-      <div class="flex items-start gap-2 sm:gap-3">
-        <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd"
-            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-            clip-rule="evenodd" />
-        </svg>
-        <p class="text-xs sm:text-sm text-green-800 leading-relaxed">
-          <strong>100% Private:</strong> Your financial data is sensitive, and we treat it that way. You remain the
-          sole owner of every byte.
-        </p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Migration Info Modal -->
-<div id="migrationInfoModal"
-  class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300 p-3 sm:p-4 md:p-6">
-
-  <!-- Overlay -->
-  <div class="absolute inset-0 bg-black/30 transition-opacity duration-300"></div>
-
-  <!-- Modal Content -->
-  <div
-    class="relative z-10 bg-white rounded-xl p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md md:max-w-lg w-full shadow-2xl transform translate-y-full transition-transform duration-500 max-h-[90vh] overflow-y-auto">
-
-    <!-- Close Btn -->
-    <button id="closeMigrationInfoModal"
-      class="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-      aria-label="Close modal">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    </button>
-
-    <!-- Title -->
-    <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 pr-8 text-gray-900">
-      How the Migration Process Works
-    </h3>
-
-    <!-- Body -->
-    <div class="space-y-4 text-sm text-gray-600">
-      <div>
-        <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 1: Access Your Data</h4>
-        <p class="text-gray-600 text-sm">Connect your YNAB account or upload your data manually. We'll retrieve your
-          budgets, transactions, categories, and accounts.</p>
-      </div>
-      <div>
-        <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 2: Filter & Process</h4>
-        <p class="text-gray-600 text-sm">Decide what to migrate and make edits as needed.</p>
-      </div>
-      <div>
-        <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 3: Download or Import</h4>
-        <p class="text-gray-600 text-sm">Decide to receive a ready-to-import file that you can upload into Monarch
-          Money yourself, or connect to your Monarch Money account to automatically migrate your data.</p>
-      </div>
-    </div>
-  </div>
-</div>`;
+</section>`;
 
   // src/services/ynabParser.js
   var import_papaparse = __toESM(require_papaparse_min(), 1);
   var import_jszip = __toESM(require_jszip_min(), 1);
+
+  // src/schemas/accountSchema.js
   function generateId() {
     return "id-" + Math.random().toString(36).slice(2, 11);
   }
+  function createAccountFromOauth(ynabAccount, inferredType = null, inferredSubtype = null) {
+    const balanceCents = Math.round(ynabAccount.balance / 10);
+    const balanceDollars = balanceCents / 100;
+    return {
+      id: ynabAccount.id,
+      name: ynabAccount.name.trim(),
+      modifiedName: ynabAccount.name.trim(),
+      type: inferredType || ynabAccount.type || "depository",
+      subtype: inferredSubtype || null,
+      transactions: [],
+      transactionCount: 0,
+      balanceCents,
+      balance: balanceDollars,
+      included: true,
+      selected: false,
+      status: "unprocessed"
+    };
+  }
+  function createAccountFromCsv(accountName, transactions, inferredType, inferredSubtype, balanceCents) {
+    const balanceDollars = balanceCents / 100;
+    const transactionCount = transactions.length;
+    return {
+      id: generateId(),
+      name: accountName,
+      modifiedName: accountName,
+      type: inferredType,
+      subtype: inferredSubtype,
+      transactions,
+      transactionCount,
+      balanceCents,
+      balance: balanceDollars,
+      included: transactionCount > 0,
+      selected: false,
+      status: "unprocessed"
+    };
+  }
+  function validateAccount(account) {
+    const errors = [];
+    const requiredStrings = ["id", "name", "modifiedName", "type", "status"];
+    for (const prop of requiredStrings) {
+      if (typeof account[prop] !== "string" || account[prop].length === 0) {
+        errors.push(`Missing or invalid required string property: ${prop}`);
+      }
+    }
+    if (account.subtype !== null && typeof account.subtype !== "string") {
+      errors.push('Property "subtype" must be a string or null');
+    }
+    const requiredNumbers = ["transactionCount", "balanceCents", "balance"];
+    for (const prop of requiredNumbers) {
+      if (typeof account[prop] !== "number" || isNaN(account[prop])) {
+        errors.push(`Missing or invalid required number property: ${prop}`);
+      }
+    }
+    const requiredBooleans = ["included", "selected"];
+    for (const prop of requiredBooleans) {
+      if (typeof account[prop] !== "boolean") {
+        errors.push(`Missing or invalid required boolean property: ${prop}`);
+      }
+    }
+    if (!Array.isArray(account.transactions)) {
+      errors.push('Property "transactions" must be an array');
+    }
+    const validStatuses = ["unprocessed", "processed", "failed"];
+    if (!validStatuses.includes(account.status)) {
+      errors.push(`Property "status" must be one of: ${validStatuses.join(", ")}`);
+    }
+    return {
+      valid: errors.length === 0,
+      errors
+    };
+  }
+  function createAccountCollection() {
+    return {};
+  }
+  function addAccountToCollection(collection, account) {
+    const validation = validateAccount(account);
+    if (!validation.valid) {
+      return {
+        success: false,
+        errors: validation.errors
+      };
+    }
+    collection[account.id] = account;
+    return {
+      success: true
+    };
+  }
+
+  // src/services/ynabParser.js
   function parseCurrencyToCents(str) {
     if (!str)
       return 0;
@@ -3721,7 +4379,7 @@
             console.groupEnd("parseCSV");
             return reject(new Error("\u274C CSV file appears to be empty or invalid."));
           }
-          const accounts2 = /* @__PURE__ */ new Map();
+          const accounts = /* @__PURE__ */ new Map();
           for (const row of data2) {
             const accountName = row["Account"]?.trim();
             if (!accountName) {
@@ -3744,23 +4402,16 @@
             } else {
               row.Amount = "0.00";
             }
-            if (!accounts2.has(accountName)) {
+            if (!accounts.has(accountName)) {
               const { type, subtype } = inferMonarchType(accountName, monarchAccountTypes);
-              accounts2.set(accountName, {
-                id: generateId(),
-                name: accountName,
-                modifiedName: accountName,
+              accounts.set(accountName, {
                 type,
                 subtype,
                 transactions: [],
-                transactionCount: 0,
-                balanceCents: 0,
-                included: true,
-                selected: false,
-                status: "unprocessed"
+                balanceCents: 0
               });
             }
-            const account = accounts2.get(accountName);
+            const account = accounts.get(accountName);
             account.transactions.push({
               Date: row.Date,
               Merchant: row.Payee || "",
@@ -3770,79 +4421,142 @@
               Amount: row.Amount,
               Tags: row.Flag || ""
             });
-            account.transactionCount += 1;
             account.balanceCents += netCents;
           }
           ;
-          for (const account of accounts2.values()) {
-            account.balance = account.balanceCents / 100;
-            account.included = account.transactionCount > 0;
+          const accountCollection = createAccountCollection();
+          for (const [accountName, accountData] of accounts.entries()) {
+            const standardizedAccount = createAccountFromCsv(accountName, accountData.transactions, accountData.type, accountData.subtype, accountData.balanceCents);
+            addAccountToCollection(accountCollection, standardizedAccount);
           }
           ;
           console.groupEnd("parseCSV");
-          resolve(Object.fromEntries(accounts2));
+          resolve(accountCollection);
         },
         error: (err) => reject(err)
       });
     });
   }
+  function parseYnabAccountApi(data2) {
+    console.group("parseYnabAccountApi");
+    const accountCollection = createAccountCollection();
+    try {
+      for (const row of data2) {
+        console.log("Parsing account:", row["name"], "Balance (milliunits):", row["balance"]);
+        const { type, subtype } = inferMonarchType(row["name"]);
+        const standardizedAccount = createAccountFromOauth(row, type, subtype);
+        addAccountToCollection(accountCollection, standardizedAccount);
+      }
+    } catch (err) {
+      console.error("\u274C Error parsing YNAB account API data:", err);
+    } finally {
+      console.log("Parsed accounts:", accountCollection);
+      console.groupEnd();
+      return accountCollection;
+    }
+  }
 
-  // src/api/config.js
-  var config = null;
-  async function fetchConfig() {
-    if (config) {
-      return config;
+  // src/api/ynabOauth.js
+  var AUTHORIZE_BASE_URL = "https://app.ynab.com/oauth/authorize";
+  var CALLBACK_PATH = "/oauth/ynab/callback";
+  var EXPECTED_STATE_KEY = "ynab_oauth_expected_state";
+  var ALERT_MESSAGE = "Could not retrieve YNAB OAuth client ID. Please try again.";
+  var cachedClientId = null;
+  function getRedirectUri() {
+    return `${location.origin}${CALLBACK_PATH}`;
+  }
+  async function getClientId() {
+    if (cachedClientId) {
+      return cachedClientId;
     }
     try {
       const response = await fetch("/.netlify/functions/config");
       if (!response.ok) {
-        throw new Error("Failed to fetch configuration");
+        throw new Error("Failed to fetch config");
       }
-      config = await response.json();
-      return config;
+      const config = await response.json();
+      cachedClientId = config.ynabClientId;
+      return cachedClientId;
     } catch (error) {
-      console.error("Could not fetch app configuration:", error);
-      return {
-        ynabClientId: "FALLBACK_CLIENT_ID",
-        ynabRedirectUri: "http://localhost:8888/oauth/ynab/callback"
-      };
+      console.error("Error fetching YNAB client ID:", error);
+      return null;
     }
   }
-  async function getConfig() {
-    return await fetchConfig();
+  function safeSessionStorage() {
+    try {
+      return window.sessionStorage;
+    } catch (error) {
+      console.warn("Session storage unavailable:", error);
+      return null;
+    }
   }
-  var base = location.hostname === "localhost" ? "http://localhost:3000/dev/" : "/.netlify/functions/";
-  var API = {
-    login: base + "monarchLogin",
-    fetchAccounts: base + "fetchMonarchAccounts",
-    createAccounts: base + "createMonarchAccounts",
-    generateStatements: base + "generateStatements",
-    getUploadStatus: base + "getUploadStatus"
-  };
+  function persistExpectedState(state) {
+    const storage = safeSessionStorage();
+    if (!storage)
+      return;
+    storage.setItem(EXPECTED_STATE_KEY, state);
+  }
+  function grabExpectedState() {
+    const storage = safeSessionStorage();
+    if (!storage)
+      return null;
+    return storage.getItem(EXPECTED_STATE_KEY);
+  }
+  function dropExpectedState() {
+    const storage = safeSessionStorage();
+    if (!storage)
+      return;
+    storage.removeItem(EXPECTED_STATE_KEY);
+  }
+  function buildState() {
+    const cryptoSource = window.crypto || window.msCrypto;
+    if (cryptoSource?.randomUUID) {
+      return cryptoSource.randomUUID();
+    }
+    if (cryptoSource?.getRandomValues) {
+      const array = new Uint8Array(16);
+      cryptoSource.getRandomValues(array);
+      return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("");
+    }
+    return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  }
+  function buildAuthorizeUrl(clientId, stateValue) {
+    const base2 = new URL(AUTHORIZE_BASE_URL);
+    base2.searchParams.set("client_id", clientId);
+    base2.searchParams.set("response_type", "code");
+    base2.searchParams.set("redirect_uri", getRedirectUri());
+    base2.searchParams.set("state", stateValue);
+    return base2.toString();
+  }
+  async function startYnabOauth() {
+    const clientId = await getClientId();
+    if (!clientId) {
+      window.alert(ALERT_MESSAGE);
+      return null;
+    }
+    const state = buildState();
+    persistExpectedState(state);
+    const redirectUri = getRedirectUri();
+    console.log("Starting YNAB OAuth:", { clientId, state, redirectUri });
+    const url = buildAuthorizeUrl(clientId, state);
+    console.log("Redirecting to:", url);
+    window.location.assign(url);
+    return url;
+  }
+  function getExpectedState() {
+    return grabExpectedState();
+  }
+  function clearExpectedState() {
+    return dropExpectedState();
+  }
 
   // src/api/ynabApi.js
   var YNAB_API_BASE_URL = "https://api.ynab.com/v1";
-  function generateCsrfToken() {
-    const randomBytes = new Uint8Array(32);
-    window.crypto.getRandomValues(randomBytes);
-    return Array.from(randomBytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
-  }
   async function redirectToYnabOauth() {
-    const { ynabClientId, ynabRedirectUri } = await getConfig();
-    console.log("Redirecting to YNAB OAuth with Client ID:", ynabClientId);
-    console.log("Redirect URI:", ynabRedirectUri);
-    const csrfToken = generateCsrfToken();
-    sessionStorage.setItem("ynab_csrf_token", csrfToken);
-    const authUrl = new URL("https://app.ynab.com/oauth/authorize");
-    authUrl.searchParams.append("client_id", ynabClientId);
-    authUrl.searchParams.append("redirect_uri", ynabRedirectUri);
-    authUrl.searchParams.append("response_type", "code");
-    authUrl.searchParams.append("scope", "read-only");
-    authUrl.searchParams.append("state", csrfToken);
-    window.location.href = authUrl.toString();
+    await startYnabOauth();
   }
-  async function getAccounts(accessToken, budgetId) {
-    const url = new URL(`${YNAB_API_BASE_URL}/${budgetId}/accounts`);
+  async function getAccounts(accessToken) {
+    const url = new URL(`${YNAB_API_BASE_URL}/budgets/default/accounts`);
     try {
       const response = await fetch(url, {
         headers: {
@@ -3855,11 +4569,37 @@
         throw new Error(`Failed to fetch YNAB accounts. Status: ${response.status}`);
       }
       const data2 = await response.json();
-      return data2.data.accounts;
+      const rawAccounts = data2.data.accounts;
+      const accounts = rawAccounts.filter((acc) => !acc.deleted);
+      return accounts;
     } catch (error) {
       console.error("YNAB API call failed:", error);
-      navigate("/upload");
       return null;
+    }
+  }
+  async function getTransactions(accessToken, accountId) {
+    const url = new URL(`${YNAB_API_BASE_URL}/budgets/default/accounts/${accountId}/transactions`);
+    try {
+      const response = await fetch(url, {
+        headers: {
+          "Authorization": `Bearer ${accessToken}`
+        }
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error(`Error fetching YNAB transactions for account ${accountId}:`, errorData);
+        throw new Error(`Failed to fetch YNAB transactions. Status: ${response.status}`);
+      }
+      const data2 = await response.json();
+      const transactions = data2.data.transactions;
+      return transactions.filter((txn) => {
+        if (txn.deleted)
+          return false;
+        return true;
+      });
+    } catch (error) {
+      console.error(`YNAB transactions API call failed for account ${accountId}:`, error);
+      return [];
     }
   }
   async function exchangeCodeForToken(code) {
@@ -3885,23 +4625,49 @@
       return null;
     }
   }
+  async function refreshAccessToken(refreshToken) {
+    try {
+      const response = await fetch("/.netlify/functions/ynabTokenExchange", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          grant_type: "refresh_token",
+          refresh_token: refreshToken
+        })
+      });
+      const data2 = await response.json();
+      if (!response.ok) {
+        console.error("YNAB token refresh failed:", data2);
+        throw new Error("Failed to refresh access token.");
+      }
+      sessionStorage.setItem("ynab_access_token", data2.access_token);
+      if (data2.refresh_token) {
+        sessionStorage.setItem("ynab_refresh_token", data2.refresh_token);
+      }
+      sessionStorage.setItem("ynab_token_expires_at", Date.now() + data2.expires_in * 1e3);
+      return data2;
+    } catch (error) {
+      console.error("Error during token refresh:", error);
+      return null;
+    }
+  }
   async function handleOauthCallback() {
     const queryParams = new URLSearchParams(window.location.search);
     const code = queryParams.get("code");
     const stateToken = queryParams.get("state");
-    const storedState = sessionStorage.getItem("ynab_csrf_token");
-    sessionStorage.removeItem("ynab_csrf_token");
+    const storedState = getExpectedState();
+    console.log("OAuth callback params:", { code, stateToken, storedState, fullUrl: window.location.href });
     if (!stateToken || stateToken !== storedState) {
-      console.error("Invalid CSRF token on OAuth callback.");
-      alert("Security error. Please try connecting to YNAB again.");
-      navigate("/upload", true);
-      return;
+      console.error("Invalid CSRF token on OAuth callback.", { stateToken, storedState });
+      clearExpectedState();
+      throw new Error("Invalid CSRF token on OAuth callback.");
     }
+    clearExpectedState();
     if (!code) {
       console.error("OAuth callback did not contain an authorization code.");
-      alert("Could not authenticate with YNAB. Please try again.");
-      navigate("/upload", true);
-      return;
+      throw new Error("OAuth callback did not contain an authorization code.");
     }
     const tokenData = await exchangeCodeForToken(code);
     if (tokenData && tokenData.access_token) {
@@ -3909,87 +4675,732 @@
       sessionStorage.setItem("ynab_access_token", tokenData.access_token);
       sessionStorage.setItem("ynab_refresh_token", tokenData.refresh_token);
       sessionStorage.setItem("ynab_token_expires_at", Date.now() + tokenData.expires_in * 1e3);
-      const accounts2 = await getAccounts(tokenData.access_token);
-      if (accounts2 && accounts2.length > 0) {
-        state_default.accounts = accounts2.reduce((acc, account) => {
-          if (!account.deleted) {
-            acc[account.id] = {
-              ...account,
-              selected: true,
-              transactions: []
-            };
+      const accounts = await getAccounts(tokenData.access_token);
+      if (accounts && accounts.length > 0) {
+        const activeAccounts = accounts.filter((acc) => !acc.deleted);
+        state_default.accounts = parseYnabAccountApi(activeAccounts);
+        console.log("Fetching transactions for", activeAccounts.length, "accounts...");
+        for (const account of activeAccounts) {
+          const transactions = await getTransactions(tokenData.access_token, account.id);
+          if (transactions && transactions.length > 0) {
+            const transformedTransactions = transactions.map((txn) => {
+              const date = txn.date;
+              const amountDollars = (txn.amount / 1e3).toFixed(2);
+              return {
+                Date: date,
+                Merchant: txn.payee_name || "",
+                Category: txn.category_name || "",
+                CategoryGroup: txn.category_group_name || "",
+                Notes: txn.memo || "",
+                Amount: amountDollars,
+                Tags: txn.flag_name || ""
+              };
+            });
+            if (state_default.accounts[account.id]) {
+              state_default.accounts[account.id].transactions = transformedTransactions;
+              state_default.accounts[account.id].transactionCount = transformedTransactions.length;
+              console.log(`Account ${account.name}: ${transformedTransactions.length} transactions loaded`);
+            }
           }
-          return acc;
-        }, {});
+        }
         console.table(state_default.accounts);
-        navigate("/review");
+        return "success";
       } else {
-        alert("No budgets found in your YNAB account.");
-        navigate("/upload");
+        console.warn("No accounts retrieved from YNAB API.");
+        throw new Error("No accounts retrieved from YNAB API.");
       }
     } else {
-      alert("Failed to get access token from YNAB. Please try again.");
-      navigate("/upload", true);
+      console.error("Failed to get access token from YNAB.");
+      throw new Error("Failed to get access token from YNAB.");
     }
   }
 
+  // src/components/Card.js
+  var Card = class extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" });
+    }
+    connectedCallback() {
+      this._render();
+    }
+    static get observedAttributes() {
+      return ["data-color", "data-width"];
+    }
+    attributeChangedCallback() {
+      if (this.shadowRoot.innerHTML) {
+        this._updateStyles();
+      }
+    }
+    _getColorClasses() {
+      const color = this.getAttribute("data-color") || "blue";
+      const colorMap = {
+        blue: {
+          border: "#93c5fd",
+          bg: "rgba(219, 234, 254, 0.3)",
+          iconBg: "#bfdbfe",
+          iconColor: "#1d4ed8",
+          textColor: "#2563eb",
+          decorBg: "#dbeafe"
+        },
+        green: {
+          border: "#86efac",
+          bg: "rgba(220, 252, 231, 0.3)",
+          iconBg: "#bbf7d0",
+          iconColor: "#16a34a",
+          textColor: "#16a34a",
+          decorBg: "#dcfce7"
+        },
+        purple: {
+          border: "#c4b5fd",
+          bg: "rgba(237, 233, 254, 0.3)",
+          iconBg: "#ddd6fe",
+          iconColor: "#7c3aed",
+          textColor: "#7c3aed",
+          decorBg: "#ede9fe"
+        },
+        red: {
+          border: "#fca5a5",
+          bg: "rgba(254, 226, 226, 0.3)",
+          iconBg: "#fecaca",
+          iconColor: "#dc2626",
+          textColor: "#dc2626",
+          decorBg: "#fee2e2"
+        }
+      };
+      return colorMap[color] || colorMap.blue;
+    }
+    _updateStyles() {
+      const colors = this._getColorClasses();
+      const width = this.getAttribute("data-width") || "full";
+      const widthStyles = {
+        full: "width: 100%;",
+        auto: "width: auto;",
+        fixed: "width: 300px;"
+      };
+      const root = this.shadowRoot.querySelector(".card-container");
+      if (root) {
+        root.style.cssText = widthStyles[width] || widthStyles.full;
+      }
+      if (this.shadowRoot.styleSheets[0]) {
+        const sheet = this.shadowRoot.styleSheets[0];
+        const rule = sheet.cssRules[0];
+        if (rule && rule.style) {
+          rule.style.setProperty("--card-border", colors.border);
+          rule.style.setProperty("--card-bg", colors.bg);
+          rule.style.setProperty("--icon-bg", colors.iconBg);
+          rule.style.setProperty("--icon-color", colors.iconColor);
+          rule.style.setProperty("--text-color", colors.textColor);
+          rule.style.setProperty("--decor-bg", colors.decorBg);
+        }
+      }
+    }
+    _render() {
+      const colors = this._getColorClasses();
+      const width = this.getAttribute("data-width") || "full";
+      const widthStyles = {
+        full: "width: 100%;",
+        auto: "width: auto; min-width: 280px;",
+        fixed: "width: 300px;"
+      };
+      this.shadowRoot.innerHTML = `
+      <style>
+        :host {
+          --card-border: ${colors.border};
+          --card-bg: ${colors.bg};
+          --icon-bg: ${colors.iconBg};
+          --icon-color: ${colors.iconColor};
+          --text-color: ${colors.textColor};
+          --decor-bg: ${colors.decorBg};
+          --card-title-font-size: 1.125rem;
+          --card-title-margin-bottom: 0;
+          display: block;
+        }
+
+        .card-container {
+          ${widthStyles[width] || widthStyles.full}
+          user-select: none;
+        }
+
+        @media (min-width: 640px) {
+          :host {
+            --card-title-font-size: 1.25rem;
+            --card-title-margin-bottom: 1rem;
+          }
+        }
+
+        @media (min-width: 768px) {
+          :host {
+            --card-title-font-size: 1.5rem;
+            --card-title-margin-bottom: 1.5rem;
+          }
+        }
+
+        .card-inner {
+          height: 100%;
+          padding: 1rem;
+          border: 2px solid var(--card-border);
+          border-radius: 0.75rem;
+          box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+          background-color: var(--card-bg);
+          position: relative;
+          overflow: hidden;
+          transition: all 300ms;
+        }
+
+        @media (min-width: 640px) {
+          .card-inner {
+            padding: 1.5rem;
+          }
+        }
+
+        @media (min-width: 768px) {
+          .card-inner {
+            padding: 2rem;
+          }
+        }
+
+        .decoration {
+          position: absolute;
+          top: 0;
+          right: 0;
+          width: 5rem;
+          height: 5rem;
+          background-color: var(--decor-bg);
+          border-radius: 9999px;
+          transform: translateY(-2.5rem) translateX(2.5rem);
+          opacity: 0.5;
+          transition: opacity 300ms;
+        }
+
+        .card-content {
+          position: relative;
+          z-index: 10;
+        }
+
+        .card-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          margin-bottom: 1rem;
+          gap: 1rem;
+        }
+
+        .card-title-wrapper {
+          flex: 1;
+          padding-right: 1rem;
+          font-size: var(--card-title-font-size);
+          font-weight: 700;
+          color: #111827;
+          line-height: 1.5;
+        }
+
+        .card-title-wrapper ::slotted(*) {
+          font-size: inherit;
+          font-weight: inherit;
+          color: inherit;
+          line-height: inherit;
+          margin: 0;
+          margin-bottom: var(--card-title-margin-bottom);
+          display: block;
+        }
+
+        .icon-wrapper {
+          width: 2.5rem;
+          height: 2.5rem;
+          background-color: var(--icon-bg);
+          border-radius: 0.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background-color 300ms;
+        }
+
+        @media (min-width: 640px) {
+          .icon-wrapper {
+            width: 3rem;
+            height: 3rem;
+          }
+        }
+
+        ::slotted([slot="icon"]) {
+          width: 1.25rem;
+          height: 1.25rem;
+          color: var(--icon-color);
+        }
+
+        @media (min-width: 640px) {
+          ::slotted([slot="icon"]) {
+            width: 1.5rem;
+            height: 1.5rem;
+          }
+        }
+
+        .card-title {
+          margin-bottom: 0.75rem;
+        }
+
+        .card-eyebrow {
+          font-size: 0.875rem;
+          font-weight: 300;
+          text-transform: uppercase;
+          letter-spacing: 0.4em;
+          color: #9ca3af;
+          margin-bottom: 0.25rem;
+        }
+
+        ::slotted([slot="title"]) {
+          font-size: 1.125rem;
+          font-weight: 600;
+          color: #111827;
+          margin: 0;
+          line-height: 1.4;
+        }
+
+        @media (min-width: 640px) {
+          ::slotted([slot="title"]) {
+            font-size: 1.25rem;
+          }
+        }
+
+        @media (min-width: 768px) {
+          ::slotted([slot="title"]) {
+            font-size: 1.5rem;
+          }
+        }
+
+        .card-description {
+          margin-bottom: 1.5rem;
+          min-height: 3rem;
+        }
+
+        ::slotted([slot="description"]) {
+          color: #4b5563;
+          font-size: 0.875rem;
+          line-height: 1.6;
+          margin: 0;
+        }
+
+        @media (min-width: 640px) {
+          ::slotted([slot="description"]) {
+            font-size: 1rem;
+          }
+        }
+
+        .card-actions {
+          display: flex;
+          width: 100%;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 1rem;
+        }
+
+        ::slotted([slot="actions"]) {
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 1rem;
+        }
+      </style>
+
+      <div class="card-container">
+        <div class="card-inner">
+          <div class="decoration"></div>
+          
+          <div class="card-content">
+            <div class="card-header">
+              <div class="icon-wrapper">
+                <slot name="icon"></slot>
+              </div>
+              <div class="card-title-wrapper">
+                <slot class="card-eyebrow" name="eyebrow"></slot>
+                <slot class="card-title" name="title"></slot>
+              </div>
+            </div>
+
+            <div class="card-description">
+              <slot name="description"></slot>
+            </div>
+
+            <div class="card-actions">
+              <slot name="actions"></slot>
+              <slot name="action-info"></slot>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    }
+  };
+  if (!customElements.get("ui-card")) {
+    customElements.define("ui-card", Card);
+  }
+
+  // src/components/Divider.js
+  var Divider = class extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" });
+    }
+    connectedCallback() {
+      this._render();
+    }
+    static get observedAttributes() {
+      return ["data-color"];
+    }
+    attributeChangedCallback() {
+      if (this.shadowRoot.innerHTML) {
+        this._updateStyles();
+      }
+    }
+    _getColor() {
+      const color = this.getAttribute("data-color") || "gray-400";
+      const colorMap = {
+        "gray-300": "#d1d5db",
+        "gray-400": "#9ca3af",
+        "gray-500": "#6b7280",
+        "gray-600": "#4b5563",
+        "blue-400": "#60a5fa",
+        "purple-400": "#c084fc"
+      };
+      return colorMap[color] || colorMap["gray-400"];
+    }
+    _updateStyles() {
+      const color = this._getColor();
+      if (this.shadowRoot.styleSheets[0]) {
+        const sheet = this.shadowRoot.styleSheets[0];
+        const rule = sheet.cssRules[0];
+        if (rule && rule.style) {
+          rule.style.setProperty("--divider-color", color);
+        }
+      }
+    }
+    _render() {
+      const color = this._getColor();
+      this.shadowRoot.innerHTML = `
+      <style>
+        :host {
+          --divider-color: ${color};
+          display: block;
+          width: 100%;
+        }
+
+        .divider-container {
+          display: flex;
+          align-items: center;
+          width: 100%;
+          gap: 1rem;
+        }
+
+        .divider-line {
+          flex: 1;
+          height: 1px;
+          background-color: var(--divider-color);
+        }
+
+        .divider-text {
+          color: var(--divider-color);
+          font-size: 0.875rem;
+          font-weight: 400;
+          white-space: nowrap;
+          user-select: none;
+        }
+      </style>
+
+      <div class="divider-container">
+        <div class="divider-line"></div>
+        <span class="divider-text">
+          <slot></slot>
+        </span>
+        <div class="divider-line"></div>
+      </div>
+    `;
+    }
+  };
+  if (!customElements.get("ui-divider")) {
+    customElements.define("ui-divider", Divider);
+  }
+
+  // src/components/ErrorMessage.js
+  var ErrorMessage = class extends HTMLElement {
+    constructor() {
+      super();
+      this._message = "";
+      this._solution = "";
+      this._severity = "error";
+      this._autoDismissTimeout = null;
+    }
+    static get observedAttributes() {
+      return ["data-severity"];
+    }
+    connectedCallback() {
+      this._severity = this.getAttribute("data-severity") || "error";
+      this._render();
+      this._attachEventListeners();
+    }
+    disconnectedCallback() {
+      if (this._autoDismissTimeout) {
+        clearTimeout(this._autoDismissTimeout);
+      }
+    }
+    attributeChangedCallback(name, oldValue, newValue) {
+      if (name === "data-severity" && oldValue !== newValue) {
+        this._severity = newValue;
+        this._updateSeverityStyles();
+      }
+    }
+    _render() {
+      this.className = "error-message-container hidden";
+      this.setAttribute("role", "alert");
+      this.setAttribute("aria-live", "polite");
+      this.setAttribute("aria-atomic", "true");
+      this.innerHTML = `
+      <div class="error-message-content rounded-lg p-4 shadow-lg border transition-all duration-300 transform">
+        <div class="flex items-start gap-3">
+          <!-- Icon -->
+          <div class="flex-shrink-0 error-icon">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+
+          <!-- Content -->
+          <div class="flex-1 min-w-0">
+            <p class="error-message-text text-sm font-medium"></p>
+            <p class="error-solution-text text-sm mt-1 hidden"></p>
+          </div>
+
+          <!-- Close Button -->
+          <button type="button" class="error-close-btn flex-shrink-0 rounded-lg p-1.5 inline-flex items-center justify-center hover:bg-opacity-20 focus:outline-none focus:ring-2 transition-colors"
+                  aria-label="Dismiss error message">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    `;
+      this._updateSeverityStyles();
+    }
+    _updateSeverityStyles() {
+      const content = this.querySelector(".error-message-content");
+      const icon = this.querySelector(".error-icon");
+      const messageText = this.querySelector(".error-message-text");
+      const solutionText = this.querySelector(".error-solution-text");
+      const closeBtn = this.querySelector(".error-close-btn");
+      if (!content)
+        return;
+      content.classList.remove("bg-red-50", "bg-yellow-50", "bg-blue-50", "border-red-200", "border-yellow-200", "border-blue-200");
+      icon?.classList.remove("text-red-400", "text-yellow-400", "text-blue-400");
+      messageText?.classList.remove("text-red-800", "text-yellow-800", "text-blue-800");
+      solutionText?.classList.remove("text-red-700", "text-yellow-700", "text-blue-700");
+      closeBtn?.classList.remove("text-red-500", "text-yellow-500", "text-blue-500", "hover:bg-red-200", "hover:bg-yellow-200", "hover:bg-blue-200", "focus:ring-red-400", "focus:ring-yellow-400", "focus:ring-blue-400");
+      switch (this._severity) {
+        case "error":
+          content.classList.add("bg-red-50", "border-red-200");
+          icon?.classList.add("text-red-400");
+          messageText?.classList.add("text-red-800");
+          solutionText?.classList.add("text-red-700");
+          closeBtn?.classList.add("text-red-500", "hover:bg-red-200", "focus:ring-red-400");
+          break;
+        case "warning":
+          content.classList.add("bg-yellow-50", "border-yellow-200");
+          icon?.classList.add("text-yellow-400");
+          messageText?.classList.add("text-yellow-800");
+          solutionText?.classList.add("text-yellow-700");
+          closeBtn?.classList.add("text-yellow-500", "hover:bg-yellow-200", "focus:ring-yellow-400");
+          break;
+        case "info":
+          content.classList.add("bg-blue-50", "border-blue-200");
+          icon?.classList.add("text-blue-400");
+          messageText?.classList.add("text-blue-800");
+          solutionText?.classList.add("text-blue-700");
+          closeBtn?.classList.add("text-blue-500", "hover:bg-blue-200", "focus:ring-blue-400");
+          break;
+      }
+    }
+    _attachEventListeners() {
+      const closeBtn = this.querySelector(".error-close-btn");
+      closeBtn?.addEventListener("click", () => this.hide());
+    }
+    show(message, solution = "", autoDismiss = 0) {
+      this._message = message;
+      this._solution = solution;
+      const messageText = this.querySelector(".error-message-text");
+      const solutionText = this.querySelector(".error-solution-text");
+      if (messageText)
+        messageText.textContent = message;
+      if (solutionText) {
+        if (solution) {
+          solutionText.textContent = solution;
+          solutionText.classList.remove("hidden");
+        } else {
+          solutionText.classList.add("hidden");
+        }
+      }
+      this.classList.remove("hidden");
+      requestAnimationFrame(() => {
+        this.classList.add("visible");
+      });
+      if (autoDismiss > 0) {
+        if (this._autoDismissTimeout) {
+          clearTimeout(this._autoDismissTimeout);
+        }
+        this._autoDismissTimeout = setTimeout(() => this.hide(), autoDismiss);
+      }
+      this.dispatchEvent(new CustomEvent("error-shown", {
+        detail: { message, solution },
+        bubbles: true
+      }));
+    }
+    hide() {
+      if (this._autoDismissTimeout) {
+        clearTimeout(this._autoDismissTimeout);
+        this._autoDismissTimeout = null;
+      }
+      this.classList.remove("visible");
+      setTimeout(() => {
+        this.classList.add("hidden");
+        this._message = "";
+        this._solution = "";
+        this.dispatchEvent(new CustomEvent("error-hidden", {
+          bubbles: true
+        }));
+      }, 300);
+    }
+    get isVisible() {
+      return this.classList.contains("visible");
+    }
+    get message() {
+      return this._message;
+    }
+    set severity(value) {
+      this._severity = value;
+      this.setAttribute("data-severity", value);
+    }
+    get severity() {
+      return this._severity;
+    }
+  };
+  customElements.define("error-message", ErrorMessage);
+
   // src/views/Upload/upload.js
-  function initUploadView2() {
+  async function initUploadView() {
     const hasExistingAccounts = state_default.accounts && Object.keys(state_default.accounts).length > 0;
+    let ynabAccessToken = sessionStorage.getItem("ynab_access_token");
+    const ynabRefreshToken = sessionStorage.getItem("ynab_refresh_token");
+    const ynabTokenExpiresAt = sessionStorage.getItem("ynab_token_expires_at");
+    let isYnabTokenValid = ynabAccessToken && ynabTokenExpiresAt && Date.now() < parseInt(ynabTokenExpiresAt, 10);
+    if (!isYnabTokenValid && ynabRefreshToken) {
+      console.log("YNAB access token expired, attempting to refresh...");
+      const refreshed = await refreshAccessToken(ynabRefreshToken);
+      if (refreshed && refreshed.access_token) {
+        ynabAccessToken = refreshed.access_token;
+        isYnabTokenValid = true;
+        console.log("YNAB access token successfully refreshed");
+      } else {
+        console.log("Failed to refresh YNAB access token");
+      }
+    }
     renderPageLayout({
       navbar: {
-        showBackButton: hasExistingAccounts,
+        showBackButton: true,
         showDataButton: true
       },
       header: {
         title: "Step 1: Import YNAB Data",
-        description: "Choose how you'd like to bring your YNAB data into Monarch Money. You can either connect your YNAB account for a seamless transfer or manually upload a file.",
+        description: "Start by bringing over your YNAB data. Next, you'll review the data, filter and edit as needed.",
         containerId: "pageHeader"
       }
     });
-    const existingDataAlert = document.getElementById("existingDataAlert");
-    if (hasExistingAccounts && existingDataAlert) {
-      existingDataAlert.classList.remove("hidden");
-    }
+    const oauthError = document.getElementById("oauthError");
+    const fileUploadError = document.getElementById("fileUploadError");
+    const continueWithYnabBtn = document.getElementById("continueWithYnabBtn");
+    const connectYnabBtn = document.getElementById("connectYnabBtn");
+    continueWithYnabBtn.hidden = !isYnabTokenValid;
+    document.getElementById("automaticUploadDivider").hidden = !isYnabTokenValid;
+    connectYnabBtn.textContent = isYnabTokenValid ? "Connect new YNAB Profile" : "Connect to YNAB";
+    connectYnabBtn.setAttribute("data-color", isYnabTokenValid ? "white" : "purple");
+    connectYnabBtn.applyStyles();
+    continueWithYnabBtn?.addEventListener("click", async (event) => {
+      event.preventDefault();
+      oauthError.hide();
+      continueWithYnabBtn.disabled = true;
+      const originalText = continueWithYnabBtn.textContent;
+      continueWithYnabBtn.textContent = "Fetching accounts...";
+      try {
+        const rawAccounts = await getAccounts(ynabAccessToken);
+        if (!rawAccounts) {
+          throw new Error("No response from YNAB API");
+        }
+        const accounts = parseYnabAccountApi(rawAccounts);
+        if (!accounts || Object.keys(accounts).length === 0) {
+          oauthError.show("No accounts found in your YNAB profile.", "Make sure you have at least one account in your YNAB budget, then try again.");
+          continueWithYnabBtn.disabled = false;
+          continueWithYnabBtn.textContent = originalText;
+          return;
+        }
+        state_default.accounts = accounts;
+        persistState();
+        navigate("/review", false, true);
+      } catch (error) {
+        console.error("Error fetching YNAB accounts:", error);
+        oauthError.show("Could not fetch accounts from YNAB.", "Your session may have expired. Try connecting to YNAB again below.");
+        continueWithYnabBtn.disabled = false;
+        continueWithYnabBtn.textContent = originalText;
+      }
+    });
+    connectYnabBtn?.addEventListener("click", async (event) => {
+      event.preventDefault();
+      oauthError.hide();
+      try {
+        await redirectToYnabOauth();
+      } catch (error) {
+        console.error("Error initiating YNAB OAuth:", error);
+        oauthError.show("Could not connect to YNAB.", "Please check your internet connection and try again.");
+      }
+    });
     const continueWithExistingBtn = document.getElementById("continueWithExistingBtn");
-    const connectButton = document.getElementById("connectButton");
     const manualUploadButton = document.getElementById("manualUploadButton");
-    const manualFileInput = document.getElementById("manualFileInput");
-    const oauthInfoModalButton = document.getElementById("oauthInfoModalButton");
-    const manualImportInfoModalButton = document.getElementById("manualImportInfoModalButton");
-    const closeOauthInfoModal = document.getElementById("closeOauthInfoModal");
-    const closeManualImportInfoModal = document.getElementById("closeManualImportInfoModal");
+    document.getElementById("manualUploadDivider").hidden = !hasExistingAccounts;
+    continueWithExistingBtn.hidden = !hasExistingAccounts;
+    manualUploadButton.textContent = hasExistingAccounts ? "Upload new Data" : "Upload YNAB Data";
+    manualUploadButton.setAttribute("data-color", hasExistingAccounts ? "white" : "blue");
+    manualUploadButton.applyStyles();
     continueWithExistingBtn?.addEventListener("click", (event) => {
       event.preventDefault();
       navigate("/review", false, true);
     });
-    connectButton?.addEventListener("click", (event) => {
-      event.preventDefault();
-      redirectToYnabOauth();
-    });
-    oauthInfoModalButton?.addEventListener("click", () => openModal("oauthInfoModal"));
-    manualImportInfoModalButton?.addEventListener("click", () => openModal("manualImportInfoModal"));
-    closeOauthInfoModal?.addEventListener("click", () => closeModal("oauthInfoModal"));
-    closeManualImportInfoModal?.addEventListener("click", () => closeModal("manualImportInfoModal"));
+    const manualFileInput = document.getElementById("manualFileInput");
     manualUploadButton?.addEventListener("click", (e) => {
       e.preventDefault();
+      fileUploadError.hide();
       manualFileInput?.click();
     });
     manualFileInput?.addEventListener("change", async (e) => {
       const file = e.target.files[0];
-      if (file)
+      if (file) {
+        fileUploadError.hide();
         await handleFile(file);
+      }
     });
     async function handleFile(csvFile) {
+      if (!csvFile) {
+        fileUploadError.show("No file selected.", "Please select a ZIP file exported from YNAB.");
+        return;
+      }
+      const maxSize = 50 * 1024 * 1024;
+      if (csvFile.size > maxSize) {
+        fileUploadError.show("File is too large.", "Please ensure your YNAB export is under 50MB. If needed, export a smaller date range.");
+        return;
+      }
+      if (csvFile.size < 100) {
+        fileUploadError.show("File appears to be empty or corrupted.", "Please re-export your data from YNAB and try again.");
+        return;
+      }
       const fileName = csvFile.name.toLowerCase();
       const fileType = csvFile.type.toLowerCase();
-      console.log("File upload debug:", {
-        name: csvFile.name,
-        type: csvFile.type,
-        size: csvFile.size,
-        fileName,
-        fileType
-      });
       const isZipByExtension = fileName.endsWith(".zip") || fileName.endsWith(".bin") || fileName.includes("ynab") || fileName.includes("register") || fileName.includes("export");
       const isZipByMimeType = [
         "application/zip",
@@ -4001,33 +5412,52 @@
         "application/binary"
       ].includes(fileType);
       const isPotentialZip = isZipByExtension || isZipByMimeType || csvFile.size > 1e3;
-      console.log("File validation debug:", {
-        isZipByExtension,
-        isZipByMimeType,
-        isPotentialZip,
-        fileSize: csvFile.size
-      });
       if (!isPotentialZip) {
-        console.log("File rejected - not a potential ZIP");
-        errorMessage.textContent = "Please upload a ZIP export from YNAB.";
-        errorMessage.classList.remove("hidden");
+        fileUploadError.show("Invalid file type.", 'Please upload a ZIP file exported from YNAB. Visit YNAB.com \u2192 Account Menu \u2192 "Export Plan" to download it.');
+        manualFileInput.value = "";
         return;
       }
-      console.log("File accepted, attempting to parse...");
+      manualUploadButton.disabled = true;
+      const originalText = manualUploadButton.textContent;
+      manualUploadButton.textContent = "Processing file...";
       try {
-        const accounts2 = await parseYNABCSV(csvFile);
-        state_default.accounts = accounts2;
-        persistState();
-        if (accounts2 && Object.keys(accounts2).length > 0) {
-          navigate("/review", false, true);
-        } else {
-          errorMessage.textContent = "No accounts found in the uploaded file.";
-          errorMessage.classList.remove("hidden");
+        const accounts = await parseYNABCSV(csvFile);
+        if (!accounts || typeof accounts !== "object") {
+          throw new Error("Invalid account data structure");
         }
+        const accountCount = Object.keys(accounts).length;
+        if (accountCount === 0) {
+          fileUploadError.show("No accounts found in the uploaded file.", "Make sure you exported the complete YNAB data including all accounts. Try exporting again from YNAB.com.");
+          manualUploadButton.disabled = false;
+          manualUploadButton.textContent = originalText;
+          manualFileInput.value = "";
+          return;
+        }
+        state_default.accounts = accounts;
+        persistState();
+        navigate("/review", false, true);
       } catch (err) {
-        errorMessage.textContent = "Failed to parse file. Please ensure it's a valid YNAB ZIP export with register.csv and plan.csv.";
-        errorMessage.classList.remove("hidden");
-        console.error(err);
+        console.error("File parsing error:", err);
+        let errorMessage = "Could not parse the uploaded file.";
+        let solution = `Please ensure it's a valid YNAB ZIP export. Try re-exporting from YNAB.com \u2192 Account Menu \u2192 "Export Plan".`;
+        const errorMsg = err.message?.toLowerCase() || "";
+        if (errorMsg.includes("register") || errorMsg.includes("csv")) {
+          errorMessage = "Missing required data in the ZIP file.";
+          solution = 'The file must contain "register.csv". Make sure you exported the complete YNAB plan from YNAB.com (not just individual account exports).';
+        } else if (errorMsg.includes("zip") || errorMsg.includes("corrupt")) {
+          errorMessage = "The ZIP file appears to be corrupted.";
+          solution = "Try downloading a fresh export from YNAB.com and upload it again.";
+        } else if (errorMsg.includes("parse") || errorMsg.includes("format")) {
+          errorMessage = "The file format is not recognized.";
+          solution = "Make sure you're uploading the ZIP file downloaded directly from YNAB.com, not a modified version.";
+        } else if (errorMsg.includes("empty") || errorMsg.includes("invalid")) {
+          errorMessage = "The file appears to be empty or invalid.";
+          solution = 'Please re-export your complete YNAB budget from YNAB.com \u2192 Account Menu \u2192 "Export Plan".';
+        }
+        fileUploadError.show(errorMessage, solution);
+        manualUploadButton.disabled = false;
+        manualUploadButton.textContent = originalText;
+        manualFileInput.value = "";
       }
     }
   }
@@ -4035,204 +5465,153 @@
   // src/views/Upload/upload.html
   var upload_default = `<div id="pageLayout"></div>
 
-<!-- Existing Data Alert -->
-<div id="existingDataAlert" class="hidden">
-  <div class="p-4 sm:p-6 bg-green-50 border border-green-200 rounded-lg mb-8">
-    <div class="flex items-start gap-4">
-      <div class="flex-shrink-0">
-        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      </div>
-      <div class="flex-1">
-        <h3 class="text-lg font-semibold text-green-900 mb-1">You have existing data</h3>
-        <p class="text-sm text-green-700 mb-4">
-          We found your previously uploaded YNAB accounts, continue where you left off.
-        </p>
-        <button id="continueWithExistingBtn" class="ui-button" data-type="primary" data-size="medium">
-          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-          </svg>
-          Continue with Existing Data
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Divider -->
-  <div class="relative mb-8">
-    <div class="absolute inset-0 flex items-center">
-      <div class="w-full border-t border-gray-200"></div>
-    </div>
-    <div class="relative flex justify-center">
-      <div class="px-4 bg-white">
-        <span class="w-5 h-5 text-gray-400">OR</span>
-      </div>
-    </div>
-  </div>
-
-</div>
-
 <!-- Upload Options -->
-<section class="mb-12">
-  <div class="grid md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto">
-    <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-lg space-y-4 flex flex-col text-left">
-      <div class="flex items-start gap-4">
-        <span class="bg-blue-50 text-blue-600 rounded-2xl p-3">
-          <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-            <path d="M10 17l-4-4 4-4" stroke-linecap="round" stroke-linejoin="round"></path>
-            <path d="M14 7h6" stroke-linecap="round" stroke-linejoin="round"></path>
-            <path d="M14 17h6" stroke-linecap="round" stroke-linejoin="round"></path>
-          </svg>
-        </span>
-        <div>
-          <p class="text-sm uppercase tracking-[0.4em] text-gray-400">Automatic</p>
-          <h3 class="text-xl font-semibold text-slate-900">Connect to YNAB</h3>
-        </div>
-      </div>
-      <div class="space-y-1 pt-4">
-        <button id="connectButton" class="ui-button w-full" data-type="primary" data-size="large">
-          Connect YNAB Account
-        </button>
-        <a id="oauthInfoModalButton" data-type="text" class="ui-button">
-          How does this work?
-        </a>
-      </div>
-    </div>
+<section class="mb-12 w-full">
+  <div class="flex flex-col md:flex-row justify-center gap-4 sm:gap-6 md:gap-8 w-full">
 
-    <div class="rounded-3xl border border-gray-200 bg-white p-6 shadow-lg space-y-4 flex flex-col text-left">
-      <div class="flex items-start gap-4">
-        <span class="bg-purple-50 text-purple-600 rounded-2xl p-3">
-          <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-            <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke-linecap="round" stroke-linejoin="round">
-            </path>
-            <path d="M12 3v12" stroke-linecap="round" stroke-linejoin="round"></path>
-            <path d="M9 10l3-3 3 3" stroke-linecap="round" stroke-linejoin="round"></path>
-          </svg>
-        </span>
-        <div>
-          <p class="text-sm uppercase tracking-[0.4em] text-gray-400">Manual</p>
-          <h3 class="text-xl font-semibold text-slate-900">Upload a File</h3>
-        </div>
-      </div>
-      <div class="space-y-1 pt-4">
-        <button id="manualUploadButton" class="ui-button w-full" data-type="secondary" data-size="large">
-          Choose File to Upload
-        </button>
+    <!-- Automatic Upload -->
+    <ui-card id="automaticUploadCard" data-color="purple" data-width="full">
+      
+      <!-- Error message for OAuth errors -->
+      <error-message id="oauthError" data-severity="error" style="margin-bottom: 1rem;"></error-message>
+      <svg slot="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-6 h-6">
+        <path d="M10 17l-4-4 4-4" stroke-linecap="round" stroke-linejoin="round"></path>
+        <path d="M14 7h6" stroke-linecap="round" stroke-linejoin="round"></path>
+        <path d="M14 17h6" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+      <p slot="eyebrow">Automatic</p>
+      <h3 slot="title">Connect to YNAB</h3>
+      <p slot="description">
+        Automatically import your YNAB data via secure OAuth connection.
+      </p>
+
+      <span slot="actions">
+        <ui-button id="continueWithYnabBtn" data-type="solid" data-size="large" data-color="purple" data-fullwidth>
+          Continue with Active Profile
+        </ui-button>
+
+        <ui-divider id="automaticUploadDivider" data-color="purple-400">OR</ui-divider>
+
+        <ui-button id="connectYnabBtn" data-type="solid" data-size="large" data-color="white" data-fullwidth>
+          Connect to YNAB
+        </ui-button>
+      </span>
+
+      <span slot="action-info">
+        <!-- OAuth Info Modal -->
+        <ui-modal id="oauthInfoModal">
+          <ui-button slot="trigger" data-type="text">
+            How does this work?
+          </ui-button>
+
+          <h3 slot="title">How does connecting my YNAB account work?</h3>
+
+          <div slot="content">
+            <div class="space-y-4 text-sm text-gray-600">
+              <div>
+                <h4 class="text-gray-900 text-sm font-semibold mb-1">1: Securely Connect</h4>
+                <p class="text-gray-600 text-sm">Using YNAB's official authentication process, securely connect your
+                  account.</p>
+              </div>
+              <div>
+                <h4 class="text-gray-900 text-sm font-semibold mb-1">2: Grant Permissions</h4>
+                <p class="text-gray-600 text-sm">We'll prompt you to authorize access to your YNAB data and thoroughly
+                  explain every permission and how it is used.</p>
+              </div>
+              <div>
+                <h4 class="text-gray-900 text-sm font-semibold mb-1">3: Review & Filter</h4>
+                <p class="text-gray-600 text-sm">Decide which accounts and transactions to migrate.</p>
+              </div>
+              <div>
+                <h4 class="text-gray-900 text-sm font-semibold mb-1">4: Process</h4>
+                <p class="text-gray-600 text-sm">Decide how to migrate your data.</p>
+              </div>
+            </div>
+          </div>
+        </ui-modal>
+      </span>
+    </ui-card>
+
+    <!-- Manual Upload -->
+    <ui-card id="manualUploadCard" data-color="blue" data-width="full">
+      
+      <!-- Error message for file upload errors -->
+      <error-message id="fileUploadError" data-severity="error" style="margin-bottom: 1rem;"></error-message>
+      
+      <svg slot="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-6 h-6">
+        <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke-linecap="round" stroke-linejoin="round">
+        </path>
+        <path d="M12 3v12" stroke-linecap="round" stroke-linejoin="round"></path>
+        <path d="M9 10l3-3 3 3" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+
+      <p slot="eyebrow">Manual</p>
+      <h3 slot="title">Upload a File</h3>
+      <p slot="description">
+        Manually export your data from YNAB, then upload the file here.
+      </p>
+
+      <span slot="actions">
+        <ui-button id="continueWithExistingBtn" data-type="solid" data-size="large" data-color="blue" data-fullwidth>
+          Continue with Existing Data
+        </ui-button>
+
+        <ui-divider id="manualUploadDivider" data-color="blue-400">OR</ui-divider>
+
+        <ui-button id="manualUploadButton" data-type="secondary" data-size="large" data-color="white" data-fullwidth>
+          Upload New Data
+        </ui-button>
         <input id="manualFileInput" type="file"
           accept=".zip,.bin,application/zip,application/x-zip-compressed,application/octet-stream,application/binary"
           class="hidden" />
-        <a id="manualImportInfoModalButton" data-type="text" class="ui-button">
-          What's the process?
-        </a>
+      </span>
+
+      <div slot="action-info">
+        <!-- Manual Import Info Modal -->
+        <ui-modal id="manualImportInfoModal">
+          <ui-button slot="trigger" data-type="text">
+            What's the process?
+          </ui-button>
+
+          <h3 slot="title">
+            Where do I find my YNAB data file?
+          </h3>
+
+          <div slot="content">
+            <div class="space-y-4 text-sm text-gray-600">
+              <div>
+                <h4 class="text-gray-900 text-sm font-semibold mb-1">1: Visit YNAB.com</h4>
+                <p class="text-gray-600 text-sm">Visit <a href="https://www.ynab.com" target="_blank"
+                    rel="noopener noreferrer">YNAB.com</a> and log into your account.</p>
+              </div>
+              <div>
+                <h4 class="text-gray-900 text-sm font-semibold mb-1">2: Export your YNAB Data</h4>
+                <p class="text-gray-600 text-sm">Click on your name in the top-left corner to reveal the menu, then
+                  click
+                  "Export Plan". This will download a ZIP file containing all your data.</p>
+              </div>
+              <div>
+                <h4 class="text-gray-900 text-sm font-semibold mb-1">3: Upload the File</h4>
+                <p class="text-gray-600 text-sm">On this page, click the "Choose File to Upload" button, navigate to
+                  where the
+                  ZIP file was downloaded, and select it.</p>
+              </div>
+              <div>
+                <h4 class="text-gray-900 text-sm font-semibold mb-1">4: Review & Filter</h4>
+                <p class="text-gray-600 text-sm">Decide which accounts and transactions to migrate.</p>
+              </div>
+              <div>
+                <h4 class="text-gray-900 text-sm font-semibold mb-1">5: Process</h4>
+                <p class="text-gray-600 text-sm">Decide how to migrate your data.</p>
+              </div>
+            </div>
+          </div>
+        </ui-modal>
       </div>
-    </div>
+    </ui-card>
+
   </div>
-</section>
-
-<!-- OAuth Info Modal -->
-<div id="oauthInfoModal"
-  class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300 p-3 sm:p-4 md:p-6">
-
-  <!-- Overlay -->
-  <div class="absolute inset-0 bg-black/30 transition-opacity duration-300"></div>
-
-  <!-- Modal Content -->
-  <div
-    class="relative z-10 bg-white rounded-xl p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md md:max-w-lg w-full shadow-2xl transform translate-y-full transition-transform duration-500 max-h-[90vh] overflow-y-auto">
-
-    <!-- Close Btn -->
-    <button id="closeOauthInfoModal"
-      class="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-      aria-label="Close modal">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    </button>
-
-    <!-- Title -->
-    <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 pr-8 text-gray-900">
-      How does connecting my YNAB account work?
-    </h3>
-
-    <!-- Body -->
-    <div class="space-y-4 text-sm text-gray-600">
-      <div>
-        <h4 class="text-gray-900 text-sm font-semibold mb-1">1: Securely Connect</h4>
-        <p class="text-gray-600 text-sm">Using YNAB's official authentication process, securely connect your account.
-        </p>
-      </div>
-      <div>
-        <h4 class="text-gray-900 text-sm font-semibold mb-1">2: Grant Permissions</h4>
-        <p class="text-gray-600 text-sm">We'll prompt you to authorize access to your YNAB data and thoroughly explain
-          every permission and how it is used.</p>
-      </div>
-      <div>
-        <h4 class="text-gray-900 text-sm font-semibold mb-1">3: Review & Filter</h4>
-        <p class="text-gray-600 text-sm">Decide which accounts and transactions to migrate.</p>
-      </div>
-      <div>
-        <h4 class="text-gray-900 text-sm font-semibold mb-1">4: Process</h4>
-        <p class="text-gray-600 text-sm">Decide how to migrate your data.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Manual Import Info Modal -->
-<div id="manualImportInfoModal"
-  class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300 p-3 sm:p-4 md:p-6">
-
-  <!-- Overlay -->
-  <div class="absolute inset-0 bg-black/30 transition-opacity duration-300"></div>
-
-  <!-- Modal Content -->
-  <div
-    class="relative z-10 bg-white rounded-xl p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md md:max-w-lg w-full shadow-2xl transform translate-y-full transition-transform duration-500 max-h-[90vh] overflow-y-auto">
-
-    <!-- Close Btn -->
-    <button id="closeManualImportInfoModal"
-      class="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-      aria-label="Close modal">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    </button>
-
-    <!-- Title -->
-    <h3 class="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 pr-8 text-gray-900">
-      Where do I find my YNAB data file?
-    </h3>
-
-    <!-- Body -->
-    <div class="space-y-4 text-sm text-gray-600">
-      <div>
-        <h4 class="text-gray-900 text-sm font-semibold mb-1">1: Visit YNAB.com</h4>
-        <p class="text-gray-600 text-sm">Visit <a href="https://www.ynab.com" target="_blank"
-            rel="noopener noreferrer">YNAB.com</a> and log into your account.</p>
-      </div>
-      <div>
-        <h4 class="text-gray-900 text-sm font-semibold mb-1">2: Export your YNAB Data</h4>
-        <p class="text-gray-600 text-sm">Click on your name in the top-left corner to reveal the menu, then click
-          "Export Plan". This will download a ZIP file containing all your data.</p>
-      </div>
-      <div>
-        <h4 class="text-gray-900 text-sm font-semibold mb-1">3: Upload the File</h4>
-        <p class="text-gray-600 text-sm">On this page, click the "Choose File to Upload" button, navigate to where the
-          ZIP file was downloaded, and select it.</p>
-      </div>
-      <div>
-        <h4 class="text-gray-900 text-sm font-semibold mb-1">4: Review & Filter</h4>
-        <p class="text-gray-600 text-sm">Decide which accounts and transactions to migrate.</p>
-      </div>
-      <div>
-        <h4 class="text-gray-900 text-sm font-semibold mb-1">5: Process</h4>
-        <p class="text-gray-600 text-sm">Decide how to migrate your data.</p>
-      </div>
-    </div>
-  </div>
-</div>`;
+</section>`;
 
   // public/static-data/monarchAccountTypes.json
   var generatedAt = "2025-06-02T06:26:29.704Z";
@@ -4648,11 +6027,6 @@
     data
   };
 
-  // src/utils/string.js
-  function capitalize(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  }
-
   // src/utils/format.js
   var currencyFormatter = new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -4689,9 +6063,425 @@
     }
   }
 
+  // src/components/ReusableTable.js
+  var ReusableTable = class extends HTMLElement {
+    constructor() {
+      super();
+      this._data = signal([]);
+      this._columns = signal([]);
+      this._selectedRows = signal(/* @__PURE__ */ new Set());
+      this._visibleRows = signal([]);
+      this._allSelected = computed(() => {
+        const visible = this._visibleRows.value;
+        const selected = this._selectedRows.value;
+        return visible.length > 0 && visible.every((row) => selected.has(this._getRowId(row)));
+      });
+      this._someSelected = computed(() => {
+        const visible = this._visibleRows.value;
+        const selected = this._selectedRows.value;
+        const selectedCount = visible.filter((row) => selected.has(this._getRowId(row))).length;
+        return selectedCount > 0 && selectedCount < visible.length;
+      });
+      this._mobileBreakpoint = "lg";
+      this._enableSelection = true;
+      this._rowIdKey = "id";
+      this._handleMasterCheckboxChange = this._handleMasterCheckboxChange.bind(this);
+      this._handleRowCheckboxChange = this._handleRowCheckboxChange.bind(this);
+    }
+    connectedCallback() {
+      this._mobileBreakpoint = this.getAttribute("data-mobile-breakpoint") || "lg";
+      this._enableSelection = this.getAttribute("data-enable-selection") !== "false";
+      this._rowIdKey = this.getAttribute("data-row-id-key") || "id";
+      this._render();
+      this._setupSubscriptions();
+    }
+    disconnectedCallback() {
+      if (this._dataUnsubscribe)
+        this._dataUnsubscribe();
+      if (this._columnsUnsubscribe)
+        this._columnsUnsubscribe();
+      if (this._selectedUnsubscribe)
+        this._selectedUnsubscribe();
+      if (this._visibleUnsubscribe)
+        this._visibleUnsubscribe();
+    }
+    _setupSubscriptions() {
+      this._dataUnsubscribe = this._data.subscribe(() => this._updateTable());
+      this._columnsUnsubscribe = this._columns.subscribe(() => this._updateTable());
+      this._selectedUnsubscribe = this._selectedRows.subscribe(() => this._updateSelection());
+      this._visibleUnsubscribe = this._visibleRows.subscribe(() => this._updateMasterCheckbox());
+    }
+    _render() {
+      this.className = "ui-table-container bg-white rounded-lg shadow-sm overflow-hidden";
+      this.innerHTML = `
+      <!-- Mobile Card View -->
+      <div class="mobile-view block ${this._mobileBreakpoint}:hidden">
+        ${this._enableSelection ? `
+        <div class="border-b border-gray-200 bg-gray-50 p-4">
+          <div class="flex items-center justify-between">
+            <label class="custom-checkbox-container">
+              <input id="masterCheckboxMobile" type="checkbox" class="master-checkbox-mobile custom-checkbox-input">
+              <span class="custom-checkbox-visual"></span>
+              <span class="text-sm font-medium text-gray-700 pl-2">Select All</span>
+            </label>
+            <div class="text-xs text-gray-500 font-medium selection-count-mobile">0 selected</div>
+          </div>
+        </div>
+        ` : ""}
+        <div class="mobile-list divide-y divide-gray-100"></div>
+      </div>
+      
+      <!-- Desktop Table View -->
+      <div class="desktop-view hidden ${this._mobileBreakpoint}:block overflow-x-auto">
+        <table class="w-full min-w-[800px]" role="grid">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-200" role="row"></tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100"></tbody>
+        </table>
+      </div>
+    `;
+      this._updateTable();
+    }
+    _updateTable() {
+      const data2 = this._data.value;
+      const columns = this._columns.value;
+      if (!columns.length || !data2.length)
+        return;
+      this._visibleRows.value = data2;
+      this._renderDesktopTable(data2, columns);
+      this._renderMobileCards(data2, columns);
+      const mobileMasterCheckbox = this.querySelector("#masterCheckboxMobile");
+      if (mobileMasterCheckbox) {
+        mobileMasterCheckbox.removeEventListener("change", this._handleMasterCheckboxChange);
+        mobileMasterCheckbox.addEventListener("change", this._handleMasterCheckboxChange);
+      }
+      this._updateSelection();
+    }
+    _renderDesktopTable(data2, columns) {
+      const thead = this.querySelector("thead tr");
+      const tbody = this.querySelector("tbody");
+      if (!thead || !tbody)
+        return;
+      thead.innerHTML = "";
+      columns.forEach((col) => {
+        const th = document.createElement("th");
+        th.scope = "col";
+        th.className = col.headerClass || "px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900";
+        if (col.width)
+          th.style.width = col.width;
+        if (col.minWidth)
+          th.style.minWidth = col.minWidth;
+        if (col.type === "checkbox" && col.masterCheckbox) {
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.className = "master-checkbox w-4 h-4 sm:w-5 sm:h-5 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2";
+          checkbox.addEventListener("change", this._handleMasterCheckboxChange);
+          th.appendChild(checkbox);
+        } else {
+          th.textContent = col.header || "";
+        }
+        thead.appendChild(th);
+      });
+      tbody.innerHTML = "";
+      data2.forEach((row) => {
+        const tr = document.createElement("tr");
+        tr.setAttribute("role", "row");
+        tr.className = "border-t border-gray-100";
+        if (row._isModified) {
+          tr.classList.add("bg-amber-50", "border-l-4", "border-l-amber-300");
+        }
+        tr.dataset.rowId = this._getRowId(row);
+        columns.forEach((col) => {
+          const td = document.createElement("td");
+          td.className = col.cellClass || "px-3 sm:px-4 py-3 sm:py-4";
+          this._renderCell(td, col, row);
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    }
+    _renderMobileCards(data2, columns) {
+      const mobileList = this.querySelector(".mobile-list");
+      if (!mobileList)
+        return;
+      mobileList.innerHTML = "";
+      data2.forEach((row) => {
+        const card = document.createElement("div");
+        card.className = "mobile-card p-4 flex items-start gap-3";
+        if (row._isModified) {
+          card.classList.add("bg-amber-50", "border-l-4", "border-l-amber-300");
+        }
+        card.dataset.rowId = this._getRowId(row);
+        const selectCol = columns.find((c) => c.type === "checkbox" && c.masterCheckbox);
+        if (selectCol && this._enableSelection) {
+          const checkboxContainer = this._createMobileCheckbox(row);
+          card.appendChild(checkboxContainer);
+        }
+        const contentDiv = document.createElement("div");
+        contentDiv.className = "flex-1 min-w-0 space-y-2";
+        columns.forEach((col) => {
+          if (col.type === "checkbox" && col.masterCheckbox)
+            return;
+          if (col.mobileHidden)
+            return;
+          const fieldDiv = document.createElement("div");
+          fieldDiv.className = col.mobileClass || "flex items-center gap-2";
+          if (col.mobileLabel !== false) {
+            const label = document.createElement("span");
+            label.className = "text-xs font-medium text-gray-500 flex-shrink-0";
+            label.textContent = col.mobileLabel || col.header + ":";
+            fieldDiv.appendChild(label);
+          }
+          const valueContainer = document.createElement("div");
+          valueContainer.className = "flex-1 min-w-0";
+          this._renderCell(valueContainer, col, row, true);
+          fieldDiv.appendChild(valueContainer);
+          contentDiv.appendChild(fieldDiv);
+        });
+        card.appendChild(contentDiv);
+        mobileList.appendChild(card);
+      });
+    }
+    _createMobileCheckbox(row) {
+      const container = document.createElement("label");
+      container.className = "custom-checkbox-container flex-shrink-0";
+      const checkbox = document.createElement("input");
+      checkbox.id = "rowCheckboxMobile_" + this._getRowId(row);
+      checkbox.type = "checkbox";
+      checkbox.className = "row-checkbox custom-checkbox-input";
+      checkbox.dataset.rowId = this._getRowId(row);
+      checkbox.checked = this._selectedRows.value.has(this._getRowId(row));
+      checkbox.addEventListener("change", this._handleRowCheckboxChange);
+      const visual = document.createElement("span");
+      visual.className = "custom-checkbox-visual";
+      container.appendChild(checkbox);
+      container.appendChild(visual);
+      return container;
+    }
+    _renderCell(container, col, row, isMobile = false) {
+      const isDisabled = col.disabled ? col.disabled(row) : false;
+      switch (col.type) {
+        case "checkbox":
+          if (!col.masterCheckbox) {
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.className = "w-5 h-5 rounded border-gray-300 cursor-pointer";
+            checkbox.checked = col.getValue ? col.getValue(row) : row[col.key];
+            checkbox.disabled = isDisabled;
+            if (col.onChange) {
+              checkbox.addEventListener("change", () => col.onChange(row, checkbox.checked));
+            }
+            container.appendChild(checkbox);
+          } else {
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.className = "row-checkbox w-5 h-5 rounded border-gray-300 cursor-pointer";
+            checkbox.dataset.rowId = this._getRowId(row);
+            checkbox.checked = this._selectedRows.value.has(this._getRowId(row));
+            checkbox.disabled = isDisabled;
+            checkbox.addEventListener("change", this._handleRowCheckboxChange);
+            container.appendChild(checkbox);
+          }
+          break;
+        case "text":
+          const text = col.getValue ? col.getValue(row) : row[col.key];
+          container.textContent = text;
+          container.className += " truncate";
+          if (col.clickable && !isDisabled) {
+            container.className += " cursor-pointer hover:text-blue-600 transition-colors duration-200";
+            if (col.onClick) {
+              container.addEventListener("click", () => col.onClick(row));
+            }
+          } else if (isDisabled) {
+            container.className += " text-gray-400 cursor-default";
+          }
+          if (col.tooltip) {
+            container.title = typeof col.tooltip === "function" ? col.tooltip(row) : col.tooltip;
+          }
+          break;
+        case "select":
+          const select = document.createElement("select");
+          select.className = (isMobile ? "text-xs " : "") + "border border-gray-300 rounded-lg px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white";
+          select.disabled = isDisabled;
+          if (isDisabled) {
+            select.className += " text-gray-300 bg-gray-50 cursor-not-allowed";
+          } else {
+            select.className += " cursor-pointer";
+          }
+          const currentValue = col.getValue ? col.getValue(row) : row[col.key];
+          const options = col.options ? typeof col.options === "function" ? col.options(row) : col.options : [];
+          options.forEach((opt) => {
+            const option = document.createElement("option");
+            option.value = opt.value;
+            option.textContent = opt.label;
+            if (opt.value === currentValue)
+              option.selected = true;
+            select.appendChild(option);
+          });
+          if (col.onChange) {
+            select.addEventListener("change", () => col.onChange(row, select.value));
+          }
+          if (col.tooltip) {
+            select.title = typeof col.tooltip === "function" ? col.tooltip(row) : col.tooltip;
+          }
+          container.appendChild(select);
+          break;
+        case "button":
+          const buttonConfig = col.render ? col.render(row) : {};
+          const button = document.createElement("ui-button");
+          button.className = "ui-button";
+          button.dataset.type = buttonConfig.type || "solid";
+          button.dataset.color = buttonConfig.color || "blue";
+          button.dataset.size = buttonConfig.size || (isMobile ? "small" : "medium");
+          button.textContent = buttonConfig.text || "";
+          button.dataset.fullwidth = isMobile ? "true" : "false";
+          button.disabled = isDisabled || buttonConfig.disabled;
+          if (buttonConfig.onClick) {
+            button.addEventListener("click", () => buttonConfig.onClick(row));
+          }
+          if (buttonConfig.tooltip || col.tooltip) {
+            button.title = buttonConfig.tooltip || (typeof col.tooltip === "function" ? col.tooltip(row) : col.tooltip);
+          }
+          container.appendChild(button);
+          break;
+        case "custom":
+          if (col.render) {
+            const customContent = col.render(row, isMobile);
+            if (typeof customContent === "string") {
+              container.innerHTML = customContent;
+            } else if (customContent instanceof HTMLElement) {
+              container.appendChild(customContent);
+            }
+          }
+          break;
+        default:
+          const value = col.getValue ? col.getValue(row) : row[col.key];
+          container.textContent = value || "";
+      }
+      if (col.cellStyle) {
+        const styles = typeof col.cellStyle === "function" ? col.cellStyle(row) : col.cellStyle;
+        Object.assign(container.style, styles);
+      }
+    }
+    _handleMasterCheckboxChange(e) {
+      const visibleRows = this._visibleRows.value;
+      const selected = new Set(this._selectedRows.value);
+      const checkbox = e.target;
+      const shouldSelectAll = checkbox.checked;
+      visibleRows.forEach((row) => {
+        const rowId = this._getRowId(row);
+        if (shouldSelectAll) {
+          selected.add(rowId);
+        } else {
+          selected.delete(rowId);
+        }
+      });
+      this._selectedRows.value = selected;
+      setTimeout(() => {
+        this._emitSelectionChange();
+      }, 0);
+    }
+    _handleRowCheckboxChange(e) {
+      const rowId = e.target.dataset.rowId;
+      const checked = e.target.checked;
+      const selected = new Set(this._selectedRows.value);
+      if (checked) {
+        selected.add(rowId);
+      } else {
+        selected.delete(rowId);
+      }
+      this._selectedRows.value = selected;
+      this._emitSelectionChange();
+    }
+    _updateSelection() {
+      const checkboxes = this.querySelectorAll(".row-checkbox");
+      checkboxes.forEach((checkbox) => {
+        const rowId = checkbox.dataset.rowId;
+        checkbox.checked = this._selectedRows.value.has(rowId);
+      });
+      this._updateMasterCheckbox();
+      this._updateSelectionCount();
+    }
+    _updateMasterCheckbox() {
+      const masterCheckboxes = this.querySelectorAll(".master-checkbox, .master-checkbox-mobile");
+      const visible = this._visibleRows.value;
+      const selected = this._selectedRows.value;
+      const selectedCount = visible.filter((row) => selected.has(this._getRowId(row))).length;
+      const allSelected = visible.length > 0 && selectedCount === visible.length;
+      const someSelected = selectedCount > 0 && selectedCount < visible.length;
+      masterCheckboxes.forEach((checkbox) => {
+        checkbox.checked = allSelected;
+        checkbox.indeterminate = someSelected;
+      });
+    }
+    _updateSelectionCount() {
+      const countElements = this.querySelectorAll(".selection-count-mobile");
+      const count = this._selectedRows.value.size;
+      countElements.forEach((el) => {
+        el.textContent = `${count} selected`;
+      });
+    }
+    _emitSelectionChange() {
+      const selected = Array.from(this._selectedRows.value);
+      const visibleRows = this._visibleRows.value;
+      const selectedRows = visibleRows.filter((row) => this._selectedRows.value.has(this._getRowId(row)));
+      this.dispatchEvent(new CustomEvent("selectionchange", {
+        detail: {
+          selected,
+          selectedRows,
+          count: selected.length,
+          allSelected: this._allSelected.value,
+          someSelected: this._someSelected.value
+        },
+        bubbles: true
+      }));
+    }
+    _getRowId(row) {
+      return String(row[this._rowIdKey] || row.id || JSON.stringify(row));
+    }
+    set data(value) {
+      this._data.value = Array.isArray(value) ? value : [];
+    }
+    get data() {
+      return this._data.value;
+    }
+    set columns(value) {
+      this._columns.value = Array.isArray(value) ? value : [];
+    }
+    get columns() {
+      return this._columns.value;
+    }
+    set selectedRows(value) {
+      this._selectedRows.value = new Set(value);
+      this._updateSelection();
+      this._emitSelectionChange();
+    }
+    get selectedRows() {
+      return Array.from(this._selectedRows.value);
+    }
+    clearSelection() {
+      this._selectedRows.value = /* @__PURE__ */ new Set();
+      this._updateSelection();
+      this._emitSelectionChange();
+    }
+    selectAll() {
+      const selected = /* @__PURE__ */ new Set();
+      this._visibleRows.value.forEach((row) => {
+        selected.add(this._getRowId(row));
+      });
+      this._selectedRows.value = selected;
+      this._updateSelection();
+      this._emitSelectionChange();
+    }
+    refresh() {
+      this._updateTable();
+    }
+  };
+  customElements.define("ui-table", ReusableTable);
+
   // src/views/AccountReview/review.js
-  var reviewTableBody;
-  var mobileAccountList;
+  var accountsTable;
   var importBtn;
   var searchInput;
   var activeFilters = {
@@ -4707,11 +6497,9 @@
     inclusion: "all"
   };
   var searchQuery = "";
+  var changeHistory = {};
+  var initialAccountsSnapshot = null;
   function initAccountReviewView() {
-    if (!state_default.accounts || Object.keys(state_default.accounts).length === 0) {
-      navigate("/upload", true);
-      return;
-    }
     renderPageLayout({
       navbar: {
         showBackButton: true,
@@ -4723,10 +6511,11 @@
         containerId: "pageHeader"
       }
     });
-    reviewTableBody = document.getElementById("reviewTableBody");
-    mobileAccountList = document.getElementById("mobileAccountList");
+    accountsTable = document.getElementById("accountsTable");
     importBtn = document.getElementById("continueBtn");
     searchInput = document.getElementById("searchInput");
+    initializeChangeTracking();
+    setupTableColumns();
     renderAccountTable();
     setTimeout(() => {
       initializeFiltersModal();
@@ -4745,18 +6534,12 @@
     setTimeout(() => {
       const filtersBtn = document.getElementById("filtersBtn");
       if (filtersBtn) {
-        console.log("Adding click listener to filters button");
         filtersBtn.addEventListener("click", (e) => {
-          console.log("Filters button clicked!");
           e.preventDefault();
           openFiltersModal();
         });
       } else {
         console.error("Filters button not found!");
-      }
-      const filtersModalClose = document.getElementById("filtersModalClose");
-      if (filtersModalClose) {
-        filtersModalClose.addEventListener("click", closeFiltersModal);
       }
       const filtersApply = document.getElementById("filtersApply");
       if (filtersApply) {
@@ -4766,28 +6549,14 @@
       if (filtersReset) {
         filtersReset.addEventListener("click", resetFilters);
       }
-      const clearAllFilters2 = document.getElementById("clearAllFilters");
-      if (clearAllFilters2) {
-        clearAllFilters2.addEventListener("click", clearAllFilters2);
+      const clearAllFiltersBtn = document.getElementById("clearAllFilters");
+      if (clearAllFiltersBtn) {
+        clearAllFiltersBtn.addEventListener("click", clearAllFilters);
       }
-      const filtersModal = document.getElementById("filtersModal");
-      if (filtersModal) {
-        filtersModal.addEventListener("click", (e) => {
-          if (e.target.id === "filtersModal") {
-            closeFiltersModal();
-          }
-        });
-      }
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && filtersModal && !filtersModal.classList.contains("hidden")) {
-          closeFiltersModal();
-        }
-      });
       const clearFiltersBtn = document.getElementById("clearFiltersBtn");
       if (clearFiltersBtn) {
         clearFiltersBtn.addEventListener("click", () => {
           resetFilters();
-          closeFiltersModal();
         });
       }
     }, 100);
@@ -4801,13 +6570,287 @@
     document.getElementById("bulkRenameBtnDesktop").addEventListener("click", openBulkRenameModal);
     document.getElementById("bulkTypeBtnMobile").addEventListener("click", openBulkTypeModal);
     document.getElementById("bulkTypeBtnDesktop").addEventListener("click", openBulkTypeModal);
-    document.getElementById("masterCheckbox").addEventListener("change", masterCheckboxChange);
-    const masterCheckboxMobile = document.getElementById("masterCheckboxMobile");
-    if (masterCheckboxMobile) {
-      masterCheckboxMobile.addEventListener("change", masterCheckboxChange);
-    }
+    accountsTable.addEventListener("selectionchange", (e) => {
+      const selectedCount = e.detail.count;
+      const bar = document.getElementById("bulkActionBar");
+      if (!bar)
+        return;
+      const mobileCountSpan = document.getElementById("selectedCountMobile");
+      if (mobileCountSpan) {
+        mobileCountSpan.textContent = selectedCount;
+        const mobileLabelSpan = document.getElementById("selectCountMobileLabel");
+        if (mobileLabelSpan) {
+          mobileLabelSpan.textContent = selectedCount === 1 ? "Account" : "Accounts";
+        }
+      }
+      const desktopCountSpan = document.getElementById("selectedCountDesktop");
+      if (desktopCountSpan) {
+        desktopCountSpan.textContent = selectedCount;
+        const desktopLabelSpan = document.getElementById("selectCountDesktopLabel");
+        if (desktopLabelSpan) {
+          desktopLabelSpan.textContent = selectedCount === 1 ? "Account" : "Accounts";
+        }
+      }
+      const accounts = Object.values(state_default.accounts);
+      accounts.forEach((acc) => {
+        acc.selected = e.detail.selected.includes(String(acc.id || acc.modifiedName));
+      });
+      if (selectedCount > 0) {
+        bar.classList.remove("hidden");
+        bar.classList.add("active");
+      } else {
+        bar.classList.remove("active");
+        setTimeout(() => {
+          if (!bar.classList.contains("active")) {
+            bar.classList.add("hidden");
+          }
+        }, 300);
+      }
+    });
     document.getElementById("continueBtn").addEventListener("click", () => navigate("/method"));
+    setupUndoListeners();
     renderAccountTable();
+  }
+  function initializeChangeTracking() {
+    changeHistory = {};
+    initialAccountsSnapshot = JSON.parse(JSON.stringify(state_default.accounts));
+    Object.keys(state_default.accounts).forEach((accountId) => {
+      state_default.accounts[accountId]._isModified = false;
+    });
+  }
+  function trackChange(accountId) {
+    if (!changeHistory[accountId]) {
+      const account = state_default.accounts[accountId];
+      changeHistory[accountId] = {
+        modifiedName: account.modifiedName,
+        type: account.type,
+        subtype: account.subtype
+      };
+    }
+    state_default.accounts[accountId]._isModified = true;
+  }
+  function checkAndUpdateModifiedStatus(accountId) {
+    if (!changeHistory[accountId])
+      return;
+    const account = state_default.accounts[accountId];
+    const original = changeHistory[accountId];
+    const isBackToOriginal = account.modifiedName === original.modifiedName && account.type === original.type && account.subtype === original.subtype;
+    if (isBackToOriginal) {
+      delete changeHistory[accountId];
+      account._isModified = false;
+    } else {
+      account._isModified = true;
+    }
+  }
+  function undoRowChanges(accountId) {
+    if (!changeHistory[accountId])
+      return;
+    const original = changeHistory[accountId];
+    const account = state_default.accounts[accountId];
+    account.modifiedName = original.modifiedName;
+    account.type = original.type;
+    account.subtype = original.subtype;
+    account._isModified = false;
+    delete changeHistory[accountId];
+    persistState();
+    renderAccountTable();
+  }
+  function undoAllChanges() {
+    const accountIds = Object.keys(changeHistory);
+    accountIds.forEach((accountId) => {
+      const original = changeHistory[accountId];
+      const account = state_default.accounts[accountId];
+      account.modifiedName = original.modifiedName;
+      account.type = original.type;
+      account.subtype = original.subtype;
+      account._isModified = false;
+      delete changeHistory[accountId];
+    });
+    persistState();
+    renderAccountTable();
+  }
+  function setupUndoListeners() {
+    const undoAllBtn = document.getElementById("undoAllBtn");
+    if (undoAllBtn) {
+      undoAllBtn.addEventListener("click", () => {
+        if (confirm("Are you sure you want to undo all changes? This action cannot be reversed.")) {
+          undoAllChanges();
+        }
+      });
+    }
+    accountsTable.addEventListener("click", (e) => {
+      const undoBtn = e.target.closest("[data-undo-button]");
+      if (undoBtn) {
+        const rowId = undoBtn.dataset.rowId;
+        undoRowChanges(rowId);
+      }
+    });
+  }
+  function setupTableColumns() {
+    accountsTable.columns = [
+      {
+        key: "select",
+        type: "checkbox",
+        header: "",
+        width: "60px",
+        headerClass: "px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 w-[50px] sm:w-[60px]",
+        cellClass: "px-2 py-2 text-center",
+        masterCheckbox: true,
+        disabled: (row) => row.status === "processed",
+        mobileHidden: true
+      },
+      {
+        key: "modifiedName",
+        type: "text",
+        header: "Account Name",
+        minWidth: "200px",
+        headerClass: "px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[200px]",
+        cellClass: "px-2 py-2 max-w-[300px]",
+        clickable: true,
+        tooltip: (row) => row.status === "processed" ? "" : `Click to rename '${row.modifiedName}'`,
+        onClick: (row) => {
+          if (row.status !== "processed") {
+            trackChange(row.id);
+            openNameEditor(row);
+          }
+        },
+        mobileLabel: false,
+        mobileClass: "mb-2"
+      },
+      {
+        key: "type",
+        type: "select",
+        header: "Type",
+        minWidth: "150px",
+        headerClass: "px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[150px]",
+        cellClass: "px-2 py-2",
+        options: monarchAccountTypes_default.data.map((type) => ({
+          value: type.typeName,
+          label: type.typeDisplay
+        })),
+        disabled: (row) => row.status === "processed",
+        tooltip: (row) => getAccountTypeByName(row.type)?.typeDisplay || "",
+        onChange: (row, value) => {
+          trackChange(row.id);
+          row.type = value;
+          const selectedType = getAccountTypeByName(value);
+          row.subtype = selectedType?.subtypes[0]?.name || null;
+          checkAndUpdateModifiedStatus(row.id);
+          persistState();
+          renderAccountTable();
+        },
+        mobileLabel: "Type"
+      },
+      {
+        key: "subtype",
+        type: "select",
+        header: "Subtype",
+        minWidth: "150px",
+        headerClass: "px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[150px]",
+        cellClass: "px-2 py-2",
+        options: (row) => {
+          const selectedType = getAccountTypeByName(row.type);
+          return (selectedType?.subtypes || []).map((sub) => ({
+            value: sub.name,
+            label: sub.display
+          }));
+        },
+        disabled: (row) => row.status === "processed",
+        tooltip: (row) => getSubtypeByName(row.type, row.subtype)?.display || "",
+        onChange: (row, value) => {
+          trackChange(row.id);
+          row.subtype = value;
+          checkAndUpdateModifiedStatus(row.id);
+          persistState();
+          renderAccountTable();
+        },
+        mobileLabel: "Subtype"
+      },
+      {
+        key: "transactionCount",
+        type: "text",
+        header: "Transactions",
+        minWidth: "100px",
+        headerClass: "px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[100px] text-center",
+        cellClass: "px-2 py-2 text-center text-[#637988] cursor-default",
+        tooltip: (row) => `${row.transactionCount} transaction${row.transactionCount !== 1 ? "s" : ""}`,
+        cellStyle: (row) => row.status === "processed" ? { color: "#9ca3af" } : {},
+        mobileLabel: "Transactions",
+        mobileClass: "text-sm text-gray-600"
+      },
+      {
+        key: "balance",
+        type: "text",
+        header: "Balance",
+        minWidth: "120px",
+        headerClass: "px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[120px] text-right",
+        cellClass: "px-2 py-2 text-[#637988] cursor-default text-right",
+        getValue: (row) => currencyFormatter.format(row.balance),
+        tooltip: (row) => `Balance: ${currencyFormatter.format(row.balance)}`,
+        cellStyle: (row) => row.status === "processed" ? { color: "#9ca3af" } : {},
+        mobileLabel: "Balance",
+        mobileClass: "text-sm font-medium"
+      },
+      {
+        key: "undo",
+        type: "custom",
+        header: "",
+        minWidth: "50px",
+        width: "50px",
+        headerClass: "px-2 py-3 sm:py-4 text-center",
+        cellClass: "px-2 py-2",
+        render: (row) => {
+          const container = document.createElement("div");
+          container.className = "flex items-center justify-center w-full h-full";
+          if (!row._isModified) {
+            return container;
+          }
+          const button = document.createElement("button");
+          button.className = "p-1.5 rounded hover:bg-amber-100 transition-colors duration-150";
+          button.title = "Undo changes to this account";
+          button.setAttribute("aria-label", "Undo changes");
+          button.innerHTML = `
+          <svg class="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 hover:text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+          </svg>
+        `;
+          button.addEventListener("click", () => undoRowChanges(row.id));
+          container.appendChild(button);
+          return container;
+        },
+        mobileLabel: "",
+        mobileClass: "flex items-center justify-center"
+      },
+      {
+        key: "included",
+        type: "button",
+        header: "Migrate?",
+        minWidth: "100px",
+        headerClass: "px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[100px] text-center",
+        cellClass: "px-2 py-2",
+        render: (row) => {
+          const isProcessed = row.status === "processed";
+          const isFailed = row.status === "failed";
+          return {
+            text: isProcessed ? "Processed" : row.included ? "Included" : "Excluded",
+            type: "outline",
+            color: isProcessed ? "grey" : row.included ? "green" : "red",
+            size: "small",
+            disabled: isProcessed,
+            tooltip: isProcessed ? "This account has already been processed" : row.included ? "Click to exclude this account" : "Click to include this account",
+            onClick: () => {
+              if (!isProcessed) {
+                row.included = !row.included;
+                persistState();
+                renderAccountTable();
+              }
+            }
+          };
+        },
+        mobileLabel: "Migrate?",
+        mobileClass: "flex items-center justify-center"
+      }
+    ];
   }
   function updateSelection(shouldSelect) {
     Object.values(state_default.accounts).forEach((acc) => {
@@ -4819,397 +6862,57 @@
   }
   function updateInclusion(include) {
     Object.values(state_default.accounts).forEach((acc) => {
-      if (acc.selected)
+      if (acc.selected) {
         acc.included = include;
+      }
     });
     persistState();
     renderAccountTable();
   }
   function renderAccountTable() {
-    const fragment = document.createDocumentFragment();
-    const mobileFragment = document.createDocumentFragment();
-    const accounts2 = Object.values(state_default.accounts);
-    let visibleCount2 = 0;
-    reviewTableBody.innerHTML = "";
-    if (mobileAccountList)
-      mobileAccountList.innerHTML = "";
-    for (const account of accounts2) {
-      if (!passesFilters(account))
-        continue;
-      if (searchQuery && !account.modifiedName.toLowerCase().includes(searchQuery))
-        continue;
-      visibleCount2++;
-      fragment.appendChild(createAccountRowElement(account));
-      if (mobileAccountList) {
-        mobileFragment.appendChild(createMobileAccountCard(account));
-      }
-    }
-    reviewTableBody.appendChild(fragment);
-    if (mobileAccountList) {
-      mobileAccountList.appendChild(mobileFragment);
-    }
-    updateAccountCountDisplay(visibleCount2, accounts2.length);
-    updateMasterCheckbox(getVisibleAccounts());
-    refreshBulkActionBar();
-    updateMobileSelectionCount();
-    const includedCount = accounts2.filter(isIncludedAndUnprocessed).length;
-    const hasIncludedAccounts = includedCount > 0;
-    toggleDisabled(importBtn, !hasIncludedAccounts);
-    importBtn.title = importBtn.disabled ? "At least one account must be included to proceed" : "";
-    if (hasIncludedAccounts) {
-      importBtn.textContent = `Continue with ${includedCount} account${includedCount !== 1 ? "s" : ""}`;
-    } else {
-      importBtn.textContent = "Continue";
-    }
-  }
-  function isIncludedAndUnprocessed(account) {
-    return account.included && account.status !== "processed";
-  }
-  function createAccountRowElement(account) {
-    const row = document.createElement("tr");
-    row.setAttribute("role", "row");
-    row.className = "border-t border-[#dce1e5]";
-    const isProcessed = account.status === "processed";
-    const isFailed = account.status === "failed";
-    const checkboxTd = document.createElement("td");
-    checkboxTd.className = "px-2 py-2 text-center";
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    const checkboxId = `account-checkbox-${account.id || account.modifiedName.replace(/\s+/g, "-")}`;
-    checkbox.id = checkboxId;
-    checkbox.name = checkboxId;
-    checkbox.setAttribute("aria-label", `Select account: ${account.modifiedName}`);
-    checkbox.className = "w-5 h-5";
-    toggleDisabled(checkbox, isProcessed);
-    checkbox.checked = account.selected;
-    checkbox.addEventListener("change", () => {
-      account.selected = checkbox.checked;
-      refreshBulkActionBar();
-      updateMasterCheckbox(getVisibleAccounts());
-    });
-    checkboxTd.appendChild(checkbox);
-    row.appendChild(checkboxTd);
-    const nameTd = document.createElement("td");
-    nameTd.className = "px-2 py-2 max-w-[300px] truncate";
-    nameTd.textContent = account.modifiedName;
-    if (!isProcessed) {
-      nameTd.classList.add("cursor-pointer");
-      nameTd.title = `Click to rename '${account.modifiedName}'`;
-      nameTd.addEventListener("click", () => openNameEditor(account, nameTd));
-    } else {
-      nameTd.classList.add("text-gray-400", "cursor-default");
-    }
-    row.appendChild(nameTd);
-    const typeTd = document.createElement("td");
-    typeTd.className = "px-2 py-2";
-    const typeSelect = document.createElement("select");
-    const typeId = `type-select-${account.id || account.modifiedName.replace(/\s+/g, "-")}`;
-    typeSelect.id = typeId;
-    typeSelect.name = typeId;
-    typeSelect.title = getAccountTypeByName(account.type)?.typeDisplay || "";
-    typeSelect.className = "border rounded px-2 py-1 w-full";
-    typeSelect.disabled = isProcessed;
-    if (isProcessed)
-      typeSelect.classList.add("text-gray-300", "cursor-default");
-    else
-      typeSelect.classList.add("cursor-pointer");
-    monarchAccountTypes_default.data.forEach((type) => {
-      const opt = document.createElement("option");
-      opt.value = type.typeName;
-      opt.textContent = type.typeDisplay;
-      if (type.typeName === account.type)
-        opt.selected = true;
-      typeSelect.appendChild(opt);
-    });
-    typeSelect.addEventListener("change", () => {
-      account.type = typeSelect.value;
-      const selectedType2 = getAccountTypeByName(account.type);
-      account.subtype = selectedType2?.subtypes[0]?.name || null;
-      renderAccountTable();
-    });
-    typeTd.appendChild(typeSelect);
-    row.appendChild(typeTd);
-    const subtypeTd = document.createElement("td");
-    subtypeTd.className = "px-2 py-2";
-    const subtypeSelect = document.createElement("select");
-    const subtypeId = `subtype-select-${account.id || account.modifiedName.replace(/\s+/g, "-")}`;
-    subtypeSelect.id = subtypeId;
-    subtypeSelect.name = subtypeId;
-    subtypeSelect.className = "border rounded px-2 py-1 w-full";
-    subtypeSelect.disabled = isProcessed;
-    if (isProcessed)
-      subtypeSelect.classList.add("text-gray-300", "cursor-default");
-    else
-      subtypeSelect.classList.add("cursor-pointer");
-    const selectedType = getAccountTypeByName(account.type);
-    subtypeSelect.title = getSubtypeByName(account.type, account.subtype)?.display || "";
-    (selectedType?.subtypes || []).forEach((sub) => {
-      const opt = document.createElement("option");
-      opt.value = sub.name;
-      opt.textContent = sub.display;
-      if (sub.name === account.subtype)
-        opt.selected = true;
-      subtypeSelect.appendChild(opt);
-    });
-    subtypeSelect.addEventListener("change", () => {
-      account.subtype = subtypeSelect.value;
-      renderAccountTable();
-    });
-    subtypeTd.appendChild(subtypeSelect);
-    row.appendChild(subtypeTd);
-    const txTd = document.createElement("td");
-    txTd.className = "px-2 py-2 text-center cursor-default";
-    txTd.textContent = account.transactionCount;
-    txTd.title = `${account.transactionCount} transaction${account.transactionCount !== 1 ? "s" : ""}`;
-    if (isProcessed)
-      txTd.classList.add("text-gray-400");
-    row.appendChild(txTd);
-    const balanceTd = document.createElement("td");
-    balanceTd.className = "px-2 py-2 text-[#637988] cursor-default";
-    balanceTd.textContent = currencyFormatter.format(account.balance);
-    balanceTd.title = `Balance: ${currencyFormatter.format(account.balance)}`;
-    if (isProcessed)
-      balanceTd.classList.add("text-gray-400");
-    row.appendChild(balanceTd);
-    const includeTd = document.createElement("td");
-    includeTd.className = "px-2 py-2 flex items-center gap-2";
-    const toggleBtn = document.createElement("button");
-    toggleBtn.classList.add("ui-button");
-    toggleBtn.dataset.type = account.included ? "primary" : "secondary";
-    toggleBtn.dataset.size = "small";
-    toggleBtn.textContent = isProcessed ? "Processed" : account.included ? "Included" : "Excluded";
-    toggleBtn.disabled = isProcessed;
-    toggleBtn.title = isProcessed ? "This account has already been processed" : account.included ? "Click to exclude this account" : "Click to include this account";
-    if (!isProcessed) {
-      toggleBtn.addEventListener("click", () => {
-        account.included = !account.included;
-        persistState();
-        renderAccountTable();
-      });
-    }
-    includeTd.appendChild(toggleBtn);
-    if (isFailed) {
-      const errorIcon = document.createElement("span");
-      errorIcon.className = "text-red-600 text-xl cursor-default";
-      errorIcon.innerHTML = "\u26A0\uFE0F";
-      errorIcon.title = "Previously failed to process";
-      includeTd.appendChild(errorIcon);
-    }
-    row.appendChild(includeTd);
-    return row;
-  }
-  function createMobileAccountCard(account) {
-    const card = document.createElement("div");
-    card.className = "mobile-account-card";
-    const isProcessed = account.status === "processed";
-    const isFailed = account.status === "failed";
-    const checkboxContainer = document.createElement("label");
-    checkboxContainer.className = "custom-checkbox-container flex-shrink-0";
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.className = "custom-checkbox-input";
-    const checkboxId = `mobile-account-checkbox-${account.id || account.modifiedName.replace(/\s+/g, "-")}`;
-    checkbox.id = checkboxId;
-    checkbox.name = checkboxId;
-    checkbox.setAttribute("aria-label", `Select account: ${account.modifiedName}`);
-    checkbox.disabled = isProcessed;
-    checkbox.checked = account.selected || false;
-    checkbox.addEventListener("change", () => {
-      account.selected = checkbox.checked;
-      persistState();
-      refreshBulkActionBar();
-      updateMasterCheckbox(getVisibleAccounts());
-      updateMobileSelectionCount();
-    });
-    const checkboxVisual = document.createElement("span");
-    checkboxVisual.className = "custom-checkbox-visual";
-    checkboxContainer.appendChild(checkbox);
-    checkboxContainer.appendChild(checkboxVisual);
-    card.appendChild(checkboxContainer);
-    const contentDiv = document.createElement("div");
-    contentDiv.className = "card-content";
-    const nameDiv = document.createElement("div");
-    nameDiv.className = "account-name";
-    nameDiv.textContent = account.modifiedName;
-    if (!isProcessed) {
-      nameDiv.classList.add("cursor-pointer", "hover:text-blue-600", "transition-colors", "duration-200");
-      nameDiv.title = `Click to rename '${account.modifiedName}'`;
-      nameDiv.addEventListener("click", () => openNameEditor(account, nameDiv));
-    } else {
-      nameDiv.classList.add("text-gray-400", "cursor-default");
-    }
-    contentDiv.appendChild(nameDiv);
-    const detailsDiv = document.createElement("div");
-    detailsDiv.className = "account-details";
-    const typeRow = document.createElement("div");
-    typeRow.className = "flex flex-col xs:flex-row xs:items-center gap-2 xs:gap-4";
-    const typeContainer = document.createElement("div");
-    typeContainer.className = "flex items-center gap-2 flex-1 min-w-0";
-    const typeLabel = document.createElement("span");
-    typeLabel.textContent = "Type:";
-    typeLabel.className = "text-xs font-medium text-gray-500 flex-shrink-0";
-    const typeSelect = document.createElement("select");
-    const typeId = `mobile-type-select-${account.id || account.modifiedName.replace(/\s+/g, "-")}`;
-    typeSelect.id = typeId;
-    typeSelect.name = typeId;
-    typeSelect.title = getAccountTypeByName(account.type)?.typeDisplay || "";
-    typeSelect.className = "border border-gray-300 rounded-lg px-2 py-1 text-xs flex-1 min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white";
-    typeSelect.disabled = isProcessed;
-    if (isProcessed)
-      typeSelect.classList.add("text-gray-300", "bg-gray-50", "cursor-not-allowed");
-    else
-      typeSelect.classList.add("cursor-pointer");
-    monarchAccountTypes_default.data.forEach((type) => {
-      const opt = document.createElement("option");
-      opt.value = type.typeName;
-      opt.textContent = type.typeDisplay;
-      if (type.typeName === account.type)
-        opt.selected = true;
-      typeSelect.appendChild(opt);
-    });
-    typeSelect.addEventListener("change", () => {
-      account.type = typeSelect.value;
-      const selectedType2 = getAccountTypeByName(account.type);
-      account.subtype = selectedType2?.subtypes[0]?.name || null;
-      renderAccountTable();
-    });
-    typeContainer.appendChild(typeLabel);
-    typeContainer.appendChild(typeSelect);
-    typeRow.appendChild(typeContainer);
-    const subtypeContainer = document.createElement("div");
-    subtypeContainer.className = "flex items-center gap-2 flex-1 min-w-0";
-    const subtypeLabel = document.createElement("span");
-    subtypeLabel.textContent = "Sub:";
-    subtypeLabel.className = "text-xs font-medium text-gray-500 flex-shrink-0";
-    const subtypeSelect = document.createElement("select");
-    const subtypeId = `mobile-subtype-select-${account.id || account.modifiedName.replace(/\s+/g, "-")}`;
-    subtypeSelect.id = subtypeId;
-    subtypeSelect.name = subtypeId;
-    subtypeSelect.className = "border border-gray-300 rounded-lg px-2 py-1 text-xs flex-1 min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white";
-    subtypeSelect.disabled = isProcessed;
-    if (isProcessed)
-      subtypeSelect.classList.add("text-gray-300", "bg-gray-50", "cursor-not-allowed");
-    else
-      subtypeSelect.classList.add("cursor-pointer");
-    const selectedType = getAccountTypeByName(account.type);
-    subtypeSelect.title = getSubtypeByName(account.type, account.subtype)?.display || "";
-    (selectedType?.subtypes || []).forEach((sub) => {
-      const opt = document.createElement("option");
-      opt.value = sub.name;
-      opt.textContent = sub.display;
-      if (sub.name === account.subtype)
-        opt.selected = true;
-      subtypeSelect.appendChild(opt);
-    });
-    subtypeSelect.addEventListener("change", () => {
-      account.subtype = subtypeSelect.value;
-      renderAccountTable();
-    });
-    subtypeContainer.appendChild(subtypeLabel);
-    subtypeContainer.appendChild(subtypeSelect);
-    typeRow.appendChild(subtypeContainer);
-    detailsDiv.appendChild(typeRow);
-    const statsRow = document.createElement("div");
-    statsRow.className = "flex justify-between items-center";
-    const transactionInfo = document.createElement("span");
-    transactionInfo.className = isProcessed ? "text-gray-400" : "text-gray-600";
-    transactionInfo.textContent = `${account.transactionCount} transaction${account.transactionCount !== 1 ? "s" : ""}`;
-    const balanceInfo = document.createElement("span");
-    balanceInfo.className = `account-balance ${isProcessed ? "text-gray-400" : "text-gray-900"}`;
-    balanceInfo.textContent = currencyFormatter.format(account.balance);
-    statsRow.appendChild(transactionInfo);
-    statsRow.appendChild(balanceInfo);
-    detailsDiv.appendChild(statsRow);
-    const actionRow = document.createElement("div");
-    actionRow.className = "flex items-center justify-end pt-1";
-    if (!isProcessed) {
-      const toggleBtn = document.createElement("button");
-      toggleBtn.className = `px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 ${account.included ? "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 focus:ring-red-500" : "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 focus:ring-green-500"}`;
-      toggleBtn.textContent = account.included ? "Exclude" : "Include";
-      toggleBtn.title = account.included ? "Click to exclude this account" : "Click to include this account";
-      toggleBtn.addEventListener("click", () => {
-        account.included = !account.included;
-        renderAccountTable();
-      });
-      actionRow.appendChild(toggleBtn);
-    }
-    if (isFailed) {
-      const errorIcon = document.createElement("span");
-      errorIcon.className = "text-red-600 text-lg cursor-default ml-2";
-      errorIcon.innerHTML = "\u26A0\uFE0F";
-      errorIcon.title = "Previously failed to process";
-      actionRow.appendChild(errorIcon);
-    }
-    detailsDiv.appendChild(actionRow);
-    contentDiv.appendChild(detailsDiv);
-    card.appendChild(contentDiv);
-    return card;
-  }
-  function updateMasterCheckbox(visibleAccounts) {
-    const masterCheckbox = document.getElementById("masterCheckbox");
-    const masterCheckboxMobile = document.getElementById("masterCheckboxMobile");
-    const selectedCount = visibleAccounts.filter((acc) => acc.selected).length;
-    const isChecked = selectedCount > 0 && selectedCount === visibleAccounts.length;
-    const isIndeterminate = selectedCount > 0 && selectedCount < visibleAccounts.length;
-    if (masterCheckbox) {
-      masterCheckbox.checked = isChecked;
-      masterCheckbox.indeterminate = isIndeterminate;
-    }
-    if (masterCheckboxMobile) {
-      masterCheckboxMobile.checked = isChecked;
-      masterCheckboxMobile.indeterminate = isIndeterminate;
-    }
-    updateMobileSelectionCount();
-  }
-  function updateMobileSelectionCount() {
-    const countElement = document.getElementById("mobileSelectionCount");
-    if (countElement) {
-      const selectedCount = Object.values(state_default.accounts).filter((acc) => acc.selected).length;
-      countElement.textContent = `${selectedCount} selected`;
-    }
-  }
-  function getVisibleAccounts() {
-    return Object.values(state_default.accounts).filter((account) => {
-      if (account.status === "processed")
-        return false;
+    const accounts = Object.values(state_default.accounts);
+    const visibleAccounts = accounts.filter((account) => {
       if (!passesFilters(account))
         return false;
       if (searchQuery && !account.modifiedName.toLowerCase().includes(searchQuery))
         return false;
       return true;
     });
-  }
-  function masterCheckboxChange(e) {
-    const checked = e.target.checked;
-    getVisibleAccounts().forEach((acc) => {
-      acc.selected = checked;
+    visibleAccounts.forEach((account, index) => {
+      if (!account.id) {
+        account.id = account.modifiedName.replace(/\s+/g, "-") + "-" + index;
+      }
     });
-    renderAccountTable();
-  }
-  function refreshBulkActionBar() {
-    const bar = document.getElementById("bulkActionBar");
-    const selectedCount = Object.values(state_default.accounts).filter((acc) => acc.selected).length;
-    const mobileCountSpan = document.getElementById("selectedCountMobile");
-    if (mobileCountSpan) {
-      mobileCountSpan.textContent = selectedCount;
-    }
-    const desktopCountSpan = document.getElementById("selectedCountDesktop");
-    if (desktopCountSpan) {
-      desktopCountSpan.textContent = selectedCount;
-    }
-    if (selectedCount > 0) {
-      bar.classList.remove("hidden");
-      bar.classList.add("active");
+    accountsTable.data = visibleAccounts;
+    const selectedIds = accounts.filter((acc) => acc.selected).map((acc) => String(acc.id || acc.modifiedName));
+    accountsTable.selectedRows = selectedIds;
+    updateAccountCountDisplay(visibleAccounts.length, accounts.length);
+    const includedCount = accounts.filter(isIncludedAndUnprocessed).length;
+    const hasIncludedAccounts = includedCount > 0;
+    toggleDisabled(importBtn, !hasIncludedAccounts);
+    importBtn.title = importBtn.disabled ? "At least one account must be included to proceed" : "";
+    if (hasIncludedAccounts) {
+      importBtn.textContent = `Migrate ${includedCount} of ${accounts.length} account${accounts.length !== 1 ? "s" : ""}`;
     } else {
-      bar.classList.remove("active");
-      setTimeout(() => {
-        if (!bar.classList.contains("active")) {
-          bar.classList.add("hidden");
-        }
-      }, 300);
+      importBtn.textContent = "Continue";
+    }
+    updateChangesAlert();
+  }
+  function updateChangesAlert() {
+    const undoAllContainer = document.getElementById("undoAllContainer");
+    if (!undoAllContainer)
+      return;
+    const hasChanges = Object.keys(changeHistory).length > 0;
+    if (hasChanges) {
+      undoAllContainer.classList.remove("hidden");
+    } else {
+      undoAllContainer.classList.add("hidden");
     }
   }
-  function openNameEditor(account, nameCell) {
+  function isIncludedAndUnprocessed(account) {
+    return account.included && account.status !== "processed";
+  }
+  function openNameEditor(account) {
     const overlay = document.createElement("div");
     overlay.className = "fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 opacity-0 transition-opacity duration-200";
     document.body.appendChild(overlay);
@@ -5255,53 +6958,99 @@
     }
     function save() {
       account.modifiedName = input.value.trim();
-      nameCell.textContent = account.modifiedName;
-      nameCell.title = `Click to rename '${account.modifiedName}'`;
+      checkAndUpdateModifiedStatus(account.id);
+      persistState();
+      const table = document.getElementById("accountsTable");
+      if (table) {
+        table.refresh();
+      }
       closeEditor();
     }
   }
   function openBulkRenameModal() {
     const modal = document.getElementById("bulkRenameModal");
-    const renamePattern = document.getElementById("renamePattern");
-    const indexStartInput = document.getElementById("indexStart");
-    const previewDiv = document.getElementById("renamePreview");
-    const cancelBtn = document.getElementById("renameCancel");
-    const applyBtn = document.getElementById("renameApply");
-    const tokenButtons = modal.querySelectorAll(".token-btn");
-    modal.classList.remove("hidden");
-    renamePattern.focus();
     const selectedAccounts = Object.values(state_default.accounts).filter((acc) => acc.selected);
-    tokenButtons.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const token = btn.dataset.token;
-        renamePattern.value += token;
-        updatePreview();
+    modal.open();
+    setTimeout(() => {
+      const modalOverlay = Array.from(document.body.children).find((el) => el.classList.contains("ui-modal-overlay") && el.querySelector("#renamePattern"));
+      if (!modalOverlay) {
+        console.error("Modal overlay not found in body");
+        return;
+      }
+      console.log("Found modal overlay:", modalOverlay);
+      const renamePattern = modalOverlay.querySelector("#renamePattern");
+      const indexStartInput = modalOverlay.querySelector("#indexStart");
+      const previewDiv = modalOverlay.querySelector("#renamePreview");
+      const cancelBtn = modalOverlay.querySelector("#renameCancel");
+      const applyBtn = modalOverlay.querySelector("#renameApply");
+      const tokenButtons = modalOverlay.querySelectorAll(".token-btn");
+      console.log("Found elements:", { renamePattern, indexStartInput, previewDiv, cancelBtn, applyBtn, tokenButtons: tokenButtons.length });
+      if (!renamePattern || !indexStartInput || !previewDiv || !cancelBtn || !applyBtn) {
+        console.error("Modal elements not found", { renamePattern, indexStartInput, previewDiv, cancelBtn, applyBtn });
+        return;
+      }
+      const updatePreview = () => {
+        const preview = modalOverlay.querySelector("#renamePreview");
+        const patternInput = modalOverlay.querySelector("#renamePattern");
+        const indexInput = modalOverlay.querySelector("#indexStart");
+        if (!preview || !patternInput || !indexInput)
+          return;
+        preview.innerHTML = "";
+        const pattern = patternInput.value;
+        const indexStart = parseInt(indexInput.value, 10) || 1;
+        selectedAccounts.slice(0, 3).forEach((acc, i) => {
+          const previewName = applyPattern(pattern, acc, i + indexStart);
+          const div = document.createElement("div");
+          div.textContent = previewName;
+          preview.appendChild(div);
+        });
+      };
+      tokenButtons.forEach((btn) => {
+        console.log("Attaching token button handler", btn);
+        btn.onclick = (e) => {
+          console.log("Token button clicked!");
+          e.preventDefault();
+          e.stopPropagation();
+          const currentPattern = modalOverlay.querySelector("#renamePattern");
+          if (currentPattern) {
+            const token = btn.dataset.token;
+            currentPattern.value += token;
+            updatePreview();
+          }
+        };
       });
-    });
-    renamePattern.addEventListener("input", updatePreview);
-    indexStartInput.addEventListener("input", updatePreview);
-    updatePreview();
-    function updatePreview() {
-      previewDiv.innerHTML = "";
-      const pattern = renamePattern.value;
-      const indexStart = parseInt(indexStartInput.value, 10) || 1;
-      selectedAccounts.slice(0, 3).forEach((acc, i) => {
-        const previewName = applyPattern(pattern, acc, i + indexStart);
-        const div = document.createElement("div");
-        div.textContent = previewName;
-        previewDiv.appendChild(div);
-      });
-    }
-    cancelBtn.onclick = () => modal.classList.add("hidden");
-    applyBtn.onclick = () => {
-      const pattern = renamePattern.value;
-      const indexStart = parseInt(indexStartInput.value, 10) || 1;
-      selectedAccounts.forEach((acc, i) => {
-        acc.modifiedName = applyPattern(pattern, acc, i + indexStart);
-      });
-      modal.classList.add("hidden");
-      renderAccountTable();
-    };
+      renamePattern.oninput = updatePreview;
+      indexStartInput.oninput = updatePreview;
+      updatePreview();
+      console.log("Attaching cancel handler to:", cancelBtn);
+      cancelBtn.onclick = (e) => {
+        console.log("Cancel clicked!");
+        e.preventDefault();
+        e.stopPropagation();
+        modal.close();
+      };
+      console.log("Attaching apply handler to:", applyBtn);
+      applyBtn.onclick = (e) => {
+        console.log("Apply clicked!");
+        e.preventDefault();
+        e.stopPropagation();
+        const currentPattern = modalOverlay.querySelector("#renamePattern");
+        const currentIndexStart = modalOverlay.querySelector("#indexStart");
+        if (!currentPattern || !currentIndexStart)
+          return;
+        const pattern = currentPattern.value;
+        const indexStart = parseInt(currentIndexStart.value, 10) || 1;
+        selectedAccounts.forEach((acc, i) => {
+          trackChange(acc.id);
+          acc.modifiedName = applyPattern(pattern, acc, i + indexStart);
+          checkAndUpdateModifiedStatus(acc.id);
+        });
+        modal.close();
+        persistState();
+        renderAccountTable();
+      };
+      renamePattern.focus();
+    }, 300);
   }
   function applyPattern(pattern, account, index) {
     const today = new Date().toISOString().split("T")[0];
@@ -5309,56 +7058,88 @@
   }
   function openBulkTypeModal() {
     const modal = document.getElementById("bulkTypeModal");
-    const typeSelect = document.getElementById("bulkTypeSelect");
-    const subtypeSelect = document.getElementById("bulkSubtypeSelect");
-    const cancelBtn = document.getElementById("bulkTypeCancel");
-    const applyBtn = document.getElementById("bulkTypeApply");
-    modal.classList.remove("hidden");
-    typeSelect.innerHTML = "";
-    monarchAccountTypes_default.data.forEach((type) => {
-      const opt = document.createElement("option");
-      opt.value = type.typeName;
-      opt.textContent = type.typeDisplay;
-      typeSelect.appendChild(opt);
-    });
-    function updateSubtypeOptions() {
-      const selectedType = getAccountTypeByName(typeSelect.value);
-      subtypeSelect.innerHTML = "";
-      (selectedType?.subtypes || []).forEach((sub) => {
-        const opt = document.createElement("option");
-        opt.value = sub.name;
-        opt.textContent = sub.display;
-        subtypeSelect.appendChild(opt);
-      });
-      if ((selectedType?.subtypes || []).length === 0) {
-        const opt = document.createElement("option");
-        opt.value = "";
-        opt.textContent = "-";
-        subtypeSelect.appendChild(opt);
+    modal.open();
+    setTimeout(() => {
+      const modalOverlay = Array.from(document.body.children).find((el) => el.classList.contains("ui-modal-overlay") && el.querySelector("#bulkTypeSelect"));
+      if (!modalOverlay) {
+        console.error("Modal overlay not found in body");
+        return;
       }
-    }
-    typeSelect.addEventListener("change", updateSubtypeOptions);
-    updateSubtypeOptions();
-    cancelBtn.onclick = () => modal.classList.add("hidden");
-    applyBtn.onclick = () => {
-      const typeValue = typeSelect.value;
-      const subtypeValue = subtypeSelect.value;
-      const selectedAccounts = Object.values(state_default.accounts).filter((acc) => acc.selected);
-      selectedAccounts.forEach((acc) => {
-        acc.type = typeValue;
-        acc.subtype = subtypeValue || null;
+      console.log("Found modal overlay:", modalOverlay);
+      const typeSelect = modalOverlay.querySelector("#bulkTypeSelect");
+      const subtypeSelect = modalOverlay.querySelector("#bulkSubtypeSelect");
+      const cancelBtn = modalOverlay.querySelector("#bulkTypeCancel");
+      const applyBtn = modalOverlay.querySelector("#bulkTypeApply");
+      console.log("Found elements:", { typeSelect, subtypeSelect, cancelBtn, applyBtn });
+      if (!typeSelect || !subtypeSelect || !cancelBtn || !applyBtn) {
+        console.error("Modal elements not found", { typeSelect, subtypeSelect, cancelBtn, applyBtn });
+        return;
+      }
+      const updateSubtypeOptions = () => {
+        const currentTypeSelect = modalOverlay.querySelector("#bulkTypeSelect");
+        const currentSubtypeSelect = modalOverlay.querySelector("#bulkSubtypeSelect");
+        if (!currentTypeSelect || !currentSubtypeSelect)
+          return;
+        const selectedType = getAccountTypeByName(currentTypeSelect.value);
+        currentSubtypeSelect.innerHTML = "";
+        (selectedType?.subtypes || []).forEach((sub) => {
+          const opt = document.createElement("option");
+          opt.value = sub.name;
+          opt.textContent = sub.display;
+          currentSubtypeSelect.appendChild(opt);
+        });
+        if ((selectedType?.subtypes || []).length === 0) {
+          const opt = document.createElement("option");
+          opt.value = "";
+          opt.textContent = "-";
+          currentSubtypeSelect.appendChild(opt);
+        }
+      };
+      typeSelect.innerHTML = "";
+      monarchAccountTypes_default.data.forEach((type) => {
+        const opt = document.createElement("option");
+        opt.value = type.typeName;
+        opt.textContent = type.typeDisplay;
+        typeSelect.appendChild(opt);
       });
-      modal.classList.add("hidden");
-      renderAccountTable();
-    };
+      typeSelect.onchange = updateSubtypeOptions;
+      updateSubtypeOptions();
+      console.log("Attaching cancel handler to:", cancelBtn);
+      cancelBtn.onclick = (e) => {
+        console.log("Cancel clicked!");
+        e.preventDefault();
+        e.stopPropagation();
+        modal.close();
+      };
+      console.log("Attaching apply handler to:", applyBtn);
+      applyBtn.onclick = (e) => {
+        console.log("Apply clicked!");
+        e.preventDefault();
+        e.stopPropagation();
+        const currentTypeSelect = modalOverlay.querySelector("#bulkTypeSelect");
+        const currentSubtypeSelect = modalOverlay.querySelector("#bulkSubtypeSelect");
+        if (!currentTypeSelect || !currentSubtypeSelect)
+          return;
+        const typeValue = currentTypeSelect.value;
+        const subtypeValue = currentSubtypeSelect.value;
+        const selectedAccounts = Object.values(state_default.accounts).filter((acc) => acc.selected);
+        selectedAccounts.forEach((acc) => {
+          trackChange(acc.id);
+          acc.type = typeValue;
+          acc.subtype = subtypeValue || null;
+          checkAndUpdateModifiedStatus(acc.id);
+        });
+        modal.close();
+        persistState();
+        renderAccountTable();
+      };
+    }, 300);
   }
   function initializeFiltersModal() {
-    console.log("Initializing filters modal...");
     try {
       populateTypeFilters();
       populateSubtypeFilters();
       updateFilterDisplay();
-      console.log("Filters modal initialized successfully");
     } catch (error) {
       console.error("Error initializing filters modal:", error);
     }
@@ -5375,7 +7156,6 @@
       const checkbox = createFilterCheckbox("type", type, type);
       container.appendChild(checkbox);
     });
-    console.log(`Populated ${types.length} type filters`);
   }
   function populateSubtypeFilters() {
     const container = document.getElementById("subtypeFiltersContainer");
@@ -5395,7 +7175,6 @@
       const checkbox = createFilterCheckbox("subtype", subtype, subtype);
       container.appendChild(checkbox);
     });
-    console.log(`Populated ${sortedSubtypes.length} subtype filters`);
   }
   function createFilterCheckbox(filterType, value, label) {
     const div = document.createElement("div");
@@ -5415,67 +7194,73 @@
     return div;
   }
   function openFiltersModal() {
-    console.log("Opening filters modal...");
     try {
-      const filterAccountName = document.getElementById("filterAccountName");
-      if (filterAccountName) {
-        filterAccountName.value = activeFilters.accountName;
-      }
-      const nameMatchType = document.querySelector(`input[name="nameMatchType"][value="${activeFilters.nameMatchType}"]`);
-      if (nameMatchType) {
-        nameMatchType.checked = true;
-      }
-      const nameCaseSensitive = document.getElementById("nameCaseSensitive");
-      if (nameCaseSensitive) {
-        nameCaseSensitive.checked = activeFilters.nameCaseSensitive;
-      }
-      document.querySelectorAll('#typeFiltersContainer input[type="checkbox"]').forEach((cb) => {
-        cb.checked = activeFilters.types.has(cb.value);
-      });
-      document.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]').forEach((cb) => {
-        cb.checked = activeFilters.subtypes.has(cb.value);
-      });
-      const filterTransactionsMin = document.getElementById("filterTransactionsMin");
-      if (filterTransactionsMin) {
-        filterTransactionsMin.value = activeFilters.transactionsMin || "";
-      }
-      const filterTransactionsMax = document.getElementById("filterTransactionsMax");
-      if (filterTransactionsMax) {
-        filterTransactionsMax.value = activeFilters.transactionsMax || "";
-      }
-      const filterBalanceMin = document.getElementById("filterBalanceMin");
-      if (filterBalanceMin) {
-        filterBalanceMin.value = activeFilters.balanceMin || "";
-      }
-      const filterBalanceMax = document.getElementById("filterBalanceMax");
-      if (filterBalanceMax) {
-        filterBalanceMax.value = activeFilters.balanceMax || "";
-      }
-      const inclusionFilter = document.querySelector(`input[name="inclusionFilter"][value="${activeFilters.inclusion}"]`);
-      if (inclusionFilter) {
-        inclusionFilter.checked = true;
-      }
       const modal = document.getElementById("filtersModal");
-      if (modal) {
-        console.log("Found modal, showing it...");
-        modal.classList.remove("hidden");
-        setTimeout(() => modal.classList.add("show"), 10);
-      } else {
-        console.error("Modal not found!");
+      if (!modal) {
+        console.error("\u274C Modal element not found!");
+        return;
       }
+      if (typeof modal.close === "function") {
+        modal.close();
+      }
+      setTimeout(() => {
+        if (typeof modal.open === "function") {
+          modal.open();
+        } else {
+          console.error("\u274C modal.open is not a function");
+          return;
+        }
+      }, 10);
+      setTimeout(() => {
+        try {
+          const filterAccountName = document.getElementById("filterAccountName");
+          if (filterAccountName) {
+            filterAccountName.value = activeFilters.accountName;
+          }
+          const nameMatchType = document.querySelector(`input[name="nameMatchType"][value="${activeFilters.nameMatchType}"]`);
+          if (nameMatchType) {
+            nameMatchType.checked = true;
+          }
+          const nameCaseSensitive = document.getElementById("nameCaseSensitive");
+          if (nameCaseSensitive) {
+            nameCaseSensitive.checked = activeFilters.nameCaseSensitive;
+          }
+          document.querySelectorAll('#typeFiltersContainer input[type="checkbox"]').forEach((cb) => {
+            cb.checked = activeFilters.types.has(cb.value);
+          });
+          document.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]').forEach((cb) => {
+            cb.checked = activeFilters.subtypes.has(cb.value);
+          });
+          const filterTransactionsMin = document.getElementById("filterTransactionsMin");
+          if (filterTransactionsMin) {
+            filterTransactionsMin.value = activeFilters.transactionsMin || "";
+          }
+          const filterTransactionsMax = document.getElementById("filterTransactionsMax");
+          if (filterTransactionsMax) {
+            filterTransactionsMax.value = activeFilters.transactionsMax || "";
+          }
+          const filterBalanceMin = document.getElementById("filterBalanceMin");
+          if (filterBalanceMin) {
+            filterBalanceMin.value = activeFilters.balanceMin || "";
+          }
+          const filterBalanceMax = document.getElementById("filterBalanceMax");
+          if (filterBalanceMax) {
+            filterBalanceMax.value = activeFilters.balanceMax || "";
+          }
+          const inclusionFilter = document.querySelector(`input[name="inclusionFilter"][value="${activeFilters.inclusion}"]`);
+          if (inclusionFilter) {
+            inclusionFilter.checked = true;
+          }
+        } catch (err) {
+          console.error("Error populating filter values:", err);
+        }
+      }, 50);
     } catch (error) {
-      console.error("Error opening filters modal:", error);
+      console.error("\u274C Error in openFiltersModal:", error);
     }
   }
   window.openFiltersModal = openFiltersModal;
-  function closeFiltersModal() {
-    const modal = document.getElementById("filtersModal");
-    modal.classList.remove("show");
-    setTimeout(() => modal.classList.add("hidden"), 300);
-  }
-  window.closeFiltersModal = closeFiltersModal;
   function applyFilters() {
-    console.log("Apply filters button clicked!");
     try {
       const filterAccountName = document.getElementById("filterAccountName");
       activeFilters.accountName = filterAccountName ? filterAccountName.value.trim() : "";
@@ -5501,8 +7286,9 @@
       activeFilters.balanceMax = balMax && balMax.value ? parseFloat(balMax.value) : null;
       const inclusionFilter = document.querySelector('input[name="inclusionFilter"]:checked');
       activeFilters.inclusion = inclusionFilter ? inclusionFilter.value : "all";
-      console.log("Applied filters:", activeFilters);
-      closeFiltersModal();
+      const modal = document.getElementById("filtersModal");
+      if (modal && modal.close)
+        modal.close();
       renderAccountTable();
       updateFilterDisplay();
       persistState();
@@ -5512,7 +7298,6 @@
   }
   window.applyFilters = applyFilters;
   function resetFilters() {
-    console.log("Reset filters button clicked!");
     try {
       const filterAccountName = document.getElementById("filterAccountName");
       if (filterAccountName)
@@ -5555,115 +7340,62 @@
       renderAccountTable();
       updateFilterDisplay();
       persistState();
-      closeFiltersModal();
-      console.log("Filters reset successfully");
     } catch (error) {
       console.error("Error resetting filters:", error);
     }
   }
   window.resetFilters = resetFilters;
   function clearAllFilters() {
-    console.log("Clear all filters clicked!");
     resetFilters();
-    closeFiltersModal();
   }
   window.clearAllFilters = clearAllFilters;
   function updateFilterDisplay() {
-    const filterCount = document.getElementById("filterCount");
+    const filterNotificationBadge = document.getElementById("filterNotificationBadge");
     const activeFiltersSection = document.getElementById("activeFiltersSection");
     const activeFiltersContainer = document.getElementById("activeFiltersContainer");
+    if (!filterNotificationBadge || !activeFiltersSection || !activeFiltersContainer) {
+      console.warn("Filter display elements not found in DOM");
+      return;
+    }
     let activeFilterCount = 0;
-    const filterChips = [];
     if (activeFilters.accountName) {
       activeFilterCount++;
-      filterChips.push(createFilterChip("Name", `${activeFilters.nameMatchType}: "${activeFilters.accountName}"`, () => {
-        activeFilters.accountName = "";
-        document.getElementById("filterAccountName").value = "";
-        renderAccountTable();
-        updateFilterDisplay();
-      }));
     }
     if (activeFilters.types.size > 0) {
       activeFilterCount++;
       const typeList = [...activeFilters.types].join(", ");
-      filterChips.push(createFilterChip("Types", typeList, () => {
-        activeFilters.types.clear();
-        document.querySelectorAll('#typeFiltersContainer input[type="checkbox"]').forEach((cb) => cb.checked = false);
-        renderAccountTable();
-        updateFilterDisplay();
-      }));
     }
     if (activeFilters.subtypes.size > 0) {
       activeFilterCount++;
       const subtypeList = [...activeFilters.subtypes].join(", ");
-      filterChips.push(createFilterChip("Subtypes", subtypeList, () => {
-        activeFilters.subtypes.clear();
-        document.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]').forEach((cb) => cb.checked = false);
-        renderAccountTable();
-        updateFilterDisplay();
-      }));
     }
     if (activeFilters.transactionsMin !== null || activeFilters.transactionsMax !== null) {
       activeFilterCount++;
       const min = activeFilters.transactionsMin || 0;
       const max = activeFilters.transactionsMax || "\u221E";
-      filterChips.push(createFilterChip("Transactions", `${min} - ${max}`, () => {
-        activeFilters.transactionsMin = null;
-        activeFilters.transactionsMax = null;
-        document.getElementById("filterTransactionsMin").value = "";
-        document.getElementById("filterTransactionsMax").value = "";
-        renderAccountTable();
-        updateFilterDisplay();
-      }));
     }
     if (activeFilters.balanceMin !== null || activeFilters.balanceMax !== null) {
       activeFilterCount++;
       const min = activeFilters.balanceMin !== null ? `$${activeFilters.balanceMin}` : "$0";
       const max = activeFilters.balanceMax !== null ? `$${activeFilters.balanceMax}` : "\u221E";
-      filterChips.push(createFilterChip("Balance", `${min} - ${max}`, () => {
-        activeFilters.balanceMin = null;
-        activeFilters.balanceMax = null;
-        document.getElementById("filterBalanceMin").value = "";
-        document.getElementById("filterBalanceMax").value = "";
-        renderAccountTable();
-        updateFilterDisplay();
-      }));
     }
     if (activeFilters.inclusion !== "all") {
       activeFilterCount++;
-      filterChips.push(createFilterChip("Status", capitalize(activeFilters.inclusion), () => {
-        activeFilters.inclusion = "all";
-        document.querySelector('input[name="inclusionFilter"][value="all"]').checked = true;
-        renderAccountTable();
-        updateFilterDisplay();
-      }));
     }
     if (activeFilterCount > 0) {
-      filterCount.textContent = activeFilterCount;
-      filterCount.classList.remove("hidden");
+      filterNotificationBadge.textContent = activeFilterCount;
+      filterNotificationBadge.classList.remove("hidden");
     } else {
-      filterCount.classList.add("hidden");
+      filterNotificationBadge.classList.add("hidden");
     }
-    if (filterChips.length > 0) {
-      activeFiltersSection.classList.remove("hidden");
-      activeFiltersContainer.innerHTML = "";
-      filterChips.forEach((chip) => activeFiltersContainer.appendChild(chip));
-    } else {
-      activeFiltersSection.classList.add("hidden");
+    const clearFiltersBtn = document.getElementById("clearFiltersBtn");
+    if (clearFiltersBtn) {
+      if (activeFilterCount > 0) {
+        clearFiltersBtn.classList.remove("hidden");
+      } else {
+        clearFiltersBtn.classList.add("hidden");
+      }
     }
-    updateAccountCountDisplay(visibleCount, accounts.length);
-  }
-  function createFilterChip(label, value, onRemove) {
-    const chip = document.createElement("div");
-    chip.className = "filter-chip";
-    const content = document.createElement("span");
-    content.textContent = `${label}: ${value}`;
-    const removeBtn = document.createElement("button");
-    removeBtn.onclick = onRemove;
-    removeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
-    chip.appendChild(content);
-    chip.appendChild(removeBtn);
-    return chip;
   }
   function passesFilters(account) {
     if (activeFilters.accountName) {
@@ -5705,14 +7437,14 @@
       return false;
     return true;
   }
-  function updateAccountCountDisplay(visibleCount2, totalCount) {
+  function updateAccountCountDisplay(visibleCount, totalCount) {
     const visibleAccountCount = document.getElementById("visibleAccountCount");
     const totalAccountCount = document.getElementById("totalAccountCount");
     const filterResultsSummary = document.getElementById("filterResultsSummary");
     const filterNotificationBadge = document.getElementById("filterNotificationBadge");
     const clearFiltersBtn = document.getElementById("clearFiltersBtn");
     if (visibleAccountCount)
-      visibleAccountCount.textContent = visibleCount2;
+      visibleAccountCount.textContent = visibleCount;
     if (totalAccountCount)
       totalAccountCount.textContent = totalCount;
     const hasFilters = hasActiveFilters();
@@ -5761,254 +7493,1031 @@
   }
 
   // src/views/AccountReview/review.html
-  var review_default = '<div id="pageLayout"></div>\n\n<!-- Control Bar -->\n<div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between \n                p-4 sm:p-6 gap-4 lg:gap-6 bg-white rounded-lg mb-4 sm:mb-6 \n                border border-gray-100 shadow-sm">\n\n  <!-- Filters, Search and Account Summary -->\n  <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 flex-1">\n    <!-- Filters Button -->\n    <div class="flex-shrink-0">\n      <button id="filtersBtn" class="flex items-center gap-2 px-4 py-2 sm:py-3 text-sm sm:text-base\n                         border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer \n                         transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500\n                         relative whitespace-nowrap" title="Open advanced filters"\n        onclick="window.openFiltersModal && window.openFiltersModal()">\n        <!-- Notification Badge -->\n        <div id="filterNotificationBadge" class="hidden"></div>\n\n        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z" />\n        </svg>\n        <span>Filters</span>\n      </button>\n    </div>\n\n    <!-- Search Input -->\n    <div class="flex-1 max-w-md">\n      <div class="relative">\n        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">\n          <svg class="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />\n          </svg>\n        </div>\n        <input id="searchInput" type="text" placeholder="Search accounts..." style="padding-left: 2.75rem !important;"\n          class="block w-full pr-3 py-2 sm:py-3 text-sm sm:text-base\n                          border border-gray-300 rounded-lg placeholder-gray-400 \n                          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 \n                          transition-colors duration-200">\n      </div>\n    </div>\n\n    <!-- Account Count Summary -->\n    <div id="filterResultsSummary" class="text-sm text-gray-600 whitespace-nowrap">\n      Showing <span id="visibleAccountCount" class="font-medium text-gray-900">0</span>\n      of <span id="totalAccountCount" class="font-medium text-gray-900">0</span> accounts\n    </div>\n  </div>\n\n  <!-- Clear Filter Controls -->\n  <div class="flex items-center gap-3">\n    <!-- Clear All Filters Button (only shown when filters are active) -->\n    <button id="clearFiltersBtn" class="hidden px-3 py-2 sm:py-3 text-sm text-red-600 hover:text-red-800 \n                       hover:bg-red-50 rounded-lg transition-colors duration-200 \n                       focus:outline-none focus:ring-2 focus:ring-red-500" title="Clear all filters"\n      onclick="window.clearAllFilters && window.clearAllFilters()">\n      Clear\n    </button>\n  </div>\n</div>\n\n<!-- Table Container -->\n<div class="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">\n\n  <!-- Mobile Card View (hidden on larger screens) -->\n  <div id="mobileView" class="block lg:hidden">\n    <!-- Mobile Header with Master Checkbox -->\n    <div class="border-b border-gray-200 bg-gray-50 p-4">\n      <div class="flex items-center justify-between">\n        <label class="custom-checkbox-container">\n          <input type="checkbox" id="masterCheckboxMobile" class="custom-checkbox-input">\n          <span class="custom-checkbox-visual"></span>\n          <span class="text-sm font-medium text-gray-700 pl-2">Select All</span>\n        </label>\n        <div class="text-xs text-gray-500 font-medium" id="mobileSelectionCount">0 selected</div>\n      </div>\n    </div>\n\n    <div id="mobileAccountList" class="divide-y divide-gray-100">\n      <!-- populated dynamically for mobile -->\n    </div>\n  </div>\n\n  <!-- Desktop Table View (hidden on mobile) -->\n  <div class="hidden lg:block overflow-x-auto">\n    <table class="w-full min-w-[800px]" role="grid">\n      <thead>\n        <tr class="bg-gray-50 border-b border-gray-200" role="row">\n          <th\n            class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 w-[50px] sm:w-[60px]">\n            <input type="checkbox" id="masterCheckbox" class="w-4 h-4 sm:w-5 sm:h-5 cursor-pointer rounded border-gray-300 \n                              text-blue-600 focus:ring-blue-500 focus:ring-2">\n          </th>\n          <th scope="col"\n            class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[200px]">\n            Account Name\n          </th>\n          <th scope="col"\n            class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[150px]">\n            Type\n          </th>\n          <th scope="col"\n            class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[150px]">\n            Subtype\n          </th>\n          <th scope="col"\n            class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[100px] text-center">\n            Transactions\n          </th>\n          <th scope="col"\n            class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[120px] text-right">\n            Balance\n          </th>\n          <th scope="col"\n            class="px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[100px] text-center">\n            Include\n          </th>\n        </tr>\n      </thead>\n      <tbody id="reviewTableBody" class="divide-y divide-gray-100">\n        <!-- populated dynamically -->\n      </tbody>\n    </table>\n  </div>\n</div>\n\n<button id="continueBtn" class="ui-button">\n  Continue\n</button>\n\n<!-- Bulk Action Bar -->\n<div id="bulkActionBar"\n  class="hidden fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300">\n\n  <!-- Mobile Bulk Actions (visible on mobile/tablet) -->\n  <div\n    class="block lg:hidden bg-white shadow-2xl rounded-xl border border-gray-200 w-[calc(100vw-2rem)] max-w-md mx-auto">\n    <div class="p-4">\n      <div class="flex flex-col gap-3">\n        <!-- Selection Info -->\n        <div class="flex items-center justify-between">\n          <span class="text-sm font-medium text-gray-900">\n            <span id="selectedCountMobile">0</span> selected\n          </span>\n          <button id="unselectAllBtnMobile" class="text-xs font-medium px-3 py-1.5 border border-gray-300 text-gray-700 \n                             bg-white rounded-md hover:bg-gray-50 cursor-pointer transition-colors \n                             duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n            title="Unselect all accounts">\n            Clear\n          </button>\n        </div>\n\n        <!-- Action Buttons Grid -->\n        <div class="grid grid-cols-2 gap-2">\n          <button id="bulkRenameBtnMobile" class="flex items-center justify-center gap-2 px-3 py-3 border border-gray-300 \n                             bg-white rounded-lg hover:bg-gray-50 cursor-pointer transition-colors \n                             duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n            title="Bulk rename accounts">\n            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />\n            </svg>\n            <span class="text-sm font-medium">Rename</span>\n          </button>\n\n          <button id="bulkTypeBtnMobile" class="flex items-center justify-center gap-2 px-3 py-3 border border-gray-300 \n                             bg-white rounded-lg hover:bg-gray-50 cursor-pointer transition-colors \n                             duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n            title="Bulk edit account types">\n            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />\n            </svg>\n            <span class="text-sm font-medium">Edit Type</span>\n          </button>\n\n          <button id="bulkIncludeBtnMobile" class="flex items-center justify-center gap-2 px-3 py-3 border border-green-300 \n                             text-green-700 bg-green-50 rounded-lg hover:bg-green-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500"\n            title="Include selected accounts">\n            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />\n            </svg>\n            <span class="text-sm font-medium">Include</span>\n          </button>\n\n          <button id="bulkExcludeBtnMobile" class="flex items-center justify-center gap-2 px-3 py-3 border border-red-300 \n                             text-red-700 bg-red-50 rounded-lg hover:bg-red-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"\n            title="Exclude selected accounts">\n            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />\n            </svg>\n            <span class="text-sm font-medium">Exclude</span>\n          </button>\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <!-- Desktop Bulk Actions (visible on desktop) -->\n  <div class="hidden lg:block bg-white shadow-2xl rounded-xl border border-gray-200">\n    <div class="px-6 py-4">\n      <div class="flex items-center gap-6">\n        <!-- Selection Count -->\n        <button id="unselectAllBtnDesktop" class="text-sm font-medium px-4 py-2 border border-gray-300 \n                           rounded-lg hover:bg-gray-50 cursor-pointer whitespace-nowrap transition-colors \n                           duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n          title="Unselect all accounts">\n          <span id="selectedCountDesktop">0</span> selected\n        </button>\n\n        <!-- Separator -->\n        <div class="h-6 border-l border-gray-300"></div>\n\n        <!-- Action Buttons -->\n        <div class="flex items-center gap-3">\n          <button id="bulkRenameBtnDesktop" class="text-sm font-medium px-4 py-2 border border-gray-300 \n                             rounded-lg hover:bg-gray-50 cursor-pointer transition-colors duration-200\n                             focus:outline-none focus:ring-2 focus:ring-blue-500" title="Bulk rename accounts">\n            Rename\n          </button>\n\n          <button id="bulkTypeBtnDesktop" class="text-sm font-medium px-4 py-2 border border-gray-300 \n                             rounded-lg hover:bg-gray-50 cursor-pointer transition-colors duration-200\n                             focus:outline-none focus:ring-2 focus:ring-blue-500" title="Bulk edit account types">\n            Edit Type\n          </button>\n\n          <button id="bulkIncludeBtnDesktop" class="text-sm font-medium px-4 py-2 border border-green-300 \n                             text-green-700 bg-green-50 rounded-lg hover:bg-green-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500"\n            title="Include selected accounts">\n            Include\n          </button>\n\n          <button id="bulkExcludeBtnDesktop" class="text-sm font-medium px-4 py-2 border border-red-300 \n                             text-red-700 bg-red-50 rounded-lg hover:bg-red-100 cursor-pointer \n                             transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500"\n            title="Exclude selected accounts">\n            Exclude\n          </button>\n        </div>\n      </div>\n    </div>\n  </div>\n</div>\n\n<!-- Bulk Rename Modal -->\n<div id="bulkRenameModal"\n  class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 hidden p-3 sm:p-4">\n  <div class="bg-white rounded-lg shadow-lg w-full max-w-lg p-4 sm:p-6 relative max-h-[90vh] overflow-y-auto">\n\n    <h2 class="text-lg sm:text-xl font-bold mb-4">Bulk Rename Accounts</h2>\n\n    <label for="renamePattern" class="font-medium text-sm">Pattern:</label>\n    <input id="renamePattern" name="renamePattern" type="text"\n      class="border rounded w-full px-3 py-2 mb-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"\n      placeholder="e.g. {{YNAB}} - {{Index}}">\n\n    <!-- Token shortcuts -->\n    <div class="grid grid-cols-2 gap-2 mb-4">\n      <button\n        class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{YNAB}}">YNAB Name</button>\n      <button\n        class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{Index}}">Index</button>\n      <button\n        class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{Upper}}">Uppercase YNAB</button>\n      <button\n        class="token-btn bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded text-xs sm:text-sm cursor-pointer transition-colors duration-200"\n        data-token="{{Date}}">Today (YYYY-MM-DD)</button>\n    </div>\n\n    <!-- Index start -->\n    <div class="flex items-center gap-3 mb-4">\n      <label for="indexStart" class="text-sm">Index Start:</label>\n      <input id="indexStart" type="number"\n        class="border rounded px-3 py-2 w-20 sm:w-24 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"\n        value="1" />\n    </div>\n\n    <!-- Preview -->\n    <div class="border rounded p-3 bg-gray-50 mb-4">\n      <div class="font-medium text-sm mb-2">Preview:</div>\n      <div id="renamePreview" class="text-xs sm:text-sm text-gray-700 space-y-1 max-h-32 overflow-y-auto"\n        aria-live="polite"></div>\n    </div>\n\n    <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">\n      <button id="renameCancel" class="ui-button order-2 sm:order-1 w-full sm:w-auto"\n        data-type="secondary">Cancel</button>\n      <button id="renameApply" class="ui-button order-1 sm:order-2 w-full sm:w-auto" data-type="primary">Apply</button>\n    </div>\n\n  </div>\n</div>\n\n<!-- Bulk Type Edit Modal -->\n<div id="bulkTypeModal"\n  class="fixed inset-0 bg-black bg-opacity-40 hidden z-50 flex items-center justify-center p-3 sm:p-4">\n  <div class="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md">\n    <h2 class="text-lg font-bold mb-4">Bulk Edit Account Type</h2>\n\n    <div class="mb-4">\n      <label for="bulkTypeSelect" class="block mb-2 font-medium text-sm">Account Type</label>\n      <select id="bulkTypeSelect" name="bulkSubtypeSelect"\n        class="border rounded w-full px-3 py-2 cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></select>\n    </div>\n\n    <div class="mb-6">\n      <label for="bulkSubtypeSelect" class="block mb-2 font-medium text-sm">Subtype</label>\n      <select id="bulkSubtypeSelect"\n        class="border rounded w-full px-3 py-2 cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></select>\n    </div>\n\n    <div class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">\n      <button id="bulkTypeCancel" class="ui-button order-2 sm:order-1 w-full sm:w-auto"\n        data-type="secondary">Cancel</button>\n      <button id="bulkTypeApply" class="ui-button order-1 sm:order-2 w-full sm:w-auto"\n        data-type="primary">Apply</button>\n    </div>\n  </div>\n</div>\n\n<!-- Advanced Filters Modal -->\n<div id="filtersModal"\n  class="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 hidden p-3 sm:p-4">\n  <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] flex flex-col relative">\n\n    <!-- Modal Header -->\n    <div class="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 flex-shrink-0 rounded-t-lg">\n      <h2 class="text-lg sm:text-xl font-bold text-gray-900">Advanced Filters</h2>\n      <button id="filtersModalClose"\n        class="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-1"\n        title="Close filters" onclick="window.closeFiltersModal && window.closeFiltersModal()">\n        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />\n        </svg>\n      </button>\n    </div>\n\n    <!-- Modal Content - Scrollable -->\n    <div class="p-4 sm:p-6 space-y-6 overflow-y-auto flex-1 min-h-0">\n\n      <!-- Active Filters Display -->\n      <div id="activeFiltersSection" class="hidden">\n        <div class="flex items-center justify-between mb-3">\n          <h3 class="text-sm font-medium text-gray-700">Active Filters</h3>\n          <button id="clearAllFilters"\n            class="text-xs text-blue-600 hover:text-blue-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"\n            onclick="window.clearAllFilters && window.clearAllFilters()">\n            Clear All\n          </button>\n        </div>\n        <div id="activeFiltersContainer" class="flex flex-wrap gap-2"></div>\n        <hr class="mt-4">\n      </div>\n\n      <!-- Account Name Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Account Name</h3>\n        <div class="space-y-3">\n          <input id="filterAccountName" type="text" placeholder="Enter account name..."\n            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n\n          <div class="flex flex-wrap gap-4">\n            <label class="flex items-center">\n              <input type="radio" name="nameMatchType" value="contains" checked\n                class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n              <span class="ml-2 text-sm text-gray-700">Contains</span>\n            </label>\n            <label class="flex items-center">\n              <input type="radio" name="nameMatchType" value="exact"\n                class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n              <span class="ml-2 text-sm text-gray-700">Exact match</span>\n            </label>\n            <label class="flex items-center">\n              <input type="checkbox" id="nameCaseSensitive"\n                class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">\n              <span class="ml-2 text-sm text-gray-700">Case sensitive</span>\n            </label>\n          </div>\n        </div>\n      </div>\n\n      <!-- Account Type Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Account Type</h3>\n        <div class="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">\n          <div id="typeFiltersContainer" class="space-y-2">\n            <!-- Populated dynamically -->\n          </div>\n        </div>\n      </div>\n\n      <!-- Account Subtype Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Account Subtype</h3>\n        <div class="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">\n          <div id="subtypeFiltersContainer" class="space-y-2">\n            <!-- Populated dynamically -->\n          </div>\n        </div>\n      </div>\n\n      <!-- Transactions Count Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Transaction Count</h3>\n        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">\n          <div>\n            <label class="block text-xs text-gray-600 mb-1">Minimum</label>\n            <input id="filterTransactionsMin" type="number" placeholder="0" min="0"\n              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          </div>\n          <div>\n            <label class="block text-xs text-gray-600 mb-1">Maximum</label>\n            <input id="filterTransactionsMax" type="number" placeholder="999999" min="0"\n              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          </div>\n        </div>\n      </div>\n\n      <!-- Balance Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Balance</h3>\n        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">\n          <div>\n            <label class="block text-xs text-gray-600 mb-1">Minimum ($)</label>\n            <input id="filterBalanceMin" type="number" placeholder="0.00" step="0.01"\n              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          </div>\n          <div>\n            <label class="block text-xs text-gray-600 mb-1">Maximum ($)</label>\n            <input id="filterBalanceMax" type="number" placeholder="999999.99" step="0.01"\n              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">\n          </div>\n        </div>\n      </div>\n\n      <!-- Inclusion Status Filter -->\n      <div class="space-y-3">\n        <h3 class="text-sm font-medium text-gray-900">Include Status</h3>\n        <div class="flex flex-wrap gap-4">\n          <label class="flex items-center">\n            <input type="radio" name="inclusionFilter" value="all" checked\n              class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n            <span class="ml-2 text-sm text-gray-700">All accounts</span>\n          </label>\n          <label class="flex items-center">\n            <input type="radio" name="inclusionFilter" value="included"\n              class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n            <span class="ml-2 text-sm text-gray-700">Included only</span>\n          </label>\n          <label class="flex items-center">\n            <input type="radio" name="inclusionFilter" value="excluded"\n              class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">\n            <span class="ml-2 text-sm text-gray-700">Excluded only</span>\n          </label>\n        </div>\n      </div>\n    </div>\n\n    <!-- Modal Footer - Fixed at bottom -->\n    <div\n      class="flex flex-col sm:flex-row justify-end gap-3 p-4 sm:p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg flex-shrink-0">\n      <button id="filtersReset" class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-lg hover:bg-gray-50 \n                     cursor-pointer transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n        onclick="window.resetFilters && window.resetFilters()">\n        Reset Filters\n      </button>\n      <button id="filtersApply" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer \n                     transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"\n        onclick="window.applyFilters && window.applyFilters()">\n        Apply Filters\n      </button>\n    </div>\n  </div>\n</div>\n\n<style>\n  /* Filter chip styles */\n  .filter-chip {\n    display: inline-flex;\n    align-items: center;\n    gap: 0.5rem;\n    background-color: #dbeafe;\n    color: #1e40af;\n    padding: 0.25rem 0.75rem;\n    border-radius: 9999px;\n    font-size: 0.75rem;\n    font-weight: 500;\n    max-width: 250px;\n  }\n\n  .filter-chip span {\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n\n  /* Mini filter chips for status bar */\n  .filter-chip-mini {\n    display: inline-flex;\n    align-items: center;\n    background-color: #1e40af;\n    color: white;\n    padding: 0.125rem 0.5rem;\n    border-radius: 9999px;\n    font-size: 0.625rem;\n    font-weight: 500;\n    max-width: 120px;\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n\n  /* Filter results summary styling */\n  #filterResultsSummary {\n    transition: all 0.3s ease;\n  }\n\n  #filterResultsSummary.filtered {\n    color: #1e40af;\n    font-weight: 500;\n  }\n\n  /* Filter notification badge */\n  #filtersBtn {\n    position: relative;\n  }\n\n  #filterNotificationBadge {\n    position: absolute;\n    top: -8px;\n    right: -8px;\n    background-color: #dc2626;\n    color: white;\n    border-radius: 50%;\n    width: 20px;\n    height: 20px;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    font-size: 0.75rem;\n    font-weight: 600;\n    line-height: 1;\n    border: 2px solid white;\n    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);\n    transition: all 0.2s ease;\n    z-index: 10;\n  }\n\n  #filterNotificationBadge.hidden {\n    display: none;\n  }\n\n  /* Clear filters button animation */\n  #clearFiltersBtn {\n    transition: all 0.3s ease;\n    transform: scale(0.95);\n    opacity: 0;\n  }\n\n  #clearFiltersBtn:not(.hidden) {\n    transform: scale(1);\n    opacity: 1;\n  }\n\n  .filter-chip button {\n    background: none;\n    border: none;\n    color: inherit;\n    cursor: pointer;\n    padding: 0;\n    margin-left: 0.25rem;\n    border-radius: 50%;\n    width: 1rem;\n    height: 1rem;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: background-color 0.2s;\n  }\n\n  .filter-chip button:hover {\n    background-color: rgba(59, 130, 246, 0.2);\n  }\n\n  .filter-chip svg {\n    width: 0.75rem;\n    height: 0.75rem;\n  }\n\n  /* Modal animation and layout */\n  #filtersModal {\n    transition: opacity 0.3s ease;\n    opacity: 0;\n  }\n\n  #filtersModal.show {\n    opacity: 1;\n  }\n\n  #filtersModal.hide {\n    opacity: 0;\n  }\n\n  /* Ensure proper modal sizing and scrolling */\n  #filtersModal .max-w-2xl {\n    min-height: 300px;\n  }\n\n  /* Improve mobile modal experience */\n  @media (max-width: 640px) {\n    #filtersModal .max-w-2xl {\n      max-width: calc(100vw - 1.5rem);\n      margin: 0.75rem;\n    }\n\n    #filtersModal .max-h-\\[90vh\\] {\n      max-height: calc(100vh - 1.5rem);\n    }\n\n    /* Ensure footer buttons are properly sized on mobile */\n    #filtersModal .flex-col.sm\\:flex-row button {\n      min-height: 44px;\n    }\n  }\n\n  /* Bulk action bar styling */\n  #bulkActionBar {\n    transition: opacity 0.3s ease, transform 0.3s ease;\n  }\n\n  #bulkActionBar:not(.active) {\n    opacity: 0;\n    transform: translateY(-10px);\n    pointer-events: none;\n  }\n\n  #bulkActionBar.active {\n    opacity: 1;\n    transform: translateY(0);\n    pointer-events: auto;\n  }\n\n  /* Enhanced button hover effects */\n  #bulkActionBar button:hover {\n    transform: translateY(-1px);\n    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);\n  }\n\n  #bulkActionBar button:active {\n    transform: translateY(0);\n  }\n\n  /* Mobile grid button sizing */\n  @media (max-width: 1024px) {\n    #bulkActionBar .grid button {\n      min-height: 48px;\n    }\n  }\n\n  /* Mobile card styles for accounts */\n  .mobile-account-card {\n    padding: 1rem;\n    border-bottom: 1px solid #f3f4f6;\n    position: relative;\n    display: flex;\n    align-items: flex-start;\n    gap: 0.75rem;\n  }\n\n  .mobile-account-card:last-child {\n    border-bottom: none;\n  }\n\n  .mobile-account-card .card-content {\n    flex: 1;\n    min-width: 0;\n  }\n\n  .mobile-account-card .account-name {\n    font-weight: 500;\n    color: #111827;\n    margin-bottom: 0.5rem;\n    word-wrap: break-word;\n  }\n\n  .mobile-account-card .account-details {\n    font-size: 0.875rem;\n    color: #6b7280;\n  }\n\n  .mobile-account-card .account-details>div {\n    margin-bottom: 0.5rem;\n  }\n\n  .mobile-account-card .account-balance {\n    font-weight: 500;\n    text-align: right;\n  }\n\n  /* Custom checkbox styling */\n  .custom-checkbox-container {\n    display: flex;\n    align-items: center;\n    cursor: pointer;\n    user-select: none;\n    position: relative;\n  }\n\n  .custom-checkbox-input {\n    position: absolute;\n    opacity: 0;\n    cursor: pointer;\n    height: 0;\n    width: 0;\n  }\n\n  .custom-checkbox-visual {\n    position: relative;\n    height: 20px;\n    width: 20px;\n    background-color: #ffffff;\n    border: 2px solid #d1d5db;\n    border-radius: 4px;\n    transition: all 0.2s ease;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n  }\n\n  .custom-checkbox-visual::after {\n    content: "";\n    position: absolute;\n    display: none;\n    left: 6px;\n    top: 2px;\n    width: 4px;\n    height: 8px;\n    border: solid white;\n    border-width: 0 2px 2px 0;\n    transform: rotate(45deg);\n  }\n\n  .custom-checkbox-input:checked+.custom-checkbox-visual {\n    background-color: #3b82f6;\n    border-color: #3b82f6;\n  }\n\n  .custom-checkbox-input:checked+.custom-checkbox-visual::after {\n    display: block;\n  }\n\n  .custom-checkbox-input:focus+.custom-checkbox-visual {\n    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);\n    outline: none;\n  }\n\n  .custom-checkbox-input:disabled+.custom-checkbox-visual {\n    background-color: #f3f4f6;\n    border-color: #e5e7eb;\n    cursor: not-allowed;\n  }\n\n  .custom-checkbox-container:hover .custom-checkbox-input:not(:disabled)+.custom-checkbox-visual {\n    border-color: #3b82f6;\n  }\n\n  /* Mobile specific enhancements */\n  @media (max-width: 1024px) {\n    .custom-checkbox-visual {\n      height: 24px;\n      width: 24px;\n      min-width: 24px;\n      min-height: 24px;\n    }\n\n    .custom-checkbox-visual::after {\n      left: 8px;\n      top: 3px;\n      width: 5px;\n      height: 10px;\n    }\n\n    button,\n    select {\n      min-height: 44px;\n      padding: 0.75rem;\n    }\n\n    .token-btn {\n      min-height: 44px;\n    }\n\n    input[type="text"],\n    input[type="number"] {\n      min-height: 44px;\n      padding: 0.75rem;\n    }\n  }\n</style>';
+  var review_default = `<div id="pageLayout"></div>
+<!-- TODO: Fix the Filters modal, the content isn't loading. -->
 
-  // src/components/navigationBar.js
-  function renderNavigationBar2(options = {}) {
-    const {
-      showBackButton = true,
-      showDataButton = true,
-      backText = "Back",
-      containerId = "navigationBar"
-    } = options;
-    const container = document.getElementById(containerId);
-    if (!container) {
-      console.warn(`Navigation container with id "${containerId}" not found`);
-      return;
-    }
-    const hasData = checkForStoredData2();
-    const dataButtonText = hasData ? "Manage your data" : "No data currently stored";
-    let navHTML = '<div class="flex flex-wrap items-center justify-between gap-2 mb-4">';
-    if (showBackButton) {
-      navHTML += `
-      <button 
-        id="navBackBtn" 
-        class="ui-button flex items-center text-sm"
-        data-type="text"
-        data-size="small"
-      >
+<!-- Control Bar -->
+<div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between 
+                p-4 sm:p-6 gap-4 lg:gap-6 bg-white rounded-lg mb-4 sm:mb-6 
+                border border-gray-100 shadow-sm">
+
+  <!-- Filters, Search and Account Summary -->
+  <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 flex-1">
+    <!-- Filters Button -->
+    <div class="flex-shrink-0">
+      <ui-button id="filtersBtn" title="Open advanced filters" data-type="secondary" data-size="medium"
+        onclick="window.openFiltersModal && window.openFiltersModal()">
+        <!-- Notification Badge -->
+        <div id="filterNotificationBadge" class="hidden"></div>
+
         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z" />
         </svg>
-        ${backText}
-      </button>
-    `;
-    } else {
-      navHTML += "<div></div>";
-    }
-    if (showDataButton) {
-      navHTML += `
-      <button 
-        id="navDataBtn" 
-        class="ui-button text-xs sm:text-sm"
-        data-type="text"
-        data-size="small"
-        ${!hasData ? 'style="opacity: 0.6; cursor: default;"' : ""}
-      >
-        ${dataButtonText}
-      </button>
-    `;
-    }
-    navHTML += "</div>";
-    container.innerHTML = navHTML;
-    renderButtons();
-    if (showBackButton) {
-      const backBtn = document.getElementById("navBackBtn");
-      backBtn?.addEventListener("click", () => {
-        goBack();
-      });
-    }
-    if (showDataButton) {
-      const dataBtn = document.getElementById("navDataBtn");
-      dataBtn?.addEventListener("click", () => {
-        if (hasData) {
-          navigate("/data-management");
-        }
-      });
-    }
-  }
-  function checkForStoredData2() {
-    const hasStateAccounts = state_default.accounts && Object.keys(state_default.accounts).length > 0;
-    const hasMonarchAccounts = state_default.monarchAccounts !== null;
-    const hasSessionAccounts = sessionStorage.getItem("ynab_accounts") !== null;
-    const hasSessionMonarch = sessionStorage.getItem("monarch_accounts") !== null;
-    const localStorage2 = getLocalStorage();
-    const hasLocalStorageData = !!(localStorage2.email || localStorage2.encryptedPassword || localStorage2.token || localStorage2.uuid);
-    return hasStateAccounts || hasMonarchAccounts || hasSessionAccounts || hasSessionMonarch || hasLocalStorageData;
-  }
+        <span>Filters</span>
+      </ui-button>
+    </div>
 
-  // src/components/pageHeader.js
-  function renderPageHeader2(options = {}) {
-    const {
-      title = "",
-      description = "",
-      containerId = "pageHeader",
-      className = ""
-    } = options;
-    const container = document.getElementById(containerId);
-    if (!container) {
-      console.warn(`Page header container with id "${containerId}" not found`);
-      return;
-    }
-    const headerHTML = `
-    <section class="text-center mb-5 ${className}">
-      <div class="inline-flex items-center justify-center gap-2 mb-6">
-        <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
-          ${escapeHtml2(title)}
-        </h2>
+    <!-- Search Input -->
+    <div class="flex-1 max-w-md">
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+          <svg class="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        <input id="searchInput" type="text" placeholder="Search accounts..." style="padding-left: 2.75rem !important;"
+          class="block w-full pr-3 py-2 sm:py-3 text-sm sm:text-base
+                          border border-gray-300 rounded-lg placeholder-gray-400 
+                          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+                          transition-colors duration-200">
       </div>
+    </div>
 
-      <p class="text-gray-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto px-2 leading-relaxed">
-        ${escapeHtml2(description)}
-      </p>
-    </section>
-  `;
-    container.innerHTML = headerHTML;
+    <!-- Undo All Button (Hidden by default) -->
+    <div id="undoAllContainer" class="hidden flex-shrink-0">
+      <ui-button id="undoAllBtn" data-type="solid" data-size="medium" data-color="yellow" title="Undo all changes">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+        </svg>
+        <span>Undo All Changes</span>
+      </ui-button>
+    </div>
+
+  </div>
+  <!-- Account Count Summary -->
+  <div id="filterResultsSummary" class="text-sm text-gray-600 whitespace-nowrap">
+    Showing <span id="visibleAccountCount" class="font-medium text-gray-900">0</span>
+    of <span id="totalAccountCount" class="font-medium text-gray-900">0</span> accounts
+  </div>
+</div>
+
+<!-- Table Container -->
+<ui-table id="accountsTable" data-mobile-breakpoint="lg" data-enable-selection="true" data-row-id-key="id">
+</ui-table>
+
+<!-- Continue Button with Hint -->
+<div class="flex flex-col sm:flex-row sm:items-center gap-4 mt-4">
+  <!-- Label set programmatically -->
+  <ui-button id="continueBtn"></ui-button>
+
+  <!-- Hint Text -->
+  <p class="text-xs sm:text-sm text-gray-600">
+    <span class="inline-flex items-center gap-1.5">
+      <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span>At least one account must be included to continue</span>
+    </span>
+  </p>
+</div>
+
+<!-- Bulk Action Bar -->
+<div id="bulkActionBar"
+  class="hidden fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300">
+
+  <!-- Mobile Bulk Actions (visible on mobile/tablet) -->
+  <div
+    class="block lg:hidden bg-blue-900 shadow-2xl rounded-xl border border-gray-200 w-[calc(100vw-2rem)] max-w-md mx-auto">
+    <div class="p-4">
+      <div class="flex flex-col gap-3">
+        <!-- Selection Count -->
+        <ui-button id="unselectAllBtnMobile" data-type="outline" data-color="transparent" title="Unselect all accounts">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          <span id="selectedCountMobile" class="mr-1">0</span> <span id="selectCountMobileLabel">Accounts</span>
+        </ui-button>
+
+        <!-- Action Buttons Grid -->
+        <div class="grid grid-cols-2 gap-2">
+          <ui-button id="bulkRenameBtnMobile" data-type="outline" data-color="transparent" title="Bulk rename accounts">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            <span>Rename</span>
+          </ui-button>
+
+          <ui-button id="bulkTypeBtnMobile" data-type="outline" data-color="transparent" title="Bulk edit account types">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+            <span>Edit Type</span>
+          </ui-button>
+
+          <ui-button id="bulkIncludeBtnMobile" data-type="outline" data-color="transparent" title="Include selected accounts">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>Include</span>
+          </ui-button>
+
+          <ui-button id="bulkExcludeBtnMobile" data-type="outline" data-color="transparent" title="Exclude selected accounts">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            <span>Exclude</span>
+          </ui-button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Desktop Bulk Actions (visible on desktop) -->
+  <div class="hidden lg:block bg-blue-900 shadow-2xl rounded-xl border border-gray-200">
+    <div class="px-2 py-2">
+      <div class="flex items-center gap-2">
+        <!-- Selection Count -->
+        <ui-button id="unselectAllBtnDesktop" data-type="solid" data-color="transparent" data-size="small" title="Unselect all accounts">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          <span id="selectedCountDesktop" class="mr-1">0</span> <span id="selectCountDesktopLabel">Accounts</span>
+        </ui-button>
+
+        <!-- Separator -->
+        <div class="h-6 border-l border-gray-300"></div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center">
+
+          <!-- Bulk Rename -->
+          <ui-button id="bulkRenameBtnDesktop" data-type="solid" data-color="transparent" data-size="small" title="Bulk rename accounts">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Rename
+          </ui-button>
+
+          <!-- Bulk Edit Account Types -->
+          <ui-button id="bulkTypeBtnDesktop" data-type="solid" data-color="transparent" data-size="small" title="Bulk edit account types">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+            Edit Type
+          </ui-button>
+
+          <!-- Bulk Include -->
+          <ui-button id="bulkIncludeBtnDesktop" data-type="solid" data-color="transparent" data-size="small" title="Include selected accounts">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            Include
+          </ui-button>
+
+          <!-- Bulk Exclude -->
+          <ui-button id="bulkExcludeBtnDesktop" data-type="solid" data-color="transparent" data-size="small" title="Exclude selected accounts">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Exclude
+          </ui-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk Rename Modal -->
+<ui-modal id="bulkRenameModal">
+  <h3 slot="title">Bulk Rename Accounts</h3>
+  <div slot="content" class="space-y-4">
+    <div>
+      <label for="renamePattern" class="font-medium text-sm block mb-2">Pattern:</label>
+      <input id="renamePattern" name="renamePattern" type="text"
+        class="border rounded w-full px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        placeholder="e.g. {{YNAB}} - {{Index}}">
+    </div>
+
+    <!-- Token shortcuts -->
+    <div>
+      <label class="font-medium text-sm block mb-2">Token Shortcuts:</label>
+      <div class="grid grid-cols-2 gap-2">
+        <ui-button data-type="secondary" data-size="small" class="token-btn" data-token="{{YNAB}}">YNAB Name</ui-button>
+        <ui-button data-type="secondary" data-size="small" class="token-btn" data-token="{{Index}}">Index</ui-button>
+        <ui-button data-type="secondary" data-size="small" class="token-btn" data-token="{{Upper}}">
+          Uppercase YNAB
+        </ui-button>
+        <ui-button data-type="secondary" data-size="small" class="token-btn" data-token="{{Date}}">
+          Today (YYYY-MM-DD)
+        </ui-button>
+      </div>
+    </div>
+
+    <!-- Index start -->
+    <div class="flex items-center gap-3">
+      <label for="indexStart" class="text-sm">Index Start:</label>
+      <input id="indexStart" type="number"
+        class="border rounded px-3 py-2 w-20 sm:w-24 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        value="1" />
+    </div>
+
+    <!-- Preview -->
+    <div class="border rounded p-3 bg-gray-50">
+      <div class="font-medium text-sm mb-2">Preview:</div>
+      <div id="renamePreview" class="text-xs sm:text-sm text-gray-700 space-y-1 max-h-32 overflow-y-auto"
+        aria-live="polite"></div>
+    </div>
+  </div>
+  <div slot="footer" class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+    <ui-button id="renameCancel" data-type="outline" data-color="black">Cancel</ui-button>
+    <ui-button id="renameApply" data-type="solid">Apply</ui-button>
+  </div>
+</ui-modal>
+
+<!-- Bulk Type Edit Modal -->
+<ui-modal id="bulkTypeModal">
+  <h3 slot="title">Bulk Edit Account Type</h3>
+  <div slot="content" class="space-y-4">
+    <div>
+      <label for="bulkTypeSelect" class="block mb-2 font-medium text-sm">Account Type</label>
+      <select id="bulkTypeSelect" name="bulkSubtypeSelect"
+        class="border rounded w-full px-3 py-2 cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></select>
+    </div>
+
+    <div>
+      <label for="bulkSubtypeSelect" class="block mb-2 font-medium text-sm">Subtype</label>
+      <select id="bulkSubtypeSelect"
+        class="border rounded w-full px-3 py-2 cursor-pointer text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></select>
+    </div>
+  </div>
+  <div slot="footer" class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+    <ui-button id="bulkTypeCancel" data-type="outline" data-color="black">Cancel</ui-button>
+    <ui-button id="bulkTypeApply" data-type="solid">Apply</ui-button>
+  </div>
+</ui-modal>
+
+<!-- Advanced Filters Modal -->
+<ui-modal id="filtersModal">
+  <h3 slot="title">Advanced Filters</h3>
+  <div slot="content" class="space-y-6">
+
+    <!-- Active Filters Display -->
+    <div id="activeFiltersSection" class="hidden">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-medium text-gray-700">Active Filters</h3>
+        <!-- TODO: Move event handling into .js file -->
+        <!-- TODO: Set color to red -->
+        <ui-button id="clearAllFilters" data-type="text" onclick="window.clearAllFilters && window.clearAllFilters()">
+          Clear All
+        </ui-button>
+      </div>
+      <div id="activeFiltersContainer" class="flex flex-wrap gap-2"></div>
+      <hr class="mt-4">
+    </div>
+
+    <!-- Account Name Filter -->
+    <div class="space-y-3">
+      <div class="space-y-3">
+        <label for="filterAccountName" class="block text-sm font-medium text-gray-900">Account Name</label>
+        <input id="filterAccountName" name="filterAccountName" type="text" placeholder="Enter account name..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+
+        <div class="flex flex-wrap gap-4">
+          <label class="flex items-center">
+            <input id="nameMatchTypeContains" type="radio" name="nameMatchType" value="contains" checked
+              class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+            <span class="ml-2 text-sm text-gray-700">Contains</span>
+          </label>
+          <label class="flex items-center">
+            <input id="nameMatchTypeExact" type="radio" name="nameMatchType" value="exact"
+              class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+            <span class="ml-2 text-sm text-gray-700">Exact match</span>
+          </label>
+          <label class="flex items-center">
+            <input id="nameCaseSensitive" name="nameCaseSensitive" type="checkbox"
+              class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+            <span class="ml-2 text-sm text-gray-700">Case sensitive</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Account Type Filter -->
+    <div class="space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-medium text-gray-900">Account Type</h3>
+        <div class="flex gap-1">
+          <ui-button id="accountTypeSelectAllBtn" data-type="text" data-size="small">Select All</ui-button>
+          <ui-button id="accountTypeDeselectAllBtn" data-type="text" data-size="small">Deselect All</ui-button>
+        </div>
+      </div>
+      <div class="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">
+        <div id="typeFiltersContainer" class="space-y-2">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Account Subtype Filter -->
+    <div class="space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-medium text-gray-900">Account Subtype</h3>
+        <div class="flex gap-1">
+          <ui-button id="accountSubtypeSelectAllBtn" data-type="text" data-size="small">Select All</ui-button>
+          <ui-button id="accountSubtypeDeselectAllBtn" data-type="text" data-size="small">Deselect All</ui-button>
+        </div>
+      </div>
+      <div class="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-3">
+        <div id="subtypeFiltersContainer" class="space-y-2">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Transactions Count Filter -->
+    <div class="space-y-3">
+      <h3 class="text-sm font-medium text-gray-900">Transaction Count</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label for="filterTransactionsMin" class="block text-xs text-gray-600 mb-1">Minimum</label>
+          <input id="filterTransactionsMin" name="filterTransactionsMin" type="number" placeholder="0" min="0"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+        <div>
+          <label for="filterTransactionsMax" class="block text-xs text-gray-600 mb-1">Maximum</label>
+          <input id="filterTransactionsMax" name="filterTransactionsMax" type="number" placeholder="999999" min="0"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+      </div>
+    </div>
+
+    <!-- Balance Filter -->
+    <div class="space-y-3">
+      <h3 class="text-sm font-medium text-gray-900">Balance</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label for="filterBalanceMin" class="block text-xs text-gray-600 mb-1">Minimum ($)</label>
+          <input id="filterBalanceMin" name="filterBalanceMin" type="number" placeholder="0.00" step="0.01"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+        <div>
+          <label for="filterBalanceMax" class="block text-xs text-gray-600 mb-1">Maximum ($)</label>
+          <input id="filterBalanceMax" name="filterBalanceMax" type="number" placeholder="999999.99" step="0.01"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+      </div>
+    </div>
+
+    <!-- Inclusion Status Filter -->
+    <div class="space-y-3">
+      <h3 class="text-sm font-medium text-gray-900">Include Status</h3>
+      <div class="flex flex-wrap gap-4">
+        <label class="flex items-center">
+          <input id="inclusionFilterAll" type="radio" name="inclusionFilter" value="all" checked
+            class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+          <span class="ml-2 text-sm text-gray-700">All accounts</span>
+        </label>
+        <label class="flex items-center">
+          <input id="inclusionFilterIncluded" type="radio" name="inclusionFilter" value="included"
+            class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+          <span class="ml-2 text-sm text-gray-700">Included only</span>
+        </label>
+        <label class="flex items-center">
+          <input id="inclusionFilterExcluded" type="radio" name="inclusionFilter" value="excluded"
+            class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+          <span class="ml-2 text-sm text-gray-700">Excluded only</span>
+        </label>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <div slot="footer" class="flex flex-col sm:flex-row justify-end gap-3">
+    <!-- TODO: Move logic into .js file -->
+    <ui-button id="filtersReset" data-type="secondary" onclick="window.resetFilters && window.resetFilters()">
+      Reset Filters
+    </ui-button>
+    <!-- TODO: Move logic into .js file -->
+    <ui-button id="filtersApply" data-type="primary" onclick="window.applyFilters && window.applyFilters()">
+      Apply Filters
+    </ui-button>
+  </div>
+</ui-modal>
+
+<style>
+  /* Filter results summary styling */
+  #filterResultsSummary {
+    transition: all 0.3s ease;
   }
-  function escapeHtml2(text) {
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
+
+  /* Filter notification badge */
+  #filtersBtn {
+    position: relative;
+  }
+
+  #filterNotificationBadge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: #dc2626;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+    z-index: 10;
+  }
+
+  #filterNotificationBadge.hidden {
+    display: none;
+  }
+
+  /* Bulk action bar styling */
+  #bulkActionBar {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  #bulkActionBar:not(.active) {
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+  }
+
+  #bulkActionBar.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  /* Enhanced button hover effects */
+  #bulkActionBar button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  #bulkActionBar button:active {
+    transform: translateY(0);
+  }
+
+  /* Mobile grid button sizing */
+  @media (max-width: 1024px) {
+    #bulkActionBar .grid button {
+      min-height: 48px;
+    }
+  }
+
+  /* Mobile card styles for accounts */
+  .mobile-account-card {
+    padding: 1rem;
+    border-bottom: 1px solid #f3f4f6;
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .mobile-account-card:last-child {
+    border-bottom: none;
+  }
+
+  .mobile-account-card .card-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mobile-account-card .account-name {
+    font-weight: 500;
+    color: #111827;
+    margin-bottom: 0.5rem;
+    word-wrap: break-word;
+  }
+
+  .mobile-account-card .account-details {
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+
+  .mobile-account-card .account-details>div {
+    margin-bottom: 0.5rem;
+  }
+
+  .mobile-account-card .account-balance {
+    font-weight: 500;
+    text-align: right;
+  }
+
+  /* Custom checkbox styling */
+  .custom-checkbox-container {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+  }
+
+  .custom-checkbox-input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+  }
+
+  .custom-checkbox-visual {
+    position: relative;
+    height: 20px;
+    width: 20px;
+    background-color: #ffffff;
+    border: 2px solid #d1d5db;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .custom-checkbox-visual::after {
+    content: "";
+    position: absolute;
+    display: none;
+    left: 6px;
+    top: 2px;
+    width: 4px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+
+  .custom-checkbox-input:checked+.custom-checkbox-visual {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+  }
+
+  .custom-checkbox-input:checked+.custom-checkbox-visual::after {
+    display: block;
+  }
+
+  .custom-checkbox-input:indeterminate+.custom-checkbox-visual {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+  }
+
+  .custom-checkbox-input:indeterminate+.custom-checkbox-visual::after {
+    content: "";
+    position: absolute;
+    display: block;
+    left: 4px;
+    top: 50%;
+    width: 12px;
+    height: 2px;
+    background-color: white;
+    border: none;
+    transform: translateY(-50%);
+  }
+
+  .custom-checkbox-input:focus+.custom-checkbox-visual {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+    outline: none;
+  }
+
+  .custom-checkbox-input:disabled+.custom-checkbox-visual {
+    background-color: #f3f4f6;
+    border-color: #e5e7eb;
+    cursor: not-allowed;
+  }
+
+  .custom-checkbox-container:hover .custom-checkbox-input:not(:disabled)+.custom-checkbox-visual {
+    border-color: #3b82f6;
+  }
+
+  /* Mobile specific enhancements */
+  @media (max-width: 1024px) {
+    .custom-checkbox-visual {
+      height: 24px;
+      width: 24px;
+      min-width: 24px;
+      min-height: 24px;
+    }
+
+    .custom-checkbox-visual::after {
+      left: 8px;
+      top: 3px;
+      width: 5px;
+      height: 10px;
+    }
+
+    button,
+    select {
+      min-height: 44px;
+      padding: 0.75rem;
+    }
+
+    .token-btn {
+      min-height: 44px;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      min-height: 44px;
+      padding: 0.75rem;
+    }
+  }
+</style>`;
+
+  // src/components/ClickableCard.js
+  var ClickableCard = class extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" });
+    }
+    connectedCallback() {
+      this._render();
+      this._setupEventListeners();
+    }
+    static get observedAttributes() {
+      return ["data-color", "data-width"];
+    }
+    attributeChangedCallback() {
+      if (this.shadowRoot.innerHTML) {
+        this._updateStyles();
+      }
+    }
+    _getColorClasses() {
+      const color = this.getAttribute("data-color") || "blue";
+      const colorMap = {
+        blue: {
+          border: "#93c5fd",
+          bg: "rgba(219, 234, 254, 0.3)",
+          iconBg: "#dbeafe",
+          iconBgHover: "#bfdbfe",
+          iconColor: "#2563eb",
+          textColor: "#2563eb",
+          textColorHover: "#1d4ed8",
+          decorBg: "#dbeafe"
+        },
+        green: {
+          border: "#86efac",
+          bg: "rgba(220, 252, 231, 0.3)",
+          iconBg: "#dcfce7",
+          iconBgHover: "#bbf7d0",
+          iconColor: "#16a34a",
+          textColor: "#16a34a",
+          textColorHover: "#15803d",
+          decorBg: "#dcfce7"
+        },
+        purple: {
+          border: "#c4b5fd",
+          bg: "rgba(237, 233, 254, 0.3)",
+          iconBg: "#ede9fe",
+          iconBgHover: "#ddd6fe",
+          iconColor: "#7c3aed",
+          textColor: "#7c3aed",
+          textColorHover: "#6d28d9",
+          decorBg: "#ede9fe"
+        },
+        red: {
+          border: "#fca5a5",
+          bg: "rgba(254, 226, 226, 0.3)",
+          iconBg: "#fee2e2",
+          iconBgHover: "#fecaca",
+          iconColor: "#dc2626",
+          textColor: "#dc2626",
+          textColorHover: "#b91c1c",
+          decorBg: "#fee2e2"
+        }
+      };
+      return colorMap[color] || colorMap.blue;
+    }
+    _updateStyles() {
+      const colors = this._getColorClasses();
+      const width = this.getAttribute("data-width") || "full";
+      const widthStyles = {
+        full: "width: 100%;",
+        auto: "width: auto;",
+        fixed: "width: 300px;"
+      };
+      const root = this.shadowRoot.querySelector(".card-container");
+      if (root) {
+        root.style.cssText = widthStyles[width] || widthStyles.full;
+      }
+      if (this.shadowRoot.styleSheets[0]) {
+        const sheet = this.shadowRoot.styleSheets[0];
+        const rule = sheet.cssRules[0];
+        if (rule && rule.style) {
+          rule.style.setProperty("--card-border", colors.border);
+          rule.style.setProperty("--card-bg-hover", colors.bg);
+          rule.style.setProperty("--icon-bg", colors.iconBg);
+          rule.style.setProperty("--icon-bg-hover", colors.iconBgHover);
+          rule.style.setProperty("--icon-color", colors.iconColor);
+          rule.style.setProperty("--text-color", colors.textColor);
+          rule.style.setProperty("--text-color-hover", colors.textColorHover);
+          rule.style.setProperty("--decor-bg", colors.decorBg);
+        }
+      }
+    }
+    _render() {
+      const colors = this._getColorClasses();
+      const width = this.getAttribute("data-width") || "full";
+      const widthStyles = {
+        full: "width: 100%;",
+        auto: "width: auto; min-width: 280px;",
+        fixed: "width: 300px;"
+      };
+      this.shadowRoot.innerHTML = `
+      <style>
+        :host {
+          --card-border: ${colors.border};
+          --card-bg-hover: ${colors.bg};
+          --icon-bg: ${colors.iconBg};
+          --icon-bg-hover: ${colors.iconBgHover};
+          --icon-color: ${colors.iconColor};
+          --text-color: ${colors.textColor};
+          --text-color-hover: ${colors.textColorHover};
+          --decor-bg: ${colors.decorBg};
+          display: block;
+        }
+
+        .card-container {
+          ${widthStyles[width] || widthStyles.full}
+          cursor: pointer;
+          user-select: none;
+        }
+
+        @media (min-width: 1024px) {
+          .card-container {
+            flex: 1;
+          }
+        }
+
+        .card-inner {
+          height: 100%;
+          padding: 1rem;
+          border: 2px solid #e5e7eb;
+          border-radius: 0.75rem;
+          box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+          background-color: white;
+          position: relative;
+          overflow: hidden;
+          transition: all 300ms;
+        }
+
+        @media (min-width: 640px) {
+          .card-inner {
+            padding: 1.5rem;
+          }
+        }
+
+        @media (min-width: 768px) {
+          .card-inner {
+            padding: 2rem;
+          }
+        }
+
+        .card-container:hover .card-inner {
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+          border-color: var(--card-border);
+          background-color: var(--card-bg-hover);
+        }
+
+        .decoration {
+          position: absolute;
+          top: 0;
+          right: 0;
+          width: 5rem;
+          height: 5rem;
+          background-color: var(--decor-bg);
+          border-radius: 9999px;
+          transform: translateY(-2.5rem) translateX(2.5rem);
+          opacity: 0.5;
+          transition: opacity 300ms;
+        }
+
+        .card-container:hover .decoration {
+          opacity: 0.75;
+        }
+
+        .card-content {
+          position: relative;
+          z-index: 10;
+        }
+
+        .card-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          margin-bottom: 1rem;
+        }
+
+        .icon-wrapper {
+          width: 2.5rem;
+          height: 2.5rem;
+          background-color: var(--icon-bg);
+          border-radius: 0.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background-color 300ms;
+        }
+
+        @media (min-width: 640px) {
+          .icon-wrapper {
+            width: 3rem;
+            height: 3rem;
+          }
+        }
+
+        .card-container:hover .icon-wrapper {
+          background-color: var(--icon-bg-hover);
+        }
+
+        ::slotted([slot="icon"]) {
+          width: 1.25rem;
+          height: 1.25rem;
+          color: var(--icon-color);
+        }
+
+        @media (min-width: 640px) {
+          ::slotted([slot="icon"]) {
+            width: 1.5rem;
+            height: 1.5rem;
+          }
+        }
+
+        .arrow-wrapper {
+          color: var(--text-color);
+          transition: color 300ms;
+        }
+
+        .card-container:hover .arrow-wrapper {
+          color: var(--text-color-hover);
+        }
+
+        ::slotted([slot="arrow"]) {
+          width: 1.25rem;
+          height: 1.25rem;
+        }
+
+        .card-title {
+          margin-bottom: 0.75rem;
+        }
+
+        ::slotted([slot="title"]) {
+          font-size: 1.125rem;
+          font-weight: 600;
+          color: #111827;
+          margin: 0;
+          line-height: 1.4;
+        }
+
+        @media (min-width: 640px) {
+          ::slotted([slot="title"]) {
+            font-size: 1.25rem;
+          }
+        }
+
+        @media (min-width: 768px) {
+          ::slotted([slot="title"]) {
+            font-size: 1.5rem;
+          }
+        }
+
+        .card-description {
+          margin-bottom: 1.5rem;
+          min-height: 3rem;
+        }
+
+        ::slotted([slot="description"]) {
+          color: #4b5563;
+          font-size: 0.875rem;
+          line-height: 1.6;
+          margin: 0;
+        }
+
+        @media (min-width: 640px) {
+          ::slotted([slot="description"]) {
+            font-size: 1rem;
+          }
+        }
+
+        .card-action {
+          display: flex;
+          align-items: center;
+        }
+
+        ::slotted([slot="action"]) {
+          color: var(--text-color);
+          font-weight: 600;
+          font-size: 0.875rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          transition: color 300ms;
+          margin: 0;
+        }
+
+        @media (min-width: 640px) {
+          ::slotted([slot="action"]) {
+            font-size: 1rem;
+          }
+        }
+
+        .card-container:hover ::slotted([slot="action"]) {
+          color: var(--text-color-hover);
+        }
+
+        .action-arrow {
+          width: 1rem;
+          height: 1rem;
+          transition: transform 300ms;
+        }
+
+        .card-container:hover .action-arrow {
+          transform: translateX(0.25rem);
+        }
+      </style>
+
+      <div class="card-container">
+        <div class="card-inner">
+          <div class="decoration"></div>
+          
+          <div class="card-content">
+            <div class="card-header">
+              <div class="icon-wrapper">
+                <slot name="icon"></slot>
+              </div>
+              <div class="arrow-wrapper">
+                <slot name="arrow"></slot>
+              </div>
+            </div>
+
+            <div class="card-title">
+              <slot name="title"></slot>
+            </div>
+
+            <div class="card-description">
+              <slot name="description"></slot>
+            </div>
+
+            <div class="card-action">
+              <slot name="action"></slot>
+              <svg class="action-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    }
+    _setupEventListeners() {
+      const container = this.shadowRoot.querySelector(".card-container");
+      container.addEventListener("click", () => {
+        this.dispatchEvent(new CustomEvent("card-click", {
+          bubbles: true,
+          composed: true
+        }));
+      });
+    }
+  };
+  if (!customElements.get("clickable-card")) {
+    customElements.define("clickable-card", ClickableCard);
   }
 
   // src/views/MethodSelect/method.js
   function initMethodSelectView() {
-    if (!state_default.accounts || Object.keys(state_default.accounts).length === 0) {
-      navigate("/upload", true);
-      return;
-    }
-    renderPageLayout();
-    renderNavigationBar2({
-      showBackButton: true,
-      showDataButton: true
+    renderPageLayout({
+      navbar: {
+        showBackButton: true,
+        showDataButton: true
+      },
+      header: {
+        title: "Step 3: Choose Your Migration Method",
+        description: "Either manually import your accounts into Monarch Money yourself or let us automate the process.",
+        containerId: "pageHeader"
+      }
     });
-    renderPageHeader2({
-      title: "Choose Your Migration Method",
-      description: "You can either manually import your accounts into Monarch or let us automatically import your data.",
-      containerId: "pageHeader"
-    });
-    renderButtons();
     const totalCount = Object.keys(state_default.accounts).length;
     const selectedCount = Object.values(state_default.accounts).filter((acc) => acc.included).length;
     document.getElementById("totalCountDisplay").textContent = totalCount;
     document.getElementById("filesCountDisplay").textContent = selectedCount;
     document.getElementById("manualFileCount").textContent = selectedCount;
-    const manualBtn = document.getElementById("manualImportBtn");
-    const autoBtn = document.getElementById("autoImportBtn");
-    manualBtn.addEventListener("click", () => {
+    document.getElementById("manualFileLabel").textContent = selectedCount === 1 ? "file" : "files";
+    document.getElementById("manualImportCard").addEventListener("card-click", () => {
       navigate("/manual");
     });
-    autoBtn.addEventListener("click", () => {
+    document.getElementById("autoImportCard").addEventListener("card-click", () => {
       navigate("/login");
     });
   }
 
   // src/views/MethodSelect/method.html
-  var method_default = `<div id="pageLayout"></div>
-
-<!-- Summary Counts -->
-<div class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 md:gap-10 
-          bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 md:p-8 
-          border border-blue-100 w-full max-w-2xl mx-auto shadow-sm">
-
-  <div class="text-center">
-    <div class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-800" id="totalCountDisplay">0</div>
-    <div class="text-gray-600 text-xs sm:text-sm md:text-base font-medium">Total Accounts</div>
-  </div>
-
-  <div class="hidden sm:block w-px h-12 bg-gray-300"></div>
-  <div class="sm:hidden w-full h-px bg-gray-300"></div>
-
-  <div class="text-center">
-    <div class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-green-600" id="filesCountDisplay">0</div>
-    <div class="text-gray-600 text-xs sm:text-sm md:text-base font-medium">Accounts To Migrate</div>
-  </div>
-</div>
-
-<!-- Migration Options -->
-<div class="flex flex-col lg:flex-row gap-4 sm:gap-6 md:gap-8 w-full max-w-5xl mx-auto">
-
-  <!-- Manual Import -->
-  <div class="w-full lg:flex-1 group cursor-pointer" id="manualImportBtn">
-      <div class="h-full p-4 sm:p-6 md:p-8 border-2 border-gray-200 rounded-xl shadow-sm 
-                hover:shadow-lg hover:border-blue-300 transition-all duration-300 
-                bg-white group-hover:bg-blue-50/30 relative overflow-hidden">
-
-        <div class="absolute top-0 right-0 w-20 h-20 bg-blue-100 rounded-full -translate-y-10 translate-x-10 opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
-
-        <div class="relative z-10">
-          <div class="flex items-start justify-between mb-4">
-            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors duration-300">
-              <svg class="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-              </svg>
-            </div>
-            <div class="text-blue-600 group-hover:text-blue-700 transition-colors duration-300">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-          </div>
-
-          <h3 class="text-lg sm:text-xl md:text-2xl font-semibold mb-3 text-gray-900">Manual Import</h3>
-          <p class="text-gray-600 text-sm sm:text-base mb-6 leading-relaxed min-h-[3rem]">
-            Download <span id="manualFileCount" class="font-semibold text-blue-600">0</span> CSV files and upload them directly into Monarch yourself. Perfect for users who prefer full control.
-          </p>
-
-          <div class="flex items-center text-blue-600 font-semibold text-sm sm:text-base group-hover:text-blue-700 transition-colors duration-300">
-            Select Manual Import
-            <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Auto Import -->
-    <div class="w-full lg:flex-1 group cursor-pointer" id="autoImportBtn">
-      <div class="h-full p-4 sm:p-6 md:p-8 border-2 border-gray-200 rounded-xl shadow-sm 
-                hover:shadow-lg hover:border-green-300 transition-all duration-300 
-                bg-white group-hover:bg-green-50/30 relative overflow-hidden">
-
-        <div class="absolute top-0 right-0 w-20 h-20 bg-green-100 rounded-full -translate-y-10 translate-x-10 opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
-
-        <div class="absolute top-4 left-4 bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-full">
-          Recommended
-        </div>
-
-        <div class="relative z-10 pt-6">
-          <div class="flex items-start justify-between mb-4">
-            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300">
-              <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
-            <div class="text-green-600 group-hover:text-green-700 transition-colors duration-300">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-          </div>
-
-          <h3 class="text-lg sm:text-xl md:text-2xl font-semibold mb-3 text-gray-900">Auto Import</h3>
-          <p class="text-gray-600 text-sm sm:text-base mb-6 leading-relaxed min-h-[3rem]">
-            We'll connect to Monarch and automatically import your selected accounts on your behalf. Fast, secure, and hassle-free.
-          </p>
-
-          <div class="flex items-center text-green-600 font-semibold text-sm sm:text-base group-hover:text-green-700 transition-colors duration-300">
-            Select Auto Import
-            <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
-
-</div>`;
+  var method_default = '<div id="pageLayout"></div>\n\n<!-- Summary Counts -->\n<div class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 md:gap-10 \n          bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 md:p-8 \n          border border-blue-100 w-full max-w-2xl mx-auto shadow-sm mb-12">\n\n  <div class="text-center">\n    <div class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-500" id="totalCountDisplay">0</div>\n    <div class="text-gray-500 text-xs sm:text-sm md:text-base font-medium">Total Accounts</div>\n  </div>\n\n  <div class="hidden sm:block w-px h-12 bg-gray-300"></div>\n  <div class="sm:hidden w-full h-px bg-gray-300"></div>\n\n  <div class="text-center">\n    <div class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-green-600" id="filesCountDisplay">0</div>\n    <div class="text-gray-600 text-xs sm:text-sm md:text-base font-medium">Accounts To Migrate</div>\n  </div>\n</div>\n\n<!-- Migration Options -->\n<div class="flex flex-col lg:flex-row gap-4 sm:gap-6 md:gap-8 w-full max-w-5xl mx-auto">\n\n  <!-- Manual Import -->\n  <clickable-card id="manualImportCard" data-color="blue" data-width="full">\n    <svg slot="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n        d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" />\n    </svg>\n    <svg slot="arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />\n    </svg>\n    <h3 slot="title">Manual Import</h3>\n    <p slot="description">\n      Download <span id="manualFileCount" class="font-semibold text-blue-600">0</span> CSV <span id="manualFileLabel">files</span> and upload them\n      into Monarch Money yourself, one by one.\n    </p>\n    <span slot="action">Select Manual Import</span>\n  </clickable-card>\n\n  <!-- Auto Import -->\n  <clickable-card id="autoImportCard" data-color="green" data-width="full">\n    <svg slot="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />\n    </svg>\n    <svg slot="arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />\n    </svg>\n    <h3 slot="title">Auto Import</h3>\n    <p slot="description">\n      Connect your Monarch Money account and automatically import your selected accounts.\n    </p>\n    <span slot="action">Select Auto Import</span>\n  </clickable-card>\n\n</div>';
 
   // src/views/ManualInstructions/manualInstructions.js
   var import_jszip2 = __toESM(require_jszip_min(), 1);
@@ -6022,25 +8531,20 @@
 
   // src/views/ManualInstructions/manualInstructions.js
   function initManualInstructionsView() {
-    if (!state_default.accounts || Object.keys(state_default.accounts).length === 0) {
-      navigate("/upload", true);
-      return;
-    }
     renderPageLayout({
       navbar: {
         showBackButton: true,
         showDataButton: true
       },
       header: {
-        title: "You're Ready to Import",
-        description: "Choose how you'd like to bring your YNAB data into Monarch Money. You can either connect your YNAB account for a seamless transfer or manually upload a file.",
+        title: "Step 4: Manual Migration",
+        description: "A step-by-step guide to manually importing your YNAB data into Monarch Money.",
         containerId: "pageHeader"
       }
     });
     const downloadBtn = document.getElementById("downloadBtn");
     const switchBtn = document.getElementById("switchToAuto");
     const includedAccounts = Object.values(state_default.accounts).filter((acc) => acc.included);
-    countSpan.textContent = `${includedAccounts.length} account${includedAccounts.length !== 1 ? "s" : ""}`;
     downloadBtn.addEventListener("click", async (e) => {
       e.preventDefault();
       const zip = new import_jszip2.default();
@@ -6083,8 +8587,8 @@
   var manualInstructions_default = `<div id="pageLayout"></div>
 
 <!-- Main Instructions Card -->
-<div
-  class="w-full max-w-4xl bg-white border border-gray-200 rounded-xl shadow-lg p-6 sm:p-8 md:p-10 space-y-8 sm:space-y-10">
+<section
+  class="w-full max-w-4xl bg-white border border-gray-200 rounded-xl shadow-lg p-6 sm:p-8 md:p-10 space-y-8 sm:space-y-10 md:max-w-4xl mx-auto">
 
   <!-- Step 1: Download -->
   <div class="relative">
@@ -6103,14 +8607,13 @@
         specifically for Monarch Money import.
       </p>
 
-      <a id="downloadBtn" class="ui-button inline-flex items-center btn-responsive" data-type="primary"
-        data-size="large" href="#">
+      <ui-button id="downloadBtn" data-type="solid" data-size="large">
         <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 10l5 5 5-5M12 4v12" />
         </svg>
         Download CSV Bundle
-      </a>
+      </ui-button>
     </div>
   </div>
 
@@ -6133,7 +8636,7 @@
     <!-- Step Number -->
     <div class="flex items-center mb-4 sm:mb-6">
       <div
-        class="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-green-100 text-green-600 rounded-full font-bold text-sm sm:text-base mr-3 sm:mr-4">
+        class="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 text-blue-600 rounded-full font-bold text-sm sm:text-base mr-3 sm:mr-4">
         2
       </div>
       <h3 class="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900">Import into Monarch</h3>
@@ -6209,12 +8712,11 @@
 
           <li class="flex items-start gap-3">
             <span
-              class="flex items-center justify-center w-6 h-6 bg-green-100 text-green-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
+              class="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-xs font-semibold flex-shrink-0 mt-0.5">
               g
             </span>
             <div class="text-sm sm:text-base text-gray-700 leading-relaxed">
-              <strong class="text-green-700">Enable</strong>
-              <em>"Adjust account's balances based on these transactions"</em>
+              Enable <em>"Adjust account's balances based on these transactions"</em>
             </div>
           </li>
 
@@ -6241,10 +8743,10 @@
       </div>
     </div>
   </div>
-</div>
+</section>
 
 <!-- Auto Import Promotion -->
-<div
+<section
   class="flex flex-col items-center text-center gap-4 sm:gap-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 sm:p-8 md:p-10 border border-blue-100 w-full max-w-4xl shadow-sm">
 
   <div class="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center">
@@ -6263,12 +8765,11 @@
     </p>
   </div>
 
-  <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
-    <button id="switchToAuto" class="ui-button btn-responsive" data-type="primary" data-size="large">
-      Try Auto Import Instead
-    </button>
-  </div>
-</div>`;
+  <ui-button id="switchToAuto" data-type="solid" data-size="large">
+    Try Auto Import Instead
+  </ui-button>
+
+</section>`;
 
   // node_modules/uuid/dist/esm-browser/stringify.js
   var byteToHex = [];
@@ -6322,6 +8823,16 @@
   }
   var v4_default = v4;
 
+  // src/api/config.js
+  var base = "/.netlify/functions/";
+  var API = {
+    login: base + "monarchLogin",
+    fetchAccounts: base + "fetchMonarchAccounts",
+    createAccounts: base + "createMonarchAccounts",
+    generateStatements: base + "generateStatements",
+    getUploadStatus: base + "getUploadStatus"
+  };
+
   // src/api/utils.js
   async function postJson(url, body) {
     const res = await fetch(url, {
@@ -6340,11 +8851,11 @@
   var monarchApi = {
     login: (email, encryptedPassword, deviceUuid, otp) => postJson(API.login, { email, encryptedPassword, deviceUuid, otp }),
     fetchMonarchAccounts: (token) => postJson(API.fetchAccounts, { token }),
-    createAccounts: (token, accounts2) => postJson(API.createAccounts, { token, accounts: accounts2 }),
-    generateAccounts: (accounts2) => fetch(API.generateStatements, {
+    createAccounts: (token, accounts) => postJson(API.createAccounts, { token, accounts }),
+    generateAccounts: (accounts) => fetch(API.generateStatements, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ accounts: accounts2 })
+      body: JSON.stringify({ accounts })
     }),
     queryUploadStatus: (token, sessionKey) => postJson(API.getUploadStatus, { token, sessionKey })
   };
@@ -6426,7 +8937,7 @@
         showDataButton: true
       },
       header: {
-        title: "Auto Import: Connect Your Monarch Account",
+        title: "Step 4: Auto Migration",
         description: "Authorize your Monarch account so we can directly import your accounts and transactions.",
         containerId: "pageHeader"
       }
@@ -6493,17 +9004,25 @@
       };
       switch (status) {
         case "remembered":
-          UI.securityNoteMsg.textContent = "Your credentials will be stored securely on this device.";
+          UI.securityNoteMsg.innerHTML = 'Your credentials will be encrypted and saved to this device. <a href="#" data-nav="/data-management" class="text-blue-600 hover:text-blue-800 underline">Manage stored data</a>.';
           UI.securityNoteIcon.setAttribute("fill", COLOR.ORANGE);
           break;
         case "signed-in":
-          UI.securityNoteMsg.textContent = 'You are signed in. To use different credentials, click "Not you?".';
+          UI.securityNoteMsg.innerHTML = 'Currently signed in. To use different credentials, click "Not you?" or <a href="#" data-nav="/data-management" class="text-blue-600 hover:text-blue-800 underline">manage your data</a>.';
           UI.securityNoteIcon.setAttribute("fill", COLOR.BLUE);
           break;
         default:
-          UI.securityNoteMsg.textContent = "Your credentials will not be stored.";
+          UI.securityNoteMsg.textContent = "Your credentials will only be used for this session and will not be saved.";
           UI.securityNoteIcon.setAttribute("fill", COLOR.GREEN);
       }
+      const links = UI.securityNoteMsg.querySelectorAll("[data-nav]");
+      links.forEach((link) => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          const path = e.target.getAttribute("data-nav");
+          navigate(path);
+        });
+      });
     }
     function onSubmitForm(e) {
       e.preventDefault();
@@ -6698,8 +9217,9 @@
     <!-- Not You? -->
     <div id="notYouContainer" class="mt-2 text-sm text-gray-500 hidden">
       <span id="rememberedEmail">"some@thing.com"</span>
-      <button type="button" id="clearCredentialsBtn" class="ml-2 text-blue-600 cursor-pointer hover:underline">Not
-        You?</button>
+      <ui-button id="clearCredentialsBtn" data-type="text" data-size="small">
+        Not You?
+      </ui-button>
     </div>
 
     <!-- Error Message -->
@@ -6715,7 +9235,7 @@
     </div>
 
     <!-- Submit Button -->
-    <button id="connectBtn" type="submit" class="ui-button w-full btn-responsive" data-type="primary" data-size="large">
+    <ui-button id="connectBtn" type="submit" data-type="solid" data-size="large">
       <span id="loginBtnText">Connect to Monarch</span>
       <svg id="loginSpinner" class="hidden animate-spin ml-2 h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -6723,7 +9243,7 @@
           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
         </path>
       </svg>
-    </button>
+    </ui-button>
   </form>
 
   <!-- Security Note -->
@@ -6775,7 +9295,7 @@
         showDataButton: true
       },
       header: {
-        title: "Enter Your Verification Code",
+        title: "Step 5: Enter Your Verification Code",
         description: "Monarch has sent a 6-digit verification code to your email address. Enter it below to continue with the secure import process.",
         containerId: "pageHeader"
       }
@@ -6800,7 +9320,7 @@
     }
     if (!credentials.email || !credentials.encryptedPassword) {
       console.warn("Missing credentials for OTP flow, redirecting to login");
-      return navigate("/credentials");
+      return navigate("/credentials", true);
     }
     async function onClickSubmitOtp(e) {
       console.group("MonarchOtpView");
@@ -6826,7 +9346,7 @@
             clearStorage();
           }
           console.groupEnd("MonarchOtpView");
-          return navigate("/complete");
+          return navigate("/complete", true);
         }
         throw new Error("Unknown login response.");
       } catch (err) {
@@ -6892,7 +9412,7 @@
   </div>
 
   <!-- Important Warning -->
-  <div class="w-full bg-amber-50 border border-amber-200 rounded-lg p-3">
+  <div class="w-full bg-amber-50 border border-amber-200 rounded-lg p-3 mt-4">
     <div class="flex items-start gap-2">
       <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
         <path fill-rule="evenodd"
@@ -6909,41 +9429,20 @@
   </div>
 
   <!-- Submit Button -->
-  <button id="submitOtpBtn" class="ui-button w-full btn-responsive" data-type="primary" data-size="large" disabled>
-    <span id="submitOtpBtnText">Verify & Start Import</span>
+  <ui-button id="submitOtpBtn" data-type="solid" data-size="large" disabled>
+    <span id="submitOtpBtnText">Connect to Monarch</span>
     <svg id="submitOtpSpinner" class="hidden animate-spin ml-2 h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24">
       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
       <path class="opacity-75" fill="currentColor"
         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
       </path>
     </svg>
-  </button>
+  </ui-button>
 
-</div>
-
-<!-- Security Note -->
-<div class="w-full max-w-md mx-auto">
-  <div class="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-    <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-      <path fill-rule="evenodd"
-        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-        clip-rule="evenodd" />
-    </svg>
-    <div>
-      <p class="text-xs sm:text-sm text-blue-800 leading-relaxed">
-        <strong>Security Notice:</strong> This verification step ensures your account's security.
-        The code expires in 10 minutes for your protection.
-      </p>
-    </div>
-  </div>
 </div>`;
 
   // src/views/MonarchComplete/monarchComplete.js
   function initMonarchCompleteView() {
-    if (!state_default.accounts || Object.keys(state_default.accounts).length === 0) {
-      navigate("/upload", true);
-      return;
-    }
     renderPageLayout({
       navbar: {
         showBackButton: true,
@@ -6960,6 +9459,8 @@
     const header = document.getElementById("header");
     const subheader = document.getElementById("subheader");
     const overallStatus = document.getElementById("overallStatus");
+    document.getElementById("visitMonarchBtn").addEventListener("click", () => window.open("https://app.monarchmoney.com", "_blank"));
+    document.getElementById("retryFailedBtn").addEventListener("click", () => retryFailedAccounts());
     const loadingContainer = document.getElementById("loadingContainer");
     if (loadingContainer) {
       loadingContainer.style.display = "none";
@@ -7016,7 +9517,7 @@
         });
         updateStatusOverview();
         updateAccountList();
-        await processBatch(token, batch, batchIndex + 1, batches.length);
+        await processBatch(token, batch);
         if (batchIndex < batches.length - 1) {
           await new Promise((resolve) => setTimeout(resolve, 1e3));
         }
@@ -7025,7 +9526,7 @@
       updateAccountList();
       updateActionButtons();
     }
-    async function processBatch(token, batch, batchNumber, totalBatches) {
+    async function processBatch(token, batch) {
       try {
         const response = await monarchApi.createAccounts(token, batch);
         if (response.success || response.failed) {
@@ -7068,11 +9569,11 @@
             }
           });
         } else {
-          const errorMessage2 = response.error || "Failed to create accounts in Monarch Money";
+          const errorMessage = response.error || "Failed to create accounts in Monarch Money";
           batch.forEach((account) => {
             if (state_default.accounts[account.accountName]) {
               state_default.accounts[account.accountName].status = "failed";
-              state_default.accounts[account.accountName].errorMessage = errorMessage2;
+              state_default.accounts[account.accountName].errorMessage = errorMessage;
             }
           });
         }
@@ -7098,8 +9599,8 @@
               if (status === "completed") {
                 return;
               } else if (status === "failed" || status === "error") {
-                const errorMessage2 = session.errorMessage || "Transaction upload failed";
-                throw new Error(errorMessage2);
+                const errorMessage = session.errorMessage || "Transaction upload failed";
+                throw new Error(errorMessage);
               }
             }
             await new Promise((resolve) => setTimeout(resolve, 5e3));
@@ -7116,8 +9617,8 @@
       }));
     }
     function updateStatusOverview() {
-      const accounts2 = state_default.accounts || {};
-      const includedAccounts = Object.values(accounts2).filter((acc) => acc.included);
+      const accounts = state_default.accounts || {};
+      const includedAccounts = Object.values(accounts).filter((acc) => acc.included);
       const totalAccounts = includedAccounts.length;
       const completedAccounts = includedAccounts.filter((acc) => acc.status === "completed").length;
       const failedAccounts = includedAccounts.filter((acc) => acc.status === "failed").length;
@@ -7163,9 +9664,9 @@
     function updateAccountList() {
       if (!accountList)
         return;
-      const accounts2 = state_default.accounts || {};
+      const accounts = state_default.accounts || {};
       accountList.innerHTML = "";
-      Object.entries(accounts2).forEach(([accountId, account]) => {
+      Object.entries(accounts).forEach(([accountId, account]) => {
         if (!account.included)
           return;
         const accountItem = document.createElement("div");
@@ -7235,35 +9736,11 @@
     function updateActionButtons() {
       if (!actionButtonsContainer)
         return;
-      const accounts2 = state_default.accounts || {};
-      const failedAccounts = Object.values(accounts2).filter((acc) => acc.included && acc.status === "failed");
-      const completedAccounts = Object.values(accounts2).filter((acc) => acc.included && acc.status === "completed");
-      actionButtonsContainer.innerHTML = "";
-      if (failedAccounts.length > 0) {
-        const retryBtn = document.createElement("button");
-        retryBtn.className = "ui-button";
-        retryBtn.dataset.type = "primary";
-        retryBtn.dataset.size = "medium";
-        retryBtn.textContent = "Retry Failed Accounts";
-        retryBtn.addEventListener("click", () => retryFailedAccounts());
-        actionButtonsContainer.appendChild(retryBtn);
-      }
-      if (completedAccounts.length > 0) {
-        const viewBtn = document.createElement("button");
-        viewBtn.className = "ui-button";
-        viewBtn.dataset.type = "secondary";
-        viewBtn.dataset.size = "medium";
-        viewBtn.textContent = "View in Monarch Money";
-        viewBtn.addEventListener("click", () => window.open("https://app.monarchmoney.com", "_blank"));
-        actionButtonsContainer.appendChild(viewBtn);
-      }
-      const startOverBtn = document.createElement("button");
-      startOverBtn.className = "ui-button";
-      startOverBtn.dataset.type = "secondary";
-      startOverBtn.dataset.size = "medium";
-      startOverBtn.textContent = "Start Over";
-      startOverBtn.addEventListener("click", () => navigate("/upload", true));
-      actionButtonsContainer.appendChild(startOverBtn);
+      const accounts = state_default.accounts || {};
+      const failedAccounts = Object.values(accounts).filter((acc) => acc.included && acc.status === "failed");
+      const completedAccounts = Object.values(accounts).filter((acc) => acc.included && acc.status === "completed");
+      document.getElementById("retryFailedBtn").hidden = failedAccounts.length === 0;
+      document.getElementById("visitMonarchBtn").hidden = completedAccounts.length <= 0;
     }
     function retryFailedAccounts() {
       const failedAccounts = Object.entries(state_default.accounts).filter(([accountName, acc]) => acc.included && acc.status === "failed");
@@ -7391,28 +9868,73 @@
 
 </div>
 
-<button id="continueBtn" class="ui-button">
-  Continue
-</button>`;
+<section class="flex items-center justify-center gap-4 sm:gap-6 mt-8 sm:mt-10 mb-12">
+  <ui-button id="visitMonarchBtn" data-type="secondary" data-size="large" hidden>
+    <span class="inline-flex items-center gap-2 mr-1">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+      </svg>
+    </span>
+    Visit Monarch Money
+  </ui-button>
+  <ui-button id="retryFailedBtn" data-type="solid" data-size="large" hidden>Retry Failed Accounts</ui-button>
+</section>`;
 
   // src/views/YnabOauthCallback/ynabOauthCallback.js
   async function initYnabOauthCallbackView() {
-    const heroMessage = document.querySelector("[data-ynab-oauth-message]");
-    if (heroMessage) {
-      heroMessage.textContent = "Processing YNAB authorization...";
+    renderPageLayout();
+    const loadingSpinner = document.getElementById("loadingSpinner");
+    const successIcon = document.getElementById("successIcon");
+    const errorIcon = document.getElementById("errorIcon");
+    const statusTitle = document.getElementById("statusTitle");
+    const statusMessage = document.getElementById("statusMessage");
+    const manualRedirectContainer = document.getElementById("manualRedirectContainer");
+    const continueBtn = document.getElementById("continueBtn");
+    try {
+      statusTitle.textContent = "Processing...";
+      statusMessage.innerHTML = "We're fetching your account data now.</br>You should be redirected automatically.";
+      await handleOauthCallback();
+      loadingSpinner.hidden = true;
+      successIcon.hidden = false;
+      statusTitle.textContent = "We got your data!";
+      statusMessage.innerHTML = "Still here? Sorry, sometimes redirections don't work.</br>Click the button below to review your data.";
+      persistState();
+      setTimeout(() => {
+        navigate("/review", true);
+      }, 1500);
+      continueBtn.textContent = "Review your Data";
+      continueBtn.addEventListener("click", () => {
+        navigate("/review", true);
+      });
+      setTimeout(() => {
+        manualRedirectContainer.hidden = false;
+      }, 1500);
+    } catch (error) {
+      console.error(error);
+      loadingSpinner.hidden = true;
+      errorIcon.hidden = false;
+      statusTitle.textContent = "Connection Failed";
+      statusMessage.textContent = "Try connecting to YNAB again.";
+      continueBtn.textContent = "Try Again";
+      continueBtn.setAttribute("data-color", "black");
+      continueBtn.updateStyle();
+      continueBtn.addEventListener("click", () => {
+        navigate("/upload", true);
+      });
+      manualRedirectContainer.hidden = false;
     }
-    await handleOauthCallback();
   }
 
   // src/views/YnabOauthCallback/ynabOauthCallback.html
-  var ynabOauthCallback_default = '<div class="container-responsive flex flex-col items-center justify-center space-y-6 py-8 sm:py-10 lg:py-14 min-h-[calc(100vh-220px)]">\n  <section class="w-full max-w-4xl space-y-6">\n    <header class="bg-gradient-to-r from-blue-50 via-white to-indigo-50 border border-transparent rounded-3xl shadow-2xl p-6 sm:p-8">\n      <div class="flex items-start gap-4">\n        <div class="flex-shrink-0 flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-blue-100 text-blue-600" data-ynab-oauth-icon>\n          <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 10-14 0 7 7 0 0014 0z" />\n          </svg>\n        </div>\n        <div class="flex-1 space-y-2">\n          <p class="text-xs sm:text-sm uppercase tracking-[0.3em] text-blue-500 font-semibold">Authorization flow</p>\n          <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">Finish connecting YNAB</h1>\n          <p class="text-sm sm:text-base text-gray-600 leading-relaxed">We returned here immediately after you granted access inside YNAB. This page safely captures the authorization code so the app can continue.</p>\n        </div>\n        <span class="text-xs font-semibold px-3 py-1 rounded-full bg-white/70 text-blue-700 border border-blue-100">Secure</span>\n      </div>\n    </header>\n\n    <article class="bg-white border border-gray-200 rounded-3xl shadow-xl p-6 sm:p-8 space-y-6">\n      <div class="flex items-start justify-between gap-4">\n        <div class="flex items-center gap-3">\n          <div class="flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-50 text-blue-600" data-ynab-oauth-hero-icon>\n            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">\n              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5s-3 1.343-3 3 1.343 3 3 3zm0 2c-3.866 0-7 1.79-7 4v1h14v-1c0-2.21-3.134-4-7-4z" />\n            </svg>\n          </div>\n          <div>\n            <p class="text-xs uppercase tracking-[0.2em] text-gray-400 font-semibold">Callback status</p>\n            <p class="text-lg font-bold text-gray-900 leading-tight" data-ynab-oauth-message>Receiving the authorization code\u2026</p>\n            <p class="text-sm text-gray-500 leading-relaxed" data-ynab-oauth-subtext aria-live="polite">Hang tight while we confirm the details sent back from YNAB.</p>\n          </div>\n        </div>\n        <span class="rounded-full px-3 py-1 text-xs font-semibold bg-gray-100 text-gray-600" data-ynab-oauth-badge>Pending</span>\n      </div>\n\n      <div class="rounded-2xl border border-dashed border-blue-100 bg-blue-50/60 p-4 text-sm text-blue-800" data-ynab-oauth-callout>\n        We are securely capturing the authorization code so you can continue the import without typing credentials again.\n      </div>\n\n      <div class="flex flex-wrap gap-3" aria-live="polite">\n        <button class="ui-button btn-responsive" data-type="primary" data-size="large" data-ynab-oauth-continue>\n          Return to the app\n        </button>\n        <a class="ui-button" data-type="text" data-size="medium" data-ynab-oauth-open href="https://app.youneedabudget.com" target="_blank" rel="noopener noreferrer">\n          Open YNAB in a new tab\n        </a>\n      </div>\n\n      <div class="space-y-2" aria-live="polite">\n        <label for="ynabOauthCode" class="text-xs font-semibold uppercase tracking-[0.3em] text-gray-500">Authorization code</label>\n        <div class="flex gap-3">\n          <input id="ynabOauthCode" class="flex-1 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700" type="text" value="" readonly placeholder="Awaiting code" data-ynab-oauth-code>\n          <button class="ui-button" data-type="secondary" data-size="small" data-ynab-oauth-copy disabled>\n            Copy code\n          </button>\n          <span class="text-xs font-semibold text-green-600 hidden" data-ynab-oauth-copy-status>Copied!</span>\n        </div>\n      </div>\n    </article>\n\n    <div class="grid gap-4 sm:grid-cols-3">\n      <article class="border border-gray-200 rounded-3xl bg-white p-4 space-y-2" data-ynab-oauth-step="request">\n        <div class="flex items-center gap-2">\n          <span class="inline-flex items-center justify-center w-8 h-8 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-600" data-ynab-oauth-step-indicator data-step-index="1">1</span>\n          <h3 class="text-sm font-semibold text-gray-900">Request issued</h3>\n        </div>\n        <p class="text-xs text-gray-500 leading-relaxed">You clicked continue inside YNAB to begin the OAuth handshake.</p>\n      </article>\n      <article class="border border-gray-200 rounded-3xl bg-white p-4 space-y-2" data-ynab-oauth-step="approval">\n        <div class="flex items-center gap-2">\n          <span class="inline-flex items-center justify-center w-8 h-8 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-600" data-ynab-oauth-step-indicator data-step-index="2">2</span>\n          <h3 class="text-sm font-semibold text-gray-900">Authorization granted</h3>\n        </div>\n        <p class="text-xs text-gray-500 leading-relaxed">YNAB verified your identity and confirmed we can access your budget.</p>\n      </article>\n      <article class="border border-gray-200 rounded-3xl bg-white p-4 space-y-2" data-ynab-oauth-step="storage">\n        <div class="flex items-center gap-2">\n          <span class="inline-flex items-center justify-center w-8 h-8 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-600" data-ynab-oauth-step-indicator data-step-index="3">3</span>\n          <h3 class="text-sm font-semibold text-gray-900">Code captured</h3>\n        </div>\n        <p class="text-xs text-gray-500 leading-relaxed">We store the code in sessionStorage so the SPA can finalize the login flow.</p>\n      </article>\n    </div>\n  </section>\n</div>\n';
+  var ynabOauthCallback_default = '<div id="pageLayout"></div>\n\n<!-- Content -->\n<div class="flex flex-col items-center justify-center text-center space-y-6 py-12">\n\n  <!-- Loading Spinner (shown by default) -->\n  <div id="loadingSpinner" class="relative w-20 h-20">\n    <div class="absolute inset-0 border-4 border-blue-200 rounded-full"></div>\n    <div class="absolute inset-0 border-4 border-transparent border-t-blue-600 rounded-full animate-spin"></div>\n  </div>\n\n  <!-- Status Icons (hidden by default) -->\n  <div id="successIcon" hidden\n    class="flex items-center justify-center w-20 h-20 rounded-full bg-green-100 text-green-600">\n    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />\n    </svg>\n  </div>\n\n  <div id="errorIcon" hidden class="flex items-center justify-center w-20 h-20 rounded-full bg-red-100 text-red-600">\n    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />\n    </svg>\n  </div>\n\n  <!-- Status Message -->\n  <div class="space-y-2">\n    <h2 id="statusTitle" class="text-2xl sm:text-3xl font-bold text-gray-900">\n      Placeholder Title\n    </h2>\n    <p id="statusMessage" class="text-base sm:text-lg text-gray-600 max-w-md">\n      Placeholder message\n    </p>\n  </div>\n\n  <!-- Manual Redirect Button (hidden by default) -->\n  <div id="manualRedirectContainer" hidden>\n    <ui-button id="continueBtn" data-type="solid" data-size="large" data-color="blue">\n      Placeholder btn\n    </ui-button>\n  </div>\n</div>';
 
   // src/views/DataManagement/dataManagement.js
   function initDataManagementView() {
     renderPageLayout({
       navbar: {
         showBackButton: true,
-        showDataButton: true
+        showDataButton: false
       },
       header: {
         title: "Data Management",
@@ -7423,15 +9945,30 @@
     displayStateData();
     displaySessionStorageData();
     displayLocalStorageData();
-    const exportBtn = document.getElementById("exportDataBtn");
-    const clearBtn = document.getElementById("clearAllDataBtn");
-    const confirmClearBtn = document.getElementById("confirmClearBtn");
-    const cancelClearBtn = document.getElementById("cancelClearBtn");
-    exportBtn?.addEventListener("click", handleExportData);
-    clearBtn?.addEventListener("click", () => openModal("confirmClearModal"));
-    confirmClearBtn?.addEventListener("click", handleClearAllData);
-    cancelClearBtn?.addEventListener("click", () => closeModal("confirmClearModal"));
+    document.getElementById("exportDataBtn").addEventListener("click", handleExportData);
+    document.getElementById("clearAllDataBtn").addEventListener("click", () => openModal("confirmClearModal"));
     window.toggleCollapse = toggleCollapse;
+  }
+  function openModal(id) {
+    const modal = document.getElementById(id);
+    modal.open();
+    setTimeout(() => {
+      const footerContainer = modal._modalOverlay?.querySelector(".ui-modal-footer");
+      const cancelBtn = footerContainer?.querySelector("#cancelBtn");
+      const applyBtn = footerContainer?.querySelector("#applyBtn");
+      if (cancelBtn) {
+        cancelBtn.onclick = () => modal.close();
+      }
+      if (applyBtn) {
+        applyBtn.onclick = () => {
+          handleClearAllData();
+          displayStateData();
+          displaySessionStorageData();
+          displayLocalStorageData();
+          modal.close();
+        };
+      }
+    }, 0);
   }
   function toggleCollapse(id) {
     const element = document.getElementById(id);
@@ -7452,52 +9989,121 @@
     const container = document.getElementById("stateDataSection");
     if (!container)
       return;
-    const stateData = {
-      credentials: {
-        email: state_default.credentials.email || "(not set)",
-        hasEncryptedPassword: !!state_default.credentials.encryptedPassword,
-        hasApiToken: !!state_default.credentials.apiToken,
-        hasDeviceUuid: !!state_default.credentials.deviceUuid,
-        remember: state_default.credentials.remember,
-        awaitingOtp: state_default.credentials.awaitingOtp
-      },
-      accounts: state_default.accounts,
-      monarchAccounts: state_default.monarchAccounts,
-      ynabOauth: state_default.ynabOauth
-    };
     const accountCount = state_default.accounts ? Object.keys(state_default.accounts).length : 0;
     const monarchCount = state_default.monarchAccounts ? Array.isArray(state_default.monarchAccounts) ? state_default.monarchAccounts.length : Object.keys(state_default.monarchAccounts).length : 0;
-    const summary = `${accountCount} YNAB accounts, ${monarchCount} Monarch accounts, ${state_default.credentials.email ? "logged in" : "not logged in"}`;
+    const hasYnabAuth = !!sessionStorage.getItem("ynab_access_token");
+    const hasMonarchAuth = !!state_default.credentials?.apiToken;
+    const hasData = accountCount > 0 || monarchCount > 0 || hasYnabAuth || hasMonarchAuth;
+    if (!hasData) {
+      container.innerHTML = '<p class="text-gray-500 text-sm italic">No application state data</p>';
+      return;
+    }
     const html = `
-    <div class="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-      <p class="text-sm text-blue-800 font-medium">Summary: ${summary}</p>
+    <div class="space-y-3">
+      <div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
+        <p class="text-sm text-blue-800 font-medium">Data Summary</p>
+      </div>
+      
+      <div class="space-y-2">
+        ${accountCount > 0 ? `
+        <div class="p-3 bg-gray-50 rounded border border-gray-200">
+          <p class="text-sm font-medium text-gray-900">YNAB Data</p>
+          <p class="text-sm text-gray-600 mt-1">
+            \u2713 ${accountCount} account${accountCount !== 1 ? "s" : ""} imported
+          </p>
+        </div>
+        ` : ""}
+
+        ${monarchCount > 0 ? `
+        <div class="p-3 bg-gray-50 rounded border border-gray-200">
+          <p class="text-sm font-medium text-gray-900">Monarch Money Data</p>
+          <p class="text-sm text-gray-600 mt-1">
+            \u2713 ${monarchCount} account${monarchCount !== 1 ? "s" : ""} synced
+          </p>
+        </div>
+        ` : ""}
+
+        ${hasYnabAuth || hasMonarchAuth ? `
+        <div class="p-3 bg-gray-50 rounded border border-gray-200">
+          <p class="text-sm font-medium text-gray-900">Authentication Status</p>
+          <p class="text-sm text-gray-600 mt-1">
+            ${hasYnabAuth ? "YNAB: \u2713 Connected<br/>" : ""}
+            ${hasMonarchAuth ? "Monarch: \u2713 Connected" : ""}
+          </p>
+        </div>
+        ` : ""}
+      </div>
     </div>
-    ${renderDataObject(stateData, "state")}
   `;
-    container.innerHTML = html || '<p class="text-gray-500 text-sm italic">No application state data</p>';
+    container.innerHTML = html;
   }
   function displaySessionStorageData() {
     const container = document.getElementById("sessionStorageSection");
     if (!container)
       return;
-    const sessionData = {};
-    for (let i = 0; i < sessionStorage.length; i++) {
-      const key = sessionStorage.key(i);
-      try {
-        const value = sessionStorage.getItem(key);
-        sessionData[key] = JSON.parse(value);
-      } catch {
-        sessionData[key] = sessionStorage.getItem(key);
-      }
+    const hasYnabToken = !!sessionStorage.getItem("ynab_access_token");
+    const hasYnabRefresh = !!sessionStorage.getItem("ynab_refresh_token");
+    const hasYnabExpiry = !!sessionStorage.getItem("ynab_token_expires_at");
+    const hasYnabAccounts = !!sessionStorage.getItem("ynab_accounts");
+    const hasMonarchAccounts = !!sessionStorage.getItem("monarch_accounts");
+    const hasMonarchToken = !!sessionStorage.getItem("monarch_api_token");
+    const hasMonarchUuid = !!sessionStorage.getItem("monarch_device_uuid");
+    const hasExpectedState = !!sessionStorage.getItem("ynab_oauth_expected_state");
+    const hasAnyData = hasYnabToken || hasYnabRefresh || hasYnabExpiry || hasYnabAccounts || hasMonarchAccounts || hasMonarchToken || hasMonarchUuid || hasExpectedState;
+    if (!hasAnyData) {
+      container.innerHTML = '<p class="text-gray-500 text-sm italic">No session storage data</p>';
+      return;
     }
-    const itemCount = sessionStorage.length;
-    const summary = itemCount > 0 ? `${itemCount} item${itemCount !== 1 ? "s" : ""} stored` : "No items stored";
-    const html = itemCount > 0 ? `
-    <div class="mb-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
-      <p class="text-sm text-purple-800 font-medium">Summary: ${summary}</p>
+    const html = `
+    <div class="space-y-3">
+      <div class="p-3 bg-purple-50 rounded-lg border border-purple-200">
+        <p class="text-sm text-purple-800 font-medium">Session Data Overview</p>
+        <p class="text-xs text-purple-700 mt-1">Data in session storage is cleared when this tab closes</p>
+      </div>
+
+      <div class="space-y-2">
+        ${hasYnabToken || hasYnabRefresh || hasYnabExpiry ? `
+        <div class="p-3 bg-gray-50 rounded border border-gray-200">
+          <p class="text-sm font-medium text-gray-900">YNAB Authentication</p>
+          <p class="text-sm text-gray-600 mt-1">
+            ${hasYnabToken ? "Access Token: \u2713 Stored<br/>" : ""}
+            ${hasYnabRefresh ? "Refresh Token: \u2713 Stored<br/>" : ""}
+            ${hasYnabExpiry ? "Token Expiry: \u2713 Set" : ""}
+          </p>
+        </div>
+        ` : ""}
+
+        ${hasYnabAccounts || hasMonarchAccounts ? `
+        <div class="p-3 bg-gray-50 rounded border border-gray-200">
+          <p class="text-sm font-medium text-gray-900">Account Data</p>
+          <p class="text-sm text-gray-600 mt-1">
+            ${hasYnabAccounts ? "YNAB Accounts: \u2713 Cached<br/>" : ""}
+            ${hasMonarchAccounts ? "Monarch Accounts: \u2713 Cached" : ""}
+          </p>
+        </div>
+        ` : ""}
+
+        ${hasMonarchToken || hasMonarchUuid ? `
+        <div class="p-3 bg-gray-50 rounded border border-gray-200">
+          <p class="text-sm font-medium text-gray-900">Monarch Authentication</p>
+          <p class="text-sm text-gray-600 mt-1">
+            ${hasMonarchToken ? "API Token: \u2713 Stored<br/>" : ""}
+            ${hasMonarchUuid ? "Device UUID: \u2713 Stored" : ""}
+          </p>
+        </div>
+        ` : ""}
+
+        ${hasExpectedState ? `
+        <div class="p-3 bg-gray-50 rounded border border-gray-200">
+          <p class="text-sm font-medium text-gray-900">OAuth Flow</p>
+          <p class="text-sm text-gray-600 mt-1">
+            CSRF Token: \u2713 Stored
+          </p>
+        </div>
+        ` : ""}
+      </div>
     </div>
-    ${renderDataObject(sessionData, "session")}
-  ` : '<p class="text-gray-500 text-sm italic">No session storage data</p>';
+  `;
     container.innerHTML = html;
   }
   function displayLocalStorageData() {
@@ -7505,119 +10111,70 @@
     if (!container)
       return;
     const localData = getLocalStorage();
+    const hasMonarchEmail = !!localData.email;
+    const hasMonarchPassword = !!localData.encryptedPassword;
+    const hasMonarchToken = !!localData.token;
+    const hasMonarchUuid = !!localData.uuid;
+    const rememberMe = localData.remember === true;
     const appStateRaw = localStorage.getItem("app_state");
+    let lastPath = null;
+    let lastPathTimestamp = null;
     if (appStateRaw) {
       try {
-        localData.app_state = JSON.parse(appStateRaw);
-      } catch {
-        localData.app_state = appStateRaw;
+        const appState = JSON.parse(appStateRaw);
+        lastPath = appState.lastPath;
+        lastPathTimestamp = appState.timestamp;
+      } catch (e) {
       }
     }
-    const sanitizedData = {
-      email: localData.email || "(not set)",
-      hasEncryptedPassword: !!localData.encryptedPassword,
-      hasToken: !!localData.token,
-      hasUuid: !!localData.uuid,
-      remember: localData.remember,
-      tempForOtp: localData.tempForOtp,
-      app_state: localData.app_state
-    };
-    const hasData = localData.email || localData.encryptedPassword || localData.token || localData.uuid;
-    const summary = hasData ? `Credentials stored (${localData.email || "no email"}), Remember: ${localData.remember ? "Yes" : "No"}` : "No credentials stored";
-    const html = hasData ? `
-    <div class="mb-3 p-3 bg-green-50 rounded-lg border border-green-200">
-      <p class="text-sm text-green-800 font-medium">Summary: ${summary}</p>
+    const hasCredentials = hasMonarchEmail || hasMonarchPassword || hasMonarchToken || hasMonarchUuid;
+    const hasAnyData = hasCredentials || rememberMe || lastPath;
+    if (!hasAnyData) {
+      container.innerHTML = '<p class="text-gray-500 text-sm italic">No local storage data</p>';
+      return;
+    }
+    const html = `
+    <div class="space-y-3">
+      <div class="p-3 bg-green-50 rounded-lg border border-green-200">
+        <p class="text-sm text-green-800 font-medium">Persistent Data Overview</p>
+        <p class="text-xs text-green-700 mt-1">Data in local storage persists across browser sessions</p>
+      </div>
+
+      <div class="space-y-2">
+        ${hasCredentials ? `
+        <div class="p-3 bg-gray-50 rounded border border-gray-200">
+          <p class="text-sm font-medium text-gray-900">Monarch Authentication</p>
+          <p class="text-sm text-gray-600 mt-1">
+            ${hasMonarchEmail ? "Email Address: \u2713 Stored<br/>" : ""}
+            ${hasMonarchPassword ? "Encrypted Password: \u2713 Stored<br/>" : ""}
+            ${hasMonarchToken ? "API Token: \u2713 Stored<br/>" : ""}
+            ${hasMonarchUuid ? "Device UUID: \u2713 Stored" : ""}
+          </p>
+        </div>
+        ` : ""}
+
+        ${rememberMe ? `
+        <div class="p-3 bg-gray-50 rounded border border-gray-200">
+          <p class="text-sm font-medium text-gray-900">User Preferences</p>
+          <p class="text-sm text-gray-600 mt-1">
+            Remember Me: \u2713 Enabled
+          </p>
+        </div>
+        ` : ""}
+
+        ${lastPath ? `
+        <div class="p-3 bg-gray-50 rounded border border-gray-200">
+          <p class="text-sm font-medium text-gray-900">Session Information</p>
+          <p class="text-sm text-gray-600 mt-1">
+            Last Page: ${escapeHtml2(lastPath)}<br/>
+            Last Visit: ${lastPathTimestamp ? new Date(lastPathTimestamp).toLocaleString() : "Not available"}
+          </p>
+        </div>
+        ` : ""}
+      </div>
     </div>
-    ${renderDataObject(sanitizedData, "local")}
-  ` : '<p class="text-gray-500 text-sm italic">No local storage data</p>';
+  `;
     container.innerHTML = html;
-  }
-  function renderDataObject(data2, prefix = "", depth = 0) {
-    if (data2 === null || data2 === void 0) {
-      return `<span class="text-gray-400 italic">null</span>`;
-    }
-    if (typeof data2 === "boolean") {
-      return `<span class="font-mono text-${data2 ? "green" : "red"}-600">${data2}</span>`;
-    }
-    if (typeof data2 === "number" || typeof data2 === "string") {
-      const displayValue = String(data2).length > 100 ? String(data2).substring(0, 100) + "..." : String(data2);
-      return `<span class="font-mono text-gray-700">${escapeHtml3(displayValue)}</span>`;
-    }
-    if (Array.isArray(data2)) {
-      if (data2.length === 0) {
-        return `<span class="text-gray-400 italic">[ ] (empty array)</span>`;
-      }
-      const collapsibleId = `collapse_${prefix}_${Math.random().toString(36).substr(2, 9)}`;
-      return `
-      <div class="ml-2">
-        <button 
-          class="collapsible-toggle text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm font-medium mb-1"
-          onclick="toggleCollapse('${collapsibleId}')"
-        >
-          <svg class="collapse-icon w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-          </svg>
-          Array (${data2.length} items)
-        </button>
-        <div id="${collapsibleId}" class="collapsible-content hidden ml-4 space-y-2">
-          ${data2.map((item, index) => `
-            <div class="border-l-2 border-gray-200 pl-3">
-              <span class="text-gray-500 font-medium">[${index}]:</span>
-              ${renderDataObject(item, `${prefix}_${index}`, depth + 1)}
-            </div>
-          `).join("")}
-        </div>
-      </div>
-    `;
-    }
-    if (typeof data2 === "object") {
-      const entries = Object.entries(data2);
-      if (entries.length === 0) {
-        return `<span class="text-gray-400 italic">{ } (empty object)</span>`;
-      }
-      const collapsibleId = `collapse_${prefix}_${Math.random().toString(36).substr(2, 9)}`;
-      const hasNestedObjects = entries.some(([_, value]) => typeof value === "object" && value !== null);
-      if (hasNestedObjects || depth === 0) {
-        return `
-        <div class="${depth > 0 ? "ml-2 mt-2" : ""}">
-          <button 
-            class="collapsible-toggle text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm font-medium mb-1"
-            onclick="toggleCollapse('${collapsibleId}')"
-          >
-            <svg class="collapse-icon w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-            </svg>
-            Object (${entries.length} properties)
-          </button>
-          <div id="${collapsibleId}" class="collapsible-content hidden ml-4 space-y-2">
-            ${entries.map(([key, value]) => {
-          const isNested = typeof value === "object" && value !== null;
-          return `
-                <div class="border-l-2 ${depth === 0 ? "border-blue-300" : "border-gray-200"} pl-3 py-1">
-                  <div class="flex items-start">
-                    <span class="font-semibold text-gray-700 mr-2">${escapeHtml3(key)}:</span>
-                    ${!isNested ? renderDataObject(value, `${prefix}_${key}`, depth + 1) : ""}
-                  </div>
-                  ${isNested ? renderDataObject(value, `${prefix}_${key}`, depth + 1) : ""}
-                </div>
-              `;
-        }).join("")}
-          </div>
-        </div>
-      `;
-      }
-      return `
-      <div class="space-y-2 ${depth > 0 ? "ml-4 mt-1" : ""}">
-        ${entries.map(([key, value]) => `
-          <div class="border-l-2 border-gray-200 pl-3 py-1">
-            <span class="font-semibold text-gray-700 mr-2">${escapeHtml3(key)}:</span>
-            ${renderDataObject(value, `${prefix}_${key}`, depth + 1)}
-          </div>
-        `).join("")}
-      </div>
-    `;
-    }
-    return `<span class="text-gray-400 italic">(unknown type)</span>`;
   }
   function handleExportData() {
     const allData = {
@@ -7670,164 +10227,32 @@
       state_default.monarchAccounts = null;
       state_default.accounts = {};
       state_default.ynabOauth = { code: null, state: null, error: null };
-      closeModal("confirmClearModal");
-      console.log("All data cleared successfully");
     } catch (error) {
       console.error("Error clearing data:", error);
       alert("An error occurred while clearing data. Please try again.");
     }
   }
-  function escapeHtml3(text) {
+  function escapeHtml2(text) {
     const div = document.createElement("div");
     div.textContent = text;
     return div.innerHTML;
   }
 
   // src/views/DataManagement/dataManagement.html
-  var dataManagement_default = `<div id="pageLayout"></div>
-
-<!-- Warning Banner -->
-<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-r-lg">
-  <div class="flex items-start">
-    <svg class="w-5 h-5 text-yellow-400 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-      <path fill-rule="evenodd"
-        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-        clip-rule="evenodd" />
-    </svg>
-    <div>
-      <h3 class="text-sm font-medium text-yellow-800 mb-1">Privacy Notice</h3>
-      <p class="text-sm text-yellow-700">
-        All data shown below is stored locally in your browser only. No data is sent to our servers or any third-party
-        services.
-      </p>
-    </div>
-  </div>
-</div>
-
-<!-- Data Sections Container -->
-<div class="space-y-6">
-
-  <!-- Application State Section -->
-  <div class="bg-white rounded-lg shadow-md overflow-hidden">
-    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-4">
-      <h2 class="text-xl font-semibold text-white flex items-center">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-        Application State
-      </h2>
-      <p class="text-blue-100 text-sm mt-1">Current session data and account information</p>
-    </div>
-    <div id="stateDataSection" class="p-6">
-      <!-- Populated by JavaScript -->
-    </div>
-  </div>
-
-  <!-- Session Storage Section -->
-  <div class="bg-white rounded-lg shadow-md overflow-hidden">
-    <div class="bg-gradient-to-r from-purple-500 to-pink-600 px-6 py-4">
-      <h2 class="text-xl font-semibold text-white flex items-center">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-        </svg>
-        Session Storage
-      </h2>
-      <p class="text-purple-100 text-sm mt-1">Data cleared when browser tab is closed</p>
-    </div>
-    <div id="sessionStorageSection" class="p-6">
-      <!-- Populated by JavaScript -->
-    </div>
-  </div>
-
-  <!-- Local Storage Section -->
-  <div class="bg-white rounded-lg shadow-md overflow-hidden">
-    <div class="bg-gradient-to-r from-green-500 to-teal-600 px-6 py-4">
-      <h2 class="text-xl font-semibold text-white flex items-center">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-        </svg>
-        Local Storage
-      </h2>
-      <p class="text-green-100 text-sm mt-1">Persistent data saved across sessions</p>
-    </div>
-    <div id="localStorageSection" class="p-6">
-      <!-- Populated by JavaScript -->
-    </div>
-  </div>
-
-</div>
-
-<!-- Action Buttons -->
-<div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-  <button id="exportDataBtn" class="ui-button" data-type="secondary" data-size="medium">
-    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-    </svg>
-    Export Data (JSON)
-  </button>
-
-  <button id="clearAllDataBtn" class="ui-button" data-type="danger" data-size="medium">
-    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-    </svg>
-    Clear All Data
-  </button>
-</div>
-
-<!-- Info Footer -->
-<div class="mt-8 text-center text-sm text-gray-500">
-  <p>Clearing data will remove all accounts, credentials, and session information.</p>
-  <p class="mt-1">You'll need to re-upload your YNAB data and re-authenticate with Monarch.</p>
-</div>
-
-<!-- Confirmation Modal -->
-<div id="confirmClearModal"
-  class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 pointer-events-none opacity-0 transition-opacity duration-500">
-  <div
-    class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 transform translate-y-full transition-transform duration-500">
-    <div class="flex items-start mb-4">
-      <div class="flex-shrink-0">
-        <svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-      </div>
-      <div class="ml-4">
-        <h3 class="text-lg font-semibold text-gray-900 mb-2">Clear All Data?</h3>
-        <p class="text-sm text-gray-600 mb-4">
-          This action cannot be undone. All your YNAB accounts, Monarch credentials, and session data will be
-          permanently deleted from your browser.
-        </p>
-        <div class="flex gap-3 justify-end">
-          <button id="cancelClearBtn" class="ui-button" data-type="secondary" data-size="small">
-            Cancel
-          </button>
-          <button id="confirmClearBtn" class="ui-button" data-type="danger" data-size="small">
-            Yes, Clear Everything
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>`;
+  var dataManagement_default = '<div id="pageLayout"></div>\n\n<!-- Warning Banner -->\n<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-r-lg">\n  <div class="flex items-start">\n    <svg class="w-5 h-5 text-yellow-400 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">\n      <path fill-rule="evenodd"\n        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"\n        clip-rule="evenodd" />\n    </svg>\n    <div>\n      <h3 class="text-sm font-medium text-yellow-800 mb-1">Privacy Notice</h3>\n      <p class="text-sm text-yellow-700">\n        All data shown below is stored locally in your browser only. No data is sent to our servers or any third-party\n        services.\n      </p>\n    </div>\n  </div>\n</div>\n\n<!-- Data Sections Container -->\n<div class="space-y-6">\n\n  <!-- Application State Section -->\n  <div class="bg-white rounded-lg shadow-md overflow-hidden">\n    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-4">\n      <h2 class="text-xl font-semibold text-white flex items-center">\n        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />\n        </svg>\n        Application State\n      </h2>\n      <p class="text-blue-100 text-sm mt-1">Current session data and account information</p>\n    </div>\n    <div id="stateDataSection" class="p-6">\n      <!-- Populated by JavaScript -->\n    </div>\n  </div>\n\n  <!-- Session Storage Section -->\n  <div class="bg-white rounded-lg shadow-md overflow-hidden">\n    <div class="bg-gradient-to-r from-purple-500 to-pink-600 px-6 py-4">\n      <h2 class="text-xl font-semibold text-white flex items-center">\n        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n            d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />\n        </svg>\n        Session Storage\n      </h2>\n      <p class="text-purple-100 text-sm mt-1">Data cleared when browser tab is closed</p>\n    </div>\n    <div id="sessionStorageSection" class="p-6">\n      <!-- Populated by JavaScript -->\n    </div>\n  </div>\n\n  <!-- Local Storage Section -->\n  <div class="bg-white rounded-lg shadow-md overflow-hidden">\n    <div class="bg-gradient-to-r from-green-500 to-teal-600 px-6 py-4">\n      <h2 class="text-xl font-semibold text-white flex items-center">\n        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />\n        </svg>\n        Local Storage\n      </h2>\n      <p class="text-green-100 text-sm mt-1">Persistent data saved across sessions</p>\n    </div>\n    <div id="localStorageSection" class="p-6">\n      <!-- Populated by JavaScript -->\n    </div>\n  </div>\n\n</div>\n\n<!-- Action Buttons -->\n<div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">\n  <ui-button id="exportDataBtn" data-type="outline" data-color="grey">\n    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />\n    </svg>\n    Export Data (JSON)\n  </ui-button>\n\n  <ui-button id="clearAllDataBtn" data-type="solid" data-color="red">\n    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />\n    </svg>\n    Clear All Data\n  </ui-button>\n</div>\n\n<!-- Confirmation Modal -->\n<ui-modal id="confirmClearModal">\n  <div slot="title">\n    <div class="flex-shrink-0">\n      <svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />\n      </svg>\n    </div>\n    <h3 class="text-lg font-semibold text-gray-900 mb-2">Clear All Data?</h3>\n  </div>\n  <div slot="content" class="space-y-4">\n    <p class="text-sm text-gray-600 mb-4">\n      This action cannot be undone. All your YNAB accounts, Monarch credentials, and session data will be\n      permanently deleted from your browser.\n    </p>\n  </div>\n  <div slot="footer">\n    <ui-button id="cancelBtn" data-type="outline" data-color="grey">Cancel</ui-button>\n    <ui-button id="applyBtn" data-type="solid" data-color="red">Yes, wipe my data</ui-button>\n  </div>\n</ui-modal>';
 
   // src/router.js
   var routes = {
     "/": {
       template: home_default,
-      init: initUploadView,
+      init: initHomeView,
       scroll: false,
       title: "Home - YNAB to Monarch",
       requiresAuth: false
     },
     "/upload": {
       template: upload_default,
-      init: initUploadView2,
+      init: initUploadView,
       scroll: false,
       title: "Upload - YNAB to Monarch",
       requiresAuth: false
@@ -7925,8 +10350,9 @@
         }
       }
       const currentPath = getCurrentPath();
+      const urlToSet = path === "/oauth/ynab/callback" ? window.location.href : path;
       if (replace) {
-        history.replaceState({ path }, "", path);
+        history.replaceState({ path }, "", urlToSet);
       } else {
         if (currentPath && currentPath !== path) {
           navigationHistory.push(currentPath);
@@ -7934,7 +10360,7 @@
             navigationHistory.shift();
           }
         }
-        history.pushState({ path }, "", path);
+        history.pushState({ path }, "", urlToSet);
       }
       await renderRoute(path);
     } catch (error) {
@@ -7959,6 +10385,7 @@
     } else {
       document.body.classList.remove("always-scroll");
     }
+    window.scrollTo(0, 0);
     app.innerHTML = "";
     app.innerHTML = route.template;
     try {
@@ -8094,7 +10521,8 @@
     try {
       if (route) {
         if (!history.state) {
-          history.replaceState({ path }, "", path);
+          const urlToSet = path === "/oauth/ynab/callback" ? window.location.href : path;
+          history.replaceState({ path }, "", urlToSet);
         }
         await renderRoute(path);
       } else {
@@ -8105,6 +10533,66 @@
       navigate("/upload", true);
     }
   });
+
+  // src/core/ComponentRegistry.js
+  var ComponentRegistry = class {
+    constructor() {
+      this.components = /* @__PURE__ */ new Map();
+      this.initialized = /* @__PURE__ */ new WeakSet();
+      this.observer = null;
+    }
+    register(selector, init) {
+      this.components.set(selector, init);
+    }
+    start() {
+      if (this.observer)
+        return;
+      this.scanAndInit(document.body);
+      this.observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              this.scanAndInit(node);
+            }
+          });
+        });
+      });
+      this.observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+    }
+    stop() {
+      if (this.observer) {
+        this.observer.disconnect();
+        this.observer = null;
+      }
+    }
+    scanAndInit(root) {
+      this.components.forEach((init, selector) => {
+        const elements = root.matches?.(selector) ? [root] : Array.from(root.querySelectorAll?.(selector) || []);
+        elements.forEach((element) => {
+          if (!this.initialized.has(element)) {
+            try {
+              init(element);
+              this.initialized.add(element);
+            } catch (error) {
+              console.error(`Failed to initialize component ${selector}:`, error);
+            }
+          }
+        });
+      });
+    }
+    init(element) {
+      this.scanAndInit(element);
+    }
+  };
+  var registry = new ComponentRegistry();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => registry.start());
+  } else {
+    registry.start();
+  }
 })();
 /* @license
 Papa Parse

@@ -147,15 +147,234 @@ HTML template must include:
 <div id="navigationBar"></div>
 ```
 
-### UI Button System
-HTML buttons use declarative data attributes, styled by `renderButtons()`:
+### Auto-Styled Button System
+Buttons automatically style themselves using Web Components - no manual `renderButtons()` calls needed:
+
 ```html
-<button class="ui-button" data-type="primary|secondary|text|danger|warning" 
-        data-size="small|medium|large" data-fullwidth>
+<!-- Auto-styled button (recommended) -->
+<ui-button class="ui-button" data-type="primary" data-size="large" data-fullwidth>
   Button Text
-</button>
+</ui-button>
+
+<!-- Legacy button (still works with renderButtons()) -->
+<button class="ui-button" data-type="primary">Old Button</button>
 ```
-**Critical**: Always call `renderButtons()` after injecting HTML or buttons won't style correctly.
+
+**Button types**: `primary`, `secondary`, `text`, `danger`, `warning`
+**Button sizes**: `small`, `medium`, `large`
+**Modifiers**: `data-fullwidth`, `disabled`
+
+**Auto-update feature**: Styles automatically update when attributes change:
+```javascript
+import '../../components/AutoStyledButton.js';
+
+const button = document.getElementById('myButton');
+button.dataset.type = 'danger'; // Styles update automatically
+button.disabled = true; // Styles update automatically
+```
+
+**No more manual styling calls** - Import once and buttons auto-style themselves.
+
+### Reactive State System (Optional)
+For complex UIs that need to respond to state changes, use the reactive signal system:
+
+```javascript
+import { signal, bind } from '../../core/reactiveState.js';
+
+// Create reactive state
+const isLoading = signal(false);
+const message = signal('Ready');
+
+// Bind to DOM elements
+const button = document.getElementById('submitBtn');
+bind(button, {
+  'attr:disabled': isLoading,
+  'textContent': message
+});
+
+// Updates automatically trigger DOM changes
+isLoading.value = true; // Button disables
+message.value = 'Loading...'; // Button text updates
+```
+
+**When to use**:
+- Dynamic UI that changes based on state
+- Loading states, form validation, conditional rendering
+- Complex interactions requiring multiple DOM updates
+
+**When NOT to use**:
+- Simple static pages
+- One-time DOM manipulations
+- When vanilla JS is simpler
+
+### Reusable Modal Components (Reactive Web Components)
+Modals are self-managing Web Components with reactive state and animations. Create multiple instances with different content.
+
+**Base Component**: `<ui-modal>` (ReusableModal.js)
+```html
+<!-- Instance 1: Privacy Info Modal -->
+<ui-modal id="privacyModal">
+  <button slot="trigger" data-type="text">Learn more</button>
+  <h3 slot="title">Privacy Details</h3>
+  <div slot="content">Privacy information here</div>
+</ui-modal>
+
+<!-- Instance 2: Migration Info Modal -->
+<ui-modal id="migrationModal">
+  <button slot="trigger" data-type="text">How does this work?</button>
+  <h3 slot="title">Migration Steps</h3>
+  <div slot="content">Step-by-step guide here</div>
+</ui-modal>
+```
+
+**Programmatic Control** (if needed):
+```javascript
+const modal = document.querySelector('#privacyModal');
+modal.open();   // Open modal
+modal.close();  // Close modal
+modal.toggle(); // Toggle modal
+```
+
+**Features**:
+- Reactive state via signals (auto-updates animations)
+- Shadow DOM for style encapsulation
+- Slot-based content composition
+- Built-in animations (fade + slide, 300ms)
+- Accessibility: ARIA attributes, Escape key support, backdrop click
+- Auto-cleanup on disconnect
+- Create unlimited instances with different content
+
+**When to use**:
+- Any modal dialog (confirmation, info, feedback)
+- Multiple modals on same page (one component, many instances)
+- Page-specific modals with custom content
+
+**When NOT to use**:
+- Simple alerts (use browser `alert()` for emergency cases)
+- Tooltips (use CSS or hover components)
+- Inline popovers (consider floating UI)
+
+### Reusable Table Component (Reactive Web Component)
+Tables are self-managing Web Components with reactive state, master checkbox, and customizable cells. Supports desktop table view and mobile responsive card view.
+
+**Base Component**: `<ui-table>` (ReusableTable.js)
+```html
+<ui-table 
+  id="accountsTable" 
+  data-mobile-breakpoint="lg" 
+  data-enable-selection="true"
+  data-row-id-key="id">
+</ui-table>
+```
+
+**JavaScript Configuration**:
+```javascript
+import '../../components/ReusableTable.js';
+
+const table = document.getElementById('accountsTable');
+
+// Define columns with different cell types
+table.columns = [
+  { 
+    key: 'select', 
+    type: 'checkbox', 
+    header: '',
+    width: '60px',
+    masterCheckbox: true,
+    disabled: (row) => row.status === 'processed'
+  },
+  { 
+    key: 'name', 
+    type: 'text', 
+    header: 'Account Name',
+    clickable: true,
+    tooltip: (row) => `Click to edit ${row.name}`,
+    onClick: (row) => console.log('Edit', row)
+  },
+  { 
+    key: 'type', 
+    type: 'select', 
+    header: 'Type',
+    options: [...], // or function: (row) => [...]
+    onChange: (row, value) => { row.type = value; }
+  },
+  { 
+    key: 'status', 
+    type: 'button', 
+    header: 'Status',
+    render: (row) => ({ 
+      text: row.included ? 'Included' : 'Excluded',
+      type: row.included ? 'primary' : 'secondary',
+      size: 'small',
+      onClick: () => { row.included = !row.included; }
+    })
+  }
+];
+
+// Set data
+table.data = accountsArray;
+
+// Listen to selection changes
+table.addEventListener('selectionchange', (e) => {
+  console.log('Selected count:', e.detail.count);
+  console.log('All selected:', e.detail.allSelected);
+  console.log('Some selected (indeterminate):', e.detail.someSelected);
+  console.log('Selected row IDs:', e.detail.selected);
+  console.log('Selected row objects:', e.detail.selectedRows);
+});
+
+// Programmatic control
+table.clearSelection();
+table.selectAll();
+table.refresh();
+```
+
+**Column Configuration Options**:
+- `key`: Data property key
+- `type`: `'checkbox'`, `'text'`, `'select'`, `'button'`, `'custom'`
+- `header`: Column header text
+- `width`, `minWidth`: Column sizing
+- `headerClass`, `cellClass`: Custom CSS classes
+- `disabled`: Function to disable cell interaction
+- `clickable`: Make text cells clickable
+- `tooltip`: Static string or function
+- `onClick`: Click handler for clickable cells
+- `getValue`: Custom value getter
+- `render`: Custom render function
+- `options`: Array or function returning options for selects
+- `onChange`: Change handler for selects
+- `cellStyle`: Static object or function returning styles
+- `mobileHidden`: Hide column in mobile view
+- `mobileLabel`: Label for mobile card layout
+- `mobileClass`: CSS class for mobile layout
+- `masterCheckbox`: Enable master checkbox for selection column
+
+**Features**:
+- Master checkbox with indeterminate state
+- Row selection with state propagation
+- Customizable cell types (text, button, checkbox, dropdown, custom)
+- Mobile responsive card view (auto-switches at breakpoint)
+- Filtering and search integration (external)
+- Reactive state via signals
+- Selection change events
+- Programmatic selection control
+
+**When to use**:
+- Data tables with row selection
+- Tables with mixed cell types (buttons, dropdowns, etc.)
+- Mobile-responsive table views
+- Tables requiring master checkbox
+- Dynamic tables with state management
+
+**When NOT to use**:
+- Simple static tables (use plain HTML `<table>`)
+- Read-only tables without interaction
+- When vanilla table is simpler
+
+**When NOT to use**:
+- Simple alerts (use browser `alert()` for emergency cases)
+- Tooltips (use CSS or hover components)
+- Inline popovers (consider floating UI)
 
 ### Navigation & Back Button Logic
 - Uses a **navigation history stack** (`navigationHistory` array in `router.js`)

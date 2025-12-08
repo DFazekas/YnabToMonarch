@@ -1,15 +1,6 @@
 import Papa from 'papaparse';
 import JSZip from 'jszip';
-
-/**
- * Generate a short, pseudo-random unique ID.
- * Used to assign unique identifiers to account objects.
- * 
- * @returns {string} A unique ID string prefixed with "id-".
- */
-function generateId() {
-  return 'id-' + Math.random().toString(36).slice(2, 11);
-}
+import { createAccountFromOauth, createAccountFromCsv, createAccountCollection, addAccountToCollection } from '../schemas/accountSchema.js';
 
 /**
  * Convert a currency-formatted string (e.g., "$1,234.56") into an integer value in cents.
@@ -130,17 +121,10 @@ function parseCSV(csvContent, monarchAccountTypes) {
             const { type, subtype } = inferMonarchType(accountName, monarchAccountTypes);
 
             accounts.set(accountName, {
-              id: generateId(),
-              name: accountName,
-              modifiedName: accountName,
-              type,         // Monarch compatible type (ex: 'depository')
-              subtype,      // Monarch compatible subtype (ex: 'checking')
+              type,
+              subtype,
               transactions: [],
-              transactionCount: 0,
-              balanceCents: 0,
-              included: true,
-              selected: false,
-              status: 'unprocessed',
+              balanceCents: 0
             });
           }
 
@@ -154,19 +138,54 @@ function parseCSV(csvContent, monarchAccountTypes) {
             Amount: row.Amount,
             Tags: row.Flag || '',
           });
-          account.transactionCount += 1;
           account.balanceCents += netCents;
         };
 
-        for (const account of accounts.values()) {
-          account.balance = account.balanceCents / 100;
-          account.included = account.transactionCount > 0;
+        // Convert temporary account data to standardized schema
+        const accountCollection = createAccountCollection();
+        for (const [accountName, accountData] of accounts.entries()) {
+          const standardizedAccount = createAccountFromCsv(
+            accountName,
+            accountData.transactions,
+            accountData.type,
+            accountData.subtype,
+            accountData.balanceCents
+          );
+          addAccountToCollection(accountCollection, standardizedAccount);
         };
 
         console.groupEnd("parseCSV");
-        resolve(Object.fromEntries(accounts));
+        resolve(accountCollection);
       },
       error: (err) => reject(err)
     });
   });
+}
+
+export function parseYnabAccountApi(data) {
+  console.group("parseYnabAccountApi");
+  const accountCollection = createAccountCollection();
+
+  try {
+    for (const row of data) {
+      console.log("Parsing account:", row['name'], "Balance (milliunits):", row['balance']);
+      
+      // Infer Monarch type from YNAB type if possible
+      const { type, subtype } = inferMonarchType(row['name']);
+      
+      const standardizedAccount = createAccountFromOauth(
+        row,
+        type,
+        subtype
+      );
+      
+      addAccountToCollection(accountCollection, standardizedAccount);
+    }
+  } catch (err) {
+    console.error("❌ Error parsing YNAB account API data:", err);
+  } finally {
+    console.log("Parsed accounts:", accountCollection);
+    console.groupEnd();
+    return accountCollection;
+  }
 }

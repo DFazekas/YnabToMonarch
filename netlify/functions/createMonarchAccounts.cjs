@@ -17,7 +17,26 @@ export async function handler(event, context) {
   }
 
   try {
-    const { accounts, token } = JSON.parse(event.body)
+    // Handle missing or empty body
+    if (!event.body) {
+      console.error("CreateMonarchAccounts ❌ missing request body");
+      console.groupEnd()
+      return createResponse(400, { error: 'Request body is required.' })
+    }
+
+    // Parse body - handle both string and object cases
+    const bodyData = typeof event.body === 'string'
+      ? JSON.parse(event.body)
+      : event.body;
+
+    const { accounts, token } = bodyData;
+
+    if (!accounts || !token) {
+      console.error("CreateMonarchAccounts ❌ missing accounts or token");
+      console.groupEnd()
+      return createResponse(400, { error: 'Accounts and token are required.' })
+    }
+
     const results = await Promise.allSettled(accounts.map(account =>
       processAccount(token, account).then((result) => ({
         name: account.modifiedName,
@@ -44,10 +63,16 @@ export async function handler(event, context) {
 
     return createResponse(200, { success, failed });
   } catch (err) {
-    console.error("❌ unexpected error", err)
-    return createResponse(500, { error: err.message });
+    console.error("CreateMonarchAccounts ❌ unexpected error", err);
+    console.error("Error details:", {
+      message: err.message,
+      stack: err.stack,
+      body: event.body,
+      bodyType: typeof event.body
+    });
+    return createResponse(500, { error: err.message || 'Internal Server Error' });
   } finally {
-    console.groupEnd("CreateMonarchAccounts Lambda Handler")
+    console.groupEnd()
   }
 }
 
@@ -66,6 +91,10 @@ async function processAccount(token, account) {
     name: account.modifiedName,
     displayBalance: 0.0
   }
+
+  console.log("Monarch account data:", accountInput);
+  console.log(accountInput)
+  console.dir(accountInput, { depth: null });
 
   // Create new account in Monarch
   const { account: newAccount, error } = await createManualAccount(token, accountInput)
@@ -220,15 +249,15 @@ async function performGraphQLRequest(token, query, variables) {
     // Check if subscription has ended
     if (result?.errors?.some(err => err.message.includes("SUBSCRIPTION_ENDED"))) {
       console.error("❌ Subscription has ended. Please renew your subscription or use a different account.");
-      console.groupEnd("Performing GraphQL Request")
+      console.groupEnd()
       throw new Error("Monarch subscription has ended. Please renew your subscription or use different account.")
     }
 
-    console.groupEnd("Performing GraphQL Request")
+    console.groupEnd()
     throw new Error(`GraphQL request failed: ${JSON.stringify(result.errors)}`);
   }
 
-  console.groupEnd("Performing GraphQL Request")
+  console.groupEnd()
   return { data: result.data }
 }
 

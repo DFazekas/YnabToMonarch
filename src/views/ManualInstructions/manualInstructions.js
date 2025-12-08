@@ -5,20 +5,14 @@ import { navigate } from '../../router.js';
 import { renderPageLayout } from '../../components/pageLayout.js';
 
 export default function initManualInstructionsView() {
-  // Redirect to upload if no accounts are available
-  if (!state.accounts || Object.keys(state.accounts).length === 0) {
-    navigate('/upload', true);
-    return;
-  }
-
   renderPageLayout({
     navbar: {
       showBackButton: true,
       showDataButton: true
     },
     header: {
-      title: 'You\'re Ready to Import',
-      description: 'Choose how you\'d like to bring your YNAB data into Monarch Money. You can either connect your YNAB account for a seamless transfer or manually upload a file.',
+      title: 'Step 4: Manual Migration',
+      description: 'A step-by-step guide to manually importing your YNAB data into Monarch Money.',
       containerId: 'pageHeader'
     }
   });
@@ -27,7 +21,6 @@ export default function initManualInstructionsView() {
   const switchBtn = document.getElementById('switchToAuto');
 
   const includedAccounts = Object.values(state.accounts).filter(acc => acc.included);
-  countSpan.textContent = `${includedAccounts.length} account${includedAccounts.length !== 1 ? 's' : ''}`;
 
   downloadBtn.addEventListener('click', async (e) => {
     e.preventDefault();

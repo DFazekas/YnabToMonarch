@@ -12,7 +12,7 @@
  * @param {string} config.nextId - ID for the next/continue button (default: "continueBtn")
  * @param {boolean} config.showBack - Whether to show the back button (default: true)
  * @param {boolean} config.showNext - Whether to show the next button (default: false)
- * @param {string} config.nextType - Button type for next button (default: "primary")
+ * @param {string} config.nextType - Button type for next button (default: "text")
  * @param {boolean} config.nextDisabled - Whether next button is disabled (default: false)
  * @param {string} config.containerClass - Additional classes for the container
  * @returns {string} HTML string for the navigation bar
@@ -25,13 +25,12 @@ export function createNavigationBar(config = {}) {
     nextId = "continueBtn",
     showBack = true,
     showNext = false,
-    nextType = "primary",
     nextDisabled = false,
     containerClass = ""
   } = config;
 
   const backButton = showBack ? `
-    <button id="${backId}" class="ui-button order-2 sm:order-1 w-full sm:w-auto whitespace-nowrap" data-type="secondary" data-size="large">
+    <button id="${backId}" class="ui-button order-2 sm:order-1 w-full sm:w-auto whitespace-nowrap" data-type="text" data-size="large">
       <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
       </svg>
@@ -42,7 +41,7 @@ export function createNavigationBar(config = {}) {
   const nextButton = showNext ? `
     <button id="${nextId}" 
             class="ui-button order-1 sm:order-2 w-full sm:w-auto whitespace-nowrap" 
-            data-type="${nextType}" 
+            data-type="text" 
             data-size="large"
             ${nextDisabled ? 'disabled' : ''}>
       <span class="hidden sm:inline truncate">${nextText}</span>
@@ -86,7 +85,7 @@ export function createSimpleNavigationBar(config = {}) {
     <div class="bg-white border-t border-gray-200 mt-8 sm:mt-12">
       <div class="container-responsive">
         <div class="flex justify-center items-center py-6 sm:py-8 ${containerClass}">
-          <button id="${backId}" class="ui-button w-full sm:w-auto sm:max-w-xs whitespace-nowrap" data-type="secondary" data-size="large">
+          <button id="${backId}" class="ui-button w-full sm:w-auto sm:max-w-xs whitespace-nowrap" data-type="text" data-size="large">
             <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
@@ -109,7 +108,7 @@ export function createCustomNavigationBar(buttons = [], containerClass = "") {
     const {
       id,
       text,
-      type = "secondary",
+      type = "text",
       size = "large",
       disabled = false,
       hidden = false,

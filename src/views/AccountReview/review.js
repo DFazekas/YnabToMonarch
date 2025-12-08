@@ -1,13 +1,13 @@
 import state from '../../state.js';
 import monarchAccountTypes from '../../../public/static-data/monarchAccountTypes.json';
 import { navigate, persistState } from '../../router.js';
-import { capitalize } from '../../utils/string.js';
 import { currencyFormatter } from '../../utils/format.js';
 import { getAccountTypeByName, getSubtypeByName } from '../../utils/accountTypeUtils.js';
 import { toggleDisabled } from '../../utils/dom.js';
 import { renderPageLayout } from '../../components/pageLayout.js';
+import '../../components/ReusableTable.js';
 
-let reviewTableBody, mobileAccountList, importBtn, searchInput;
+let accountsTable, importBtn, searchInput;
 let activeFilters = {
   accountName: '',
   nameMatchType: 'contains',
@@ -22,14 +22,12 @@ let activeFilters = {
 };
 let searchQuery = '';
 
-export default function initAccountReviewView() {
-  // Redirect to upload if no accounts are available
-  if (!state.accounts || Object.keys(state.accounts).length === 0) {
-    navigate('/upload', true);
-    return;
-  }
+// Track changes for undo functionality
+let changeHistory = {}; // Maps account ID -> { original values }
+let initialAccountsSnapshot = null;
 
-  // Set up the page layout (wraps existing content)
+export default function initAccountReviewView() {
+
   renderPageLayout({
     navbar: {
       showBackButton: true,
@@ -42,12 +40,18 @@ export default function initAccountReviewView() {
     }
   });
 
-  reviewTableBody = document.getElementById('reviewTableBody');
-  mobileAccountList = document.getElementById('mobileAccountList');
+  accountsTable = document.getElementById('accountsTable');
   importBtn = document.getElementById('continueBtn');
   searchInput = document.getElementById('searchInput');
+  
+  // Initialize change tracking snapshot
+  initializeChangeTracking();
 
-  renderAccountTable(); // Initialize the table/mobile view
+  // Configure table columns
+  setupTableColumns();
+
+  // Initialize table with data
+  renderAccountTable();
 
   // Initialize filters modal after a brief delay to ensure DOM is ready
   setTimeout(() => {
@@ -72,19 +76,12 @@ export default function initAccountReviewView() {
   setTimeout(() => {
     const filtersBtn = document.getElementById('filtersBtn');
     if (filtersBtn) {
-      console.log('Adding click listener to filters button');
       filtersBtn.addEventListener('click', (e) => {
-        console.log('Filters button clicked!');
         e.preventDefault();
         openFiltersModal();
       });
     } else {
       console.error('Filters button not found!');
-    }
-
-    const filtersModalClose = document.getElementById('filtersModalClose');
-    if (filtersModalClose) {
-      filtersModalClose.addEventListener('click', closeFiltersModal);
     }
 
     const filtersApply = document.getElementById('filtersApply');
@@ -97,35 +94,16 @@ export default function initAccountReviewView() {
       filtersReset.addEventListener('click', resetFilters);
     }
 
-    const clearAllFilters = document.getElementById('clearAllFilters');
-    if (clearAllFilters) {
-      clearAllFilters.addEventListener('click', clearAllFilters);
+    const clearAllFiltersBtn = document.getElementById('clearAllFilters');
+    if (clearAllFiltersBtn) {
+      clearAllFiltersBtn.addEventListener('click', clearAllFilters);
     }
 
-    // Close modal when clicking outside
-    const filtersModal = document.getElementById('filtersModal');
-    if (filtersModal) {
-      filtersModal.addEventListener('click', (e) => {
-        if (e.target.id === 'filtersModal') {
-          closeFiltersModal();
-        }
-      });
-    }
-
-    // Close modal on Escape key
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && filtersModal && !filtersModal.classList.contains('hidden')) {
-        closeFiltersModal();
-      }
-    });
-
-    // Quick clear filters button (new clear button)
+    // Quick clear filters button
     const clearFiltersBtn = document.getElementById('clearFiltersBtn');
     if (clearFiltersBtn) {
       clearFiltersBtn.addEventListener('click', () => {
         resetFilters();
-        // Close modal if it's open
-        closeFiltersModal();
       });
     }
   }, 100);
@@ -142,19 +120,335 @@ export default function initAccountReviewView() {
   document.getElementById('bulkTypeBtnMobile').addEventListener('click', openBulkTypeModal);
   document.getElementById('bulkTypeBtnDesktop').addEventListener('click', openBulkTypeModal);
 
-  // Master checkbox listener
-  document.getElementById('masterCheckbox').addEventListener('change', masterCheckboxChange);
+  // Listen to table selection changes
+  accountsTable.addEventListener('selectionchange', (e) => {
+    const selectedCount = e.detail.count;
+    const bar = document.getElementById('bulkActionBar');
 
-  // Mobile master checkbox listener
-  const masterCheckboxMobile = document.getElementById('masterCheckboxMobile');
-  if (masterCheckboxMobile) {
-    masterCheckboxMobile.addEventListener('change', masterCheckboxChange);
-  }
+    if (!bar) return;
+
+    // Update selection count displays
+    const mobileCountSpan = document.getElementById('selectedCountMobile');
+    if (mobileCountSpan) {
+      mobileCountSpan.textContent = selectedCount;
+      const mobileLabelSpan = document.getElementById('selectCountMobileLabel');
+      if (mobileLabelSpan) {
+        mobileLabelSpan.textContent = selectedCount === 1 ? 'Account' : 'Accounts';
+      }
+    }
+
+    const desktopCountSpan = document.getElementById('selectedCountDesktop');
+    if (desktopCountSpan) {
+      desktopCountSpan.textContent = selectedCount;
+      const desktopLabelSpan = document.getElementById('selectCountDesktopLabel');
+      if (desktopLabelSpan) {
+        desktopLabelSpan.textContent = selectedCount === 1 ? 'Account' : 'Accounts';
+      }
+    }
+
+    // Update account selected state
+    const accounts = Object.values(state.accounts);
+    accounts.forEach(acc => {
+      acc.selected = e.detail.selected.includes(String(acc.id || acc.modifiedName));
+    });
+
+    // Update bulk action bar visibility
+    if (selectedCount > 0) {
+      bar.classList.remove('hidden');
+      bar.classList.add('active');
+    } else {
+      bar.classList.remove('active');
+      // Add a small delay to allow CSS transition to complete before hiding
+      setTimeout(() => {
+        if (!bar.classList.contains('active')) {
+          bar.classList.add('hidden');
+        }
+      }, 300);
+    }
+  });
 
   // Navigation listeners
   document.getElementById('continueBtn').addEventListener('click', () => navigate('/method'));
 
+  // Setup undo handlers
+  setupUndoListeners();
+
   renderAccountTable();
+}
+
+function initializeChangeTracking() {
+  changeHistory = {};
+  initialAccountsSnapshot = JSON.parse(JSON.stringify(state.accounts));
+  Object.keys(state.accounts).forEach(accountId => {
+    state.accounts[accountId]._isModified = false;
+  });
+}
+
+function trackChange(accountId) {
+  if (!changeHistory[accountId]) {
+    const account = state.accounts[accountId];
+    changeHistory[accountId] = {
+      modifiedName: account.modifiedName,
+      type: account.type,
+      subtype: account.subtype
+    };
+  }
+  state.accounts[accountId]._isModified = true;
+}
+
+function checkAndUpdateModifiedStatus(accountId) {
+  // If no change history for this account, nothing to check
+  if (!changeHistory[accountId]) return;
+  
+  const account = state.accounts[accountId];
+  const original = changeHistory[accountId];
+  
+  // Check if current state matches original state
+  const isBackToOriginal = 
+    account.modifiedName === original.modifiedName &&
+    account.type === original.type &&
+    account.subtype === original.subtype;
+  
+  if (isBackToOriginal) {
+    // Remove from change history and mark as unmodified
+    delete changeHistory[accountId];
+    account._isModified = false;
+  } else {
+    // Ensure marked as modified
+    account._isModified = true;
+  }
+}
+
+function hasChanges() {
+  return Object.keys(changeHistory).length > 0;
+}
+
+function undoRowChanges(accountId) {
+  if (!changeHistory[accountId]) return;
+  
+  const original = changeHistory[accountId];
+  const account = state.accounts[accountId];
+  
+  account.modifiedName = original.modifiedName;
+  account.type = original.type;
+  account.subtype = original.subtype;
+  account._isModified = false;
+  
+  delete changeHistory[accountId];
+  persistState();
+  renderAccountTable();
+}
+
+function undoAllChanges() {
+  const accountIds = Object.keys(changeHistory);
+  
+  accountIds.forEach(accountId => {
+    const original = changeHistory[accountId];
+    const account = state.accounts[accountId];
+    
+    account.modifiedName = original.modifiedName;
+    account.type = original.type;
+    account.subtype = original.subtype;
+    account._isModified = false;
+    
+    delete changeHistory[accountId];
+  });
+  
+  persistState();
+  renderAccountTable();
+}
+
+function setupUndoListeners() {
+  // Setup undo all button
+  const undoAllBtn = document.getElementById('undoAllBtn');
+  if (undoAllBtn) {
+    undoAllBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to undo all changes? This action cannot be reversed.')) {
+        undoAllChanges();
+      }
+    });
+  }
+  
+  // Setup per-row undo buttons using event delegation
+  accountsTable.addEventListener('click', (e) => {
+    const undoBtn = e.target.closest('[data-undo-button]');
+    if (undoBtn) {
+      const rowId = undoBtn.dataset.rowId;
+      undoRowChanges(rowId);
+    }
+  });
+}
+
+function setupTableColumns() {
+  accountsTable.columns = [
+    {
+      key: 'select',
+      type: 'checkbox',
+      header: '',
+      width: '60px',
+      headerClass: 'px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 w-[50px] sm:w-[60px]',
+      cellClass: 'px-2 py-2 text-center',
+      masterCheckbox: true,
+      disabled: (row) => row.status === 'processed',
+      mobileHidden: true // Handled separately in mobile view
+    },
+    {
+      key: 'modifiedName',
+      type: 'text',
+      header: 'Account Name',
+      minWidth: '200px',
+      headerClass: 'px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[200px]',
+      cellClass: 'px-2 py-2 max-w-[300px]',
+      clickable: true,
+      tooltip: (row) => row.status === 'processed' ? '' : `Click to rename '${row.modifiedName}'`,
+      onClick: (row) => {
+        if (row.status !== 'processed') {
+          trackChange(row.id);
+          openNameEditor(row);
+        }
+      },
+      mobileLabel: false, // Show as title in mobile, not labeled field
+      mobileClass: 'mb-2'
+    },
+    {
+      key: 'type',
+      type: 'select',
+      header: 'Type',
+      minWidth: '150px',
+      headerClass: 'px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[150px]',
+      cellClass: 'px-2 py-2',
+      options: monarchAccountTypes.data.map(type => ({
+        value: type.typeName,
+        label: type.typeDisplay
+      })),
+      disabled: (row) => row.status === 'processed',
+      tooltip: (row) => getAccountTypeByName(row.type)?.typeDisplay || '',
+      onChange: (row, value) => {
+        trackChange(row.id);
+        row.type = value;
+        const selectedType = getAccountTypeByName(value);
+        row.subtype = selectedType?.subtypes[0]?.name || null;
+        checkAndUpdateModifiedStatus(row.id);
+        persistState();
+        renderAccountTable();
+      },
+      mobileLabel: 'Type'
+    },
+    {
+      key: 'subtype',
+      type: 'select',
+      header: 'Subtype',
+      minWidth: '150px',
+      headerClass: 'px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[150px]',
+      cellClass: 'px-2 py-2',
+      options: (row) => {
+        const selectedType = getAccountTypeByName(row.type);
+        return (selectedType?.subtypes || []).map(sub => ({
+          value: sub.name,
+          label: sub.display
+        }));
+      },
+      disabled: (row) => row.status === 'processed',
+      tooltip: (row) => getSubtypeByName(row.type, row.subtype)?.display || '',
+      onChange: (row, value) => {
+        trackChange(row.id);
+        row.subtype = value;
+        checkAndUpdateModifiedStatus(row.id);
+        persistState();
+        renderAccountTable();
+      },
+      mobileLabel: 'Subtype'
+    },
+    {
+      key: 'transactionCount',
+      type: 'text',
+      header: 'Transactions',
+      minWidth: '100px',
+      headerClass: 'px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[100px] text-center',
+      cellClass: 'px-2 py-2 text-center text-[#637988] cursor-default',
+      tooltip: (row) => `${row.transactionCount} transaction${row.transactionCount !== 1 ? 's' : ''}`,
+      cellStyle: (row) => row.status === 'processed' ? { color: '#9ca3af' } : {},
+      mobileLabel: 'Transactions',
+      mobileClass: 'text-sm text-gray-600'
+    },
+    {
+      key: 'balance',
+      type: 'text',
+      header: 'Balance',
+      minWidth: '120px',
+      headerClass: 'px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[120px] text-right',
+      cellClass: 'px-2 py-2 text-[#637988] cursor-default text-right',
+      getValue: (row) => currencyFormatter.format(row.balance),
+      tooltip: (row) => `Balance: ${currencyFormatter.format(row.balance)}`,
+      cellStyle: (row) => row.status === 'processed' ? { color: '#9ca3af' } : {},
+      mobileLabel: 'Balance',
+      mobileClass: 'text-sm font-medium'
+    },
+    {
+      key: 'undo',
+      type: 'custom',
+      header: '',
+      minWidth: '50px',
+      width: '50px',
+      headerClass: 'px-2 py-3 sm:py-4 text-center',
+      cellClass: 'px-2 py-2',
+      render: (row) => {
+        const container = document.createElement('div');
+        container.className = 'flex items-center justify-center w-full h-full';
+        
+        if (!row._isModified) {
+          return container;
+        }
+        
+        const button = document.createElement('button');
+        button.className = 'p-1.5 rounded hover:bg-amber-100 transition-colors duration-150';
+        button.title = 'Undo changes to this account';
+        button.setAttribute('aria-label', 'Undo changes');
+        button.innerHTML = `
+          <svg class="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 hover:text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+          </svg>
+        `;
+        button.addEventListener('click', () => undoRowChanges(row.id));
+        container.appendChild(button);
+        return container;
+      },
+      mobileLabel: '',
+      mobileClass: 'flex items-center justify-center'
+    },
+    {
+      key: 'included',
+      type: 'button',
+      header: 'Migrate?',
+      minWidth: '100px',
+      headerClass: 'px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[100px] text-center',
+      cellClass: 'px-2 py-2',
+      render: (row) => {
+        const isProcessed = row.status === 'processed';
+        const isFailed = row.status === 'failed';
+
+        return {
+          text: isProcessed ? 'Processed' : (row.included ? 'Included' : 'Excluded'),
+          type: 'outline',
+          color: isProcessed ? 'grey' : (row.included ? 'green' : 'red'),
+          size: 'small',
+          disabled: isProcessed,
+          tooltip: isProcessed
+            ? 'This account has already been processed'
+            : (row.included ? 'Click to exclude this account' : 'Click to include this account'),
+          onClick: () => {
+            if (!isProcessed) {
+              row.included = !row.included;
+              persistState();
+              renderAccountTable();
+            }
+          }
+        };
+      },
+      mobileLabel: 'Migrate?',
+      mobileClass: 'flex items-center justify-center'
+    }
+  ];
 }
 
 function updateSelection(shouldSelect) {
@@ -167,51 +461,46 @@ function updateSelection(shouldSelect) {
 
 function updateInclusion(include) {
   Object.values(state.accounts).forEach(acc => {
-    if (acc.selected) acc.included = include;
+    if (acc.selected) {
+      acc.included = include;
+    }
   });
   persistState();
   renderAccountTable();
 }
 
 function renderAccountTable() {
-  const fragment = document.createDocumentFragment();
-  const mobileFragment = document.createDocumentFragment();
   const accounts = Object.values(state.accounts);
-  let visibleCount = 0;
 
-  // Clear both desktop and mobile views
-  reviewTableBody.innerHTML = '';
-  if (mobileAccountList) mobileAccountList.innerHTML = '';
-
-  for (const account of accounts) {
+  // Filter accounts
+  const visibleAccounts = accounts.filter(account => {
     // Apply advanced filters
-    if (!passesFilters(account)) continue;
+    if (!passesFilters(account)) return false;
 
     // Apply search query
-    if (searchQuery && !account.modifiedName.toLowerCase().includes(searchQuery)) continue;
+    if (searchQuery && !account.modifiedName.toLowerCase().includes(searchQuery)) return false;
 
-    visibleCount++;
+    return true;
+  });
 
-    // Create desktop table row
-    fragment.appendChild(createAccountRowElement(account));
-
-    // Create mobile card
-    if (mobileAccountList) {
-      mobileFragment.appendChild(createMobileAccountCard(account));
+  // Add unique IDs to accounts if they don't have them
+  visibleAccounts.forEach((account, index) => {
+    if (!account.id) {
+      account.id = account.modifiedName.replace(/\s+/g, '-') + '-' + index;
     }
-  }
+  });
 
-  reviewTableBody.appendChild(fragment);
-  if (mobileAccountList) {
-    mobileAccountList.appendChild(mobileFragment);
-  }
+  // Update table data
+  accountsTable.data = visibleAccounts;
+
+  // Restore selection state
+  const selectedIds = accounts
+    .filter(acc => acc.selected)
+    .map(acc => String(acc.id || acc.modifiedName));
+  accountsTable.selectedRows = selectedIds;
 
   // Update account count indicators
-  updateAccountCountDisplay(visibleCount, accounts.length);
-
-  updateMasterCheckbox(getVisibleAccounts());
-  refreshBulkActionBar();
-  updateMobileSelectionCount();
+  updateAccountCountDisplay(visibleAccounts.length, accounts.length);
 
   // Update continue button with included account count
   const includedCount = accounts.filter(isIncludedAndUnprocessed).length;
@@ -222,424 +511,33 @@ function renderAccountTable() {
 
   // Update button text to show included account count
   if (hasIncludedAccounts) {
-    importBtn.textContent = `Continue with ${includedCount} account${includedCount !== 1 ? 's' : ''}`;
+    importBtn.textContent = `Migrate ${includedCount} of ${accounts.length} account${accounts.length !== 1 ? 's' : ''}`;
   } else {
     importBtn.textContent = 'Continue';
   }
+  
+  // Update changes alert visibility
+  updateChangesAlert();
+}
 
+function updateChangesAlert() {
+  const undoAllContainer = document.getElementById('undoAllContainer');
+  if (!undoAllContainer) return;
+  
+  const hasChanges = Object.keys(changeHistory).length > 0;
+  if (hasChanges) {
+    undoAllContainer.classList.remove('hidden');
+  } else {
+    undoAllContainer.classList.add('hidden');
+  }
 }
 
 function isIncludedAndUnprocessed(account) {
   return account.included && account.status !== 'processed';
 }
 
-function createAccountRowElement(account) {
-  const row = document.createElement('tr');
-  row.setAttribute('role', 'row');
-  row.className = 'border-t border-[#dce1e5]';
-
-  const isProcessed = account.status === 'processed';
-  const isFailed = account.status === 'failed';
-
-  // Account checkbox cell
-  const checkboxTd = document.createElement('td');
-  checkboxTd.className = 'px-2 py-2 text-center';
-  const checkbox = document.createElement('input');
-  checkbox.type = 'checkbox';
-  const checkboxId = `account-checkbox-${account.id || account.modifiedName.replace(/\s+/g, '-')}`;
-  checkbox.id = checkboxId;
-  checkbox.name = checkboxId;
-  checkbox.setAttribute('aria-label', `Select account: ${account.modifiedName}`);
-  checkbox.className = 'w-5 h-5';
-  toggleDisabled(checkbox, isProcessed);
-  checkbox.checked = account.selected;
-  checkbox.addEventListener('change', () => {
-    account.selected = checkbox.checked;
-    refreshBulkActionBar();
-    updateMasterCheckbox(getVisibleAccounts());
-  });
-  checkboxTd.appendChild(checkbox);
-  row.appendChild(checkboxTd);
-
-  // Account name cell
-  const nameTd = document.createElement('td');
-  nameTd.className = 'px-2 py-2 max-w-[300px] truncate';
-  nameTd.textContent = account.modifiedName;
-  if (!isProcessed) {
-    nameTd.classList.add('cursor-pointer');
-    nameTd.title = `Click to rename '${account.modifiedName}'`;
-    nameTd.addEventListener('click', () => openNameEditor(account, nameTd));
-  } else {
-    nameTd.classList.add('text-gray-400', 'cursor-default');
-  }
-  row.appendChild(nameTd);
-
-  // Account Type cell
-  const typeTd = document.createElement('td');
-  typeTd.className = 'px-2 py-2';
-  const typeSelect = document.createElement('select');
-  const typeId = `type-select-${account.id || account.modifiedName.replace(/\s+/g, '-')}`;
-  typeSelect.id = typeId;
-  typeSelect.name = typeId;
-  typeSelect.title = getAccountTypeByName(account.type)?.typeDisplay || '';
-  typeSelect.className = 'border rounded px-2 py-1 w-full';
-  typeSelect.disabled = isProcessed;
-  if (isProcessed) typeSelect.classList.add('text-gray-300', 'cursor-default');
-  else typeSelect.classList.add('cursor-pointer');
-  monarchAccountTypes.data.forEach(type => {
-    const opt = document.createElement('option');
-    opt.value = type.typeName;
-    opt.textContent = type.typeDisplay;
-    if (type.typeName === account.type) opt.selected = true;
-    typeSelect.appendChild(opt);
-  });
-  typeSelect.addEventListener('change', () => {
-    account.type = typeSelect.value;
-    const selectedType = getAccountTypeByName(account.type);
-    account.subtype = selectedType?.subtypes[0]?.name || null;
-    renderAccountTable();
-  });
-  typeTd.appendChild(typeSelect);
-  row.appendChild(typeTd);
-
-  // Account Subtype cell
-  const subtypeTd = document.createElement('td');
-  subtypeTd.className = 'px-2 py-2';
-  const subtypeSelect = document.createElement('select');
-  const subtypeId = `subtype-select-${account.id || account.modifiedName.replace(/\s+/g, '-')}`;
-  subtypeSelect.id = subtypeId;
-  subtypeSelect.name = subtypeId;
-  subtypeSelect.className = 'border rounded px-2 py-1 w-full';
-  subtypeSelect.disabled = isProcessed;
-  if (isProcessed) subtypeSelect.classList.add('text-gray-300', 'cursor-default');
-  else subtypeSelect.classList.add('cursor-pointer');
-  const selectedType = getAccountTypeByName(account.type);
-  subtypeSelect.title = getSubtypeByName(account.type, account.subtype)?.display || '';
-  (selectedType?.subtypes || []).forEach(sub => {
-    const opt = document.createElement('option');
-    opt.value = sub.name;
-    opt.textContent = sub.display;
-    if (sub.name === account.subtype) opt.selected = true;
-    subtypeSelect.appendChild(opt);
-  });
-  subtypeSelect.addEventListener('change', () => {
-    account.subtype = subtypeSelect.value;
-    renderAccountTable();
-  });
-  subtypeTd.appendChild(subtypeSelect);
-  row.appendChild(subtypeTd);
-
-  // Account Transaction Count cell
-  const txTd = document.createElement('td');
-  txTd.className = 'px-2 py-2 text-center cursor-default';
-  txTd.textContent = account.transactionCount;
-  txTd.title = `${account.transactionCount} transaction${account.transactionCount !== 1 ? 's' : ''}`;
-  if (isProcessed) txTd.classList.add('text-gray-400');
-  row.appendChild(txTd);
-
-  // Account Balance cell
-  const balanceTd = document.createElement('td');
-  balanceTd.className = 'px-2 py-2 text-[#637988] cursor-default';
-  balanceTd.textContent = currencyFormatter.format(account.balance);
-  balanceTd.title = `Balance: ${currencyFormatter.format(account.balance)}`;
-  if (isProcessed) balanceTd.classList.add('text-gray-400');
-  row.appendChild(balanceTd);
-
-  // Account Include/Exclude cell
-  const includeTd = document.createElement('td');
-  includeTd.className = 'px-2 py-2 flex items-center gap-2';
-  const toggleBtn = document.createElement('button');
-  toggleBtn.classList.add('ui-button');
-  toggleBtn.dataset.type = account.included ? 'primary' : 'secondary';
-  toggleBtn.dataset.size = 'small';
-  toggleBtn.textContent = isProcessed ? 'Processed' : (account.included ? 'Included' : 'Excluded');
-  toggleBtn.disabled = isProcessed;
-  toggleBtn.title = isProcessed ? 'This account has already been processed' : (account.included ? 'Click to exclude this account' : 'Click to include this account');
-  if (!isProcessed) {
-    toggleBtn.addEventListener('click', () => {
-      account.included = !account.included;
-      persistState();
-      renderAccountTable();
-    });
-  }
-  includeTd.appendChild(toggleBtn);
-
-  if (isFailed) {
-    const errorIcon = document.createElement('span');
-    errorIcon.className = 'text-red-600 text-xl cursor-default';
-    errorIcon.innerHTML = '⚠️';
-    errorIcon.title = 'Previously failed to process';
-    includeTd.appendChild(errorIcon);
-  }
-
-  row.appendChild(includeTd);
-  return row;
-}
-
-function createMobileAccountCard(account) {
-  const card = document.createElement('div');
-  card.className = 'mobile-account-card';
-
-  const isProcessed = account.status === 'processed';
-  const isFailed = account.status === 'failed';
-
-  // Custom checkbox container
-  const checkboxContainer = document.createElement('label');
-  checkboxContainer.className = 'custom-checkbox-container flex-shrink-0';
-
-  const checkbox = document.createElement('input');
-  checkbox.type = 'checkbox';
-  checkbox.className = 'custom-checkbox-input';
-  const checkboxId = `mobile-account-checkbox-${account.id || account.modifiedName.replace(/\s+/g, '-')}`;
-  checkbox.id = checkboxId;
-  checkbox.name = checkboxId;
-  checkbox.setAttribute('aria-label', `Select account: ${account.modifiedName}`);
-  checkbox.disabled = isProcessed;
-  checkbox.checked = account.selected || false;
-  checkbox.addEventListener('change', () => {
-    account.selected = checkbox.checked;
-    persistState();
-    refreshBulkActionBar();
-    updateMasterCheckbox(getVisibleAccounts());
-    updateMobileSelectionCount();
-  });
-
-  const checkboxVisual = document.createElement('span');
-  checkboxVisual.className = 'custom-checkbox-visual';
-
-  checkboxContainer.appendChild(checkbox);
-  checkboxContainer.appendChild(checkboxVisual);
-  card.appendChild(checkboxContainer);
-
-  // Card content container
-  const contentDiv = document.createElement('div');
-  contentDiv.className = 'card-content';
-
-  // Account name
-  const nameDiv = document.createElement('div');
-  nameDiv.className = 'account-name';
-  nameDiv.textContent = account.modifiedName;
-  if (!isProcessed) {
-    nameDiv.classList.add('cursor-pointer', 'hover:text-blue-600', 'transition-colors', 'duration-200');
-    nameDiv.title = `Click to rename '${account.modifiedName}'`;
-    nameDiv.addEventListener('click', () => openNameEditor(account, nameDiv));
-  } else {
-    nameDiv.classList.add('text-gray-400', 'cursor-default');
-  }
-  contentDiv.appendChild(nameDiv);
-
-  // Account details container
-  const detailsDiv = document.createElement('div');
-  detailsDiv.className = 'account-details';
-
-  // Type and subtype row
-  const typeRow = document.createElement('div');
-  typeRow.className = 'flex flex-col xs:flex-row xs:items-center gap-2 xs:gap-4';
-
-  // Type selection
-  const typeContainer = document.createElement('div');
-  typeContainer.className = 'flex items-center gap-2 flex-1 min-w-0';
-
-  const typeLabel = document.createElement('span');
-  typeLabel.textContent = 'Type:';
-  typeLabel.className = 'text-xs font-medium text-gray-500 flex-shrink-0';
-
-  const typeSelect = document.createElement('select');
-  const typeId = `mobile-type-select-${account.id || account.modifiedName.replace(/\s+/g, '-')}`;
-  typeSelect.id = typeId;
-  typeSelect.name = typeId;
-  typeSelect.title = getAccountTypeByName(account.type)?.typeDisplay || '';
-  typeSelect.className = 'border border-gray-300 rounded-lg px-2 py-1 text-xs flex-1 min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white';
-  typeSelect.disabled = isProcessed;
-  if (isProcessed) typeSelect.classList.add('text-gray-300', 'bg-gray-50', 'cursor-not-allowed');
-  else typeSelect.classList.add('cursor-pointer');
-
-  monarchAccountTypes.data.forEach(type => {
-    const opt = document.createElement('option');
-    opt.value = type.typeName;
-    opt.textContent = type.typeDisplay;
-    if (type.typeName === account.type) opt.selected = true;
-    typeSelect.appendChild(opt);
-  });
-  typeSelect.addEventListener('change', () => {
-    account.type = typeSelect.value;
-    const selectedType = getAccountTypeByName(account.type);
-    account.subtype = selectedType?.subtypes[0]?.name || null;
-    renderAccountTable();
-  });
-
-  typeContainer.appendChild(typeLabel);
-  typeContainer.appendChild(typeSelect);
-  typeRow.appendChild(typeContainer);
-
-  // Subtype selection
-  const subtypeContainer = document.createElement('div');
-  subtypeContainer.className = 'flex items-center gap-2 flex-1 min-w-0';
-
-  const subtypeLabel = document.createElement('span');
-  subtypeLabel.textContent = 'Sub:';
-  subtypeLabel.className = 'text-xs font-medium text-gray-500 flex-shrink-0';
-
-  const subtypeSelect = document.createElement('select');
-  const subtypeId = `mobile-subtype-select-${account.id || account.modifiedName.replace(/\s+/g, '-')}`;
-  subtypeSelect.id = subtypeId;
-  subtypeSelect.name = subtypeId;
-  subtypeSelect.className = 'border border-gray-300 rounded-lg px-2 py-1 text-xs flex-1 min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white';
-  subtypeSelect.disabled = isProcessed;
-  if (isProcessed) subtypeSelect.classList.add('text-gray-300', 'bg-gray-50', 'cursor-not-allowed');
-  else subtypeSelect.classList.add('cursor-pointer');
-
-  const selectedType = getAccountTypeByName(account.type);
-  subtypeSelect.title = getSubtypeByName(account.type, account.subtype)?.display || '';
-  (selectedType?.subtypes || []).forEach(sub => {
-    const opt = document.createElement('option');
-    opt.value = sub.name;
-    opt.textContent = sub.display;
-    if (sub.name === account.subtype) opt.selected = true;
-    subtypeSelect.appendChild(opt);
-  });
-  subtypeSelect.addEventListener('change', () => {
-    account.subtype = subtypeSelect.value;
-    renderAccountTable();
-  });
-
-  subtypeContainer.appendChild(subtypeLabel);
-  subtypeContainer.appendChild(subtypeSelect);
-  typeRow.appendChild(subtypeContainer);
-
-  detailsDiv.appendChild(typeRow);
-
-  // Statistics row
-  const statsRow = document.createElement('div');
-  statsRow.className = 'flex justify-between items-center';
-
-  const transactionInfo = document.createElement('span');
-  transactionInfo.className = isProcessed ? 'text-gray-400' : 'text-gray-600';
-  transactionInfo.textContent = `${account.transactionCount} transaction${account.transactionCount !== 1 ? 's' : ''}`;
-
-  const balanceInfo = document.createElement('span');
-  balanceInfo.className = `account-balance ${isProcessed ? 'text-gray-400' : 'text-gray-900'}`;
-  balanceInfo.textContent = currencyFormatter.format(account.balance);
-
-  statsRow.appendChild(transactionInfo);
-  statsRow.appendChild(balanceInfo);
-  detailsDiv.appendChild(statsRow);
-
-  // Status and action row
-  const actionRow = document.createElement('div');
-  actionRow.className = 'flex items-center justify-end pt-1';
-
-  if (!isProcessed) {
-    const toggleBtn = document.createElement('button');
-    toggleBtn.className = `px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 ${account.included
-        ? 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 focus:ring-red-500'
-        : 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 focus:ring-green-500'
-      }`;
-    toggleBtn.textContent = account.included ? 'Exclude' : 'Include';
-    toggleBtn.title = account.included ? 'Click to exclude this account' : 'Click to include this account';
-    toggleBtn.addEventListener('click', () => {
-      account.included = !account.included;
-      renderAccountTable();
-    });
-    actionRow.appendChild(toggleBtn);
-  }
-
-  if (isFailed) {
-    const errorIcon = document.createElement('span');
-    errorIcon.className = 'text-red-600 text-lg cursor-default ml-2';
-    errorIcon.innerHTML = '⚠️';
-    errorIcon.title = 'Previously failed to process';
-    actionRow.appendChild(errorIcon);
-  }
-
-  detailsDiv.appendChild(actionRow);
-  contentDiv.appendChild(detailsDiv);
-  card.appendChild(contentDiv);
-
-  return card;
-}
-
-function updateMasterCheckbox(visibleAccounts) {
-  const masterCheckbox = document.getElementById('masterCheckbox');
-  const masterCheckboxMobile = document.getElementById('masterCheckboxMobile');
-  const selectedCount = visibleAccounts.filter(acc => acc.selected).length;
-  const isChecked = selectedCount > 0 && selectedCount === visibleAccounts.length;
-  const isIndeterminate = selectedCount > 0 && selectedCount < visibleAccounts.length;
-
-  if (masterCheckbox) {
-    masterCheckbox.checked = isChecked;
-    masterCheckbox.indeterminate = isIndeterminate;
-  }
-
-  if (masterCheckboxMobile) {
-    masterCheckboxMobile.checked = isChecked;
-    masterCheckboxMobile.indeterminate = isIndeterminate;
-  }
-
-  updateMobileSelectionCount();
-}
-
-function updateMobileSelectionCount() {
-  const countElement = document.getElementById('mobileSelectionCount');
-  if (countElement) {
-    const selectedCount = Object.values(state.accounts).filter(acc => acc.selected).length;
-    countElement.textContent = `${selectedCount} selected`;
-  }
-}
-
-function getVisibleAccounts() {
-  return Object.values(state.accounts).filter(account => {
-    if (account.status === 'processed') return false;
-
-    // Apply advanced filters
-    if (!passesFilters(account)) return false;
-
-    // Apply search query
-    if (searchQuery && !account.modifiedName.toLowerCase().includes(searchQuery)) return false;
-
-    return true;
-  });
-}
-
-function masterCheckboxChange(e) {
-  const checked = e.target.checked;
-  getVisibleAccounts().forEach(acc => {
-    acc.selected = checked;
-  });
-  renderAccountTable();
-}
-
-function refreshBulkActionBar() {
-  const bar = document.getElementById('bulkActionBar');
-  const selectedCount = Object.values(state.accounts).filter(acc => acc.selected).length;
-
-  // Update mobile count
-  const mobileCountSpan = document.getElementById('selectedCountMobile');
-  if (mobileCountSpan) {
-    mobileCountSpan.textContent = selectedCount;
-  }
-
-  // Update desktop count
-  const desktopCountSpan = document.getElementById('selectedCountDesktop');
-  if (desktopCountSpan) {
-    desktopCountSpan.textContent = selectedCount;
-  }
-
-  // Show/hide bulk action bar
-  if (selectedCount > 0) {
-    bar.classList.remove('hidden');
-    bar.classList.add('active');
-  } else {
-    bar.classList.remove('active');
-    setTimeout(() => {
-      if (!bar.classList.contains('active')) {
-        bar.classList.add('hidden');
-      }
-    }, 300);
-  }
-}
-
-function openNameEditor(account, nameCell) {
+// TODO: Refactor to leverage the ui-modal component
+function openNameEditor(account) {
   const overlay = document.createElement('div');
   overlay.className = 'fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 opacity-0 transition-opacity duration-200';
   document.body.appendChild(overlay);
@@ -694,68 +592,131 @@ function openNameEditor(account, nameCell) {
 
   function save() {
     account.modifiedName = input.value.trim();
-    nameCell.textContent = account.modifiedName;
-    nameCell.title = `Click to rename '${account.modifiedName}'`;
+    checkAndUpdateModifiedStatus(account.id);
+    persistState();
+    // Update the table component to reflect the change
+    const table = document.getElementById('accountsTable');
+    if (table) {
+      table.refresh();
+    }
     closeEditor();
   }
 }
 
 function openBulkRenameModal() {
   const modal = document.getElementById('bulkRenameModal');
-  const renamePattern = document.getElementById('renamePattern');
-  const indexStartInput = document.getElementById('indexStart');
-  const previewDiv = document.getElementById('renamePreview');
-  const cancelBtn = document.getElementById('renameCancel');
-  const applyBtn = document.getElementById('renameApply');
-  const tokenButtons = modal.querySelectorAll('.token-btn');
-
-  modal.classList.remove('hidden');
-  renamePattern.focus();
-
   const selectedAccounts = Object.values(state.accounts).filter(acc => acc.selected);
+  
+  modal.open();
+  
+  // Wait for modal overlay to be appended to body
+  setTimeout(() => {
+    // Find the modal overlay in the body (it's a direct child)
+    const modalOverlay = Array.from(document.body.children).find(el => 
+      el.classList.contains('ui-modal-overlay') && el.querySelector('#renamePattern')
+    );
+    
+    if (!modalOverlay) {
+      console.error('Modal overlay not found in body');
+      return;
+    }
+    
+    console.log('Found modal overlay:', modalOverlay);
+    
+    // Query elements from the modal overlay
+    const renamePattern = modalOverlay.querySelector('#renamePattern');
+    const indexStartInput = modalOverlay.querySelector('#indexStart');
+    const previewDiv = modalOverlay.querySelector('#renamePreview');
+    const cancelBtn = modalOverlay.querySelector('#renameCancel');
+    const applyBtn = modalOverlay.querySelector('#renameApply');
+    const tokenButtons = modalOverlay.querySelectorAll('.token-btn');
 
-  // Token insert handlers
-  tokenButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const token = btn.dataset.token;
-      renamePattern.value += token;
-      updatePreview();
+    console.log('Found elements:', { renamePattern, indexStartInput, previewDiv, cancelBtn, applyBtn, tokenButtons: tokenButtons.length });
+
+    if (!renamePattern || !indexStartInput || !previewDiv || !cancelBtn || !applyBtn) {
+      console.error('Modal elements not found', { renamePattern, indexStartInput, previewDiv, cancelBtn, applyBtn });
+      return;
+    }
+
+    const updatePreview = () => {
+      const preview = modalOverlay.querySelector('#renamePreview');
+      const patternInput = modalOverlay.querySelector('#renamePattern');
+      const indexInput = modalOverlay.querySelector('#indexStart');
+      
+      if (!preview || !patternInput || !indexInput) return;
+      
+      preview.innerHTML = '';
+
+      const pattern = patternInput.value;
+      const indexStart = parseInt(indexInput.value, 10) || 1;
+
+      selectedAccounts.slice(0, 3).forEach((acc, i) => {
+        const previewName = applyPattern(pattern, acc, i + indexStart);
+        const div = document.createElement('div');
+        div.textContent = previewName;
+        preview.appendChild(div);
+      });
+    };
+
+    // Token insert handlers
+    tokenButtons.forEach(btn => {
+      console.log('Attaching token button handler', btn);
+      btn.onclick = (e) => {
+        console.log('Token button clicked!');
+        e.preventDefault();
+        e.stopPropagation();
+        const currentPattern = modalOverlay.querySelector('#renamePattern');
+        if (currentPattern) {
+          const token = btn.dataset.token;
+          currentPattern.value += token;
+          updatePreview();
+        }
+      };
     });
-  });
 
-  // Live preview
-  renamePattern.addEventListener('input', updatePreview);
-  indexStartInput.addEventListener('input', updatePreview);
+    // Live preview listeners
+    renamePattern.oninput = updatePreview;
+    indexStartInput.oninput = updatePreview;
 
-  updatePreview();
+    updatePreview();
 
-  function updatePreview() {
-    previewDiv.innerHTML = '';
+    // Cancel button
+    console.log('Attaching cancel handler to:', cancelBtn);
+    cancelBtn.onclick = (e) => {
+      console.log('Cancel clicked!');
+      e.preventDefault();
+      e.stopPropagation();
+      modal.close();
+    };
 
-    const pattern = renamePattern.value;
-    const indexStart = parseInt(indexStartInput.value, 10) || 1;
+    // Apply button
+    console.log('Attaching apply handler to:', applyBtn);
+    applyBtn.onclick = (e) => {
+      console.log('Apply clicked!');
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const currentPattern = modalOverlay.querySelector('#renamePattern');
+      const currentIndexStart = modalOverlay.querySelector('#indexStart');
+      
+      if (!currentPattern || !currentIndexStart) return;
+      
+      const pattern = currentPattern.value;
+      const indexStart = parseInt(currentIndexStart.value, 10) || 1;
 
-    selectedAccounts.slice(0, 3).forEach((acc, i) => {
-      const previewName = applyPattern(pattern, acc, i + indexStart);
-      const div = document.createElement('div');
-      div.textContent = previewName;
-      previewDiv.appendChild(div);
-    });
-  }
+      selectedAccounts.forEach((acc, i) => {
+        trackChange(acc.id);
+        acc.modifiedName = applyPattern(pattern, acc, i + indexStart);
+        checkAndUpdateModifiedStatus(acc.id);
+      });
 
-  cancelBtn.onclick = () => modal.classList.add('hidden');
-
-  applyBtn.onclick = () => {
-    const pattern = renamePattern.value;
-    const indexStart = parseInt(indexStartInput.value, 10) || 1;
-
-    selectedAccounts.forEach((acc, i) => {
-      acc.modifiedName = applyPattern(pattern, acc, i + indexStart);
-    });
-
-    modal.classList.add('hidden');
-    renderAccountTable();
-  };
+      modal.close();
+      persistState();
+      renderAccountTable();
+    };
+    
+    renamePattern.focus();
+  }, 300);
 }
 
 function applyPattern(pattern, account, index) {
@@ -769,71 +730,119 @@ function applyPattern(pattern, account, index) {
 
 function openBulkTypeModal() {
   const modal = document.getElementById('bulkTypeModal');
-  const typeSelect = document.getElementById('bulkTypeSelect');
-  const subtypeSelect = document.getElementById('bulkSubtypeSelect');
-  const cancelBtn = document.getElementById('bulkTypeCancel');
-  const applyBtn = document.getElementById('bulkTypeApply');
-
-  modal.classList.remove('hidden');
-
-  // Populate Type dropdown
-  typeSelect.innerHTML = '';
-  monarchAccountTypes.data.forEach(type => {
-    const opt = document.createElement('option');
-    opt.value = type.typeName;
-    opt.textContent = type.typeDisplay;
-    typeSelect.appendChild(opt);
-  });
-
-  // On type change, repopulate subtype dropdown
-  function updateSubtypeOptions() {
-    const selectedType = getAccountTypeByName(typeSelect.value);
-    subtypeSelect.innerHTML = '';
-
-    (selectedType?.subtypes || []).forEach(sub => {
-      const opt = document.createElement('option');
-      opt.value = sub.name;
-      opt.textContent = sub.display;
-      subtypeSelect.appendChild(opt);
-    });
-
-    // If no subtypes available, add default empty option
-    if ((selectedType?.subtypes || []).length === 0) {
-      const opt = document.createElement('option');
-      opt.value = '';
-      opt.textContent = '-';
-      subtypeSelect.appendChild(opt);
+  
+  modal.open();
+  
+  // Wait for modal overlay to be appended to body
+  setTimeout(() => {
+    // Find the modal overlay in the body
+    const modalOverlay = Array.from(document.body.children).find(el => 
+      el.classList.contains('ui-modal-overlay') && el.querySelector('#bulkTypeSelect')
+    );
+    
+    if (!modalOverlay) {
+      console.error('Modal overlay not found in body');
+      return;
     }
-  }
+    
+    console.log('Found modal overlay:', modalOverlay);
+    
+    // Query elements from the modal overlay
+    const typeSelect = modalOverlay.querySelector('#bulkTypeSelect');
+    const subtypeSelect = modalOverlay.querySelector('#bulkSubtypeSelect');
+    const cancelBtn = modalOverlay.querySelector('#bulkTypeCancel');
+    const applyBtn = modalOverlay.querySelector('#bulkTypeApply');
 
-  typeSelect.addEventListener('change', updateSubtypeOptions);
-  updateSubtypeOptions();
+    console.log('Found elements:', { typeSelect, subtypeSelect, cancelBtn, applyBtn });
 
-  cancelBtn.onclick = () => modal.classList.add('hidden');
+    if (!typeSelect || !subtypeSelect || !cancelBtn || !applyBtn) {
+      console.error('Modal elements not found', { typeSelect, subtypeSelect, cancelBtn, applyBtn });
+      return;
+    }
 
-  applyBtn.onclick = () => {
-    const typeValue = typeSelect.value;
-    const subtypeValue = subtypeSelect.value;
+    const updateSubtypeOptions = () => {
+      const currentTypeSelect = modalOverlay.querySelector('#bulkTypeSelect');
+      const currentSubtypeSelect = modalOverlay.querySelector('#bulkSubtypeSelect');
+      
+      if (!currentTypeSelect || !currentSubtypeSelect) return;
+      
+      const selectedType = getAccountTypeByName(currentTypeSelect.value);
+      currentSubtypeSelect.innerHTML = '';
 
-    const selectedAccounts = Object.values(state.accounts).filter(acc => acc.selected);
-    selectedAccounts.forEach(acc => {
-      acc.type = typeValue;
-      acc.subtype = subtypeValue || null;
+      (selectedType?.subtypes || []).forEach(sub => {
+        const opt = document.createElement('option');
+        opt.value = sub.name;
+        opt.textContent = sub.display;
+        currentSubtypeSelect.appendChild(opt);
+      });
+
+      // If no subtypes available, add default empty option
+      if ((selectedType?.subtypes || []).length === 0) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = '-';
+        currentSubtypeSelect.appendChild(opt);
+      }
+    };
+
+    // Populate Type dropdown
+    typeSelect.innerHTML = '';
+    monarchAccountTypes.data.forEach(type => {
+      const opt = document.createElement('option');
+      opt.value = type.typeName;
+      opt.textContent = type.typeDisplay;
+      typeSelect.appendChild(opt);
     });
 
-    modal.classList.add('hidden');
-    renderAccountTable();
-  };
+    // Attach change listener
+    typeSelect.onchange = updateSubtypeOptions;
+    updateSubtypeOptions();
+
+    // Cancel button
+    console.log('Attaching cancel handler to:', cancelBtn);
+    cancelBtn.onclick = (e) => {
+      console.log('Cancel clicked!');
+      e.preventDefault();
+      e.stopPropagation();
+      modal.close();
+    };
+
+    // Apply button
+    console.log('Attaching apply handler to:', applyBtn);
+    applyBtn.onclick = (e) => {
+      console.log('Apply clicked!');
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const currentTypeSelect = modalOverlay.querySelector('#bulkTypeSelect');
+      const currentSubtypeSelect = modalOverlay.querySelector('#bulkSubtypeSelect');
+      
+      if (!currentTypeSelect || !currentSubtypeSelect) return;
+      
+      const typeValue = currentTypeSelect.value;
+      const subtypeValue = currentSubtypeSelect.value;
+
+      const selectedAccounts = Object.values(state.accounts).filter(acc => acc.selected);
+      selectedAccounts.forEach(acc => {
+        trackChange(acc.id);
+        acc.type = typeValue;
+        acc.subtype = subtypeValue || null;
+        checkAndUpdateModifiedStatus(acc.id);
+      });
+
+      modal.close();
+      persistState();
+      renderAccountTable();
+    };
+  }, 300);
 }
 
 // Advanced Filters Functions
 function initializeFiltersModal() {
-  console.log('Initializing filters modal...');
   try {
     populateTypeFilters();
     populateSubtypeFilters();
     updateFilterDisplay();
-    console.log('Filters modal initialized successfully');
   } catch (error) {
     console.error('Error initializing filters modal:', error);
   }
@@ -853,7 +862,6 @@ function populateTypeFilters() {
     const checkbox = createFilterCheckbox('type', type, type);
     container.appendChild(checkbox);
   });
-  console.log(`Populated ${types.length} type filters`);
 }
 
 function populateSubtypeFilters() {
@@ -877,7 +885,6 @@ function populateSubtypeFilters() {
     const checkbox = createFilterCheckbox('subtype', subtype, subtype);
     container.appendChild(checkbox);
   });
-  console.log(`Populated ${sortedSubtypes.length} subtype filters`);
 }
 
 function createFilterCheckbox(filterType, value, label) {
@@ -903,90 +910,93 @@ function createFilterCheckbox(filterType, value, label) {
 }
 
 function openFiltersModal() {
-  console.log('Opening filters modal...');
-
   try {
-    // Populate current filter values
-    const filterAccountName = document.getElementById('filterAccountName');
-    if (filterAccountName) {
-      filterAccountName.value = activeFilters.accountName;
-    }
-
-    const nameMatchType = document.querySelector(`input[name="nameMatchType"][value="${activeFilters.nameMatchType}"]`);
-    if (nameMatchType) {
-      nameMatchType.checked = true;
-    }
-
-    const nameCaseSensitive = document.getElementById('nameCaseSensitive');
-    if (nameCaseSensitive) {
-      nameCaseSensitive.checked = activeFilters.nameCaseSensitive;
-    }
-
-    // Update type checkboxes
-    document.querySelectorAll('#typeFiltersContainer input[type="checkbox"]').forEach(cb => {
-      cb.checked = activeFilters.types.has(cb.value);
-    });
-
-    // Update subtype checkboxes
-    document.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]').forEach(cb => {
-      cb.checked = activeFilters.subtypes.has(cb.value);
-    });
-
-    // Update number inputs
-    const filterTransactionsMin = document.getElementById('filterTransactionsMin');
-    if (filterTransactionsMin) {
-      filterTransactionsMin.value = activeFilters.transactionsMin || '';
-    }
-
-    const filterTransactionsMax = document.getElementById('filterTransactionsMax');
-    if (filterTransactionsMax) {
-      filterTransactionsMax.value = activeFilters.transactionsMax || '';
-    }
-
-    const filterBalanceMin = document.getElementById('filterBalanceMin');
-    if (filterBalanceMin) {
-      filterBalanceMin.value = activeFilters.balanceMin || '';
-    }
-
-    const filterBalanceMax = document.getElementById('filterBalanceMax');
-    if (filterBalanceMax) {
-      filterBalanceMax.value = activeFilters.balanceMax || '';
-    }
-
-    // Update inclusion radio
-    const inclusionFilter = document.querySelector(`input[name="inclusionFilter"][value="${activeFilters.inclusion}"]`);
-    if (inclusionFilter) {
-      inclusionFilter.checked = true;
-    }
-
     const modal = document.getElementById('filtersModal');
-    if (modal) {
-      console.log('Found modal, showing it...');
-      modal.classList.remove('hidden');
-      setTimeout(() => modal.classList.add('show'), 10);
-    } else {
-      console.error('Modal not found!');
+
+    if (!modal) {
+      console.error('❌ Modal element not found!');
+      return;
     }
+
+    // Close the modal first to ensure signal change detection
+    if (typeof modal.close === 'function') {
+      modal.close();
+    }
+
+    // Then open it after a brief delay
+    setTimeout(() => {
+      if (typeof modal.open === 'function') {
+        modal.open();
+      } else {
+        console.error('❌ modal.open is not a function');
+        return;
+      }
+    }, 10);
+
+    // Populate current filter values AFTER opening
+    setTimeout(() => {
+      try {
+        const filterAccountName = document.getElementById('filterAccountName');
+        if (filterAccountName) {
+          filterAccountName.value = activeFilters.accountName;
+        }
+
+        const nameMatchType = document.querySelector(`input[name="nameMatchType"][value="${activeFilters.nameMatchType}"]`);
+        if (nameMatchType) {
+          nameMatchType.checked = true;
+        }
+
+        const nameCaseSensitive = document.getElementById('nameCaseSensitive');
+        if (nameCaseSensitive) {
+          nameCaseSensitive.checked = activeFilters.nameCaseSensitive;
+        }
+
+        document.querySelectorAll('#typeFiltersContainer input[type="checkbox"]').forEach(cb => {
+          cb.checked = activeFilters.types.has(cb.value);
+        });
+
+        document.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]').forEach(cb => {
+          cb.checked = activeFilters.subtypes.has(cb.value);
+        });
+
+        const filterTransactionsMin = document.getElementById('filterTransactionsMin');
+        if (filterTransactionsMin) {
+          filterTransactionsMin.value = activeFilters.transactionsMin || '';
+        }
+
+        const filterTransactionsMax = document.getElementById('filterTransactionsMax');
+        if (filterTransactionsMax) {
+          filterTransactionsMax.value = activeFilters.transactionsMax || '';
+        }
+
+        const filterBalanceMin = document.getElementById('filterBalanceMin');
+        if (filterBalanceMin) {
+          filterBalanceMin.value = activeFilters.balanceMin || '';
+        }
+
+        const filterBalanceMax = document.getElementById('filterBalanceMax');
+        if (filterBalanceMax) {
+          filterBalanceMax.value = activeFilters.balanceMax || '';
+        }
+
+        const inclusionFilter = document.querySelector(`input[name="inclusionFilter"][value="${activeFilters.inclusion}"]`);
+        if (inclusionFilter) {
+          inclusionFilter.checked = true;
+        }
+      } catch (err) {
+        console.error('Error populating filter values:', err);
+      }
+    }, 50);
+
   } catch (error) {
-    console.error('Error opening filters modal:', error);
+    console.error('❌ Error in openFiltersModal:', error);
   }
 }
 
 // Expose globally for onclick handler
 window.openFiltersModal = openFiltersModal;
 
-function closeFiltersModal() {
-  const modal = document.getElementById('filtersModal');
-  modal.classList.remove('show');
-  setTimeout(() => modal.classList.add('hidden'), 300);
-}
-
-// Expose globally for onclick handlers
-window.closeFiltersModal = closeFiltersModal;
-
 function applyFilters() {
-  console.log('Apply filters button clicked!');
-
   try {
     // Account name filter
     const filterAccountName = document.getElementById('filterAccountName');
@@ -1026,9 +1036,10 @@ function applyFilters() {
     const inclusionFilter = document.querySelector('input[name="inclusionFilter"]:checked');
     activeFilters.inclusion = inclusionFilter ? inclusionFilter.value : 'all';
 
-    console.log('Applied filters:', activeFilters);
+    // Close the filters modal
+    const modal = document.getElementById('filtersModal');
+    if (modal && modal.close) modal.close();
 
-    closeFiltersModal();
     renderAccountTable();
     updateFilterDisplay();
     persistState();
@@ -1041,8 +1052,6 @@ function applyFilters() {
 window.applyFilters = applyFilters;
 
 function resetFilters() {
-  console.log('Reset filters button clicked!');
-
   try {
     // Reset all form fields
     const filterAccountName = document.getElementById('filterAccountName');
@@ -1089,11 +1098,6 @@ function resetFilters() {
     renderAccountTable();
     updateFilterDisplay();
     persistState();
-
-    // Close the modal after resetting
-    closeFiltersModal();
-
-    console.log('Filters reset successfully');
   } catch (error) {
     console.error('Error resetting filters:', error);
   }
@@ -1103,55 +1107,40 @@ function resetFilters() {
 window.resetFilters = resetFilters;
 
 function clearAllFilters() {
-  console.log('Clear all filters clicked!');
   resetFilters();
-  closeFiltersModal();
 }
 
 // Expose globally for onclick handler
 window.clearAllFilters = clearAllFilters;
 
 function updateFilterDisplay() {
-  const filterCount = document.getElementById('filterCount');
+  const filterNotificationBadge = document.getElementById('filterNotificationBadge');
   const activeFiltersSection = document.getElementById('activeFiltersSection');
   const activeFiltersContainer = document.getElementById('activeFiltersContainer');
 
+  // Check if elements exist before manipulating them
+  if (!filterNotificationBadge || !activeFiltersSection || !activeFiltersContainer) {
+    console.warn('Filter display elements not found in DOM');
+    return;
+  }
+
   let activeFilterCount = 0;
-  const filterChips = [];
 
   // Account name filter
   if (activeFilters.accountName) {
     activeFilterCount++;
-    filterChips.push(createFilterChip('Name', `${activeFilters.nameMatchType}: "${activeFilters.accountName}"`, () => {
-      activeFilters.accountName = '';
-      document.getElementById('filterAccountName').value = '';
-      renderAccountTable();
-      updateFilterDisplay();
-    }));
   }
 
   // Type filters
   if (activeFilters.types.size > 0) {
     activeFilterCount++;
     const typeList = [...activeFilters.types].join(', ');
-    filterChips.push(createFilterChip('Types', typeList, () => {
-      activeFilters.types.clear();
-      document.querySelectorAll('#typeFiltersContainer input[type="checkbox"]').forEach(cb => cb.checked = false);
-      renderAccountTable();
-      updateFilterDisplay();
-    }));
   }
 
   // Subtype filters
   if (activeFilters.subtypes.size > 0) {
     activeFilterCount++;
     const subtypeList = [...activeFilters.subtypes].join(', ');
-    filterChips.push(createFilterChip('Subtypes', subtypeList, () => {
-      activeFilters.subtypes.clear();
-      document.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]').forEach(cb => cb.checked = false);
-      renderAccountTable();
-      updateFilterDisplay();
-    }));
   }
 
   // Transaction count filter
@@ -1159,14 +1148,6 @@ function updateFilterDisplay() {
     activeFilterCount++;
     const min = activeFilters.transactionsMin || 0;
     const max = activeFilters.transactionsMax || '∞';
-    filterChips.push(createFilterChip('Transactions', `${min} - ${max}`, () => {
-      activeFilters.transactionsMin = null;
-      activeFilters.transactionsMax = null;
-      document.getElementById('filterTransactionsMin').value = '';
-      document.getElementById('filterTransactionsMax').value = '';
-      renderAccountTable();
-      updateFilterDisplay();
-    }));
   }
 
   // Balance filter
@@ -1174,63 +1155,30 @@ function updateFilterDisplay() {
     activeFilterCount++;
     const min = activeFilters.balanceMin !== null ? `$${activeFilters.balanceMin}` : '$0';
     const max = activeFilters.balanceMax !== null ? `$${activeFilters.balanceMax}` : '∞';
-    filterChips.push(createFilterChip('Balance', `${min} - ${max}`, () => {
-      activeFilters.balanceMin = null;
-      activeFilters.balanceMax = null;
-      document.getElementById('filterBalanceMin').value = '';
-      document.getElementById('filterBalanceMax').value = '';
-      renderAccountTable();
-      updateFilterDisplay();
-    }));
   }
 
   // Inclusion filter
   if (activeFilters.inclusion !== 'all') {
     activeFilterCount++;
-    filterChips.push(createFilterChip('Status', capitalize(activeFilters.inclusion), () => {
-      activeFilters.inclusion = 'all';
-      document.querySelector('input[name="inclusionFilter"][value="all"]').checked = true;
-      renderAccountTable();
-      updateFilterDisplay();
-    }));
   }
 
   // Update filter count badge
   if (activeFilterCount > 0) {
-    filterCount.textContent = activeFilterCount;
-    filterCount.classList.remove('hidden');
+    filterNotificationBadge.textContent = activeFilterCount;
+    filterNotificationBadge.classList.remove('hidden');
   } else {
-    filterCount.classList.add('hidden');
+    filterNotificationBadge.classList.add('hidden');
   }
 
-  // Update active filters section
-  if (filterChips.length > 0) {
-    activeFiltersSection.classList.remove('hidden');
-    activeFiltersContainer.innerHTML = '';
-    filterChips.forEach(chip => activeFiltersContainer.appendChild(chip));
-  } else {
-    activeFiltersSection.classList.add('hidden');
+  // Update clear filters button visibility
+  const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+  if (clearFiltersBtn) {
+    if (activeFilterCount > 0) {
+      clearFiltersBtn.classList.remove('hidden');
+    } else {
+      clearFiltersBtn.classList.add('hidden');
+    }
   }
-
-  // Update filter status display
-  updateAccountCountDisplay(visibleCount, accounts.length);
-}
-
-function createFilterChip(label, value, onRemove) {
-  const chip = document.createElement('div');
-  chip.className = 'filter-chip';
-
-  const content = document.createElement('span');
-  content.textContent = `${label}: ${value}`;
-
-  const removeBtn = document.createElement('button');
-  removeBtn.onclick = onRemove;
-  removeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
-
-  chip.appendChild(content);
-  chip.appendChild(removeBtn);
-
-  return chip;
 }
 
 function passesFilters(account) {
@@ -1360,3 +1308,5 @@ function countActiveFilters() {
 
   return count;
 }
+
+// TODO: Implement logic for select all/deselect all for types and subtypes in the filter modal

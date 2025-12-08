@@ -30,7 +30,7 @@
   </div>
 
   <!-- Important Warning -->
-  <div class="w-full bg-amber-50 border border-amber-200 rounded-lg p-3">
+  <div class="w-full bg-amber-50 border border-amber-200 rounded-lg p-3 mt-4">
     <div class="flex items-start gap-2">
       <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
         <path fill-rule="evenodd"
@@ -47,31 +47,14 @@
   </div>
 
   <!-- Submit Button -->
-  <button id="submitOtpBtn" class="ui-button w-full btn-responsive" data-type="primary" data-size="large" disabled>
-    <span id="submitOtpBtnText">Verify & Start Import</span>
+  <ui-button id="submitOtpBtn" data-type="solid" data-size="large" disabled>
+    <span id="submitOtpBtnText">Connect to Monarch</span>
     <svg id="submitOtpSpinner" class="hidden animate-spin ml-2 h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24">
       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
       <path class="opacity-75" fill="currentColor"
         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
       </path>
     </svg>
-  </button>
+  </ui-button>
 
-</div>
-
-<!-- Security Note -->
-<div class="w-full max-w-md mx-auto">
-  <div class="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-    <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-      <path fill-rule="evenodd"
-        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-        clip-rule="evenodd" />
-    </svg>
-    <div>
-      <p class="text-xs sm:text-sm text-blue-800 leading-relaxed">
-        <strong>Security Notice:</strong> This verification step ensures your account's security.
-        The code expires in 10 minutes for your protection.
-      </p>
-    </div>
-  </div>
 </div>

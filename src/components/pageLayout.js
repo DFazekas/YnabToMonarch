@@ -1,7 +1,6 @@
 import { goBack, navigate } from '../router.js';
 import state from '../state.js';
 import { getLocalStorage } from '../utils/storage.js';
-import { renderButtons } from './button.js';
 
 /**
  * Page Layout Component
@@ -17,57 +16,55 @@ import { renderButtons } from './button.js';
  * @param {Object} options - Optional configuration
  */
 export function renderPageLayout(options = {}) {
-    const {
-        containerId = 'pageLayout',
-        navbar = null,
-        header = null,
-        className = ''
-    } = options;
+  const {
+    containerId = 'pageLayout',
+    navbar = null,
+    header = null,
+    className = ''
+  } = options;
 
-    const container = document.getElementById(containerId);
-    if (!container) {
-        console.error(`Page layout container #${containerId} not found`);
-        return;
-    }
+  const container = document.getElementById(containerId);
+  if (!container) {
+    console.error(`Page layout container #${containerId} not found`);
+    return;
+  }
 
-    // Get all siblings after pageLayout container (the page content)
-    const pageContent = [];
-    let sibling = container.nextElementSibling;
-    while (sibling) {
-        pageContent.push(sibling);
-        sibling = sibling.nextElementSibling;
-    }
+  // Get all siblings after pageLayout container (the page content)
+  const pageContent = [];
+  let sibling = container.nextElementSibling;
+  while (sibling) {
+    pageContent.push(sibling);
+    sibling = sibling.nextElementSibling;
+  }
 
-    // Set container as a page layout wrapper with consistent responsive styling
-    container.className = `min-h-screen flex flex-col ${className}`;
-    container.innerHTML = `
-    <main class="flex-1 w-full mx-auto px-4 sm:px-6 md:px-8 py-2 sm:py-4 md:py-6 lg:py-8 max-w-6xl">
-      <div class="flex flex-col space-y-6 sm:space-y-8 md:space-y-10">
+  // Set container as a page layout wrapper with consistent responsive styling
+  container.className = `min-h-screen flex flex-col w-full max-w-full mx-auto ${className}`;
+  container.innerHTML = `
+    <main class="flex-1 w-full max-w-full mx-auto px-4 py-2 overflow-x-hidden">
+      <div class="max-w-6xl mx-auto w-full min-w-0 flex flex-col space-y-6 ">
         <!-- Navigation Bar -->
-        <div id="navigationBar"></div>
+        <div id="navigationBar" class="min-w-0"></div>
 
         <!-- Page Header -->
-        <div id="pageHeader"></div>
+        <div id="pageHeader" class="min-w-0 mx-auto"></div>
 
         <!-- Page Content Slot -->
-        <div id="pageContent"></div>
+        <div id="pageContent" class="min-w-0 mx-auto"></div>
       </div>
     </main>
   `;
 
-    // Render optional navbar and header
-    if (navbar != null) renderNavigationBar(navbar);
-    if (header != null) renderPageHeader(header);
+  // Render optional navbar and header
+  if (navbar != null) renderNavigationBar(navbar);
+  if (header != null) renderPageHeader(header);
 
-    // Move the original page content into the pageContent slot
-    const contentContainer = document.getElementById('pageContent');
-    if (contentContainer) {
-        pageContent.forEach(element => {
-            contentContainer.appendChild(element);
-        });
-    }
-
-    renderButtons();
+  // Move the original page content into the pageContent slot
+  const contentContainer = document.getElementById('pageContent');
+  if (contentContainer) {
+    pageContent.forEach(element => {
+      contentContainer.appendChild(element);
+    });
+  }
 }
 
 /**
@@ -89,84 +86,74 @@ export function renderPageLayout(options = {}) {
  * ```
  */
 export function renderNavigationBar(options = {}) {
-    const {
-        showBackButton = true,
-        showDataButton = true,
-        backText = 'Back',
-        containerId = 'navigationBar'
-    } = options;
+  const {
+    showBackButton = true,
+    showDataButton = true,
+    backText = 'Back',
+    containerId = 'navigationBar'
+  } = options;
 
-    const container = document.getElementById(containerId);
-    if (!container) {
-        console.warn(`Navigation container with id "${containerId}" not found`);
-        return;
-    }
+  const container = document.getElementById(containerId);
+  if (!container) {
+    console.warn(`Navigation container with id "${containerId}" not found`);
+    return;
+  }
 
-    // Check if there's any user data stored
-    const hasData = checkForStoredData();
-    const dataButtonText = hasData ? 'Manage your data' : 'No data currently stored';
+  // Check if there's any user data stored
+  const hasData = checkForStoredData();
+  const dataButtonText = hasData ? 'Manage your data' : 'No data currently stored';
 
-    // Build navigation HTML
-    let navHTML = '<div class="flex flex-wrap items-center justify-between gap-2 mb-4">';
+  // Build navigation HTML
+  let navHTML = '<div class="flex flex-wrap items-center justify-between gap-2 mb-4">';
 
-    // Back button (left side)
-    if (showBackButton) {
-        navHTML += `
-      <button 
+  // Back button (left side)
+  if (showBackButton) {
+    navHTML += `
+      <ui-button 
         id="navBackBtn" 
-        class="ui-button flex items-center text-sm"
         data-type="text"
-        data-size="small"
       >
         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
         ${backText}
-      </button>
+      </ui-button>
     `;
-    } else {
-        navHTML += '<div></div>'; // Spacer for flexbox
-    }
+  } else {
+    navHTML += '<div></div>'; // Spacer for flexbox
+  }
 
-    // Data management button (right side)
-    if (showDataButton) {
-        navHTML += `
-      <button 
+  // Data management button (right side)
+  if (showDataButton) {
+    navHTML += `
+      <ui-button 
         id="navDataBtn" 
-        class="ui-button text-xs sm:text-sm"
         data-type="text"
-        data-size="small"
-        ${!hasData ? 'style="opacity: 0.6; cursor: default;"' : ''}
+        ${!hasData ? 'style="opacity: 0.6;"' : ''}
       >
         ${dataButtonText}
-      </button>
+      </ui-button>
     `;
-    }
+  }
 
-    navHTML += '</div>';
+  navHTML += '</div>';
 
-    container.innerHTML = navHTML;
+  container.innerHTML = navHTML;
 
-    // Re-render UI buttons after injecting HTML
-    // TODO: Can this be removed?
-    renderButtons();
+  // Attach event listeners
+  if (showBackButton) {
+    const backBtn = document.getElementById('navBackBtn');
+    backBtn?.addEventListener('click', () => {
+      goBack();
+    });
+  }
 
-    // Attach event listeners
-    if (showBackButton) {
-        const backBtn = document.getElementById('navBackBtn');
-        backBtn?.addEventListener('click', () => {
-            goBack();
-        });
-    }
-
-    if (showDataButton) {
-        const dataBtn = document.getElementById('navDataBtn');
-        dataBtn?.addEventListener('click', () => {
-            if (hasData) {
-                navigate('/data-management');
-            }
-        });
-    }
+  if (showDataButton) {
+    const dataBtn = document.getElementById('navDataBtn');
+    dataBtn?.addEventListener('click', () => {
+      navigate('/data-management');
+    });
+  }
 }
 
 /**
@@ -174,24 +161,24 @@ export function renderNavigationBar(options = {}) {
  * @returns {boolean} True if any data exists
  */
 function checkForStoredData() {
-    // Check state
-    const hasStateAccounts = state.accounts && Object.keys(state.accounts).length > 0;
-    const hasMonarchAccounts = state.monarchAccounts !== null;
+  // Check state
+  const hasStateAccounts = state.accounts && Object.keys(state.accounts).length > 0;
+  const hasMonarchAccounts = state.monarchAccounts !== null;
 
-    // Check sessionStorage
-    const hasSessionAccounts = sessionStorage.getItem('ynab_accounts') !== null;
-    const hasSessionMonarch = sessionStorage.getItem('monarch_accounts') !== null;
+  // Check sessionStorage
+  const hasSessionAccounts = sessionStorage.getItem('ynab_accounts') !== null;
+  const hasSessionMonarch = sessionStorage.getItem('monarch_accounts') !== null;
 
-    // Check localStorage
-    const localStorage = getLocalStorage();
-    const hasLocalStorageData = !!(
-        localStorage.email ||
-        localStorage.encryptedPassword ||
-        localStorage.token ||
-        localStorage.uuid
-    );
+  // Check localStorage
+  const localStorage = getLocalStorage();
+  const hasLocalStorageData = !!(
+    localStorage.email ||
+    localStorage.encryptedPassword ||
+    localStorage.token ||
+    localStorage.uuid
+  );
 
-    return hasStateAccounts || hasMonarchAccounts || hasSessionAccounts || hasSessionMonarch || hasLocalStorageData;
+  return hasStateAccounts || hasMonarchAccounts || hasSessionAccounts || hasSessionMonarch || hasLocalStorageData;
 }
 
 /**
@@ -217,20 +204,20 @@ function checkForStoredData() {
  * ```
  */
 export function renderPageHeader(options = {}) {
-    const {
-        title = '',
-        description = '',
-        containerId = 'pageHeader',
-        className = ''
-    } = options;
+  const {
+    title = '',
+    description = '',
+    containerId = 'pageHeader',
+    className = ''
+  } = options;
 
-    const container = document.getElementById(containerId);
-    if (!container) {
-        console.warn(`Page header container with id "${containerId}" not found`);
-        return;
-    }
+  const container = document.getElementById(containerId);
+  if (!container) {
+    console.warn(`Page header container with id "${containerId}" not found`);
+    return;
+  }
 
-    const headerHTML = `
+  const headerHTML = `
     <section class="text-center mb-2 ${className}">
       <div class="inline-flex items-center justify-center gap-2 mb-6">
         <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
@@ -244,14 +231,14 @@ export function renderPageHeader(options = {}) {
     </section>
   `;
 
-    container.innerHTML = headerHTML;
+  container.innerHTML = headerHTML;
 }
 
 /**
  * Escape HTML special characters to prevent XSS
  */
 function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }

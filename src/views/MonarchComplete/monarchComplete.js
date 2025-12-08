@@ -5,11 +5,6 @@ import { getAccountTypeByName, getSubtypeByName } from '../../utils/accountTypeU
 import { renderPageLayout } from '../../components/pageLayout.js';
 
 function initMonarchCompleteView() {
-  // Redirect to upload if no accounts are available
-  if (!state.accounts || Object.keys(state.accounts).length === 0) {
-    navigate('/upload', true);
-    return;
-  }
 
   renderPageLayout({
     navbar: {
@@ -29,6 +24,9 @@ function initMonarchCompleteView() {
   const header = document.getElementById('header');
   const subheader = document.getElementById('subheader');
   const overallStatus = document.getElementById('overallStatus');
+
+  document.getElementById('visitMonarchBtn').addEventListener('click', () => window.open('https://app.monarchmoney.com', '_blank'));
+  document.getElementById('retryFailedBtn').addEventListener('click', () => retryFailedAccounts());
 
   // Hide loading container and show results immediately
   const loadingContainer = document.getElementById('loadingContainer');
@@ -113,7 +111,7 @@ function initMonarchCompleteView() {
       updateAccountList();
 
       // Process this batch
-      await processBatch(token, batch, batchIndex + 1, batches.length);
+      await processBatch(token, batch);
 
       // Small delay between batches to be API-friendly
       if (batchIndex < batches.length - 1) {
@@ -127,10 +125,9 @@ function initMonarchCompleteView() {
     updateActionButtons();
   }
 
-  async function processBatch(token, batch, batchNumber, totalBatches) {
+  async function processBatch(token, batch) {
     try {
-
-      // Step 1: Create accounts and upload transactions
+      // Create accounts and upload transactions
       const response = await monarchApi.createAccounts(token, batch);
 
       // Handle the response format: { success: [...], failed: [...] }
@@ -387,39 +384,8 @@ function initMonarchCompleteView() {
     const failedAccounts = Object.values(accounts).filter(acc => acc.included && acc.status === 'failed');
     const completedAccounts = Object.values(accounts).filter(acc => acc.included && acc.status === 'completed');
 
-    // Clear existing buttons
-    actionButtonsContainer.innerHTML = '';
-
-    // Create retry button if there are failed accounts
-    if (failedAccounts.length > 0) {
-      const retryBtn = document.createElement('button');
-      retryBtn.className = 'ui-button';
-      retryBtn.dataset.type = 'primary';
-      retryBtn.dataset.size = 'medium';
-      retryBtn.textContent = 'Retry Failed Accounts';
-      retryBtn.addEventListener('click', () => retryFailedAccounts());
-      actionButtonsContainer.appendChild(retryBtn);
-    }
-
-    // Create view in Monarch button if there are completed accounts
-    if (completedAccounts.length > 0) {
-      const viewBtn = document.createElement('button');
-      viewBtn.className = 'ui-button';
-      viewBtn.dataset.type = 'secondary';
-      viewBtn.dataset.size = 'medium';
-      viewBtn.textContent = 'View in Monarch Money';
-      viewBtn.addEventListener('click', () => window.open('https://app.monarchmoney.com', '_blank'));
-      actionButtonsContainer.appendChild(viewBtn);
-    }
-
-    // Always create start over button
-    const startOverBtn = document.createElement('button');
-    startOverBtn.className = 'ui-button';
-    startOverBtn.dataset.type = 'secondary';
-    startOverBtn.dataset.size = 'medium';
-    startOverBtn.textContent = 'Start Over';
-    startOverBtn.addEventListener('click', () => navigate('/upload', true));
-    actionButtonsContainer.appendChild(startOverBtn);
+    document.getElementById('retryFailedBtn').hidden = failedAccounts.length === 0;
+    document.getElementById('visitMonarchBtn').hidden = completedAccounts.length <= 0;
   }
 
   function retryFailedAccounts() {

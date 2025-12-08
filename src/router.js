@@ -154,8 +154,11 @@ export async function navigate(path, replace = false, skipRouteGuards = false) {
     const currentPath = getCurrentPath();
     
     // Update URL and history state
+    // For OAuth callback, preserve query parameters; otherwise just use the path
+    const urlToSet = path === '/oauth/ynab/callback' ? window.location.href : path;
+    
     if (replace) {
-      history.replaceState({ path }, '', path);
+      history.replaceState({ path }, '', urlToSet);
       // When replacing, don't modify our navigation history
     } else {
       // Only track in our history if this is a real user navigation (not a redirect)
@@ -167,7 +170,7 @@ export async function navigate(path, replace = false, skipRouteGuards = false) {
           navigationHistory.shift();
         }
       }
-      history.pushState({ path }, '', path);
+      history.pushState({ path }, '', urlToSet);
     }
 
     await renderRoute(path);
@@ -201,6 +204,9 @@ async function renderRoute(path) {
   } else {
     document.body.classList.remove('always-scroll');
   }
+
+  // Scroll to top on route change
+  window.scrollTo(0, 0);
 
   // Clear and inject HTML template
   app.innerHTML = '';
@@ -393,8 +399,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   try {
     if (route) {
       // Initialize history state for the current page
+      // For OAuth callback, preserve query parameters; otherwise just use the path
       if (!history.state) {
-        history.replaceState({ path }, '', path);
+        const urlToSet = path === '/oauth/ynab/callback' ? window.location.href : path;
+        history.replaceState({ path }, '', urlToSet);
       }
       await renderRoute(path);
     } else {

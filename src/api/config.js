@@ -20,7 +20,7 @@ async function fetchConfig() {
     // that a build tool would normally provide.
     return {
       ynabClientId: 'FALLBACK_CLIENT_ID',
-      ynabRedirectUri: 'http://localhost:8888/oauth/ynab/callback'
+      ynabRedirectUri: 'http://localhost:3000/oauth/ynab/callback'
     };
   }
 }
@@ -29,9 +29,10 @@ export async function getConfig() {
   return await fetchConfig();
 }
 
-const base = location.hostname === 'localhost'
-  ? 'http://localhost:3000/dev/'
-  : '/.netlify/functions/';
+// Netlify Dev serves both the site and functions at the same origin
+// In production: /.netlify/functions/
+// In local dev (netlify dev): /.netlify/functions/ (same path, netlify dev proxies it)
+const base = '/.netlify/functions/';
 
 export const API = {
   login: base + 'monarchLogin',

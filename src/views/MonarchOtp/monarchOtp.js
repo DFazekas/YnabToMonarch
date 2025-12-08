@@ -15,7 +15,7 @@ export default function initMonarchOtpView() {
       showDataButton: true
     },
     header: {
-      title: 'Enter Your Verification Code',
+      title: 'Step 5: Enter Your Verification Code',
       description: 'Monarch has sent a 6-digit verification code to your email address. Enter it below to continue with the secure import process.',
       containerId: 'pageHeader'
     }
@@ -49,7 +49,7 @@ export default function initMonarchOtpView() {
   // Ensure we have the required credentials for OTP
   if (!credentials.email || !credentials.encryptedPassword) {
     console.warn('Missing credentials for OTP flow, redirecting to login');
-    return navigate('/credentials');
+    return navigate('/credentials', true);
   }
 
   async function onClickSubmitOtp(e) {
@@ -88,7 +88,7 @@ export default function initMonarchOtpView() {
         }
 
         console.groupEnd("MonarchOtpView");
-        return navigate('/complete');
+        return navigate('/complete', true);
       }
 
       throw new Error('Unknown login response.');

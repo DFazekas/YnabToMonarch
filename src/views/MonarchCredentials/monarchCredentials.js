@@ -18,7 +18,7 @@ export default async function initMonarchCredentialsView() {
       showDataButton: true
     },
     header: {
-      title: 'Auto Import: Connect Your Monarch Account',
+      title: 'Step 4: Auto Migration',
       description: 'Authorize your Monarch account so we can directly import your accounts and transactions.',
       containerId: 'pageHeader'
     }
@@ -97,17 +97,27 @@ export default async function initMonarchCredentialsView() {
 
     switch (status) {
       case 'remembered':
-        UI.securityNoteMsg.textContent = 'Your credentials will be stored securely on this device.';
+        UI.securityNoteMsg.innerHTML = 'Your credentials will be encrypted and saved to this device. <a href="#" data-nav="/data-management" class="text-blue-600 hover:text-blue-800 underline">Manage stored data</a>.';
         UI.securityNoteIcon.setAttribute('fill', COLOR.ORANGE);
         break;
       case 'signed-in':
-        UI.securityNoteMsg.textContent = 'You are signed in. To use different credentials, click "Not you?".';
+        UI.securityNoteMsg.innerHTML = 'Currently signed in. To use different credentials, click "Not you?" or <a href="#" data-nav="/data-management" class="text-blue-600 hover:text-blue-800 underline">manage your data</a>.';
         UI.securityNoteIcon.setAttribute('fill', COLOR.BLUE);
         break;
       default:
-        UI.securityNoteMsg.textContent = 'Your credentials will not be stored.';
+        UI.securityNoteMsg.textContent = 'Your credentials will only be used for this session and will not be saved.';
         UI.securityNoteIcon.setAttribute('fill', COLOR.GREEN);
     }
+    
+    // Attach navigation handlers to links
+    const links = UI.securityNoteMsg.querySelectorAll('[data-nav]');
+    links.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const path = e.target.getAttribute('data-nav');
+        navigate(path);
+      });
+    });
   }
 
   function onSubmitForm(e) {

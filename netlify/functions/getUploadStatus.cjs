@@ -13,7 +13,31 @@ export async function handler(event) {
   }
 
   try {
-    const { token, sessionKey } = JSON.parse(event.body);
+    // Handle missing or empty body
+    if (!event.body) {
+      console.error("getUploadStatus ❌ missing request body");
+      console.groupEnd("getUploadStatus")
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Request body is required.' })
+      };
+    }
+
+    // Parse body - handle both string and object cases
+    const bodyData = typeof event.body === 'string' 
+      ? JSON.parse(event.body) 
+      : event.body;
+
+    const { token, sessionKey } = bodyData;
+    
+    if (!token || !sessionKey) {
+      console.error("getUploadStatus ❌ missing token or sessionKey");
+      console.groupEnd("getUploadStatus")
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Token and sessionKey are required.' })
+      };
+    }
 
     const res = await fetch(MONARCH_GRAPHQL_ENDPOINT, {
       method: 'POST',
@@ -47,11 +71,17 @@ export async function handler(event) {
       body: JSON.stringify(result)
     };
   } catch (error) {
-    console.error('❌ Error fetching upload status:', error);
+    console.error('getUploadStatus ❌ unexpected error:', error);
+    console.error("Error details:", {
+      message: error.message,
+      stack: error.stack,
+      body: event.body,
+      bodyType: typeof event.body
+    });
     console.groupEnd("getUploadStatus")
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message }),
+      body: JSON.stringify({ error: error.message || 'Internal Server Error' }),
     };
   }
 }

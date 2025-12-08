@@ -76,56 +76,42 @@
 
 <!-- Action Buttons -->
 <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-  <button id="exportDataBtn" class="ui-button" data-type="secondary" data-size="medium">
+  <ui-button id="exportDataBtn" data-type="outline" data-color="grey">
     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
         d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
     </svg>
     Export Data (JSON)
-  </button>
+  </ui-button>
 
-  <button id="clearAllDataBtn" class="ui-button" data-type="danger" data-size="medium">
+  <ui-button id="clearAllDataBtn" data-type="solid" data-color="red">
     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
     </svg>
     Clear All Data
-  </button>
-</div>
-
-<!-- Info Footer -->
-<div class="mt-8 text-center text-sm text-gray-500">
-  <p>Clearing data will remove all accounts, credentials, and session information.</p>
-  <p class="mt-1">You'll need to re-upload your YNAB data and re-authenticate with Monarch.</p>
+  </ui-button>
 </div>
 
 <!-- Confirmation Modal -->
-<div id="confirmClearModal"
-  class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 pointer-events-none opacity-0 transition-opacity duration-500">
-  <div
-    class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 transform translate-y-full transition-transform duration-500">
-    <div class="flex items-start mb-4">
-      <div class="flex-shrink-0">
-        <svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-      </div>
-      <div class="ml-4">
-        <h3 class="text-lg font-semibold text-gray-900 mb-2">Clear All Data?</h3>
-        <p class="text-sm text-gray-600 mb-4">
-          This action cannot be undone. All your YNAB accounts, Monarch credentials, and session data will be
-          permanently deleted from your browser.
-        </p>
-        <div class="flex gap-3 justify-end">
-          <button id="cancelClearBtn" class="ui-button" data-type="secondary" data-size="small">
-            Cancel
-          </button>
-          <button id="confirmClearBtn" class="ui-button" data-type="danger" data-size="small">
-            Yes, Clear Everything
-          </button>
-        </div>
-      </div>
+<ui-modal id="confirmClearModal">
+  <div slot="title">
+    <div class="flex-shrink-0">
+      <svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
     </div>
+    <h3 class="text-lg font-semibold text-gray-900 mb-2">Clear All Data?</h3>
   </div>
-</div>
+  <div slot="content" class="space-y-4">
+    <p class="text-sm text-gray-600 mb-4">
+      This action cannot be undone. All your YNAB accounts, Monarch credentials, and session data will be
+      permanently deleted from your browser.
+    </p>
+  </div>
+  <div slot="footer">
+    <ui-button id="cancelBtn" data-type="outline" data-color="grey">Cancel</ui-button>
+    <ui-button id="applyBtn" data-type="solid" data-color="red">Yes, wipe my data</ui-button>
+  </div>
+</ui-modal>

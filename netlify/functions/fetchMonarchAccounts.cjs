@@ -12,7 +12,22 @@ module.exports.handler = async (event, context) => {
     }
   }
   try {
-    const { token } = JSON.parse(event.body)
+    // Handle missing or empty body
+    if (!event.body) {
+      console.error("MonarchAccount ❌ missing request body");
+      console.groupEnd("fetchMonarchAccounts")
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Request body is required.' })
+      }
+    }
+
+    // Parse body - handle both string and object cases
+    const bodyData = typeof event.body === 'string' 
+      ? JSON.parse(event.body) 
+      : event.body;
+    
+    const { token } = bodyData
     if (!token) {
       console.error("MonarchAccount ❌ missing token");
       console.groupEnd("fetchMonarchAccounts")
@@ -47,10 +62,16 @@ module.exports.handler = async (event, context) => {
     }
   } catch (error) {
     console.error("MonarchAccount ❌ unexpected error", error)
+    console.error("Error details:", {
+      message: error.message,
+      stack: error.stack,
+      body: event.body,
+      bodyType: typeof event.body
+    })
     console.groupEnd("fetchMonarchAccounts")
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Internal Server Error' })
+      body: JSON.stringify({ error: error.message || 'Internal Server Error' })
     }
   }
 }

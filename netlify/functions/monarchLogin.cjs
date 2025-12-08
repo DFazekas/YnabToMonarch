@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 import { decryptPassword } from '../../shared/crypto-node.js';
 
-export async function handler(event, context) {
+export async function handler(event) {
   console.group("monarchLogin");
 
   if (event.httpMethod !== 'POST') {
@@ -11,10 +11,25 @@ export async function handler(event, context) {
   }
 
   try {
-    let { email, encryptedPassword, deviceUuid, otp } = JSON.parse(event.body)
+    // Handle missing or empty body
+    if (!event.body) {
+      console.error("monarchLogin ❌ missing request body");
+      console.groupEnd();
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Request body is required.' })
+      };
+    }
+
+    // Parse body - handle both string and object cases
+    const bodyData = typeof event.body === 'string'
+      ? JSON.parse(event.body)
+      : event.body;
+
+    let { email, encryptedPassword, deviceUuid, otp } = bodyData;
     if (!email || !encryptedPassword || !deviceUuid) {
       console.error("MonarchLogin ❌ missing credentials");
-      console.groupEnd("monarchLogin");
+      console.groupEnd();
       return createResponse(400, { error: 'Email, password, and device UUID are required.' })
     }
 
@@ -50,7 +65,7 @@ export async function handler(event, context) {
       // Invalid API request
       if (data.detail && data.detail.toLowerCase().includes("version")) {
         console.error("MonarchLogin ❌ Invalid API request", response, data);
-        console.groupEnd("monarchLogin");
+        console.groupEnd();
         return createResponse(500, { error: `Seems there's a bug in our code. Please let us know by reporting it here: <a href=\"https://github.com/DFazekas/YnabToMonarch/issues\">https://github.com/DFazekas/YnabToMonarch/issues</a>` })
       }
 
@@ -60,7 +75,7 @@ export async function handler(event, context) {
         //   "detail": "Retrieve the code from your email to continue login.",
         //   "error_code": "EMAIL_OTP_REQUIRED"
         // }
-        console.groupEnd("monarchLogin");
+        console.groupEnd();
         return createResponse(200, { otpRequired: true, detail: data.detail });
       }
     }
@@ -68,31 +83,31 @@ export async function handler(event, context) {
     // Failed: CAPTCHA is required
     if (response.status == 429) {
       console.error("MonarchLogin ❌ CAPTCHA required", { status: response.status, error: data });
-      console.groupEnd("monarchLogin");
+      console.groupEnd();
       return createResponse(429, { error: "CAPTCHA required. Please try again later." });
     }
 
     // Unexpected failure response
     if (!response.ok) {
       console.error("MonarchLogin ❌ login failed", { status: response.status, response: response, data: data })
-      console.groupEnd("monarchLogin");
+      console.groupEnd();
       return createResponse(response.status, { error: data.detail || 'Login failed.' });
     }
 
     // Response success but strangely missing token in response
     if (!data.token) {
       console.error("MonarchLogin ❌ token missing in response", { status: response.status, response: response, data: data })
-      console.groupEnd("monarchLogin");
+      console.groupEnd();
       return createResponse(500, { error: "Token not found in response." });
     }
 
     // Successful login
     console.log("MonarchLogin ✅ login successful", { tokenPreview: data.token.slice(0, 8) + '…' })
-    console.groupEnd("monarchLogin");
+    console.groupEnd();
     return createResponse(200, { token: data.token });
   } catch (error) {
     console.error("MonarchLogin ❌ unexpected error", error)
-    console.groupEnd("monarchLogin");
+    console.groupEnd();
     return createResponse(500, { error: 'Internal Server Error' });
   }
 }

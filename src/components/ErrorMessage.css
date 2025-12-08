@@ -1,0 +1,68 @@
+/**
+ * Error Message Styles
+ * 
+ * Styles for the ErrorMessage component with animations and accessibility features.
+ */
+
+/* Container */
+.error-message-container {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.error-message-container.hidden {
+  display: none;
+}
+
+.error-message-container.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Content */
+.error-message-content {
+  max-width: 100%;
+  word-wrap: break-word;
+}
+
+/* Ensure proper spacing on mobile */
+@media (max-width: 640px) {
+  .error-message-content {
+    font-size: 0.875rem;
+  }
+  
+  .error-message-text,
+  .error-solution-text {
+    line-height: 1.5;
+  }
+}
+
+/* Focus visible for accessibility */
+.error-close-btn:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* Animation keyframes */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
