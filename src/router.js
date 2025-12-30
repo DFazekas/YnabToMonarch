@@ -29,67 +29,70 @@ import initDataManagementView from './views/DataManagement/dataManagement.js';
 import dataManagementTemplate from './views/DataManagement/dataManagement.html';
 
 import state from './state.js';
-import { getLocalStorage } from './utils/storage.js';
+
+import loadingOverlay from './components/LoadingOverlay.js';
+
+import './components/index.js';
 
 const routes = {
-  '/': { 
-    template: homeTemplate, 
-    init: initHomeView, 
-    scroll: false, 
+  '/': {
+    template: homeTemplate,
+    init: initHomeView,
+    scroll: false,
     title: 'Home - YNAB to Monarch',
     requiresAuth: false
   },
-  '/upload': { 
-    template: uploadTemplate, 
-    init: initUploadView, 
-    scroll: false, 
+  '/upload': {
+    template: uploadTemplate,
+    init: initUploadView,
+    scroll: false,
     title: 'Upload - YNAB to Monarch',
     requiresAuth: false
   },
-  '/review': { 
-    template: reviewTemplate, 
-    init: initAccountReviewView, 
-    scroll: true, 
+  '/review': {
+    template: reviewTemplate,
+    init: initAccountReviewView,
+    scroll: true,
     title: 'Review Accounts - YNAB to Monarch',
     requiresAuth: false,
     requiresAccounts: true
   },
-  '/method': { 
-    template: methodTemplate, 
-    init: initMethodSelectView, 
-    scroll: false, 
+  '/method': {
+    template: methodTemplate,
+    init: initMethodSelectView,
+    scroll: false,
     title: 'Select Method - YNAB to Monarch',
     requiresAuth: false,
     requiresAccounts: true
   },
-  '/manual': { 
-    template: manualInstructionsTemplate, 
-    init: initManualInstructionsView, 
-    scroll: true, 
+  '/manual': {
+    template: manualInstructionsTemplate,
+    init: initManualInstructionsView,
+    scroll: true,
     title: 'Manual Import - YNAB to Monarch',
     requiresAuth: false,
     requiresAccounts: true
   },
-  '/login': { 
-    template: monarchCredentialsTemplate, 
-    init: initMonarchCredentialsView, 
-    scroll: false, 
+  '/login': {
+    template: monarchCredentialsTemplate,
+    init: initMonarchCredentialsView,
+    scroll: false,
     title: 'Login to Monarch - YNAB to Monarch',
     requiresAuth: false,
     requiresAccounts: true
   },
-  '/otp': { 
-    template: monarchOtpTemplate, 
-    init: initMonarchOtpView, 
-    scroll: false, 
+  '/otp': {
+    template: monarchOtpTemplate,
+    init: initMonarchOtpView,
+    scroll: false,
     title: 'Enter OTP - YNAB to Monarch',
     requiresAuth: false,
     requiresAccounts: true
   },
-  '/complete': { 
-    template: monarchCompleteTemplate, 
-    init: initMonarchCompleteView, 
-    scroll: false, 
+  '/complete': {
+    template: monarchCompleteTemplate,
+    init: initMonarchCompleteView,
+    scroll: false,
     title: 'Migration Complete - YNAB to Monarch',
     requiresAuth: false,
     requiresAccounts: true
@@ -142,8 +145,8 @@ export async function navigate(path, replace = false, skipRouteGuards = false) {
 
     // Check route guards (skip if explicitly requested)
     if (!skipRouteGuards && route.requiresAccounts) {
-      const hasAccounts = state.accounts && Object.keys(state.accounts).length > 0;
-      
+      const hasAccounts = state.hasAccounts();
+
       if (!hasAccounts) {
         console.warn(`Route ${path} requires accounts but none found. Redirecting to upload.`);
         return navigate('/upload', true);
@@ -152,19 +155,19 @@ export async function navigate(path, replace = false, skipRouteGuards = false) {
 
     // Track navigation history
     const currentPath = getCurrentPath();
-    
+
     // Update URL and history state
     // For OAuth callback, preserve query parameters; otherwise just use the path
     const urlToSet = path === '/oauth/ynab/callback' ? window.location.href : path;
-    
+
     if (replace) {
-      history.replaceState({ path }, '', urlToSet);
       // When replacing, don't modify our navigation history
+      history.replaceState({ path }, '', urlToSet);
     } else {
       // Only track in our history if this is a real user navigation (not a redirect)
       if (currentPath && currentPath !== path) {
         navigationHistory.push(currentPath);
-        
+
         // Limit history size
         if (navigationHistory.length > MAX_HISTORY_SIZE) {
           navigationHistory.shift();
@@ -189,6 +192,9 @@ async function renderRoute(path) {
   const app = document.getElementById('app');
   const route = routes[path] || routes['/upload'];
 
+  // Reset loading overlay when navigating to a new route
+  loadingOverlay.reset();
+
   // Set page title
   document.title = route.title;
 
@@ -199,11 +205,7 @@ async function renderRoute(path) {
   }
 
   // Dynamically control page overflow
-  if (route.scroll) {
-    document.body.classList.add('always-scroll');
-  } else {
-    document.body.classList.remove('always-scroll');
-  }
+  document.body.classList.toggle('always-scroll', route.scroll);
 
   // Scroll to top on route change
   window.scrollTo(0, 0);
@@ -226,21 +228,12 @@ async function renderRoute(path) {
 
 export function persistState() {
   try {
-    // Persist accounts to sessionStorage (survives refresh, cleared on tab close)
-    if (Object.keys(state.accounts).length > 0) {
-      sessionStorage.setItem('ynab_accounts', JSON.stringify(state.accounts));
-    }
-    
-    if (state.monarchAccounts) {
-      sessionStorage.setItem('monarch_accounts', JSON.stringify(state.monarchAccounts));
-    }
-
     // Also persist some state to localStorage for cross-session persistence
     const persistentState = {
       lastPath: getCurrentPath(),
       timestamp: Date.now()
     };
-    
+
     localStorage.setItem('app_state', JSON.stringify(persistentState));
   } catch (error) {
     console.error('Error persisting state:', error);
@@ -250,75 +243,28 @@ export function persistState() {
 // Enhanced state loading with error recovery
 async function loadPersistedState() {
   try {
-    // Initialize accounts as empty object if not already set
-    if (!state.accounts) {
-      state.accounts = {};
+    // Load Monarch credentials from sessionStorage (not localStorage - see storage strategy)
+    const monarchEmail = sessionStorage.getItem('monarch_email');
+    const monarchPwdEnc = sessionStorage.getItem('monarch_pwd_enc');
+    const monarchToken = sessionStorage.getItem('monarch_token');
+    const monarchUuid = sessionStorage.getItem('monarch_uuid');
+
+    if (monarchEmail || monarchToken) {
+      state.monarchCredentials = {
+        email: monarchEmail || state.monarchCredentials.email,
+        encryptedPassword: monarchPwdEnc || state.monarchCredentials.encryptedPassword,
+        accessToken: monarchToken || state.monarchCredentials.accessToken,
+        uuid: monarchUuid || state.monarchCredentials.uuid,
+        otp: state.monarchCredentials.otp
+      };
     }
 
-    // Load credentials from localStorage
-    const localStorageData = getLocalStorage();
-    if (localStorageData.email || localStorageData.token) {
-      state.credentials.email = localStorageData.email || state.credentials.email;
-      state.credentials.encryptedPassword = localStorageData.encryptedPassword || state.credentials.encryptedPassword;
-      state.credentials.apiToken = localStorageData.token || state.credentials.apiToken;
-      state.credentials.deviceUuid = localStorageData.uuid || state.credentials.deviceUuid;
-      state.credentials.remember = localStorageData.remember || state.credentials.remember;
-    }
+    // Note: YNAB tokens are now in HttpOnly cookies, not accessible here
+    // Note: Financial data is loaded from IndexedDB on the upload page
 
-    // Load accounts from sessionStorage (survives page refresh but not tab close)
-    const accountsData = sessionStorage.getItem('ynab_accounts');
-    if (accountsData) {
-      try {
-        const parsedAccounts = JSON.parse(accountsData);
-        // Validate accounts data structure
-        if (parsedAccounts && typeof parsedAccounts === 'object') {
-          state.accounts = parsedAccounts;
-        }
-      } catch (e) {
-        console.warn('Failed to parse accounts from sessionStorage:', e);
-        sessionStorage.removeItem('ynab_accounts');
-        state.accounts = {};
-      }
-    }
-
-    // Load monarch accounts from sessionStorage
-    const monarchAccountsData = sessionStorage.getItem('monarch_accounts');
-    if (monarchAccountsData) {
-      try {
-        const parsedMonarchAccounts = JSON.parse(monarchAccountsData);
-        if (parsedMonarchAccounts && typeof parsedMonarchAccounts === 'object') {
-          state.monarchAccounts = parsedMonarchAccounts;
-        }
-      } catch (e) {
-        console.warn('Failed to parse monarch accounts from sessionStorage:', e);
-        sessionStorage.removeItem('monarch_accounts');
-        state.monarchAccounts = null;
-      }
-    }
-
-    // Load app state for additional context
-    const appStateData = localStorage.getItem('app_state');
-    if (appStateData) {
-      try {
-        const appState = JSON.parse(appStateData);
-        // Check if state is recent (within last 24 hours)
-        if (appState.timestamp && (Date.now() - appState.timestamp) < 24 * 60 * 60 * 1000) {
-          // State is recent and valid
-          console.log('Loaded recent app state from localStorage');
-        } else {
-          // Clean up old state
-          localStorage.removeItem('app_state');
-        }
-      } catch (e) {
-        console.warn('Failed to parse app state from localStorage:', e);
-        localStorage.removeItem('app_state');
-      }
-    }
+    console.log('✅ Persisted state loaded');
   } catch (error) {
     console.error('Error loading persisted state:', error);
-    // Reset state on critical error
-    state.accounts = {};
-    state.monarchAccounts = null;
   }
 }
 
@@ -333,18 +279,11 @@ export function isValidRoute(path) {
 // Clear all application state (useful for logout or reset)
 export function clearAppState() {
   try {
-    // Clear session storage
-    sessionStorage.removeItem('ynab_accounts');
-    sessionStorage.removeItem('monarch_accounts');
-    
     // Clear app state from localStorage (but keep credentials if remember is enabled)
     localStorage.removeItem('app_state');
-    
-    // Reset in-memory state
-    state.accounts = {};
-    state.monarchAccounts = null;
-    
-    console.log('Application state cleared');
+
+    // Reset in-memory state via StateManager
+    state.clearAll();
   } catch (error) {
     console.error('Error clearing app state:', error);
   }
@@ -358,7 +297,7 @@ export function goBack() {
   // Check if we have navigation history
   if (navigationHistory.length > 0) {
     const previousPath = navigationHistory.pop();
-    
+
     // Validate the previous path is still a valid route
     if (isValidRoute(previousPath)) {
       // Navigate directly to the previous path
@@ -367,7 +306,7 @@ export function goBack() {
       return;
     }
   }
-  
+
   // Fallback: navigate to home page
   navigate('/', true);
 }
@@ -382,7 +321,7 @@ window.addEventListener('popstate', async (event) => {
       if (navigationHistory.length > 0) {
         navigationHistory.pop();
       }
-      
+
       await renderRoute(path);
     } catch (error) {
       console.error('Error handling popstate:', error);
@@ -395,7 +334,7 @@ window.addEventListener('popstate', async (event) => {
 window.addEventListener('DOMContentLoaded', async () => {
   const path = window.location.pathname;
   const route = routes[path];
-  
+
   try {
     if (route) {
       // Initialize history state for the current page

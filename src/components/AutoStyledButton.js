@@ -228,12 +228,42 @@ class AutoStyledButton extends HTMLElement {
       this._initialized = true;
 
       // Watch for attribute changes
-      this._observer = new MutationObserver(() => this.applyStyles());
+      this._observer = new MutationObserver((mutations) => {
+        // Prevent infinite loops by checking if we're already applying styles
+        if (this._applyingStyles) return;
+        this.applyStyles();
+      });
       this._observer.observe(this, {
         attributes: true,
         attributeFilter: ['data-type', 'data-color', 'data-size', 'disabled', 'data-fullwidth']
       });
+
+      // Override the disabled property setter to trigger attribute changes
+      this._overrideDisabledProperty();
     }
+  }
+
+  _overrideDisabledProperty() {
+    // Define a new property that updates the attribute when changed
+    Object.defineProperty(this, 'disabled', {
+      get() {
+        return this.hasAttribute('disabled');
+      },
+      set(value) {
+        const currentValue = this.hasAttribute('disabled');
+        const newValue = Boolean(value);
+        
+        // Only update if the value actually changed
+        if (currentValue !== newValue) {
+          if (newValue) {
+            this.setAttribute('disabled', '');
+          } else {
+            this.removeAttribute('disabled');
+          }
+        }
+      },
+      configurable: true
+    });
   }
 
   disconnectedCallback() {
@@ -243,46 +273,53 @@ class AutoStyledButton extends HTMLElement {
   }
 
   applyStyles() {
-    const type = this.dataset.type || 'solid';
-    const color = this.dataset.color || 'blue';
-    const size = this.dataset.size || 'medium';
-    const isDisabled = this.hasAttribute('disabled') || this.disabled;
-    const fullWidth = this.hasAttribute('data-fullwidth');
+    // Prevent recursive calls
+    if (this._applyingStyles) return;
+    this._applyingStyles = true;
 
-    // Reset classes
-    this.className = 'ui-button';
+    try {
+      const type = this.dataset.type || 'solid';
+      const color = this.dataset.color || 'blue';
+      const size = this.dataset.size || 'medium';
+      const isDisabled = this.hasAttribute('disabled');
+      const fullWidth = this.hasAttribute('data-fullwidth');
 
-    // Add base styles
-    this.classList.add(...buttonStyles.base);
+      // Reset classes
+      this.className = 'ui-button';
 
-    // Add size styles (skip for text type)
-    if (type !== 'text') {
-      this.classList.add(...(buttonStyles.sizes[size] || buttonStyles.sizes.medium));
-    }
+      // Add base styles
+      this.classList.add(...buttonStyles.base);
 
-    // Get color and type styles
-    const colorStyles = buttonStyles.colors[color] || buttonStyles.colors.blue;
-    const typeStyle = colorStyles[type] || colorStyles.solid;
+      // Add size styles (skip for text type)
+      if (type !== 'text') {
+        this.classList.add(...(buttonStyles.sizes[size] || buttonStyles.sizes.medium));
+      }
 
-    // Add type and color styles
-    this.classList.add(...typeStyle.base);
+      // Get color and type styles
+      const colorStyles = buttonStyles.colors[color] || buttonStyles.colors.blue;
+      const typeStyle = colorStyles[type] || colorStyles.solid;
 
-    // Add hover styles if not disabled
-    if (!isDisabled) {
-      this.classList.add('cursor-pointer', ...typeStyle.hover);
-    } else {
-      this.classList.add('opacity-50', 'cursor-not-allowed');
-      this.setAttribute('disabled', '');
-    }
+      // Add type and color styles
+      this.classList.add(...typeStyle.base);
 
-    // Handle full width
-    if (fullWidth) {
-      this.classList.add('w-full');
-    }
+      // Add hover styles if not disabled
+      if (!isDisabled) {
+        this.classList.add('cursor-pointer', ...typeStyle.hover);
+      } else {
+        this.classList.add('opacity-50', 'cursor-not-allowed');
+      }
 
-    // Set button type
-    if (!this.hasAttribute('type')) {
-      this.setAttribute('type', 'button');
+      // Handle full width
+      if (fullWidth) {
+        this.classList.add('w-full');
+      }
+
+      // Set button type
+      if (!this.hasAttribute('type')) {
+        this.setAttribute('type', 'button');
+      }
+    } finally {
+      this._applyingStyles = false;
     }
   }
 

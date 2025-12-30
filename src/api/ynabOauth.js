@@ -91,11 +91,7 @@ export async function startYnabOauth() {
   const state = buildState();
   persistExpectedState(state);
 
-  const redirectUri = getRedirectUri();
-  console.log('Starting YNAB OAuth:', { clientId, state, redirectUri });
-
   const url = buildAuthorizeUrl(clientId, state);
-  console.log('Redirecting to:', url);
   window.location.assign(url);
   return url;
 }

@@ -25,6 +25,12 @@
     "watch:js": "esbuild ./src/main.js --bundle --outfile=./public/bundle.js --loader:.html=text --watch",
     "netlify": "netlify dev",
     "dev": "npm-run-all --parallel watch:* netlify",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:all": "npm test && npm run test:e2e",
     "update:Shortcuts": "node ./tools/fetchMonarchShortcuts.js",
     "delete:AllAccounts": "node ./tools/deleteAllMonarchAccounts.js"
   },
@@ -40,13 +46,18 @@
   },
   "devDependencies": {
     "@netlify/esbuild": "^0.14.39-1",
+    "@playwright/test": "^1.57.0",
+    "@vitest/coverage-v8": "^4.0.16",
+    "@vitest/ui": "^4.0.16",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.5",
+    "jsdom": "^27.4.0",
     "live-server": "^1.2.2",
-    "netlify-cli": "^21.6.0",
+    "netlify-cli": "^23.13.0",
     "npm-run-all": "^4.1.5",
     "postcss": "^8.5.4",
     "serverless": "^4.14.2",
-    "serverless-offline": "^14.4.0"
+    "serverless-offline": "^14.4.0",
+    "vitest": "^4.0.16"
   }
 }

@@ -1,7 +1,5 @@
 import { handleOauthCallback } from '../../api/ynabApi.js';
 import { renderPageLayout } from '../../components/pageLayout.js';
-import '../../components/ErrorMessage.js';
-import '../../components/AutoStyledButton.js';
 import { navigate, persistState } from '../../router.js';
 
 export default async function initYnabOauthCallbackView() {

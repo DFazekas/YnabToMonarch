@@ -1,7 +1,12 @@
-import { clearStorage, getLocalStorage } from '../../utils/storage.js';
-import { clearAppState } from '../../router.js';
 import state from '../../state.js';
 import { renderPageLayout } from '../../components/pageLayout.js';
+import {
+  getStateSummary,
+  getSessionStorageSummary,
+  getLocalStorageSummary,
+  collectExportData,
+  clearAllData
+} from './dataManagementData.js';
 
 export default function initDataManagementView() {
   renderPageLayout({
@@ -33,9 +38,7 @@ function openModal(id) {
   const modal = document.getElementById(id);
   modal.open();
 
-  // Query buttons after modal is opened (they're now in the DOM)
-  // Buttons are rendered in the modal overlay, so we search there
-  // Use a small delay to ensure DOM updates have completed
+  // Query buttons from the modal overlay footer
   setTimeout(() => {
     // Search in the modal overlay's footer where the buttons are rendered
     const footerContainer = modal._modalOverlay?.querySelector('.ui-modal-footer');
@@ -57,7 +60,7 @@ function openModal(id) {
         modal.close();
       };
     }
-  }, 0);
+  }, 100);
 }
 
 /**
@@ -88,15 +91,7 @@ function displayStateData() {
   const container = document.getElementById('stateDataSection');
   if (!container) return;
 
-  const accountCount = state.accounts ? Object.keys(state.accounts).length : 0;
-  const monarchCount = state.monarchAccounts ? (Array.isArray(state.monarchAccounts) ? state.monarchAccounts.length : Object.keys(state.monarchAccounts).length) : 0;
-  // Check for actual YNAB access token, not just state object
-  const hasYnabAuth = !!sessionStorage.getItem('ynab_access_token');
-  const hasMonarchAuth = !!state.credentials?.apiToken;
-
-  // Check if there's any data to show
-  const hasData = accountCount > 0 || monarchCount > 0 || hasYnabAuth || hasMonarchAuth;
-
+  const { accountCount, monarchCount, hasYnabAuth, hasMonarchAuth, hasData } = getStateSummary(state);
   if (!hasData) {
     container.innerHTML = '<p class="text-gray-500 text-sm italic">No application state data</p>';
     return;
@@ -148,22 +143,8 @@ function displayStateData() {
 function displaySessionStorageData() {
   const container = document.getElementById('sessionStorageSection');
   if (!container) return;
-
-  // Track what types of data are in session storage without revealing sensitive details
-  const hasYnabToken = !!sessionStorage.getItem('ynab_access_token');
-  const hasYnabRefresh = !!sessionStorage.getItem('ynab_refresh_token');
-  const hasYnabExpiry = !!sessionStorage.getItem('ynab_token_expires_at');
-  const hasYnabAccounts = !!sessionStorage.getItem('ynab_accounts');
-  const hasMonarchAccounts = !!sessionStorage.getItem('monarch_accounts');
-  const hasMonarchToken = !!sessionStorage.getItem('monarch_api_token');
-  const hasMonarchUuid = !!sessionStorage.getItem('monarch_device_uuid');
-  const hasExpectedState = !!sessionStorage.getItem('ynab_oauth_expected_state');
-
-  // Check if there's any data to show
-  const hasAnyData = hasYnabToken || hasYnabRefresh || hasYnabExpiry || hasYnabAccounts || 
-                      hasMonarchAccounts || hasMonarchToken || hasMonarchUuid || hasExpectedState;
-
-  if (!hasAnyData) {
+  const summary = getSessionStorageSummary();
+  if (!summary.hasAnyData) {
     container.innerHTML = '<p class="text-gray-500 text-sm italic">No session storage data</p>';
     return;
   }
@@ -176,38 +157,38 @@ function displaySessionStorageData() {
       </div>
 
       <div class="space-y-2">
-        ${hasYnabToken || hasYnabRefresh || hasYnabExpiry ? `
+        ${summary.hasYnabToken || summary.hasYnabRefresh || summary.hasYnabExpiry ? `
         <div class="p-3 bg-gray-50 rounded border border-gray-200">
           <p class="text-sm font-medium text-gray-900">YNAB Authentication</p>
           <p class="text-sm text-gray-600 mt-1">
-            ${hasYnabToken ? 'Access Token: ✓ Stored<br/>' : ''}
-            ${hasYnabRefresh ? 'Refresh Token: ✓ Stored<br/>' : ''}
-            ${hasYnabExpiry ? 'Token Expiry: ✓ Set' : ''}
+            ${summary.hasYnabToken ? 'Access Token: ✓ Stored<br/>' : ''}
+            ${summary.hasYnabRefresh ? 'Refresh Token: ✓ Stored<br/>' : ''}
+            ${summary.hasYnabExpiry ? 'Token Expiry: ✓ Set' : ''}
           </p>
         </div>
         ` : ''}
 
-        ${hasYnabAccounts || hasMonarchAccounts ? `
+        ${summary.hasYnabAccounts || summary.hasMonarchAccounts ? `
         <div class="p-3 bg-gray-50 rounded border border-gray-200">
           <p class="text-sm font-medium text-gray-900">Account Data</p>
           <p class="text-sm text-gray-600 mt-1">
-            ${hasYnabAccounts ? 'YNAB Accounts: ✓ Cached<br/>' : ''}
-            ${hasMonarchAccounts ? 'Monarch Accounts: ✓ Cached' : ''}
+            ${summary.hasYnabAccounts ? 'YNAB Accounts: ✓ Cached<br/>' : ''}
+            ${summary.hasMonarchAccounts ? 'Monarch Accounts: ✓ Cached' : ''}
           </p>
         </div>
         ` : ''}
 
-        ${hasMonarchToken || hasMonarchUuid ? `
+        ${summary.hasMonarchToken || summary.hasMonarchUuid ? `
         <div class="p-3 bg-gray-50 rounded border border-gray-200">
           <p class="text-sm font-medium text-gray-900">Monarch Authentication</p>
           <p class="text-sm text-gray-600 mt-1">
-            ${hasMonarchToken ? 'API Token: ✓ Stored<br/>' : ''}
-            ${hasMonarchUuid ? 'Device UUID: ✓ Stored' : ''}
+            ${summary.hasMonarchToken ? 'API Token: ✓ Stored<br/>' : ''}
+            ${summary.hasMonarchUuid ? 'Device UUID: ✓ Stored' : ''}
           </p>
         </div>
         ` : ''}
 
-        ${hasExpectedState ? `
+        ${summary.hasExpectedState ? `
         <div class="p-3 bg-gray-50 rounded border border-gray-200">
           <p class="text-sm font-medium text-gray-900">OAuth Flow</p>
           <p class="text-sm text-gray-600 mt-1">
@@ -228,35 +209,8 @@ function displaySessionStorageData() {
 function displayLocalStorageData() {
   const container = document.getElementById('localStorageSection');
   if (!container) return;
-
-  const localData = getLocalStorage();
-
-  // Track what types of data are in local storage without revealing sensitive details
-  const hasMonarchEmail = !!localData.email;
-  const hasMonarchPassword = !!localData.encryptedPassword;
-  const hasMonarchToken = !!localData.token;
-  const hasMonarchUuid = !!localData.uuid;
-  const rememberMe = localData.remember === true;
-
-  // Get app_state info
-  const appStateRaw = localStorage.getItem('app_state');
-  let lastPath = null;
-  let lastPathTimestamp = null;
-  if (appStateRaw) {
-    try {
-      const appState = JSON.parse(appStateRaw);
-      lastPath = appState.lastPath;
-      lastPathTimestamp = appState.timestamp;
-    } catch (e) {
-      // Ignore parse errors
-    }
-  }
-
-  // Check if there's any data to show
-  const hasCredentials = hasMonarchEmail || hasMonarchPassword || hasMonarchToken || hasMonarchUuid;
-  const hasAnyData = hasCredentials || rememberMe || lastPath;
-
-  if (!hasAnyData) {
+  const summary = getLocalStorageSummary();
+  if (!summary.hasAnyData) {
     container.innerHTML = '<p class="text-gray-500 text-sm italic">No local storage data</p>';
     return;
   }
@@ -269,19 +223,19 @@ function displayLocalStorageData() {
       </div>
 
       <div class="space-y-2">
-        ${hasCredentials ? `
+        ${summary.hasCredentials ? `
         <div class="p-3 bg-gray-50 rounded border border-gray-200">
           <p class="text-sm font-medium text-gray-900">Monarch Authentication</p>
           <p class="text-sm text-gray-600 mt-1">
-            ${hasMonarchEmail ? 'Email Address: ✓ Stored<br/>' : ''}
-            ${hasMonarchPassword ? 'Encrypted Password: ✓ Stored<br/>' : ''}
-            ${hasMonarchToken ? 'API Token: ✓ Stored<br/>' : ''}
-            ${hasMonarchUuid ? 'Device UUID: ✓ Stored' : ''}
+            ${summary.hasMonarchEmail ? 'Email Address: ✓ Stored<br/>' : ''}
+            ${summary.hasMonarchPassword ? 'Encrypted Password: ✓ Stored<br/>' : ''}
+            ${summary.hasMonarchToken ? 'API Token: ✓ Stored<br/>' : ''}
+            ${summary.hasMonarchUuid ? 'Device UUID: ✓ Stored' : ''}
           </p>
         </div>
         ` : ''}
 
-        ${rememberMe ? `
+        ${summary.rememberMe ? `
         <div class="p-3 bg-gray-50 rounded border border-gray-200">
           <p class="text-sm font-medium text-gray-900">User Preferences</p>
           <p class="text-sm text-gray-600 mt-1">
@@ -290,12 +244,12 @@ function displayLocalStorageData() {
         </div>
         ` : ''}
 
-        ${lastPath ? `
+        ${summary.lastPath ? `
         <div class="p-3 bg-gray-50 rounded border border-gray-200">
           <p class="text-sm font-medium text-gray-900">Session Information</p>
           <p class="text-sm text-gray-600 mt-1">
-            Last Page: ${escapeHtml(lastPath)}<br/>
-            Last Visit: ${lastPathTimestamp ? new Date(lastPathTimestamp).toLocaleString() : 'Not available'}
+            Last Page: ${escapeHtml(summary.lastPath)}<br/>
+            Last Visit: ${summary.lastPathTimestamp ? new Date(summary.lastPathTimestamp).toLocaleString() : 'Not available'}
           </p>
         </div>
         ` : ''}
@@ -419,40 +373,11 @@ function renderDataObject(data, prefix = '', depth = 0) {
  * Export all data as a JSON file
  */
 function handleExportData() {
-  const allData = {
-    exportedAt: new Date().toISOString(),
-    state: state,
-    sessionStorage: {},
-    localStorage: {}
-  };
-
-  // Collect session storage
-  for (let i = 0; i < sessionStorage.length; i++) {
-    const key = sessionStorage.key(i);
-    try {
-      allData.sessionStorage[key] = JSON.parse(sessionStorage.getItem(key));
-    } catch {
-      allData.sessionStorage[key] = sessionStorage.getItem(key);
-    }
-  }
-
-  // Collect local storage
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    try {
-      allData.localStorage[key] = JSON.parse(localStorage.getItem(key));
-    } catch {
-      allData.localStorage[key] = localStorage.getItem(key);
-    }
-  }
-
-  // Create and download JSON file
-  const jsonString = JSON.stringify(allData, null, 2);
-  const blob = new Blob([jsonString], { type: 'application/json' });
+  const { blob, filename } = collectExportData(state);
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `ynab-monarch-data-${Date.now()}.json`;
+  link.download = filename;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -464,26 +389,7 @@ function handleExportData() {
  */
 function handleClearAllData() {
   try {
-    // Clear all storage
-    clearStorage();
-    clearAppState();
-
-    // Clear all sessionStorage
-    sessionStorage.clear();
-
-    // Reset state object
-    state.credentials = {
-      email: '',
-      encryptedPassword: '',
-      otp: '',
-      remember: false,
-      apiToken: '',
-      awaitingOtp: false,
-      deviceUuid: ''
-    };
-    state.monarchAccounts = null;
-    state.accounts = {};
-    state.ynabOauth = { code: null, state: null, error: null };
+    clearAllData(state);
   } catch (error) {
     console.error('Error clearing data:', error);
     alert('An error occurred while clearing data. Please try again.');

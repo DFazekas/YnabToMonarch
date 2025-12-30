@@ -1,7 +1,6 @@
 import { navigate } from '../../router.js';
 import state from '../../state.js';
 import { renderPageLayout } from '../../components/pageLayout.js';
-import '../../components/ClickableCard.js';
 
 export default function initMethodSelectView() {
 
@@ -17,8 +16,8 @@ export default function initMethodSelectView() {
     }
   });
 
-  const totalCount = Object.keys(state.accounts).length;
-  const selectedCount = Object.values(state.accounts).filter(acc => acc.included).length;
+  const totalCount = state.accounts.length();
+  const selectedCount = state.accounts._accounts.filter(acc => acc.included).length;
 
   // Set text content (elements are already in DOM)
   document.getElementById('totalCountDisplay').textContent = totalCount;

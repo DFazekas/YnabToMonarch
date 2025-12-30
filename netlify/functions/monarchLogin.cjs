@@ -102,7 +102,6 @@ export async function handler(event) {
     }
 
     // Successful login
-    console.log("MonarchLogin ✅ login successful", { tokenPreview: data.token.slice(0, 8) + '…' })
     console.groupEnd();
     return createResponse(200, { token: data.token });
   } catch (error) {

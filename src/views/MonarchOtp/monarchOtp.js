@@ -1,11 +1,11 @@
 import { navigate, goBack } from '../../router.js';
 import state from '../../state.js';
-import { monarchApi } from '../../api/monarchApi.js';
 import {
-  saveToLocalStorage, getLocalStorage, clearStorage
-} from '../../utils/storage.js';
+  initCredentialsFromStorage,
+  submitOtp,
+  clearTempCredentialsIfNeeded
+} from './monarchOtpData.js';
 import { toggleDisabled, toggleElementVisibility } from '../../utils/dom.js';
-import { patchState } from '../../utils/state.js';
 import { renderPageLayout } from '../../components/pageLayout.js';
 
 export default function initMonarchOtpView() {
@@ -30,21 +30,7 @@ export default function initMonarchOtpView() {
   };
 
   const { credentials } = state;
-  const storage = getLocalStorage();
-  const { email, encryptedPassword, uuid, remember, tempForOtp } = storage;
-
-  patchState(credentials, {
-    email: credentials.email || email,
-    encryptedPassword: credentials.encryptedPassword || encryptedPassword,
-    deviceUuid: credentials.deviceUuid || uuid,
-    remember: remember,
-  });
-
-  // Clear temporary credentials immediately if they were stored just for OTP
-  if (tempForOtp && !remember) {
-    // Keep credentials in localStorage temporarily until OTP completes
-    // They will be cleared after successful login or if user navigates away
-  }
+  const { storage, tempForOtp } = initCredentialsFromStorage(state);
 
   // Ensure we have the required credentials for OTP
   if (!credentials.email || !credentials.encryptedPassword) {
@@ -60,33 +46,8 @@ export default function initMonarchOtpView() {
     credentials.otp = UI.otpInput.value;
 
     try {
-      const response = await monarchApi.login(
-        credentials.email,
-        credentials.encryptedPassword,
-        credentials.deviceUuid,
-        credentials.otp
-      );
-
-      if (response?.token) {
-        patchState(credentials, {
-          apiToken: response.token,
-          awaitingOtp: false
-        });
-
-        if (credentials.remember) {
-          // User wants to remember credentials - save permanently
-          saveToLocalStorage({
-            email: credentials.email,
-            encryptedPassword: credentials.encryptedPassword,
-            uuid: credentials.deviceUuid,
-            token: response.token,
-            remember: true
-          });
-        } else {
-          // User doesn't want to remember - clear temporary credentials
-          clearStorage();
-        }
-
+      const result = await submitOtp(credentials);
+      if (result.success) {
         console.groupEnd("MonarchOtpView");
         return navigate('/complete', true);
       }
@@ -102,10 +63,7 @@ export default function initMonarchOtpView() {
 
   function onClickBack() {
     // Clean up temporary credentials if user navigates back
-    const storage = getLocalStorage();
-    if (storage.tempForOtp && !storage.remember) {
-      clearStorage();
-    }
+    clearTempCredentialsIfNeeded();
     goBack();
   }
 

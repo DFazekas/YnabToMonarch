@@ -1,8 +1,17 @@
 import state from '../../state.js';
 import { monarchApi } from '../../api/monarchApi.js';
-import { navigate } from '../../router.js';
 import { getAccountTypeByName, getSubtypeByName } from '../../utils/accountTypeUtils.js';
 import { renderPageLayout } from '../../components/pageLayout.js';
+import {
+  ensurePendingStatusForAccounts,
+  getIncludedAccountsToProcess,
+  splitIntoBatches,
+  createAccountsBatch,
+  markBatchProcessing,
+  markBatchFailedDueToApi,
+  markUnprocessedAsFailed,
+  handleCreateResponse
+} from './monarchCompleteData.js';
 
 function initMonarchCompleteView() {
 
@@ -43,11 +52,7 @@ function initMonarchCompleteView() {
 
   function initializeProcessing() {
     // Set initial status for all accounts
-    Object.keys(state.accounts).forEach(accountName => {
-      if (!state.accounts[accountName].status) {
-        state.accounts[accountName].status = 'pending';
-      }
-    });
+    ensurePendingStatusForAccounts(state);
 
     // Show initial state
     updateStatusOverview();
@@ -65,10 +70,10 @@ function initMonarchCompleteView() {
     if (!token) {
       console.error('No API token available');
       // Mark all accounts as failed
-      Object.keys(state.accounts).forEach(accountName => {
-        if (state.accounts[accountName].included) {
-          state.accounts[accountName].status = 'failed';
-          state.accounts[accountName].errorMessage = 'Authentication required. Please login again.';
+      state.accounts._accounts.forEach(account => {
+        if (account.included) {
+          account.status = 'failed';
+          account.errorMessage = 'Authentication required. Please login again.';
         }
       });
       updateStatusOverview();
@@ -78,10 +83,7 @@ function initMonarchCompleteView() {
     }
 
     // Get all accounts that need processing
-    const allAccountsToProcess = Object.entries(state.accounts)
-      .filter(([_, account]) => account.included && account.status !== 'completed')
-      .map(([accountName, account]) => ({ accountName, ...account }));
-
+    const allAccountsToProcess = getIncludedAccountsToProcess(state);
     if (allAccountsToProcess.length === 0) {
       console.log('No accounts to process');
       updateStatusOverview();
@@ -90,21 +92,14 @@ function initMonarchCompleteView() {
     }
 
     // Split accounts into batches
-    const batches = [];
-    for (let i = 0; i < allAccountsToProcess.length; i += BATCH_SIZE) {
-      batches.push(allAccountsToProcess.slice(i, i + BATCH_SIZE));
-    }
+    const batches = splitIntoBatches(allAccountsToProcess, BATCH_SIZE);
 
     // Process each batch sequentially
     for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
       const batch = batches[batchIndex];
 
       // Set batch accounts to processing
-      batch.forEach(account => {
-        if (state.accounts[account.accountName]) {
-          state.accounts[account.accountName].status = 'processing';
-        }
-      });
+      markBatchProcessing(state, batch);
 
       // Update UI to show processing status
       updateStatusOverview();
@@ -128,76 +123,46 @@ function initMonarchCompleteView() {
   async function processBatch(token, batch) {
     try {
       // Create accounts and upload transactions
-      const response = await monarchApi.createAccounts(token, batch);
+      const response = await createAccountsBatch(token, batch);
 
-      // Handle the response format: { success: [...], failed: [...] }
-      if (response.success || response.failed) {
-        // Handle failed accounts first
-        if (response.failed && response.failed.length > 0) {
-          response.failed.forEach((result) => {
-            const matchingAccount = batch.find(acc => acc.name === result.name || acc.modifiedName === result.name);
-            if (matchingAccount && state.accounts[matchingAccount.accountName]) {
-              state.accounts[matchingAccount.accountName].status = 'failed';
-              state.accounts[matchingAccount.accountName].errorMessage = result.error || 'Account creation failed';
-            }
-          });
-        }
+      if (response && (response.success || response.failed)) {
+        handleCreateResponse(state, batch, response);
 
-        // Step 2: Monitor upload status for successful accounts
         if (response.success && response.success.length > 0) {
-          // Set accounts to upload monitoring status
-          response.success.forEach((result) => {
-            const matchingAccount = batch.find(acc => acc.name === result.name || acc.modifiedName === result.name);
-            if (matchingAccount && state.accounts[matchingAccount.accountName]) {
-              state.accounts[matchingAccount.accountName].status = 'uploading';
-              state.accounts[matchingAccount.accountName].sessionKeys = result.sessionKeys || [];
-            }
-          });
-
-          // Update UI to show uploading status
           updateStatusOverview();
           updateAccountList();
 
-          // Monitor upload status for each successful account
           await Promise.all(response.success.map(async (result) => {
-            const matchingAccount = batch.find(acc => acc.name === result.name || acc.modifiedName === result.name);
-            if (matchingAccount && state.accounts[matchingAccount.accountName] && result.sessionKeys) {
-              try {
-                await monitorUploadStatus(token, matchingAccount.accountName, result.sessionKeys);
-                state.accounts[matchingAccount.accountName].status = 'completed';
-              } catch (error) {
-                state.accounts[matchingAccount.accountName].status = 'failed';
-                state.accounts[matchingAccount.accountName].errorMessage = error.message || 'Transaction upload failed';
+            const matchingBatchAccount = batch.find(acc => acc.modifiedName === result.name);
+            if (matchingBatchAccount && result.sessionKeys) {
+              const account = state.accounts._accounts.find(acc => acc.current.name === matchingBatchAccount.modifiedName);
+              if (account) {
+                try {
+                  await monitorUploadStatus(token, matchingBatchAccount.modifiedName, result.sessionKeys);
+                  account.status = 'completed';
+                } catch (error) {
+                  account.status = 'failed';
+                  account.errorMessage = error.message || 'Transaction upload failed';
+                }
               }
             }
           }));
         }
 
         // Mark any remaining accounts that weren't in success or failed arrays as failed
-        batch.forEach(account => {
-          if (state.accounts[account.accountName] &&
-            state.accounts[account.accountName].status === 'processing') {
-            tate.accounts[account.accountName].status = 'failed';
-            state.accounts[account.accountName].errorMessage = 'Account not processed by server';
-          }
-        });
-
+        markUnprocessedAsFailed(state, batch);
       } else {
         // API call failed, mark all batch accounts as failed
         const errorMessage = response.error || 'Failed to create accounts in Monarch Money';
-        batch.forEach(account => {
-          if (state.accounts[account.accountName]) {
-            state.accounts[account.accountName].status = 'failed';
-            state.accounts[account.accountName].errorMessage = errorMessage;
-          }
-        });
+        markBatchFailedDueToApi(state, batch, errorMessage);
       }
     } catch (error) {
       // Network error or other exception
-      batch.forEach(account => {
-        if (state.accounts[account.accountName]) {
-          state.accounts[account.accountName].status = 'failed';
-          state.accounts[account.accountName].errorMessage = 'Network error. Please check your connection and try again.';
+      batch.forEach(batchAccount => {
+        const account = state.accounts._accounts.find(acc => acc.current.name === batchAccount.modifiedName);
+        if (account) {
+          account.status = 'failed';
+          account.errorMessage = 'Network error. Please check your connection and try again.';
         }
       });
     }
@@ -246,9 +211,9 @@ function initMonarchCompleteView() {
   }
 
   function updateStatusOverview() {
-    const accounts = state.accounts || {};
+    const accounts = state.accounts?._accounts || [];
     // Only count included accounts
-    const includedAccounts = Object.values(accounts).filter(acc => acc.included);
+    const includedAccounts = accounts.filter(acc => acc.included);
     const totalAccounts = includedAccounts.length;
     const completedAccounts = includedAccounts.filter(acc => acc.status === 'completed').length;
     const failedAccounts = includedAccounts.filter(acc => acc.status === 'failed').length;
@@ -298,10 +263,10 @@ function initMonarchCompleteView() {
   function updateAccountList() {
     if (!accountList) return;
 
-    const accounts = state.accounts || {};
+    const accounts = state.accounts?._accounts || [];
     accountList.innerHTML = '';
 
-    Object.entries(accounts).forEach(([accountId, account]) => {
+    accounts.forEach(account => {
       // Skip accounts that are not included
       if (!account.included) return;
 
@@ -342,25 +307,25 @@ function initMonarchCompleteView() {
       // Get account type display name
       let accountTypeDisplay = 'Unknown Type';
 
-      if (account.type) {
-        const typeInfo = getAccountTypeByName(account.type);
+      if (account.current.type) {
+        const typeInfo = getAccountTypeByName(account.current.type);
         if (typeInfo) {
           accountTypeDisplay = typeInfo.typeDisplay || typeInfo.displayName || typeInfo.display;
-          if (account.subtype) {
-            const subtypeInfo = getSubtypeByName(account.type, account.subtype);
+          if (account.current.subtype) {
+            const subtypeInfo = getSubtypeByName(account.current.type, account.current.subtype);
             if (subtypeInfo) {
               accountTypeDisplay = subtypeInfo.display || subtypeInfo.displayName;
             }
           }
         }
       } else {
-        console.log(`Account ${accountId} has no type property`);
+        console.log(`Account ${account.id} has no type property`);
       }
 
       accountItem.innerHTML = `
         <div class="flex items-start justify-between mb-3">
           <div class="flex-1 min-w-0 pr-4">
-            <div class="font-medium text-gray-900 mb-1">${account.modifiedName || account.account_name || account.name || 'Unknown Account'}</div>
+            <div class="font-medium text-gray-900 mb-1">${account.current.name || 'Unknown Account'}</div>
             <div class="text-sm text-gray-500">${accountTypeDisplay}</div>
             ${account.monarchAccountId ? `<div class="text-xs text-gray-400 mt-1">Monarch ID: ${account.monarchAccountId}</div>` : ''}
           </div>
@@ -381,22 +346,22 @@ function initMonarchCompleteView() {
     if (!actionButtonsContainer) return;
 
     const accounts = state.accounts || {};
-    const failedAccounts = Object.values(accounts).filter(acc => acc.included && acc.status === 'failed');
-    const completedAccounts = Object.values(accounts).filter(acc => acc.included && acc.status === 'completed');
+    const failedAccounts = accounts.filter(acc => acc.included && acc.status === 'failed');
+    const completedAccounts = accounts.filter(acc => acc.included && acc.status === 'completed');
 
     document.getElementById('retryFailedBtn').hidden = failedAccounts.length === 0;
     document.getElementById('visitMonarchBtn').hidden = completedAccounts.length <= 0;
   }
 
   function retryFailedAccounts() {
-    const failedAccounts = Object.entries(state.accounts).filter(([accountName, acc]) => acc.included && acc.status === 'failed');
+    const failedAccounts = state.accounts._accounts.filter(acc => acc.included && acc.status === 'failed');
 
     if (failedAccounts.length === 0) return;
 
     // Reset failed accounts to pending
-    failedAccounts.forEach(([accountName, account]) => {
-      state.accounts[accountName].status = 'pending';
-      delete state.accounts[accountName].errorMessage;
+    failedAccounts.forEach(account => {
+      account.status = 'pending';
+      delete account.errorMessage;
     });
 
     // Update UI and restart batch processing

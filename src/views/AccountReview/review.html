@@ -32,6 +32,7 @@
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
+        <!-- TODO: Reduce height to match the "Filters" button, and the width to be 100% on mobile -->
         <input id="searchInput" type="text" placeholder="Search accounts..." style="padding-left: 2.75rem !important;"
           class="block w-full pr-3 py-2 sm:py-3 text-sm sm:text-base
                           border border-gray-300 rounded-lg placeholder-gray-400 
@@ -190,7 +191,7 @@
 </div>
 
 <!-- Bulk Rename Modal -->
-<ui-modal id="bulkRenameModal">
+<ui-modal id="bulkRenameModal" has-footer>
   <h3 slot="title">Bulk Rename Accounts</h3>
   <div slot="content" class="space-y-4">
     <div>
@@ -237,7 +238,7 @@
 </ui-modal>
 
 <!-- Bulk Type Edit Modal -->
-<ui-modal id="bulkTypeModal">
+<ui-modal id="bulkTypeModal" has-footer>
   <h3 slot="title">Bulk Edit Account Type</h3>
   <div slot="content" class="space-y-4">
     <div>
@@ -259,12 +260,12 @@
 </ui-modal>
 
 <!-- Advanced Filters Modal -->
-<ui-modal id="filtersModal">
+<ui-modal id="filtersModal" has-footer>
   <h3 slot="title">Advanced Filters</h3>
-  <div slot="content" class="space-y-6">
+  <div slot="content" class="divide-y divide-gray-200 space-y-6">
 
     <!-- Active Filters Display -->
-    <div id="activeFiltersSection" class="hidden">
+    <div id="activeFiltersSection" class="hidden pb-3 mb-3 border-b border-gray-200">
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-sm font-medium text-gray-700">Active Filters</h3>
         <!-- TODO: Move event handling into .js file -->
@@ -274,30 +275,40 @@
         </ui-button>
       </div>
       <div id="activeFiltersContainer" class="flex flex-wrap gap-2"></div>
-      <hr class="mt-4">
     </div>
 
     <!-- Account Name Filter -->
     <div class="space-y-3">
       <div class="space-y-3">
         <label for="filterAccountName" class="block text-sm font-medium text-gray-900">Account Name</label>
-        <input id="filterAccountName" name="filterAccountName" type="text" placeholder="Enter account name..."
-          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        <div class="relative">
+          <input id="filterAccountName" name="filterAccountName" type="text" placeholder="Enter account name..."
+            class="w-full px-3 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          <button id="clearAccountNameBtn" type="button" 
+            class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-150"
+            aria-label="Clear account name filter"
+            title="Clear">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
-        <div class="flex flex-wrap gap-4">
+        <div class="flex flex-wrap gap-4 items-center">
           <label class="flex items-center">
             <input id="nameMatchTypeContains" type="radio" name="nameMatchType" value="contains" checked
-              class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+              class="w-4 h-4 border-gray-300" style="accent-color: #111827;">
             <span class="ml-2 text-sm text-gray-700">Contains</span>
           </label>
           <label class="flex items-center">
             <input id="nameMatchTypeExact" type="radio" name="nameMatchType" value="exact"
-              class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+              class="w-4 h-4 border-gray-300" style="accent-color: #111827;">
             <span class="ml-2 text-sm text-gray-700">Exact match</span>
           </label>
+          <div class="h-4 w-px bg-gray-300"></div>
           <label class="flex items-center">
             <input id="nameCaseSensitive" name="nameCaseSensitive" type="checkbox"
-              class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+              class="w-4 h-4 border-gray-300 rounded" style="accent-color: #111827;">
             <span class="ml-2 text-sm text-gray-700">Case sensitive</span>
           </label>
         </div>
@@ -305,11 +316,12 @@
     </div>
 
     <!-- Account Type Filter -->
-    <div class="space-y-3">
+    <div class="pt-6 space-y-3">
       <div class="flex items-center justify-between">
         <h3 class="text-sm font-medium text-gray-900">Account Type</h3>
-        <div class="flex gap-1">
+        <div class="flex items-center gap-1">
           <ui-button id="accountTypeSelectAllBtn" data-type="text" data-size="small">Select All</ui-button>
+          <div class="h-4 w-px bg-gray-300"></div>
           <ui-button id="accountTypeDeselectAllBtn" data-type="text" data-size="small">Deselect All</ui-button>
         </div>
       </div>
@@ -321,11 +333,12 @@
     </div>
 
     <!-- Account Subtype Filter -->
-    <div class="space-y-3">
+    <div class="pt-6 space-y-3">
       <div class="flex items-center justify-between">
         <h3 class="text-sm font-medium text-gray-900">Account Subtype</h3>
-        <div class="flex gap-1">
+        <div class="flex items-center gap-1">
           <ui-button id="accountSubtypeSelectAllBtn" data-type="text" data-size="small">Select All</ui-button>
+          <div class="h-4 w-px bg-gray-300"></div>
           <ui-button id="accountSubtypeDeselectAllBtn" data-type="text" data-size="small">Deselect All</ui-button>
         </div>
       </div>
@@ -337,7 +350,7 @@
     </div>
 
     <!-- Transactions Count Filter -->
-    <div class="space-y-3">
+    <div class="pt-6 space-y-3">
       <h3 class="text-sm font-medium text-gray-900">Transaction Count</h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
@@ -354,7 +367,7 @@
     </div>
 
     <!-- Balance Filter -->
-    <div class="space-y-3">
+    <div class="pt-6 space-y-3">
       <h3 class="text-sm font-medium text-gray-900">Balance</h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
@@ -371,42 +384,53 @@
     </div>
 
     <!-- Inclusion Status Filter -->
-    <div class="space-y-3">
+    <div class="pt-6 pb-0 space-y-3">
       <h3 class="text-sm font-medium text-gray-900">Include Status</h3>
       <div class="flex flex-wrap gap-4">
         <label class="flex items-center">
           <input id="inclusionFilterAll" type="radio" name="inclusionFilter" value="all" checked
-            class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+            class="w-4 h-4 border-gray-300" style="accent-color: #111827;">
           <span class="ml-2 text-sm text-gray-700">All accounts</span>
         </label>
         <label class="flex items-center">
           <input id="inclusionFilterIncluded" type="radio" name="inclusionFilter" value="included"
-            class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+            class="w-4 h-4 border-gray-300" style="accent-color: #111827;">
           <span class="ml-2 text-sm text-gray-700">Included only</span>
         </label>
         <label class="flex items-center">
           <input id="inclusionFilterExcluded" type="radio" name="inclusionFilter" value="excluded"
-            class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+            class="w-4 h-4 border-gray-300" style="accent-color: #111827;">
           <span class="ml-2 text-sm text-gray-700">Excluded only</span>
         </label>
       </div>
     </div>
   </div>
-  </div>
 
-  <div slot="footer" class="flex flex-col sm:flex-row justify-end gap-3">
+  <div slot="footer" class="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
     <!-- TODO: Move logic into .js file -->
-    <ui-button id="filtersReset" data-type="secondary" onclick="window.resetFilters && window.resetFilters()">
-      Reset Filters
+    <ui-button id="filtersResetBtn" data-type="outline" data-color="yellow">
+      Remove All Filters
     </ui-button>
     <!-- TODO: Move logic into .js file -->
-    <ui-button id="filtersApply" data-type="primary" onclick="window.applyFilters && window.applyFilters()">
+    <ui-button id="filtersApplyBtn" data-type="solid" onclick="window.applyFilters && window.applyFilters()">
       Apply Filters
     </ui-button>
   </div>
 </ui-modal>
 
 <style>
+  /* Modified filter input styling */
+  .filter-modified {
+    border-color: #eab308 !important;
+    border-width: 1px;
+    background-color: rgba(250, 204, 21, 0.05);
+  }
+
+  .filter-modified:focus {
+    outline: 2px solid #eab308;
+    outline-offset: 2px;
+  }
+
   /* Filter results summary styling */
   #filterResultsSummary {
     transition: all 0.3s ease;
@@ -599,6 +623,17 @@
 
   .custom-checkbox-container:hover .custom-checkbox-input:not(:disabled)+.custom-checkbox-visual {
     border-color: #3b82f6;
+  }
+
+  /* Disabled form controls styling */
+  input[type="radio"]:disabled + span,
+  input[type="checkbox"]:disabled + span {
+    color: #9ca3af;
+    cursor: not-allowed;
+  }
+
+  label:has(input:disabled) {
+    cursor: not-allowed;
   }
 
   /* Mobile specific enhancements */

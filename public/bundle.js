@@ -3190,201 +3190,64 @@
     }
   });
 
-  // src/state.js
-  var state_default = {
-    credentials: { email: "", encryptedPassword: "", otp: "", remember: false, apiToken: "", awaitingOtp: false, deviceUuid: "" },
-    monarchAccounts: null,
-    accounts: {},
-    ynabOauth: { code: null, state: null, error: null }
+  // src/core/ComponentRegistry.js
+  var ComponentRegistry = class {
+    constructor() {
+      this.components = /* @__PURE__ */ new Map();
+      this.initialized = /* @__PURE__ */ new WeakSet();
+      this.observer = null;
+    }
+    register(selector, init) {
+      this.components.set(selector, init);
+    }
+    start() {
+      if (this.observer)
+        return;
+      this.scanAndInit(document.body);
+      this.observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              this.scanAndInit(node);
+            }
+          });
+        });
+      });
+      this.observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+    }
+    stop() {
+      if (this.observer) {
+        this.observer.disconnect();
+        this.observer = null;
+      }
+    }
+    scanAndInit(root) {
+      this.components.forEach((init, selector) => {
+        const elements = root.matches?.(selector) ? [root] : Array.from(root.querySelectorAll?.(selector) || []);
+        elements.forEach((element) => {
+          if (!this.initialized.has(element)) {
+            try {
+              init(element);
+              this.initialized.add(element);
+            } catch (error) {
+              console.error(`Failed to initialize component ${selector}:`, error);
+            }
+          }
+        });
+      });
+    }
+    init(element) {
+      this.scanAndInit(element);
+    }
   };
-
-  // src/utils/storage.js
-  var STORAGE_KEYS = {
-    EMAIL: "monarchEmail",
-    ENCRYPTED_PASSWORD: "monarchPasswordBase64",
-    TOKEN: "monarchApiToken",
-    UUID: "monarchDeviceUuid",
-    REMEMBER: "monarchRememberMe",
-    TEMP_FOR_OTP: "monarchTempForOtp"
-  };
-  function getLocalStorage() {
-    return {
-      email: get(STORAGE_KEYS.EMAIL),
-      encryptedPassword: get(STORAGE_KEYS.ENCRYPTED_PASSWORD),
-      token: get(STORAGE_KEYS.TOKEN),
-      uuid: get(STORAGE_KEYS.UUID),
-      remember: get(STORAGE_KEYS.REMEMBER) === "true",
-      tempForOtp: get(STORAGE_KEYS.TEMP_FOR_OTP) === "true"
-    };
-  }
-  function saveToLocalStorage({ email, encryptedPassword, token, uuid, remember, tempForOtp }) {
-    if (email)
-      set(STORAGE_KEYS.EMAIL, email);
-    if (encryptedPassword)
-      set(STORAGE_KEYS.ENCRYPTED_PASSWORD, encryptedPassword);
-    if (token)
-      set(STORAGE_KEYS.TOKEN, token);
-    if (uuid)
-      set(STORAGE_KEYS.UUID, uuid);
-    if (typeof remember === "boolean")
-      set(STORAGE_KEYS.REMEMBER, remember ? "true" : "false");
-    if (typeof tempForOtp === "boolean")
-      set(STORAGE_KEYS.TEMP_FOR_OTP, tempForOtp ? "true" : "false");
-  }
-  function clearStorage() {
-    Object.values(STORAGE_KEYS).forEach(remove);
-  }
-  function get(key) {
-    return localStorage.getItem(key);
-  }
-  function set(key, value) {
-    localStorage.setItem(key, value);
-  }
-  function remove(key) {
-    localStorage.removeItem(key);
-  }
-
-  // src/components/pageLayout.js
-  function renderPageLayout(options = {}) {
-    const {
-      containerId = "pageLayout",
-      navbar = null,
-      header = null,
-      className = ""
-    } = options;
-    const container = document.getElementById(containerId);
-    if (!container) {
-      console.error(`Page layout container #${containerId} not found`);
-      return;
-    }
-    const pageContent = [];
-    let sibling = container.nextElementSibling;
-    while (sibling) {
-      pageContent.push(sibling);
-      sibling = sibling.nextElementSibling;
-    }
-    container.className = `min-h-screen flex flex-col w-full max-w-full mx-auto ${className}`;
-    container.innerHTML = `
-    <main class="flex-1 w-full max-w-full mx-auto px-4 py-2 overflow-x-hidden">
-      <div class="max-w-6xl mx-auto w-full min-w-0 flex flex-col space-y-6 ">
-        <!-- Navigation Bar -->
-        <div id="navigationBar" class="min-w-0"></div>
-
-        <!-- Page Header -->
-        <div id="pageHeader" class="min-w-0 mx-auto"></div>
-
-        <!-- Page Content Slot -->
-        <div id="pageContent" class="min-w-0 mx-auto"></div>
-      </div>
-    </main>
-  `;
-    if (navbar != null)
-      renderNavigationBar(navbar);
-    if (header != null)
-      renderPageHeader(header);
-    const contentContainer = document.getElementById("pageContent");
-    if (contentContainer) {
-      pageContent.forEach((element) => {
-        contentContainer.appendChild(element);
-      });
-    }
-  }
-  function renderNavigationBar(options = {}) {
-    const {
-      showBackButton = true,
-      showDataButton = true,
-      backText = "Back",
-      containerId = "navigationBar"
-    } = options;
-    const container = document.getElementById(containerId);
-    if (!container) {
-      console.warn(`Navigation container with id "${containerId}" not found`);
-      return;
-    }
-    const hasData = checkForStoredData();
-    const dataButtonText = hasData ? "Manage your data" : "No data currently stored";
-    let navHTML = '<div class="flex flex-wrap items-center justify-between gap-2 mb-4">';
-    if (showBackButton) {
-      navHTML += `
-      <ui-button 
-        id="navBackBtn" 
-        data-type="text"
-      >
-        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-        </svg>
-        ${backText}
-      </ui-button>
-    `;
-    } else {
-      navHTML += "<div></div>";
-    }
-    if (showDataButton) {
-      navHTML += `
-      <ui-button 
-        id="navDataBtn" 
-        data-type="text"
-        ${!hasData ? 'style="opacity: 0.6;"' : ""}
-      >
-        ${dataButtonText}
-      </ui-button>
-    `;
-    }
-    navHTML += "</div>";
-    container.innerHTML = navHTML;
-    if (showBackButton) {
-      const backBtn = document.getElementById("navBackBtn");
-      backBtn?.addEventListener("click", () => {
-        goBack();
-      });
-    }
-    if (showDataButton) {
-      const dataBtn = document.getElementById("navDataBtn");
-      dataBtn?.addEventListener("click", () => {
-        navigate("/data-management");
-      });
-    }
-  }
-  function checkForStoredData() {
-    const hasStateAccounts = state_default.accounts && Object.keys(state_default.accounts).length > 0;
-    const hasMonarchAccounts = state_default.monarchAccounts !== null;
-    const hasSessionAccounts = sessionStorage.getItem("ynab_accounts") !== null;
-    const hasSessionMonarch = sessionStorage.getItem("monarch_accounts") !== null;
-    const localStorage2 = getLocalStorage();
-    const hasLocalStorageData = !!(localStorage2.email || localStorage2.encryptedPassword || localStorage2.token || localStorage2.uuid);
-    return hasStateAccounts || hasMonarchAccounts || hasSessionAccounts || hasSessionMonarch || hasLocalStorageData;
-  }
-  function renderPageHeader(options = {}) {
-    const {
-      title = "",
-      description = "",
-      containerId = "pageHeader",
-      className = ""
-    } = options;
-    const container = document.getElementById(containerId);
-    if (!container) {
-      console.warn(`Page header container with id "${containerId}" not found`);
-      return;
-    }
-    const headerHTML = `
-    <section class="text-center mb-2 ${className}">
-      <div class="inline-flex items-center justify-center gap-2 mb-6">
-        <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
-          ${escapeHtml(title)}
-        </h2>
-      </div>
-
-      <p class="text-gray-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto px-2 leading-relaxed">
-        ${escapeHtml(description)}
-      </p>
-    </section>
-  `;
-    container.innerHTML = headerHTML;
-  }
-  function escapeHtml(text) {
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
+  var registry = new ComponentRegistry();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => registry.start());
+  } else {
+    registry.start();
   }
 
   // src/components/AutoStyledButton.js
@@ -3767,12 +3630,36 @@
       if (!this._initialized) {
         this.applyStyles();
         this._initialized = true;
-        this._observer = new MutationObserver(() => this.applyStyles());
+        this._observer = new MutationObserver((mutations) => {
+          if (this._applyingStyles)
+            return;
+          this.applyStyles();
+        });
         this._observer.observe(this, {
           attributes: true,
           attributeFilter: ["data-type", "data-color", "data-size", "disabled", "data-fullwidth"]
         });
+        this._overrideDisabledProperty();
       }
+    }
+    _overrideDisabledProperty() {
+      Object.defineProperty(this, "disabled", {
+        get() {
+          return this.hasAttribute("disabled");
+        },
+        set(value) {
+          const currentValue = this.hasAttribute("disabled");
+          const newValue = Boolean(value);
+          if (currentValue !== newValue) {
+            if (newValue) {
+              this.setAttribute("disabled", "");
+            } else {
+              this.removeAttribute("disabled");
+            }
+          }
+        },
+        configurable: true
+      });
     }
     disconnectedCallback() {
       if (this._observer) {
@@ -3780,30 +3667,36 @@
       }
     }
     applyStyles() {
-      const type = this.dataset.type || "solid";
-      const color = this.dataset.color || "blue";
-      const size = this.dataset.size || "medium";
-      const isDisabled = this.hasAttribute("disabled") || this.disabled;
-      const fullWidth = this.hasAttribute("data-fullwidth");
-      this.className = "ui-button";
-      this.classList.add(...buttonStyles.base);
-      if (type !== "text") {
-        this.classList.add(...buttonStyles.sizes[size] || buttonStyles.sizes.medium);
-      }
-      const colorStyles = buttonStyles.colors[color] || buttonStyles.colors.blue;
-      const typeStyle = colorStyles[type] || colorStyles.solid;
-      this.classList.add(...typeStyle.base);
-      if (!isDisabled) {
-        this.classList.add("cursor-pointer", ...typeStyle.hover);
-      } else {
-        this.classList.add("opacity-50", "cursor-not-allowed");
-        this.setAttribute("disabled", "");
-      }
-      if (fullWidth) {
-        this.classList.add("w-full");
-      }
-      if (!this.hasAttribute("type")) {
-        this.setAttribute("type", "button");
+      if (this._applyingStyles)
+        return;
+      this._applyingStyles = true;
+      try {
+        const type = this.dataset.type || "solid";
+        const color = this.dataset.color || "blue";
+        const size = this.dataset.size || "medium";
+        const isDisabled = this.hasAttribute("disabled");
+        const fullWidth = this.hasAttribute("data-fullwidth");
+        this.className = "ui-button";
+        this.classList.add(...buttonStyles.base);
+        if (type !== "text") {
+          this.classList.add(...buttonStyles.sizes[size] || buttonStyles.sizes.medium);
+        }
+        const colorStyles = buttonStyles.colors[color] || buttonStyles.colors.blue;
+        const typeStyle = colorStyles[type] || colorStyles.solid;
+        this.classList.add(...typeStyle.base);
+        if (!isDisabled) {
+          this.classList.add("cursor-pointer", ...typeStyle.hover);
+        } else {
+          this.classList.add("opacity-50", "cursor-not-allowed");
+        }
+        if (fullWidth) {
+          this.classList.add("w-full");
+        }
+        if (!this.hasAttribute("type")) {
+          this.setAttribute("type", "button");
+        }
+      } finally {
+        this._applyingStyles = false;
       }
     }
     updateStyle() {
@@ -3811,909 +3704,6 @@
     }
   };
   customElements.define("ui-button", AutoStyledButton);
-
-  // src/core/reactiveState.js
-  var Signal = class {
-    constructor(initialValue) {
-      this._value = initialValue;
-      this._subscribers = /* @__PURE__ */ new Set();
-    }
-    get value() {
-      return this._value;
-    }
-    set value(newValue) {
-      if (this._value !== newValue) {
-        this._value = newValue;
-        this._notify();
-      }
-    }
-    subscribe(callback) {
-      this._subscribers.add(callback);
-      return () => this._subscribers.delete(callback);
-    }
-    _notify() {
-      this._subscribers.forEach((callback) => {
-        try {
-          callback(this._value);
-        } catch (error) {
-          console.error("Signal callback error:", error);
-        }
-      });
-    }
-  };
-  function signal(initialValue) {
-    return new Signal(initialValue);
-  }
-  function computed(compute) {
-    const result = new Signal(compute());
-    const update = () => {
-      result.value = compute();
-    };
-    return { ...result, update };
-  }
-
-  // src/components/ReusableModal.js
-  var ReusableModal = class extends HTMLElement {
-    constructor() {
-      super();
-      this.attachShadow({ mode: "open" });
-      this.isOpen = signal(false);
-      this.isOpen.subscribe((open) => {
-        this._updateModalState(open);
-      });
-    }
-    connectedCallback() {
-      this._render();
-      this._setupEventListeners();
-    }
-    _render() {
-      this.shadowRoot.innerHTML = `
-      <style>
-        ::slotted([slot="trigger"]) {
-          cursor: pointer;
-        }
-      </style>
-      <slot name="trigger"></slot>
-    `;
-      this._modalOverlay = document.createElement("div");
-      this._modalOverlay.className = "ui-modal-overlay";
-      this._modalOverlay.setAttribute("role", "dialog");
-      this._modalOverlay.setAttribute("aria-modal", "true");
-      this._modalOverlay.innerHTML = `
-      <style>
-        .ui-modal-overlay {
-          position: fixed;
-          inset: 0;
-          z-index: 999999;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0.75rem;
-          opacity: 0;
-          pointer-events: none;
-          transition: opacity 500ms cubic-bezier(0.4, 0, 0.2, 1);
-          background-color: transparent;
-        }
-
-        .ui-modal-overlay.open {
-          pointer-events: auto;
-          opacity: 1;
-        }
-
-        .ui-modal-backdrop {
-          position: absolute;
-          inset: 0;
-          background-color: rgba(0, 0, 0, 0.5);
-          transition: background-color 500ms cubic-bezier(0.4, 0, 0.2, 1);
-          z-index: -1;
-        }
-
-        .ui-modal-content {
-          position: relative;
-          z-index: 100;
-          background-color: white;
-          border-radius: 0.75rem;
-          padding: 1.5rem;
-          margin: 1rem;
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-          max-width: 85vw;
-          width: auto;
-          min-width: min(85vw, 500px);
-          transform: translateY(100%);
-          transition: transform 500ms cubic-bezier(0.4, 0, 0.2, 1);
-          max-height: 90vh;
-          overflow-y: auto;
-          flex-shrink: 0;
-        }
-
-        @media (min-width: 640px) {
-          .ui-modal-content {
-            padding: 2rem;
-            max-width: 70vw;
-            margin: 1.5rem;
-          }
-        }
-
-        @media (min-width: 768px) {
-          .ui-modal-content {
-            padding: 2.5rem;
-            max-width: 40vw;
-            margin: 2rem;
-          }
-        }
-
-        .ui-modal-overlay.open .ui-modal-content {
-          transform: translateY(0);
-        }
-
-        .ui-modal-header {
-          display: relative;
-          margin-bottom: 1rem;
-          gap: 1rem;
-        }
-
-        .ui-modal-title {
-          flex: 1;
-          padding-right: 1rem;
-          font-size: 1.125rem;
-          font-weight: 700;
-          color: #111827;
-          line-height: 1.5;
-        }
-
-        @media (min-width: 640px) {
-          .ui-modal-title {
-            font-size: 1.25rem;
-          }
-        }
-
-        @media (min-width: 768px) {
-          .ui-modal-title {
-            font-size: 1.5rem;
-          }
-        }
-
-        .ui-modal-close-btn {
-          position: absolute;
-          top: 0.75rem;
-          right: 0.75rem;
-          width: 2rem;
-          height: 2rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background-color: transparent;
-          border: none;
-          color: #9ca3af;
-          cursor: pointer;
-          border-radius: 9999px;
-          transition: all 200ms;
-          flex-shrink: 0;
-        }
-
-        .ui-modal-close-btn:hover {
-          background-color: #f3f4f6;
-          color: #4b5563;
-        }
-
-        .ui-modal-close-btn:focus {
-          outline: none;
-          ring: 2px;
-          ring-color: #3b82f6;
-        }
-
-        .ui-modal-body {
-          color: #4b5563;
-          font-size: 0.875rem;
-          line-height: 1.5;
-        }
-
-        .ui-modal-footer {
-          margin-top: 1.5rem;
-          display: flex;
-          justify-content: flex-end;
-          gap: 0.75rem;
-        }
-      </style>
-      
-      <div class="ui-modal-backdrop"></div>
-      
-      <div class="ui-modal-content">
-        <div class="ui-modal-header">
-          <div class="ui-modal-title"></div>
-          <button class="ui-modal-close-btn" aria-label="Close modal">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <div class="ui-modal-body"></div>
-        <div class="ui-modal-footer"></div>
-      </div>
-    `;
-      this._updateModalContent();
-    }
-    _updateModalContent() {
-      const titleSlot = this.querySelector('[slot="title"]');
-      const contentSlot = this.querySelector('[slot="content"]');
-      const footerSlot = this.querySelector('[slot="footer"]');
-      const titleContainer = this._modalOverlay.querySelector(".ui-modal-title");
-      const bodyContainer = this._modalOverlay.querySelector(".ui-modal-body");
-      const footerContainer = this._modalOverlay.querySelector(".ui-modal-footer");
-      if (titleSlot && titleContainer) {
-        titleContainer.innerHTML = titleSlot.innerHTML;
-      }
-      if (contentSlot && bodyContainer) {
-        bodyContainer.innerHTML = contentSlot.innerHTML;
-      }
-      if (footerSlot && footerContainer) {
-        footerContainer.innerHTML = Array.from(footerSlot.children).map((child) => child.outerHTML).join("");
-      }
-    }
-    querySelector(selector) {
-      const element = super.querySelector(selector);
-      if (element)
-        return element;
-      if (this._modalOverlay) {
-        return this._modalOverlay.querySelector(selector);
-      }
-      return null;
-    }
-    _setupEventListeners() {
-      const backdrop = this._modalOverlay.querySelector(".ui-modal-backdrop");
-      const closeBtn = this._modalOverlay.querySelector(".ui-modal-close-btn");
-      const trigger = this.querySelector('[slot="trigger"]');
-      if (trigger) {
-        trigger.addEventListener("click", () => this.open());
-      }
-      closeBtn.addEventListener("click", () => this.close());
-      backdrop.addEventListener("click", () => this.close());
-      this._handleEscape = (e) => {
-        if (e.key === "Escape" && this.isOpen.value) {
-          this.close();
-        }
-      };
-    }
-    _updateModalState(open) {
-      if (open) {
-        document.body.appendChild(this._modalOverlay);
-        this._modalOverlay.offsetHeight;
-        this._modalOverlay.classList.add("open");
-        document.body.style.overflow = "hidden";
-        document.addEventListener("keydown", this._handleEscape);
-      } else {
-        this._modalOverlay.classList.remove("open");
-        setTimeout(() => {
-          if (this._modalOverlay.parentNode) {
-            this._modalOverlay.parentNode.removeChild(this._modalOverlay);
-          }
-        }, 500);
-        document.body.style.overflow = "";
-        document.removeEventListener("keydown", this._handleEscape);
-      }
-    }
-    open() {
-      this.isOpen.value = true;
-    }
-    close() {
-      this.isOpen.value = false;
-    }
-    toggle() {
-      this.isOpen.value = !this.isOpen.value;
-    }
-    disconnectedCallback() {
-      document.removeEventListener("keydown", this._handleEscape);
-      if (this._modalOverlay && this._modalOverlay.parentNode) {
-        this._modalOverlay.parentNode.removeChild(this._modalOverlay);
-      }
-    }
-  };
-  if (!customElements.get("ui-modal")) {
-    customElements.define("ui-modal", ReusableModal);
-  }
-
-  // src/views/Home/home.js
-  function initHomeView() {
-    renderPageLayout({
-      header: {
-        title: "YNAB to Monarch Migration",
-        description: "Moving your financial data from YNAB to Monarch made simple and secure. Choose the method that works best for you, and we'll guide you through each step.",
-        containerId: "pageHeader"
-      }
-    });
-    document.getElementById("getStartedButton")?.addEventListener("click", (e) => {
-      e.preventDefault();
-      navigate("/upload");
-    });
-  }
-
-  // src/views/Home/home.html
-  var home_default = `<div id="pageLayout"></div>
-
-<section class="flex flex-col items-center mb-6 max-w-md mx-auto gap-2">
-
-  <!-- Get Started Btn -->
-  <ui-button id="getStartedButton" data-size="large">
-    Start Migrating Your Data
-  </ui-button>
-
-  <!-- Migration Info Modal -->
-  <ui-modal id="migrationInfoModal">
-    <ui-button slot="trigger" data-type="text">
-      How does this work?
-    </ui-button>
-
-    <h3 slot="title">How the Migration Process Works</h3>
-
-    <div slot="content">
-      <div class="space-y-4 text-sm text-gray-600">
-        <div>
-          <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 1: Access Your Data</h4>
-          <p class="text-gray-600 text-sm">Connect your YNAB account or upload your data manually. We'll retrieve your
-            budgets, transactions, categories, and accounts.</p>
-        </div>
-        <div>
-          <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 2: Filter & Process</h4>
-          <p class="text-gray-600 text-sm">Decide what to migrate and make edits as needed.</p>
-        </div>
-        <div>
-          <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 3: Download or Import</h4>
-          <p class="text-gray-600 text-sm">Decide to receive a ready-to-import file that you can upload into Monarch
-            Money yourself, or connect to your Monarch Money account to automatically migrate your data.</p>
-        </div>
-      </div>
-    </div>
-  </ui-modal>
-</section>
-
-<!-- Privacy Info -->
-<section class="text-center">
-  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 max-w-3xl mx-auto mb-8 text-left">
-    <div class="flex items-start gap-4">
-      <div class="bg-green-100 rounded-full p-3 shrink-0">
-        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path d="M12 3c4.97 0 9 4.03 9 9s-4.03 9-9 9-9-4.03-9-9 4.03-9 9-9z" stroke-linecap="round"
-            stroke-linejoin="round"></path>
-          <path d="M8.5 12.5l1.5 1.5 4-4" stroke-linecap="round" stroke-linejoin="round"></path>
-        </svg>
-      </div>
-      <div class="flex-1">
-        <h3 class="text-gray-900 mb-2 text-left text-lg font-semibold">Your data stays yours, always</h3>
-        <p class="text-gray-600 text-sm mb-3">
-          We never store, sell, or share your financial information. You remain in control of your data from start
-          to finish.
-        </p>
-
-        <!-- Privacy Info Modal -->
-        <ui-modal id="privacyInfoModal">
-          <ui-button slot="trigger" data-type="text">
-            Learn more about how we protect your privacy
-          </ui-button>
-
-          <h3 slot="title">Privacy is our top priority</h3>
-
-          <div slot="content">
-            <div class="space-y-4 text-sm text-gray-600">
-              <div>
-                <h4 class="text-gray-900 font-semibold mb-1">No Data Collection</h4>
-                <p>We never collect, store, or share your financial data.</p>
-              </div>
-              <div>
-                <h4 class="text-gray-900 font-semibold mb-1">Secure Connections</h4>
-                <p>We use secure, encrypted, and read-only connections when accessing your YNAB data.</p>
-              </div>
-              <div>
-                <h4 class="text-gray-900 font-semibold mb-1">You're in Control</h4>
-                <p>At any point in time you have full control to wipe your data and stop the migration process.</p>
-              </div>
-              <div>
-                <h4 class="text-gray-900 font-semibold mb-1">Open Source & Auditable</h4>
-                <p>Everything is transparent and can be reviewed by security experts. We have nothing to hide because we
-                  keep no copies. See <a href="https://github.com/your-repo" class="text-blue-600 hover:underline">our
-                    source code</a>.</p>
-              </div>
-            </div>
-
-            <div class="mt-6 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
-              <div class="flex items-start gap-2 sm:gap-3">
-                <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clip-rule="evenodd" />
-                </svg>
-                <p class="text-xs sm:text-sm text-green-800 leading-relaxed">
-                  <strong>100% Private:</strong> Your financial data is sensitive, and we treat it that way. You remain
-                  the sole owner of every byte.
-                </p>
-              </div>
-            </div>
-          </div>
-        </ui-modal>
-      </div>
-    </div>
-  </div>
-</section>`;
-
-  // src/services/ynabParser.js
-  var import_papaparse = __toESM(require_papaparse_min(), 1);
-  var import_jszip = __toESM(require_jszip_min(), 1);
-
-  // src/schemas/accountSchema.js
-  function generateId() {
-    return "id-" + Math.random().toString(36).slice(2, 11);
-  }
-  function createAccountFromOauth(ynabAccount, inferredType = null, inferredSubtype = null) {
-    const balanceCents = Math.round(ynabAccount.balance / 10);
-    const balanceDollars = balanceCents / 100;
-    return {
-      id: ynabAccount.id,
-      name: ynabAccount.name.trim(),
-      modifiedName: ynabAccount.name.trim(),
-      type: inferredType || ynabAccount.type || "depository",
-      subtype: inferredSubtype || null,
-      transactions: [],
-      transactionCount: 0,
-      balanceCents,
-      balance: balanceDollars,
-      included: true,
-      selected: false,
-      status: "unprocessed"
-    };
-  }
-  function createAccountFromCsv(accountName, transactions, inferredType, inferredSubtype, balanceCents) {
-    const balanceDollars = balanceCents / 100;
-    const transactionCount = transactions.length;
-    return {
-      id: generateId(),
-      name: accountName,
-      modifiedName: accountName,
-      type: inferredType,
-      subtype: inferredSubtype,
-      transactions,
-      transactionCount,
-      balanceCents,
-      balance: balanceDollars,
-      included: transactionCount > 0,
-      selected: false,
-      status: "unprocessed"
-    };
-  }
-  function validateAccount(account) {
-    const errors = [];
-    const requiredStrings = ["id", "name", "modifiedName", "type", "status"];
-    for (const prop of requiredStrings) {
-      if (typeof account[prop] !== "string" || account[prop].length === 0) {
-        errors.push(`Missing or invalid required string property: ${prop}`);
-      }
-    }
-    if (account.subtype !== null && typeof account.subtype !== "string") {
-      errors.push('Property "subtype" must be a string or null');
-    }
-    const requiredNumbers = ["transactionCount", "balanceCents", "balance"];
-    for (const prop of requiredNumbers) {
-      if (typeof account[prop] !== "number" || isNaN(account[prop])) {
-        errors.push(`Missing or invalid required number property: ${prop}`);
-      }
-    }
-    const requiredBooleans = ["included", "selected"];
-    for (const prop of requiredBooleans) {
-      if (typeof account[prop] !== "boolean") {
-        errors.push(`Missing or invalid required boolean property: ${prop}`);
-      }
-    }
-    if (!Array.isArray(account.transactions)) {
-      errors.push('Property "transactions" must be an array');
-    }
-    const validStatuses = ["unprocessed", "processed", "failed"];
-    if (!validStatuses.includes(account.status)) {
-      errors.push(`Property "status" must be one of: ${validStatuses.join(", ")}`);
-    }
-    return {
-      valid: errors.length === 0,
-      errors
-    };
-  }
-  function createAccountCollection() {
-    return {};
-  }
-  function addAccountToCollection(collection, account) {
-    const validation = validateAccount(account);
-    if (!validation.valid) {
-      return {
-        success: false,
-        errors: validation.errors
-      };
-    }
-    collection[account.id] = account;
-    return {
-      success: true
-    };
-  }
-
-  // src/services/ynabParser.js
-  function parseCurrencyToCents(str) {
-    if (!str)
-      return 0;
-    const normalized = str.replace(/[^0-9.-]+/g, "").trim();
-    const floatVal = parseFloat(normalized);
-    return isNaN(floatVal) ? 0 : Math.round(floatVal * 100);
-  }
-  function inferMonarchType(accountName) {
-    const lowered = accountName.toLowerCase();
-    if (lowered.includes("credit")) {
-      return { type: "credit", subtype: "credit_card" };
-    }
-    if (lowered.includes("loan") || lowered.includes("mortgage") || lowered.includes("student loan")) {
-      return { type: "loan", subtype: "loan" };
-    }
-    if (lowered.includes("savings")) {
-      return { type: "depository", subtype: "savings" };
-    }
-    if (lowered.includes("checking") || lowered.includes("debit")) {
-      return { type: "depository", subtype: "checking" };
-    }
-    return { type: "depository", subtype: "checking" };
-  }
-  async function parseYNABCSV(zipFile, monarchAccountTypes) {
-    console.group("parseYNABCSV");
-    const zip = await import_jszip.default.loadAsync(zipFile);
-    const targetFile = Object.keys(zip.files).find((name) => name.toLowerCase().includes("register") && name.toLowerCase().endsWith(".csv"));
-    if (!targetFile) {
-      console.error("\u274C No register CSV found in the ZIP file");
-      console.groupEnd("parseYNABCSV");
-      throw new Error("No register CSV found in the ZIP file");
-    }
-    const csvContent = await zip.files[targetFile].async("string");
-    console.groupEnd("parseYNABCSV");
-    return parseCSV(csvContent, monarchAccountTypes);
-  }
-  function parseCSV(csvContent, monarchAccountTypes) {
-    console.group("parseCSV");
-    return new Promise((resolve, reject) => {
-      import_papaparse.default.parse(csvContent, {
-        header: true,
-        skipEmptyLines: true,
-        complete: ({ data: data2 }) => {
-          if (!data2 || data2.length === 0) {
-            console.groupEnd("parseCSV");
-            return reject(new Error("\u274C CSV file appears to be empty or invalid."));
-          }
-          const accounts = /* @__PURE__ */ new Map();
-          for (const row of data2) {
-            const accountName = row["Account"]?.trim();
-            if (!accountName) {
-              console.warn("\u274C Skipping row with missing account name:", row);
-              continue;
-            }
-            if (row["Date"]) {
-              const [mm, dd, yyyy] = row["Date"].split("/");
-              if (mm && dd && yyyy) {
-                row["Date"] = `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
-              }
-            }
-            const inflowCents = parseCurrencyToCents(row["Inflow"]);
-            const outflowCents = parseCurrencyToCents(row["Outflow"]);
-            const netCents = inflowCents - outflowCents;
-            if (inflowCents > 0) {
-              row.Amount = (inflowCents / 100).toFixed(2);
-            } else if (outflowCents > 0) {
-              row.Amount = (-outflowCents / 100).toFixed(2);
-            } else {
-              row.Amount = "0.00";
-            }
-            if (!accounts.has(accountName)) {
-              const { type, subtype } = inferMonarchType(accountName, monarchAccountTypes);
-              accounts.set(accountName, {
-                type,
-                subtype,
-                transactions: [],
-                balanceCents: 0
-              });
-            }
-            const account = accounts.get(accountName);
-            account.transactions.push({
-              Date: row.Date,
-              Merchant: row.Payee || "",
-              Category: row.Category || "",
-              "Category Group": row["Category Group"] || "",
-              Notes: row.Memo || "",
-              Amount: row.Amount,
-              Tags: row.Flag || ""
-            });
-            account.balanceCents += netCents;
-          }
-          ;
-          const accountCollection = createAccountCollection();
-          for (const [accountName, accountData] of accounts.entries()) {
-            const standardizedAccount = createAccountFromCsv(accountName, accountData.transactions, accountData.type, accountData.subtype, accountData.balanceCents);
-            addAccountToCollection(accountCollection, standardizedAccount);
-          }
-          ;
-          console.groupEnd("parseCSV");
-          resolve(accountCollection);
-        },
-        error: (err) => reject(err)
-      });
-    });
-  }
-  function parseYnabAccountApi(data2) {
-    console.group("parseYnabAccountApi");
-    const accountCollection = createAccountCollection();
-    try {
-      for (const row of data2) {
-        console.log("Parsing account:", row["name"], "Balance (milliunits):", row["balance"]);
-        const { type, subtype } = inferMonarchType(row["name"]);
-        const standardizedAccount = createAccountFromOauth(row, type, subtype);
-        addAccountToCollection(accountCollection, standardizedAccount);
-      }
-    } catch (err) {
-      console.error("\u274C Error parsing YNAB account API data:", err);
-    } finally {
-      console.log("Parsed accounts:", accountCollection);
-      console.groupEnd();
-      return accountCollection;
-    }
-  }
-
-  // src/api/ynabOauth.js
-  var AUTHORIZE_BASE_URL = "https://app.ynab.com/oauth/authorize";
-  var CALLBACK_PATH = "/oauth/ynab/callback";
-  var EXPECTED_STATE_KEY = "ynab_oauth_expected_state";
-  var ALERT_MESSAGE = "Could not retrieve YNAB OAuth client ID. Please try again.";
-  var cachedClientId = null;
-  function getRedirectUri() {
-    return `${location.origin}${CALLBACK_PATH}`;
-  }
-  async function getClientId() {
-    if (cachedClientId) {
-      return cachedClientId;
-    }
-    try {
-      const response = await fetch("/.netlify/functions/config");
-      if (!response.ok) {
-        throw new Error("Failed to fetch config");
-      }
-      const config = await response.json();
-      cachedClientId = config.ynabClientId;
-      return cachedClientId;
-    } catch (error) {
-      console.error("Error fetching YNAB client ID:", error);
-      return null;
-    }
-  }
-  function safeSessionStorage() {
-    try {
-      return window.sessionStorage;
-    } catch (error) {
-      console.warn("Session storage unavailable:", error);
-      return null;
-    }
-  }
-  function persistExpectedState(state) {
-    const storage = safeSessionStorage();
-    if (!storage)
-      return;
-    storage.setItem(EXPECTED_STATE_KEY, state);
-  }
-  function grabExpectedState() {
-    const storage = safeSessionStorage();
-    if (!storage)
-      return null;
-    return storage.getItem(EXPECTED_STATE_KEY);
-  }
-  function dropExpectedState() {
-    const storage = safeSessionStorage();
-    if (!storage)
-      return;
-    storage.removeItem(EXPECTED_STATE_KEY);
-  }
-  function buildState() {
-    const cryptoSource = window.crypto || window.msCrypto;
-    if (cryptoSource?.randomUUID) {
-      return cryptoSource.randomUUID();
-    }
-    if (cryptoSource?.getRandomValues) {
-      const array = new Uint8Array(16);
-      cryptoSource.getRandomValues(array);
-      return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("");
-    }
-    return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
-  }
-  function buildAuthorizeUrl(clientId, stateValue) {
-    const base2 = new URL(AUTHORIZE_BASE_URL);
-    base2.searchParams.set("client_id", clientId);
-    base2.searchParams.set("response_type", "code");
-    base2.searchParams.set("redirect_uri", getRedirectUri());
-    base2.searchParams.set("state", stateValue);
-    return base2.toString();
-  }
-  async function startYnabOauth() {
-    const clientId = await getClientId();
-    if (!clientId) {
-      window.alert(ALERT_MESSAGE);
-      return null;
-    }
-    const state = buildState();
-    persistExpectedState(state);
-    const redirectUri = getRedirectUri();
-    console.log("Starting YNAB OAuth:", { clientId, state, redirectUri });
-    const url = buildAuthorizeUrl(clientId, state);
-    console.log("Redirecting to:", url);
-    window.location.assign(url);
-    return url;
-  }
-  function getExpectedState() {
-    return grabExpectedState();
-  }
-  function clearExpectedState() {
-    return dropExpectedState();
-  }
-
-  // src/api/ynabApi.js
-  var YNAB_API_BASE_URL = "https://api.ynab.com/v1";
-  async function redirectToYnabOauth() {
-    await startYnabOauth();
-  }
-  async function getAccounts(accessToken) {
-    const url = new URL(`${YNAB_API_BASE_URL}/budgets/default/accounts`);
-    try {
-      const response = await fetch(url, {
-        headers: {
-          "Authorization": `Bearer ${accessToken}`
-        }
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error fetching YNAB accounts:", errorData);
-        throw new Error(`Failed to fetch YNAB accounts. Status: ${response.status}`);
-      }
-      const data2 = await response.json();
-      const rawAccounts = data2.data.accounts;
-      const accounts = rawAccounts.filter((acc) => !acc.deleted);
-      return accounts;
-    } catch (error) {
-      console.error("YNAB API call failed:", error);
-      return null;
-    }
-  }
-  async function getTransactions(accessToken, accountId) {
-    const url = new URL(`${YNAB_API_BASE_URL}/budgets/default/accounts/${accountId}/transactions`);
-    try {
-      const response = await fetch(url, {
-        headers: {
-          "Authorization": `Bearer ${accessToken}`
-        }
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error(`Error fetching YNAB transactions for account ${accountId}:`, errorData);
-        throw new Error(`Failed to fetch YNAB transactions. Status: ${response.status}`);
-      }
-      const data2 = await response.json();
-      const transactions = data2.data.transactions;
-      return transactions.filter((txn) => {
-        if (txn.deleted)
-          return false;
-        return true;
-      });
-    } catch (error) {
-      console.error(`YNAB transactions API call failed for account ${accountId}:`, error);
-      return [];
-    }
-  }
-  async function exchangeCodeForToken(code) {
-    try {
-      const response = await fetch("/.netlify/functions/ynabTokenExchange", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          grant_type: "authorization_code",
-          code
-        })
-      });
-      const data2 = await response.json();
-      if (!response.ok) {
-        console.error("YNAB token exchange failed:", data2);
-        throw new Error("Failed to exchange authorization code for a token.");
-      }
-      return data2;
-    } catch (error) {
-      console.error("Error during token exchange:", error);
-      return null;
-    }
-  }
-  async function refreshAccessToken(refreshToken) {
-    try {
-      const response = await fetch("/.netlify/functions/ynabTokenExchange", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          grant_type: "refresh_token",
-          refresh_token: refreshToken
-        })
-      });
-      const data2 = await response.json();
-      if (!response.ok) {
-        console.error("YNAB token refresh failed:", data2);
-        throw new Error("Failed to refresh access token.");
-      }
-      sessionStorage.setItem("ynab_access_token", data2.access_token);
-      if (data2.refresh_token) {
-        sessionStorage.setItem("ynab_refresh_token", data2.refresh_token);
-      }
-      sessionStorage.setItem("ynab_token_expires_at", Date.now() + data2.expires_in * 1e3);
-      return data2;
-    } catch (error) {
-      console.error("Error during token refresh:", error);
-      return null;
-    }
-  }
-  async function handleOauthCallback() {
-    const queryParams = new URLSearchParams(window.location.search);
-    const code = queryParams.get("code");
-    const stateToken = queryParams.get("state");
-    const storedState = getExpectedState();
-    console.log("OAuth callback params:", { code, stateToken, storedState, fullUrl: window.location.href });
-    if (!stateToken || stateToken !== storedState) {
-      console.error("Invalid CSRF token on OAuth callback.", { stateToken, storedState });
-      clearExpectedState();
-      throw new Error("Invalid CSRF token on OAuth callback.");
-    }
-    clearExpectedState();
-    if (!code) {
-      console.error("OAuth callback did not contain an authorization code.");
-      throw new Error("OAuth callback did not contain an authorization code.");
-    }
-    const tokenData = await exchangeCodeForToken(code);
-    if (tokenData && tokenData.access_token) {
-      state_default.ynab_access_token = tokenData.access_token;
-      sessionStorage.setItem("ynab_access_token", tokenData.access_token);
-      sessionStorage.setItem("ynab_refresh_token", tokenData.refresh_token);
-      sessionStorage.setItem("ynab_token_expires_at", Date.now() + tokenData.expires_in * 1e3);
-      const accounts = await getAccounts(tokenData.access_token);
-      if (accounts && accounts.length > 0) {
-        const activeAccounts = accounts.filter((acc) => !acc.deleted);
-        state_default.accounts = parseYnabAccountApi(activeAccounts);
-        console.log("Fetching transactions for", activeAccounts.length, "accounts...");
-        for (const account of activeAccounts) {
-          const transactions = await getTransactions(tokenData.access_token, account.id);
-          if (transactions && transactions.length > 0) {
-            const transformedTransactions = transactions.map((txn) => {
-              const date = txn.date;
-              const amountDollars = (txn.amount / 1e3).toFixed(2);
-              return {
-                Date: date,
-                Merchant: txn.payee_name || "",
-                Category: txn.category_name || "",
-                CategoryGroup: txn.category_group_name || "",
-                Notes: txn.memo || "",
-                Amount: amountDollars,
-                Tags: txn.flag_name || ""
-              };
-            });
-            if (state_default.accounts[account.id]) {
-              state_default.accounts[account.id].transactions = transformedTransactions;
-              state_default.accounts[account.id].transactionCount = transformedTransactions.length;
-              console.log(`Account ${account.name}: ${transformedTransactions.length} transactions loaded`);
-            }
-          }
-        }
-        console.table(state_default.accounts);
-        return "success";
-      } else {
-        console.warn("No accounts retrieved from YNAB API.");
-        throw new Error("No accounts retrieved from YNAB API.");
-      }
-    } else {
-      console.error("Failed to get access token from YNAB.");
-      throw new Error("Failed to get access token from YNAB.");
-    }
-  }
 
   // src/components/Card.js
   var Card = class extends HTMLElement {
@@ -5037,6 +4027,365 @@
     customElements.define("ui-card", Card);
   }
 
+  // src/components/ClickableCard.js
+  var ClickableCard = class extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" });
+    }
+    connectedCallback() {
+      this._render();
+      this._setupEventListeners();
+    }
+    static get observedAttributes() {
+      return ["data-color", "data-width"];
+    }
+    attributeChangedCallback() {
+      if (this.shadowRoot.innerHTML) {
+        this._updateStyles();
+      }
+    }
+    _getColorClasses() {
+      const color = this.getAttribute("data-color") || "blue";
+      const colorMap = {
+        blue: {
+          border: "#93c5fd",
+          bg: "rgba(219, 234, 254, 0.3)",
+          iconBg: "#dbeafe",
+          iconBgHover: "#bfdbfe",
+          iconColor: "#2563eb",
+          textColor: "#2563eb",
+          textColorHover: "#1d4ed8",
+          decorBg: "#dbeafe"
+        },
+        green: {
+          border: "#86efac",
+          bg: "rgba(220, 252, 231, 0.3)",
+          iconBg: "#dcfce7",
+          iconBgHover: "#bbf7d0",
+          iconColor: "#16a34a",
+          textColor: "#16a34a",
+          textColorHover: "#15803d",
+          decorBg: "#dcfce7"
+        },
+        purple: {
+          border: "#c4b5fd",
+          bg: "rgba(237, 233, 254, 0.3)",
+          iconBg: "#ede9fe",
+          iconBgHover: "#ddd6fe",
+          iconColor: "#7c3aed",
+          textColor: "#7c3aed",
+          textColorHover: "#6d28d9",
+          decorBg: "#ede9fe"
+        },
+        red: {
+          border: "#fca5a5",
+          bg: "rgba(254, 226, 226, 0.3)",
+          iconBg: "#fee2e2",
+          iconBgHover: "#fecaca",
+          iconColor: "#dc2626",
+          textColor: "#dc2626",
+          textColorHover: "#b91c1c",
+          decorBg: "#fee2e2"
+        }
+      };
+      return colorMap[color] || colorMap.blue;
+    }
+    _updateStyles() {
+      const colors = this._getColorClasses();
+      const width = this.getAttribute("data-width") || "full";
+      const widthStyles = {
+        full: "width: 100%;",
+        auto: "width: auto;",
+        fixed: "width: 300px;"
+      };
+      const root = this.shadowRoot.querySelector(".card-container");
+      if (root) {
+        root.style.cssText = widthStyles[width] || widthStyles.full;
+      }
+      if (this.shadowRoot.styleSheets[0]) {
+        const sheet = this.shadowRoot.styleSheets[0];
+        const rule = sheet.cssRules[0];
+        if (rule && rule.style) {
+          rule.style.setProperty("--card-border", colors.border);
+          rule.style.setProperty("--card-bg-hover", colors.bg);
+          rule.style.setProperty("--icon-bg", colors.iconBg);
+          rule.style.setProperty("--icon-bg-hover", colors.iconBgHover);
+          rule.style.setProperty("--icon-color", colors.iconColor);
+          rule.style.setProperty("--text-color", colors.textColor);
+          rule.style.setProperty("--text-color-hover", colors.textColorHover);
+          rule.style.setProperty("--decor-bg", colors.decorBg);
+        }
+      }
+    }
+    _render() {
+      const colors = this._getColorClasses();
+      const width = this.getAttribute("data-width") || "full";
+      const widthStyles = {
+        full: "width: 100%;",
+        auto: "width: auto; min-width: 280px;",
+        fixed: "width: 300px;"
+      };
+      this.shadowRoot.innerHTML = `
+      <style>
+        :host {
+          --card-border: ${colors.border};
+          --card-bg-hover: ${colors.bg};
+          --icon-bg: ${colors.iconBg};
+          --icon-bg-hover: ${colors.iconBgHover};
+          --icon-color: ${colors.iconColor};
+          --text-color: ${colors.textColor};
+          --text-color-hover: ${colors.textColorHover};
+          --decor-bg: ${colors.decorBg};
+          display: block;
+        }
+
+        .card-container {
+          ${widthStyles[width] || widthStyles.full}
+          cursor: pointer;
+          user-select: none;
+        }
+
+        @media (min-width: 1024px) {
+          .card-container {
+            flex: 1;
+          }
+        }
+
+        .card-inner {
+          height: 100%;
+          padding: 1rem;
+          border: 2px solid #e5e7eb;
+          border-radius: 0.75rem;
+          box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+          background-color: white;
+          position: relative;
+          overflow: hidden;
+          transition: all 300ms;
+        }
+
+        @media (min-width: 640px) {
+          .card-inner {
+            padding: 1.5rem;
+          }
+        }
+
+        @media (min-width: 768px) {
+          .card-inner {
+            padding: 2rem;
+          }
+        }
+
+        .card-container:hover .card-inner {
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+          border-color: var(--card-border);
+          background-color: var(--card-bg-hover);
+        }
+
+        .decoration {
+          position: absolute;
+          top: 0;
+          right: 0;
+          width: 5rem;
+          height: 5rem;
+          background-color: var(--decor-bg);
+          border-radius: 9999px;
+          transform: translateY(-2.5rem) translateX(2.5rem);
+          opacity: 0.5;
+          transition: opacity 300ms;
+        }
+
+        .card-container:hover .decoration {
+          opacity: 0.75;
+        }
+
+        .card-content {
+          position: relative;
+          z-index: 10;
+        }
+
+        .card-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          margin-bottom: 1rem;
+        }
+
+        .icon-wrapper {
+          width: 2.5rem;
+          height: 2.5rem;
+          background-color: var(--icon-bg);
+          border-radius: 0.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background-color 300ms;
+        }
+
+        @media (min-width: 640px) {
+          .icon-wrapper {
+            width: 3rem;
+            height: 3rem;
+          }
+        }
+
+        .card-container:hover .icon-wrapper {
+          background-color: var(--icon-bg-hover);
+        }
+
+        ::slotted([slot="icon"]) {
+          width: 1.25rem;
+          height: 1.25rem;
+          color: var(--icon-color);
+        }
+
+        @media (min-width: 640px) {
+          ::slotted([slot="icon"]) {
+            width: 1.5rem;
+            height: 1.5rem;
+          }
+        }
+
+        .arrow-wrapper {
+          color: var(--text-color);
+          transition: color 300ms;
+        }
+
+        .card-container:hover .arrow-wrapper {
+          color: var(--text-color-hover);
+        }
+
+        ::slotted([slot="arrow"]) {
+          width: 1.25rem;
+          height: 1.25rem;
+        }
+
+        .card-title {
+          margin-bottom: 0.75rem;
+        }
+
+        ::slotted([slot="title"]) {
+          font-size: 1.125rem;
+          font-weight: 600;
+          color: #111827;
+          margin: 0;
+          line-height: 1.4;
+        }
+
+        @media (min-width: 640px) {
+          ::slotted([slot="title"]) {
+            font-size: 1.25rem;
+          }
+        }
+
+        @media (min-width: 768px) {
+          ::slotted([slot="title"]) {
+            font-size: 1.5rem;
+          }
+        }
+
+        .card-description {
+          margin-bottom: 1.5rem;
+          min-height: 3rem;
+        }
+
+        ::slotted([slot="description"]) {
+          color: #4b5563;
+          font-size: 0.875rem;
+          line-height: 1.6;
+          margin: 0;
+        }
+
+        @media (min-width: 640px) {
+          ::slotted([slot="description"]) {
+            font-size: 1rem;
+          }
+        }
+
+        .card-action {
+          display: flex;
+          align-items: center;
+        }
+
+        ::slotted([slot="action"]) {
+          color: var(--text-color);
+          font-weight: 600;
+          font-size: 0.875rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          transition: color 300ms;
+          margin: 0;
+        }
+
+        @media (min-width: 640px) {
+          ::slotted([slot="action"]) {
+            font-size: 1rem;
+          }
+        }
+
+        .card-container:hover ::slotted([slot="action"]) {
+          color: var(--text-color-hover);
+        }
+
+        .action-arrow {
+          width: 1rem;
+          height: 1rem;
+          transition: transform 300ms;
+        }
+
+        .card-container:hover .action-arrow {
+          transform: translateX(0.25rem);
+        }
+      </style>
+
+      <div class="card-container">
+        <div class="card-inner">
+          <div class="decoration"></div>
+          
+          <div class="card-content">
+            <div class="card-header">
+              <div class="icon-wrapper">
+                <slot name="icon"></slot>
+              </div>
+              <div class="arrow-wrapper">
+                <slot name="arrow"></slot>
+              </div>
+            </div>
+
+            <div class="card-title">
+              <slot name="title"></slot>
+            </div>
+
+            <div class="card-description">
+              <slot name="description"></slot>
+            </div>
+
+            <div class="card-action">
+              <slot name="action"></slot>
+              <svg class="action-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    }
+    _setupEventListeners() {
+      const container = this.shadowRoot.querySelector(".card-container");
+      container.addEventListener("click", () => {
+        this.dispatchEvent(new CustomEvent("card-click", {
+          bubbles: true,
+          composed: true
+        }));
+      });
+    }
+  };
+  if (!customElements.get("clickable-card")) {
+    customElements.define("clickable-card", ClickableCard);
+  }
+
   // src/components/Divider.js
   var Divider = class extends HTMLElement {
     constructor() {
@@ -5285,23 +4634,2498 @@
   };
   customElements.define("error-message", ErrorMessage);
 
+  // src/components/InfoBanner.js
+  var InfoBanner = class extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" });
+    }
+    static get observedAttributes() {
+      return ["color", "icon-type", "has-border"];
+    }
+    connectedCallback() {
+      this.render();
+    }
+    attributeChangedCallback() {
+      if (this.shadowRoot.innerHTML) {
+        this.render();
+      }
+    }
+    getColorClasses() {
+      const color = this.getAttribute("color") || "green";
+      const colorMap = {
+        green: {
+          bg: "bg-green-50",
+          border: "border-green-200",
+          iconText: "text-green-600",
+          textDark: "text-green-800",
+          cssVar: "--banner-color: #166534"
+        },
+        blue: {
+          bg: "bg-blue-50",
+          border: "border-blue-200",
+          iconText: "text-blue-600",
+          textDark: "text-blue-800",
+          cssVar: "--banner-color: #1e40af"
+        },
+        yellow: {
+          bg: "bg-yellow-50",
+          border: "border-yellow-200",
+          iconText: "text-yellow-600",
+          textDark: "text-yellow-800",
+          cssVar: "--banner-color: #854d0e"
+        },
+        red: {
+          bg: "bg-red-50",
+          border: "border-red-200",
+          iconText: "text-red-600",
+          textDark: "text-red-800",
+          cssVar: "--banner-color: #991b1b"
+        },
+        gray: {
+          bg: "bg-gray-50",
+          border: "border-gray-200",
+          iconText: "text-gray-600",
+          textDark: "text-gray-800",
+          cssVar: "--banner-color: #1f2937"
+        }
+      };
+      return colorMap[color] || colorMap.green;
+    }
+    getIconSvg() {
+      const iconType = this.getAttribute("icon-type") || "checkmark";
+      const iconMap = {
+        checkmark: `
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+      `,
+        info: `
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+      `,
+        warning: `
+        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+      `,
+        lock: `
+        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+      `,
+        shield: `
+        <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+      `
+      };
+      return iconMap[iconType] || iconMap.checkmark;
+    }
+    render() {
+      const colors = this.getColorClasses();
+      const iconSvg = this.getIconSvg();
+      const hasBorder = this.hasAttribute("has-border");
+      this.shadowRoot.innerHTML = `
+      <style>
+        * {
+          box-sizing: border-box;
+        }
+
+        .banner {
+          border-radius: 0.5rem;
+          padding: 0.75rem;
+          width: 100%;
+        }
+
+        .banner.has-border {
+          border-width: 1px;
+          border-style: solid;
+        }
+
+        .banner-content {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.5rem;
+        }
+
+        .icon {
+          width: 1.25rem;
+          height: 1.25rem;
+          flex-shrink: 0;
+          margin-top: 0.125rem;
+        }
+
+        .content-wrapper {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .text {
+          font-size: 0.75rem;
+          line-height: 1.5;
+        }
+
+        .action-slot {
+          margin-top: 0.5rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        ::slotted([slot="action"]) {
+          font-size: 0.75rem !important;
+          font-weight: 400 !important;
+          color: var(--banner-color) !important;
+        }
+
+        ::slotted(ui-button[slot="action"]) {
+          color: var(--banner-color) !important;
+        }
+
+        ::slotted(ui-modal[slot="action"]) {
+          color: var(--banner-color) !important;
+        }
+
+        @media (min-width: 640px) {
+          ::slotted([slot="action"]) {
+            font-size: 0.875rem !important;
+          }
+        }
+
+        /* Color classes */
+        .bg-green-50 { background-color: #f0fdf4; }
+        .border-green-200 { border-color: #bbf7d0; }
+        .text-green-600 { color: #16a34a; }
+        .text-green-800 { color: #166534; }
+
+        .bg-blue-50 { background-color: #eff6ff; }
+        .border-blue-200 { border-color: #bfdbfe; }
+        .text-blue-600 { color: #2563eb; }
+        .text-blue-800 { color: #1e40af; }
+
+        .bg-yellow-50 { background-color: #fefce8; }
+        .border-yellow-200 { border-color: #fde68a; }
+        .text-yellow-600 { color: #ca8a04; }
+        .text-yellow-800 { color: #854d0e; }
+
+        .bg-red-50 { background-color: #fef2f2; }
+        .border-red-200 { border-color: #fecaca; }
+        .text-red-600 { color: #dc2626; }
+        .text-red-800 { color: #991b1b; }
+
+        .bg-gray-50 { background-color: #f9fafb; }
+        .border-gray-200 { border-color: #e5e7eb; }
+        .text-gray-600 { color: #4b5563; }
+        .text-gray-800 { color: #1f2937; }
+
+        ::slotted(*) {
+          margin: 0;
+        }
+
+        @media (min-width: 640px) {
+          .banner {
+            padding: 1rem;
+          }
+          
+          .banner-content {
+            gap: 0.75rem;
+          }
+
+          .text {
+            font-size: 0.875rem;
+          }
+        }
+      </style>
+
+      <div class="banner ${colors.bg} ${hasBorder ? `has-border ${colors.border}` : ""}" style="${colors.cssVar}">
+        <div class="banner-content">
+          <svg class="icon ${colors.iconText}" fill="currentColor" viewBox="0 0 20 20">
+            ${iconSvg}
+          </svg>
+          <div class="content-wrapper">
+            <div class="text ${colors.textDark}">
+              <slot></slot>
+            </div>
+            <div class="action-slot">
+              <slot name="action"></slot>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+      setTimeout(() => {
+        const color = this.getAttribute("color") || "green";
+        const colorMap = {
+          green: "green",
+          blue: "blue",
+          yellow: "yellow",
+          red: "red",
+          gray: "grey"
+        };
+        const actionSlot = this.shadowRoot.querySelector('slot[name="action"]');
+        if (actionSlot) {
+          const assignedElements = actionSlot.assignedElements();
+          assignedElements.forEach((el) => {
+            if (el.tagName === "UI-BUTTON") {
+              el.setAttribute("data-color", colorMap[color]);
+              if (typeof el.applyStyles === "function") {
+                el.applyStyles();
+              } else if (typeof el.updateStyle === "function") {
+                el.updateStyle();
+              }
+            } else if (el.tagName === "UI-MODAL") {
+              const button = el.querySelector('[slot="trigger"]');
+              if (button && button.tagName === "UI-BUTTON") {
+                button.setAttribute("data-color", colorMap[color]);
+                if (typeof button.applyStyles === "function") {
+                  button.applyStyles();
+                } else if (typeof button.updateStyle === "function") {
+                  button.updateStyle();
+                }
+              }
+            }
+          });
+        }
+      }, 0);
+    }
+  };
+  customElements.define("info-banner", InfoBanner);
+
+  // src/components/LoadingOverlay.js
+  var LoadingOverlay = class {
+    constructor() {
+      this.overlay = null;
+      this.isVisible = false;
+      this.init();
+    }
+    init() {
+      this.overlay = document.createElement("div");
+      this.overlay.id = "loadingOverlay";
+      this.overlay.className = "loading-overlay";
+      this.overlay.innerHTML = `
+      <style>
+        .loading-overlay {
+          display: flex;
+          position: fixed;
+          inset: 0;
+          z-index: 99999;
+          background-color: rgba(0, 0, 0, 0);
+          backdrop-filter: blur(2px);
+          -webkit-backdrop-filter: blur(2px);
+          align-items: center;
+          justify-content: center;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 200ms ease-out, background-color 200ms ease-out;
+        }
+
+        .loading-overlay.show {
+          opacity: 1;
+          pointer-events: auto;
+          background-color: rgba(0, 0, 0, 0.3);
+        }
+
+        .spinner-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .spinner {
+          width: 48px;
+          height: 48px;
+          border: 4px solid rgba(255, 255, 255, 0.3);
+          border-top-color: #005B96;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        .spinner-text {
+          color: white;
+          font-size: 1rem;
+          font-weight: 500;
+          letter-spacing: 0.5px;
+        }
+      </style>
+
+      <div class="spinner-container">
+        <div class="spinner"></div>
+        <div class="spinner-text">Loading...</div>
+      </div>
+    `;
+      document.body.appendChild(this.overlay);
+    }
+    show(message = "Loading...") {
+      if (!this.overlay) {
+        this.init();
+      }
+      if (message) {
+        const spinnerText = this.overlay.querySelector(".spinner-text");
+        if (spinnerText) {
+          spinnerText.textContent = message;
+        }
+      }
+      this.overlay.classList.add("show");
+      this.isVisible = true;
+      document.body.style.overflow = "hidden";
+    }
+    hide() {
+      if (!this.overlay)
+        return;
+      this.overlay.classList.remove("show");
+      this.isVisible = false;
+      document.body.style.overflow = "";
+    }
+    reset() {
+      if (!this.overlay)
+        return;
+      this.overlay.style.transition = "none";
+      this.overlay.classList.remove("show");
+      this.isVisible = false;
+      setTimeout(() => {
+        if (this.overlay) {
+          this.overlay.style.transition = "opacity 200ms ease-out, background-color 200ms ease-out";
+        }
+      }, 0);
+      document.body.style.overflow = "";
+    }
+    destroy() {
+      if (this.overlay) {
+        this.overlay.remove();
+        this.overlay = null;
+      }
+      document.body.style.overflow = "";
+    }
+  };
+  var loadingOverlay = new LoadingOverlay();
+  var LoadingOverlay_default = loadingOverlay;
+
+  // src/utils/indexedDB.js
+  var DB_NAME = "YnabToMonarchDB";
+  var DB_VERSION = 2;
+  var isIndexedDBAvailable = typeof indexedDB !== "undefined";
+  var FinancialDataDB = class {
+    constructor() {
+      this.db = null;
+    }
+    async init() {
+      console.group("Initializing IndexedDB:");
+      if (!isIndexedDBAvailable) {
+        console.warn("IndexedDB not available in this environment");
+        console.groupEnd();
+        return;
+      }
+      if (this.db) {
+        console.log("\u2705 IndexedDB already initialized, skipping");
+        console.groupEnd();
+        return;
+      }
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onerror = () => {
+          console.error("IndexedDB failed to open:", request.error);
+          console.groupEnd();
+          reject(request.error);
+        };
+        request.onsuccess = () => {
+          this.db = request.result;
+          console.log("\u2705 IndexedDB initialized");
+          console.groupEnd();
+          resolve();
+        };
+        request.onupgradeneeded = (event) => {
+          const db = event.target.result;
+          let accountStore;
+          if (!db.objectStoreNames.contains("accounts")) {
+            accountStore = db.createObjectStore("accounts", { keyPath: "id" });
+            console.log('Created "accounts" object store');
+          } else {
+            accountStore = event.target.transaction.objectStore("accounts");
+            console.log('Upgrading "accounts" object store');
+          }
+          if (accountStore && !accountStore.indexNames.contains("name")) {
+            accountStore.createIndex("name", "name", { unique: false });
+          }
+          if (accountStore && !accountStore.indexNames.contains("type")) {
+            accountStore.createIndex("type", "type", { unique: false });
+          }
+          if (accountStore && !accountStore.indexNames.contains("included")) {
+            accountStore.createIndex("included", "included", { unique: false });
+          }
+          if (accountStore && !accountStore.indexNames.contains("modified")) {
+            accountStore.createIndex("modified", "modified", { unique: false });
+          }
+          if (accountStore && !accountStore.indexNames.contains("syncedAt")) {
+            accountStore.createIndex("syncedAt", "syncedAt", { unique: false });
+          }
+          if (!db.objectStoreNames.contains("transactions")) {
+            const txnStore = db.createObjectStore("transactions", { keyPath: "id", autoIncrement: true });
+            txnStore.createIndex("accountId", "accountId", { unique: false });
+            txnStore.createIndex("date", "date", { unique: false });
+            console.log('Created "transactions" object store');
+          }
+          if (!db.objectStoreNames.contains("uploadStates")) {
+            const uploadStore = db.createObjectStore("uploadStates", { keyPath: "itemId" });
+            uploadStore.createIndex("status", "status", { unique: false });
+            uploadStore.createIndex("timestamp", "timestamp", { unique: false });
+            console.log('Created "uploadStates" object store');
+          }
+          if (!db.objectStoreNames.contains("metadata")) {
+            db.createObjectStore("metadata", { keyPath: "key" });
+            console.log('Created "metadata" object store');
+          }
+          console.groupEnd();
+        };
+      });
+    }
+    async saveAccounts(accountsData) {
+      console.group("saveAccounts:");
+      if (!isIndexedDBAvailable || !this.db) {
+        console.warn("IndexedDB not initialized, skipping save");
+        console.groupEnd();
+        return;
+      }
+      console.log(`Saving ${Object.keys(accountsData).length} accounts to IndexedDB`);
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction(["accounts", "transactions"], "readwrite");
+        const accountStore = tx.objectStore("accounts");
+        const txnStore = tx.objectStore("transactions");
+        console.log("Clearing existing accounts and transactions...");
+        accountStore.clear();
+        txnStore.clear();
+        console.log("First entry to save:", accountsData[Object.keys(accountsData)[0]]);
+        for (const [accountId, accountData] of Object.entries(accountsData)) {
+          const now = Date.now();
+          console.debug(`Account data for ${accountId}:`, accountData);
+          const transactionIds = [];
+          if (accountData.transactions && Array.isArray(accountData.transactions)) {
+            console.log(`Processing ${accountData.transactions.length} transactions for account ${accountId}`);
+            for (const txn of accountData.transactions) {
+              try {
+                const txnToStore = {
+                  ...txn,
+                  accountId
+                };
+                console.debug(`Storing transaction:`, txnToStore);
+                txnStore.put(txnToStore);
+                transactionIds.push(txn.id);
+              } catch (e) {
+                console.error(`Error storing transaction for account ${accountId}:`, e);
+              }
+            }
+          }
+          const account = {
+            id: accountId,
+            balance: accountData.balance || 0,
+            included: accountData.included !== void 0 ? accountData.included : true,
+            modified: accountData.modified !== void 0 ? accountData.modified : false,
+            name: accountData.name,
+            originalName: accountData.originalName || accountData.name,
+            selected: accountData.selected || false,
+            status: accountData.status || "pending",
+            type: accountData.type,
+            originalType: accountData.originalType || accountData.type,
+            subtype: accountData.subtype,
+            originalSubtype: accountData.originalSubtype || accountData.subtype,
+            transactionIds,
+            lastModified: accountData.lastModified || now,
+            syncedAt: now
+          };
+          console.log(`Saving account '${account.name}' with ID '${accountId}' with ${transactionIds.length} transaction IDs`);
+          accountStore.put(account);
+        }
+        tx.oncomplete = () => {
+          console.log(`\u2705 Saved ${Object.keys(accountsData).length} accounts to IndexedDB`);
+          console.groupEnd();
+          resolve();
+        };
+        tx.onerror = () => {
+          console.error("Error saving accounts:", tx.error);
+          console.groupEnd();
+          reject(tx.error);
+        };
+      });
+    }
+    async getAccounts() {
+      console.group("getAccounts:");
+      if (!isIndexedDBAvailable || !this.db) {
+        console.warn("IndexedDB not initialized, returning empty");
+        console.groupEnd();
+        return {};
+      }
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction(["accounts", "transactions"], "readonly");
+        const accountStore = tx.objectStore("accounts");
+        const txnStore = tx.objectStore("transactions");
+        const accounts = {};
+        const cursorRequest = accountStore.openCursor();
+        cursorRequest.onsuccess = (event) => {
+          const cursor = event.target.result;
+          if (!cursor) {
+            console.debug(`\u2705 Retrieved ${Object.keys(accounts).length} accounts from IndexedDB`);
+            console.groupEnd();
+            resolve(accounts);
+            return;
+          }
+          const account = cursor.value;
+          const accountId = account.id;
+          const txnIndex = txnStore.index("accountId");
+          const txnRequest = txnIndex.getAll(accountId);
+          txnRequest.onsuccess = () => {
+            const { transactionIds, ...accountData } = account;
+            accounts[accountId] = {
+              ...accountData,
+              transactions: txnRequest.result.map((txn) => {
+                const { accountId: accountId2, ...rest } = txn;
+                return rest;
+              })
+            };
+            console.debug(`Retrieved account ${accountId} with ${txnRequest.result.length} transactions`);
+            cursor.continue();
+          };
+          txnRequest.onerror = () => {
+            console.error("Error retrieving transactions:", txnRequest.error);
+            console.groupEnd();
+            reject(txnRequest.error);
+          };
+        };
+        cursorRequest.onerror = () => {
+          console.error("Error opening cursor:", cursorRequest.error);
+          console.groupEnd();
+          reject(cursorRequest.error);
+        };
+      });
+    }
+    async getAccount(accountId) {
+      console.group("getAccount:");
+      if (!isIndexedDBAvailable || !this.db) {
+        console.warn("IndexedDB not initialized");
+        console.groupEnd();
+        return null;
+      }
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction(["accounts", "transactions"], "readonly");
+        const accountStore = tx.objectStore("accounts");
+        const txnStore = tx.objectStore("transactions");
+        const getRequest = accountStore.get(accountId);
+        getRequest.onsuccess = () => {
+          const account = getRequest.result;
+          if (!account) {
+            console.warn(`Account ${accountId} not found`);
+            console.groupEnd();
+            resolve(null);
+            return;
+          }
+          const txnIndex = txnStore.index("accountId");
+          const txnRequest = txnIndex.getAll(accountId);
+          txnRequest.onsuccess = () => {
+            const { transactionIds, ...accountData } = account;
+            const result = {
+              ...accountData,
+              transactions: txnRequest.result.map((txn) => {
+                const { accountId: accountId2, ...rest } = txn;
+                return rest;
+              })
+            };
+            console.log(`\u2705 Retrieved account ${accountId} with ${txnRequest.result.length} transactions`);
+            console.groupEnd();
+            resolve(result);
+          };
+          txnRequest.onerror = () => {
+            console.error("Error retrieving transactions:", txnRequest.error);
+            console.groupEnd();
+            reject(txnRequest.error);
+          };
+        };
+        getRequest.onerror = () => {
+          console.error("Error retrieving account:", getRequest.error);
+          console.groupEnd();
+          reject(getRequest.error);
+        };
+      });
+    }
+    async hasAccounts() {
+      console.group("hasAccounts:");
+      if (!isIndexedDBAvailable || !this.db) {
+        console.warn("IndexedDB not initialized");
+        console.groupEnd();
+        return false;
+      }
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction("accounts", "readonly");
+        const store = tx.objectStore("accounts");
+        const request = store.count();
+        request.onsuccess = () => {
+          const hasAccounts = request.result > 0;
+          console.log(`\u2705 Database has ${request.result} accounts`);
+          console.groupEnd();
+          resolve(hasAccounts);
+        };
+        request.onerror = () => {
+          console.error("Error checking accounts:", request.error);
+          console.groupEnd();
+          resolve(false);
+        };
+      });
+    }
+    async updateAccountModification(accountId, updates = {}) {
+      console.group("updateAccountModification:");
+      if (!isIndexedDBAvailable || !this.db) {
+        console.warn("IndexedDB not initialized");
+        console.groupEnd();
+        return;
+      }
+      const tx = this.db.transaction("accounts", "readwrite");
+      const store = tx.objectStore("accounts");
+      return new Promise((resolve, reject) => {
+        console.log(`Updating account ${accountId} with`, updates);
+        const getRequest = store.get(accountId);
+        getRequest.onsuccess = () => {
+          const current = getRequest.result;
+          console.log("Current account data:", current);
+          if (!current) {
+            console.warn(`Account ${accountId} not found`);
+            console.groupEnd();
+            resolve();
+            return;
+          }
+          const now = Date.now();
+          const updated = {
+            ...current,
+            ..."included" in updates ? { included: updates.included } : {},
+            ..."selected" in updates ? { selected: updates.selected } : {},
+            ..."name" in updates ? { name: updates.name } : {},
+            ..."type" in updates ? { type: updates.type } : {},
+            ..."subtype" in updates ? { subtype: updates.subtype } : {},
+            modified: updates.modified !== void 0 ? updates.modified : false,
+            lastModified: now
+          };
+          console.log("Updated account data:", updated);
+          const putRequest = store.put(updated);
+          putRequest.onsuccess = () => {
+            console.log(`\u2705 Account ${accountId} updated successfully`);
+            console.groupEnd();
+            resolve();
+          };
+          putRequest.onerror = () => {
+            console.error("Error updating account modification:", putRequest.error);
+            console.groupEnd();
+            reject(putRequest.error);
+          };
+        };
+        getRequest.onerror = () => {
+          console.error("Error retrieving account:", getRequest.error);
+          console.groupEnd();
+          reject(getRequest.error);
+        };
+      });
+    }
+    async clearAccounts() {
+      console.group("clearAccounts:");
+      if (!isIndexedDBAvailable || !this.db) {
+        console.warn("IndexedDB not initialized, nothing to clear");
+        console.groupEnd();
+        return;
+      }
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction(["accounts", "transactions"], "readwrite");
+        tx.objectStore("accounts").clear();
+        tx.objectStore("transactions").clear();
+        tx.oncomplete = () => {
+          console.log("\u2705 Cleared all accounts from IndexedDB");
+          console.groupEnd();
+          resolve();
+        };
+        tx.onerror = () => {
+          console.error("Error clearing accounts:", tx.error);
+          console.groupEnd();
+          reject(tx.error);
+        };
+      });
+    }
+    async saveUploadState(itemId, status, errorMsg = null) {
+      console.group("saveUploadState:");
+      if (!isIndexedDBAvailable || !this.db) {
+        console.warn("IndexedDB not initialized, skipping upload state save");
+        console.groupEnd();
+        return;
+      }
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction("uploadStates", "readwrite");
+        const store = tx.objectStore("uploadStates");
+        const getRequest = store.get(itemId);
+        getRequest.onsuccess = () => {
+          const existing = getRequest.result;
+          const retryCount = existing ? (existing.retryCount || 0) + 1 : 0;
+          const putRequest = store.put({
+            itemId,
+            status,
+            retryCount,
+            lastError: errorMsg,
+            timestamp: Date.now()
+          });
+          putRequest.onsuccess = () => {
+            console.log(`\u2705 Upload state for item ${itemId} saved as "${status}"`);
+            console.groupEnd();
+            resolve();
+          };
+          putRequest.onerror = () => {
+            console.error("Error saving upload state:", putRequest.error);
+            console.groupEnd();
+            reject(putRequest.error);
+          };
+        };
+        getRequest.onerror = () => {
+          console.error("Error retrieving existing upload state:", getRequest.error);
+          console.groupEnd();
+          reject(getRequest.error);
+        };
+      });
+    }
+    async getUploadStatesByStatus(status) {
+      console.group("getUploadStatesByStatus:");
+      if (!isIndexedDBAvailable || !this.db) {
+        console.warn("IndexedDB not initialized, returning empty list");
+        console.groupEnd();
+        return [];
+      }
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction("uploadStates", "readonly");
+        const store = tx.objectStore("uploadStates");
+        const index = store.index("status");
+        const request = index.getAll(status);
+        request.onsuccess = () => {
+          console.log(`\u2705 Retrieved ${request.result.length} upload states with status "${status}"`);
+          console.groupEnd();
+          resolve(request.result || []);
+        };
+        request.onerror = () => {
+          console.error("Error retrieving upload states:", request.error);
+          console.groupEnd();
+          resolve([]);
+        };
+      });
+    }
+    async clearUploadStates() {
+      console.group("clearUploadStates:");
+      if (!isIndexedDBAvailable || !this.db) {
+        console.warn("IndexedDB not initialized, nothing to clear");
+        console.groupEnd();
+        return;
+      }
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction("uploadStates", "readwrite");
+        tx.objectStore("uploadStates").clear();
+        tx.oncomplete = () => {
+          console.log("\u2705 Cleared upload states");
+          console.groupEnd();
+          resolve();
+        };
+        tx.onerror = () => {
+          console.error("Error clearing upload states:", tx.error);
+          console.groupEnd();
+          reject(tx.error);
+        };
+      });
+    }
+    async saveMetadata(key, value) {
+      console.group("saveMetadata:");
+      if (!isIndexedDBAvailable || !this.db) {
+        console.warn("IndexedDB not initialized, skipping metadata save");
+        console.groupEnd();
+        return;
+      }
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction("metadata", "readwrite");
+        const store = tx.objectStore("metadata");
+        const request = store.put({ key, value, timestamp: Date.now() });
+        request.onsuccess = () => {
+          console.log(`\u2705 Metadata for key "${key}" saved`);
+          console.groupEnd();
+          resolve();
+        };
+        request.onerror = () => {
+          console.error("Error saving metadata:", request.error);
+          console.groupEnd();
+          reject(request.error);
+        };
+      });
+    }
+    async getMetadata(key) {
+      console.group("getMetadata:");
+      if (!isIndexedDBAvailable || !this.db) {
+        console.warn("IndexedDB not initialized, returning null");
+        console.groupEnd();
+        return null;
+      }
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction("metadata", "readonly");
+        const store = tx.objectStore("metadata");
+        const request = store.get(key);
+        request.onsuccess = () => {
+          const result = request.result;
+          console.log(`\u2705 Retrieved metadata for key "${key}":`, result);
+          console.groupEnd();
+          resolve(result ? result.value : null);
+        };
+        request.onerror = () => {
+          console.error("Error retrieving metadata:", request.error);
+          console.groupEnd();
+          resolve(null);
+        };
+      });
+    }
+    close() {
+      console.group("close IndexedDB:");
+      if (this.db) {
+        this.db.close();
+        this.db = null;
+        console.log("\u2705 IndexedDB connection closed");
+      } else {
+        console.log("IndexedDB was not open");
+      }
+      console.groupEnd();
+    }
+  };
+  var financialDBInstance = null;
+  function getFinancialDB() {
+    if (!financialDBInstance) {
+      financialDBInstance = new FinancialDataDB();
+    }
+    return financialDBInstance;
+  }
+  var indexedDB_default = {
+    get init() {
+      return getFinancialDB().init.bind(getFinancialDB());
+    },
+    get saveAccounts() {
+      return getFinancialDB().saveAccounts.bind(getFinancialDB());
+    },
+    get getAccounts() {
+      return getFinancialDB().getAccounts.bind(getFinancialDB());
+    },
+    get getAccount() {
+      return getFinancialDB().getAccount.bind(getFinancialDB());
+    },
+    get saveTransaction() {
+      return getFinancialDB().saveTransaction.bind(getFinancialDB());
+    },
+    get hasAccounts() {
+      return getFinancialDB().hasAccounts.bind(getFinancialDB());
+    },
+    get clearAccounts() {
+      return getFinancialDB().clearAccounts.bind(getFinancialDB());
+    },
+    get updateAccountModification() {
+      return getFinancialDB().updateAccountModification.bind(getFinancialDB());
+    },
+    get saveUploadState() {
+      return getFinancialDB().saveUploadState.bind(getFinancialDB());
+    },
+    get getUploadStatesByStatus() {
+      return getFinancialDB().getUploadStatesByStatus.bind(getFinancialDB());
+    },
+    get clearUploadStates() {
+      return getFinancialDB().clearUploadStates.bind(getFinancialDB());
+    },
+    get saveMetadata() {
+      return getFinancialDB().saveMetadata.bind(getFinancialDB());
+    },
+    get getMetadata() {
+      return getFinancialDB().getMetadata.bind(getFinancialDB());
+    },
+    get close() {
+      return getFinancialDB().close.bind(getFinancialDB());
+    }
+  };
+
+  // src/utils/logger.js
+  var DEFAULT_CONFIG = {
+    enabled: true,
+    levels: {
+      log: false,
+      debug: false,
+      warn: true,
+      error: true,
+      group: false,
+      groupEnd: false
+    },
+    namespaces: {},
+    methods: {}
+  };
+  function getConfig() {
+    const g = globalThis;
+    if (!g.__LOG_CFG) {
+      g.__LOG_CFG = { ...DEFAULT_CONFIG };
+    }
+    return g.__LOG_CFG;
+  }
+  function setLoggerConfig(partial) {
+    const current = getConfig();
+    globalThis.__LOG_CFG = {
+      ...current,
+      ...partial,
+      levels: { ...current.levels, ...partial?.levels || {} },
+      namespaces: { ...current.namespaces, ...partial?.namespaces || {} },
+      methods: { ...current.methods, ...partial?.methods || {} }
+    };
+  }
+  function asBool(v) {
+    if (v === true || v === false)
+      return v;
+    if (typeof v === "number")
+      return v !== 0;
+    if (typeof v === "string") {
+      const s = v.trim().toLowerCase();
+      if (s === "false" || s === "0" || s === "off" || s === "no")
+        return false;
+      if (s === "true" || s === "1" || s === "on" || s === "yes")
+        return true;
+      return Boolean(s);
+    }
+    return Boolean(v);
+  }
+  function isEnabled(level, ns, methodName) {
+    const cfg = getConfig();
+    if (!cfg.enabled)
+      return false;
+    const lvl = asBool(cfg.levels[level]);
+    if (!lvl)
+      return false;
+    const methodKey = methodName ? `${ns}.${methodName}` : ns;
+    if (Object.prototype.hasOwnProperty.call(cfg.methods, methodKey)) {
+      return asBool(cfg.methods[methodKey]);
+    }
+    if (Object.prototype.hasOwnProperty.call(cfg.namespaces, ns)) {
+      return asBool(cfg.namespaces[ns]);
+    }
+    if (Object.prototype.hasOwnProperty.call(cfg.namespaces, "*")) {
+      return asBool(cfg.namespaces["*"]);
+    }
+    return true;
+  }
+  function getLogger(namespace) {
+    const ns = String(namespace || "log");
+    const buildPrefix = (m) => `[${ns}${m ? `.${m}` : ""}]`;
+    return {
+      group(methodName, ...args) {
+        if (!isEnabled("group", ns, methodName))
+          return;
+        console.group(buildPrefix(methodName), ...args);
+      },
+      groupEnd(methodName) {
+        const cfg = getConfig();
+        if (!cfg.enabled)
+          return;
+        if (isEnabled("group", ns, methodName) || asBool(cfg.levels.groupEnd)) {
+          console.groupEnd();
+        }
+      },
+      log(methodName, ...args) {
+        if (!isEnabled("log", ns, methodName))
+          return;
+        console.log(buildPrefix(methodName), ...args);
+      },
+      debug(methodName, ...args) {
+        if (!isEnabled("debug", ns, methodName))
+          return;
+        console.debug(buildPrefix(methodName), ...args);
+      },
+      warn(methodName, ...args) {
+        if (!isEnabled("warn", ns, methodName))
+          return;
+        console.warn(buildPrefix(methodName), ...args);
+      },
+      error(methodName, ...args) {
+        if (!isEnabled("error", ns, methodName))
+          return;
+        console.error(buildPrefix(methodName), ...args);
+      }
+    };
+  }
+  var logger_default = getLogger;
+
+  // src/utils/date.js
+  var dateLogger = logger_default("Date");
+  setLoggerConfig({ methods: { "Date.parseDate": false } });
+  function parseDate(dateStr) {
+    dateLogger.group("parseDate", dateStr);
+    if (!dateStr) {
+      dateLogger.groupEnd("parseDate");
+      return null;
+    }
+    const trimmed = dateStr.trim();
+    const mmddyyyyMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (mmddyyyyMatch) {
+      const [, mm, dd, yyyy] = mmddyyyyMatch;
+      const result = `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+      dateLogger.debug("parseDate", `Date '${dateStr}' parsed as MM/DD/YYYY -> ${result}`);
+      dateLogger.groupEnd("parseDate");
+      return result;
+    }
+    dateLogger.debug("parseDate", `parseDate: unrecognized format -> ${trimmed}`);
+    dateLogger.groupEnd("parseDate");
+    return null;
+  }
+
+  // src/utils/idGenerator.js
+  function generateId() {
+    return "id-" + Math.random().toString(36).slice(2, 11);
+  }
+
+  // src/utils/currency.js
+  var currencyLogger = logger_default("Currency");
+  setLoggerConfig({ methods: { "Currency.parseCurrencyToCents": false } });
+  function parseCurrencyToCents(str) {
+    currencyLogger.group("parseCurrencyToCents", str);
+    const sanitizedStr = str?.trim() || "";
+    if (sanitizedStr.length === 0) {
+      currencyLogger.error("parseCurrencyToCents", `Invalid currency string -- Empty input: "${str}"`);
+      currencyLogger.groupEnd("parseCurrencyToCents");
+      throw new Error(`Invalid currency string -- Empty input: "${str}"`);
+    }
+    const normalized = str.replace(/[^0-9.-]+/g, "").trim();
+    const floatVal = parseFloat(normalized);
+    if (isNaN(floatVal)) {
+      currencyLogger.error("parseCurrencyToCents", `Invalid currency string -- Not a number: "${str}"`);
+      currencyLogger.groupEnd("parseCurrencyToCents");
+      throw new Error(`Invalid currency string -- Not a number: "${str}"`);
+    }
+    const cents = Math.round(floatVal * 100);
+    currencyLogger.debug("parseCurrencyToCents", `parseCurrencyToCents: '${str}' -> '${cents}' cents`);
+    currencyLogger.groupEnd("parseCurrencyToCents");
+    return cents;
+  }
+
+  // src/schemas/accounts.js
+  var txnLogger = logger_default("Transaction");
+  var accountLogger = logger_default("Account");
+  var accountsLogger = logger_default("Accounts");
+  setLoggerConfig({
+    namespaces: { Accounts: false, Account: false, Transaction: false },
+    methods: { "Accounts.getByName": true },
+    levels: { debug: true, group: true, groupEnd: true }
+  });
+  var Transaction = class {
+    constructor() {
+      this.id = generateId();
+      this._accountId = null;
+      this._flagName = null;
+      this._date = null;
+      this._payee = null;
+      this._categoryGroup = null;
+      this._category = null;
+      this._memo = null;
+      this._amountDollars = 0;
+      this._state = "uncleared";
+      this._deleted = false;
+      this._transferAccountName = null;
+    }
+    init(data2) {
+      txnLogger.group("init");
+      this._setTransferAccount(data2["Payee"]);
+      this.setDate(data2["Date"]);
+      this.setPayee(data2["Payee"]);
+      this.setFlagName(data2["Flag"]);
+      this.setCategory(data2["Category"], data2["Category Group"]);
+      this.setMemo(data2["Memo"]);
+      this.setState(data2["Cleared"]);
+      this.setAccountId(data2["Account"]);
+      const txnInflowCents = parseCurrencyToCents(data2["Inflow"]);
+      const txnOutflowCents = parseCurrencyToCents(data2["Outflow"]);
+      const txnNetDollars = (txnInflowCents - txnOutflowCents) / 100;
+      this.setAmount(txnNetDollars);
+      txnLogger.groupEnd("init");
+    }
+    setAmount(amountDollars) {
+      txnLogger.group("setAmount");
+      if (typeof amountDollars !== "number" || isNaN(amountDollars)) {
+        txnLogger.error("setAmount", "Attempted to set invalid amount for transaction ID:", this.id, "Amount:", amountDollars);
+        txnLogger.groupEnd("setAmount");
+        return;
+      }
+      txnLogger.debug("setAmount", `Setting amount to '${amountDollars}'`);
+      this._amountDollars = amountDollars;
+      txnLogger.groupEnd("setAmount");
+    }
+    get amount() {
+      return this._amountDollars;
+    }
+    setDate(date) {
+      txnLogger.group("setDate");
+      const formattedDate = parseDate(date);
+      if (!formattedDate) {
+        txnLogger.error("setDate", "Attempted to set invalid date for transaction ID:", this.id, "Input date:", date);
+        txnLogger.groupEnd("setDate");
+        return;
+      }
+      txnLogger.debug("setDate", `Setting date to '${formattedDate}'`);
+      this._date = formattedDate;
+      txnLogger.groupEnd("setDate");
+    }
+    setPayee(payee) {
+      txnLogger.group("setPayee");
+      const sanitizedPayee = payee?.trim() || "";
+      if (sanitizedPayee.length === 0) {
+        txnLogger.debug("setPayee", "Setting empty Payee for balance adjustment.");
+        this._payee = null;
+        txnLogger.groupEnd("setPayee");
+        return;
+      }
+      txnLogger.debug("setPayee", `Setting Payee to '${sanitizedPayee}'`);
+      this._payee = sanitizedPayee;
+      txnLogger.groupEnd("setPayee");
+    }
+    setFlagName(flagName) {
+      txnLogger.group("setFlagName");
+      const sanitizedFlagName = flagName.trim();
+      if (sanitizedFlagName.length === 0) {
+        txnLogger.debug("setFlagName", "Setting empty flag name for transaction ID:", this.id);
+        txnLogger.groupEnd("setFlagName");
+        return;
+      }
+      txnLogger.debug("setFlagName", `Setting flag name to '${sanitizedFlagName}'`);
+      this._flagName = sanitizedFlagName;
+      txnLogger.groupEnd("setFlagName");
+    }
+    setCategory(category, categoryGroup) {
+      txnLogger.group("setCategory");
+      const sanitizedCategory = category.trim();
+      const sanitizedCategoryGroup = categoryGroup.trim();
+      const hasCategory = sanitizedCategory.length > 0;
+      const hasCategoryGroup = sanitizedCategoryGroup.length > 0;
+      if (hasCategory !== hasCategoryGroup) {
+        txnLogger.error("setCategory", `Attempted to set Category and Category Group inconsistently; Category: '${sanitizedCategory}' | Category Group: '${sanitizedCategoryGroup}'`);
+        txnLogger.groupEnd("setCategory");
+        return;
+      }
+      if (!hasCategory) {
+        txnLogger.debug("setCategory", "Setting empty Category and Category Group");
+        this._category = null;
+        this._categoryGroup = null;
+      } else {
+        txnLogger.debug("setCategory", `Setting Category to '${sanitizedCategory}' and Category Group to '${sanitizedCategoryGroup}'`);
+        this._category = sanitizedCategory;
+        this._categoryGroup = sanitizedCategoryGroup;
+      }
+      txnLogger.groupEnd("setCategory");
+    }
+    setMemo(memo) {
+      txnLogger.group("setMemo");
+      const sanitizedMemo = memo.trim();
+      if (sanitizedMemo.length === 0) {
+        txnLogger.debug("setMemo", "Setting empty memo for transaction ID:", this.id);
+        txnLogger.groupEnd("setMemo");
+        return;
+      }
+      txnLogger.debug("setMemo", `Setting memo to '${sanitizedMemo}'`);
+      this._memo = sanitizedMemo;
+      txnLogger.groupEnd("setMemo");
+    }
+    setState(state) {
+      txnLogger.group("setState");
+      const sanitizedState = state.trim().toLowerCase();
+      const validStates = ["cleared", "uncleared", "reconciled"];
+      if (!validStates.includes(sanitizedState)) {
+        txnLogger.warn("setState", `Attempted to set invalid state for transaction ID: '${this.id}', State: '${sanitizedState}'`);
+        txnLogger.groupEnd("setState");
+        return;
+      }
+      txnLogger.debug("setState", `Setting state to '${sanitizedState}'`);
+      this._state = sanitizedState;
+      txnLogger.groupEnd("setState");
+    }
+    setAccountId(accountId) {
+      txnLogger.group("setAccountId");
+      if (!accountId || accountId.trim().length === 0) {
+        txnLogger.warn("setAccountId", "Attempted to set empty account ID for transaction ID:", this.id);
+        txnLogger.groupEnd("setAccountId");
+        return;
+      }
+      txnLogger.debug("setAccountId", `Setting account ID to '${accountId}'`);
+      this._accountId = accountId;
+      txnLogger.groupEnd("setAccountId");
+    }
+    _setTransferAccount(payee) {
+      txnLogger.group("_setTransferAccount");
+      const sanitizedPayee = payee?.trim() || "";
+      const transferPrefix = "Transfer : ";
+      if (sanitizedPayee.length === 0) {
+        txnLogger.debug("_setTransferAccount", "Payee is empty; skipping.");
+        txnLogger.groupEnd("_setTransferAccount");
+        return false;
+      }
+      if (!sanitizedPayee.startsWith(transferPrefix)) {
+        txnLogger.debug("_setTransferAccount", "Payee does not indicate a transfer; skipping.");
+        txnLogger.groupEnd("_setTransferAccount");
+        return false;
+      }
+      const accountName = sanitizedPayee.substring(transferPrefix.length).trim();
+      if (accountName.length === 0) {
+        txnLogger.warn("_setTransferAccount", `Transfer payee has no account name specified.`);
+        txnLogger.groupEnd("_setTransferAccount");
+        return false;
+      }
+      txnLogger.debug("_setTransferAccount", `Detected an account transfer to '${accountName}'`);
+      this._transferAccountName = accountName;
+      txnLogger.groupEnd("_setTransferAccount");
+      return true;
+    }
+    toObject() {
+      return {
+        id: this.id,
+        accountId: this._accountId,
+        flagName: this._flagName,
+        date: this._date,
+        payee: this._payee,
+        categoryGroup: this._categoryGroup,
+        category: this._category,
+        memo: this._memo,
+        amountDollars: this._amountDollars,
+        state: this._state,
+        deleted: this._deleted,
+        transferAccountName: this._transferAccountName
+      };
+    }
+  };
+  var Account = class {
+    constructor(id) {
+      this.id = id;
+      this._name = null;
+      this._originalName = null;
+      this._balanceDollars = 0;
+      this._type = null;
+      this._subtype = null;
+      this._transactions = /* @__PURE__ */ new Map();
+      this._status = "unprocessed";
+      this._selected = false;
+      this._included = true;
+      this._isModified = false;
+    }
+    get name() {
+      return this._name;
+    }
+    get type() {
+      return this._type;
+    }
+    get subtype() {
+      return this._subtype;
+    }
+    get status() {
+      return this._status;
+    }
+    get included() {
+      return this._included;
+    }
+    set included(value) {
+      this._included = value;
+    }
+    get selected() {
+      return this._selected;
+    }
+    set selected(value) {
+      this._selected = value;
+    }
+    get transactions() {
+      return Array.from(this._transactions.values());
+    }
+    get transactionCount() {
+      return this._transactions.size;
+    }
+    get balance() {
+      return this._balanceDollars;
+    }
+    get original() {
+      return {
+        name: this._originalName,
+        type: this._type,
+        subtype: this._subtype
+      };
+    }
+    get current() {
+      return {
+        name: this._name,
+        type: this._type,
+        subtype: this._subtype
+      };
+    }
+    isModified() {
+      return this._isModified;
+    }
+    setName(name) {
+      accountLogger.group("setName");
+      const sanitizedName = name.trim();
+      if (sanitizedName.length === 0) {
+        accountLogger.warn("setName", "\u274C Attempted to set empty name for account ID:", this.id);
+        accountLogger.groupEnd("setName");
+        return;
+      }
+      accountLogger.debug("setName", `Setting name to '${sanitizedName}'`);
+      if (!this._originalName) {
+        this._originalName = sanitizedName;
+      }
+      this._name = sanitizedName;
+      accountLogger.groupEnd("setName");
+    }
+    addToBalance(amountDollars) {
+      accountLogger.group("addToBalance");
+      if (typeof amountDollars !== "number" || isNaN(amountDollars)) {
+        accountLogger.warn("addToBalance", "\u274C Attempted to add invalid amount to balance for account ID:", this.id, "Amount:", amountDollars);
+        accountLogger.groupEnd("addToBalance");
+        return;
+      }
+      accountLogger.debug("addToBalance", `Adding '${amountDollars}' to current balance ${this._balanceDollars}`);
+      this._balanceDollars += amountDollars;
+      accountLogger.debug("addToBalance", `New balance is '${this._balanceDollars}'`);
+      accountLogger.groupEnd("addToBalance");
+    }
+    setType(type) {
+      accountLogger.group("setType");
+      if (!type || type.trim().length === 0) {
+        accountLogger.warn("setType", "\u274C Attempted to set empty type for account ID:", this.id);
+        accountLogger.groupEnd("setType");
+        return;
+      }
+      accountLogger.debug("setType", `Setting type to '${type}'`);
+      this._type = type;
+      accountLogger.groupEnd("setType");
+    }
+    setSubtype(subtype) {
+      accountLogger.group("setSubtype");
+      if (!subtype || subtype.trim().length === 0) {
+        accountLogger.warn("setSubtype", "\u274C Attempted to set empty subtype for account ID:", this.id);
+        accountLogger.groupEnd("setSubtype");
+        return;
+      }
+      accountLogger.debug("setSubtype", `Setting subtype to '${subtype}'`);
+      this._subtype = subtype;
+      accountLogger.groupEnd("setSubtype");
+    }
+    async toggleInclusion() {
+      accountLogger.group("toggleInclusion");
+      this._included = !this._included;
+      await indexedDB_default.updateAccountModification(this.id, { included: this._included });
+      accountLogger.groupEnd("toggleInclusion");
+    }
+    async undoChanges() {
+      accountLogger.group("undoChanges");
+      this._name = this._originalName;
+      this._included = true;
+      this._isModified = false;
+      await indexedDB_default.updateAccountModification(this.id, {
+        name: this._originalName,
+        type: this._type,
+        subtype: this._subtype,
+        included: true,
+        modified: false
+      });
+      accountLogger.groupEnd("undoChanges");
+    }
+    isProcessed() {
+      accountLogger.group("isProcessed");
+      const result = this.status === "processed";
+      accountLogger.debug("isProcessed", `Account ID ${this.id} isProcessed ->`, result);
+      accountLogger.groupEnd("isProcessed");
+      return result;
+    }
+    addTransaction(transaction) {
+      accountLogger.group("addTransaction");
+      if (!(transaction instanceof Transaction)) {
+        accountLogger.error("addTransaction", "\u274C Attempted to add invalid transaction to account ID:", this.id, "Transaction:", transaction);
+        accountLogger.groupEnd("addTransaction");
+        return;
+      }
+      accountLogger.debug("addTransaction", `Adding transaction ID '${transaction.id}' to account ID '${this.id}'`);
+      this._transactions.set(transaction.id, transaction);
+      accountLogger.groupEnd("addTransaction");
+    }
+    toObject() {
+      return {
+        id: this.id,
+        name: this._name,
+        originalName: this._originalName,
+        type: this._type,
+        originalType: this._type,
+        subtype: this._subtype,
+        originalSubtype: this._subtype,
+        balance: this._balanceDollars,
+        status: this._status,
+        included: this._included,
+        selected: this._selected,
+        transactions: Array.from(this._transactions.values()).map((txn) => txn.toObject()),
+        modified: this._isModified
+      };
+    }
+  };
+  var Accounts = class {
+    constructor() {
+      this._accounts = /* @__PURE__ */ new Map();
+      this._transactionIds = /* @__PURE__ */ new Set();
+    }
+    async init(accountsData) {
+      const map = /* @__PURE__ */ new Map();
+      if (Array.isArray(accountsData)) {
+        accountsData.forEach((data2) => {
+          const account = new Account(data2.id);
+          this._populateAccount(account, data2);
+          map.set(account.id, account);
+        });
+      } else if (accountsData && typeof accountsData === "object") {
+        Object.values(accountsData).forEach((data2) => {
+          const account = new Account(data2.id);
+          this._populateAccount(account, data2);
+          map.set(account.id, account);
+        });
+      }
+      this._accounts = map;
+      return this;
+    }
+    _populateAccount(account, data2) {
+      account._name = data2.name;
+      account._originalName = data2.originalName || data2.name;
+      account._type = data2.type;
+      account._subtype = data2.subtype;
+      account._balanceDollars = data2.balance || 0;
+      account._status = data2.status || "unprocessed";
+      account._included = data2.included !== void 0 ? data2.included : true;
+      account._selected = data2.selected || false;
+      account._isModified = data2.modified || false;
+      if (data2.transactions && Array.isArray(data2.transactions)) {
+        data2.transactions.forEach((txnData) => {
+          const txn = new Transaction();
+          Object.assign(txn, {
+            id: txnData.id,
+            _accountId: txnData.accountId,
+            _flagName: txnData.flagName,
+            _date: txnData.date,
+            _payee: txnData.payee,
+            _categoryGroup: txnData.categoryGroup,
+            _category: txnData.category,
+            _memo: txnData.memo,
+            _amountDollars: txnData.amountDollars,
+            _state: txnData.state,
+            _deleted: txnData.deleted,
+            _transferAccountName: txnData.transferAccountName
+          });
+          account._transactions.set(txn.id, txn);
+        });
+      }
+    }
+    add(account) {
+      accountsLogger.group("add");
+      if (!this._accounts.has(account.id)) {
+        accountsLogger.debug("add", `Adding account with ID '${account.id}' to Accounts`);
+        this._accounts.set(account.id, account);
+      } else {
+        accountsLogger.warn("add", `Account with ID ${account.id} already exists:
+AccountData:`, account, `
+Existing Account:`, this._accounts.get(account.id));
+      }
+      accountsLogger.groupEnd("add");
+    }
+    has(accountName) {
+      accountsLogger.group("has");
+      const sanitizedName = accountName.trim();
+      if (sanitizedName.length === 0) {
+        accountsLogger.warn("has", "\u274C Attempted to check empty name in Accounts.has");
+        accountsLogger.groupEnd("has");
+        return false;
+      }
+      const result = Array.from(this._accounts.values()).some((acc) => acc.name === sanitizedName);
+      accountsLogger.debug("has", `Accounts.has: checking for "${sanitizedName}" ->`, result);
+      accountsLogger.groupEnd("has");
+      return result;
+    }
+    getByName(accountName) {
+      accountsLogger.group("getByName");
+      const sanitizedName = accountName.trim();
+      if (sanitizedName.length === 0) {
+        accountsLogger.warn("getByName", "\u274C Attempted to get empty name in Accounts.getByName");
+        accountsLogger.groupEnd("getByName");
+        return null;
+      }
+      const account = Array.from(this._accounts.values()).find((acc) => acc._name === sanitizedName) || null;
+      accountsLogger.debug("getByName", `Accounts.getByName: retrieving "${sanitizedName}" ->`, account);
+      accountsLogger.groupEnd("getByName");
+      return account;
+    }
+    async load() {
+      await indexedDB_default.init();
+      const accountsData = await indexedDB_default.getAccounts();
+      return this.init(accountsData);
+    }
+    async saveToDb() {
+      accountsLogger.group("saveToDb");
+      await indexedDB_default.init();
+      const accountsData = {};
+      for (const account of this._accounts.values()) {
+        console.log(`Preparing to save account:`, account);
+        accountsData[account.id] = account.toObject();
+      }
+      await indexedDB_default.saveAccounts(accountsData);
+      accountsLogger.log("saveToDb", "\u2705 All accounts saved successfully");
+      accountsLogger.groupEnd("saveToDb");
+    }
+    async forEach(callback) {
+      for (const account of this._accounts.values()) {
+        await callback(account);
+      }
+    }
+    length() {
+      return this._accounts.size;
+    }
+    totalTransactionCount() {
+      return this._transactionIds.size;
+    }
+    async hasChanges() {
+      return Array.from(this._accounts.values()).some((acc) => acc.isModified());
+    }
+    async isAccountModified(accountId) {
+      const account = this._accounts.get(accountId);
+      return account ? account.isModified() : false;
+    }
+    async includeAll() {
+      await Promise.all(Array.from(this._accounts.values()).map((account) => {
+        account._included = true;
+        return indexedDB_default.updateAccountModification(account.id, { included: true });
+      }));
+    }
+    async excludeAll() {
+      await Promise.all(Array.from(this._accounts.values()).map((account) => {
+        account._included = false;
+        return indexedDB_default.updateAccountModification(account.id, { included: false });
+      }));
+    }
+    async bulkRename(pattern, indexStart) {
+      const selected = Array.from(this._accounts.values()).filter((acc) => acc.selected);
+      await Promise.all(selected.map((acc, i) => {
+        const newName = applyPattern(pattern, acc, i + indexStart);
+        acc._name = newName;
+        acc._isModified = true;
+        return indexedDB_default.updateAccountModification(acc.id, { name: newName });
+      }));
+    }
+    async bulkEditType(type, subtype) {
+      const selected = Array.from(this._accounts.values()).filter((acc) => acc.selected);
+      await Promise.all(selected.map((acc) => {
+        acc._type = type;
+        acc._subtype = subtype;
+        acc._isModified = true;
+        return indexedDB_default.updateAccountModification(acc.id, { type, subtype });
+      }));
+    }
+    getSelected() {
+      return Array.from(this._accounts.values()).filter((acc) => acc.selected);
+    }
+    getVisible(filters) {
+      const result = Array.from(this._accounts.values()).filter((acc) => filters.passesFilters(acc));
+      return result;
+    }
+    getIncludedAndUnprocessed() {
+      return Array.from(this._accounts.values()).filter((acc) => acc.included && acc.status !== "processed");
+    }
+    async undoAccountChanges(accountId) {
+      const account = this._accounts.get(accountId);
+      if (account) {
+        await account.undoChanges();
+      }
+    }
+    async undoAllChanges() {
+      await Promise.all(Array.from(this._accounts.values()).map((account) => account.undoChanges()));
+    }
+    async deselectAll() {
+      await Promise.all(Array.from(this._accounts.values()).map((account) => {
+        account._selected = false;
+        return indexedDB_default.updateAccountModification(account.id, { selected: false });
+      }));
+    }
+    async selectAll() {
+      await Promise.all(Array.from(this._accounts.values()).map((account) => {
+        account._selected = true;
+        return indexedDB_default.updateAccountModification(account.id, { selected: true });
+      }));
+    }
+    async clear() {
+      await indexedDB_default.clearAccounts();
+      this._accounts = /* @__PURE__ */ new Map();
+    }
+    addTransaction(transactionId) {
+      accountsLogger.group("addTransaction");
+      if (this._transactionIds.has(transactionId)) {
+        accountsLogger.warn("addTransaction", "\u274C Attempted to add duplicate transaction ID to Accounts:", transactionId);
+        accountsLogger.groupEnd("addTransaction");
+        return;
+      }
+      this._transactionIds.add(transactionId);
+      accountsLogger.groupEnd("addTransaction");
+    }
+  };
+  function applyPattern(pattern, account, index) {
+    return pattern.replace(/{name}/g, account.name).replace(/{type}/g, account.type).replace(/{index}/g, index);
+  }
+
+  // src/state.js
+  var StorageManager = class {
+    constructor() {
+      this.monarchCredentials = {
+        email: null,
+        encryptedPassword: null,
+        accessToken: null,
+        uuid: null,
+        otp: null
+      };
+      this.ynabCredentials = {
+        accessToken: null,
+        refreshToken: null,
+        tokenExpiresAt: null
+      };
+      this.history = [];
+      this.accounts = new Accounts();
+      this.userPreferences = {};
+    }
+    _lsGet(key) {
+      return localStorage.getItem(key);
+    }
+    _lsSet(key, value) {
+      localStorage.setItem(key, value);
+    }
+    _lsRemove(key) {
+      localStorage.removeItem(key);
+    }
+    _ssGet(key) {
+      return sessionStorage.getItem(key);
+    }
+    _ssSet(key, value) {
+      sessionStorage.setItem(key, value);
+    }
+    _ssRemove(key) {
+      sessionStorage.removeItem(key);
+    }
+  };
+  var State = new StorageManager();
+  var state_default = State;
+
+  // src/components/pageLayout.js
+  function renderPageLayout(options = {}) {
+    const {
+      containerId = "pageLayout",
+      navbar = null,
+      header = null,
+      className = ""
+    } = options;
+    const container = document.getElementById(containerId);
+    if (!container) {
+      console.error(`Page layout container #${containerId} not found`);
+      return;
+    }
+    const pageContent = [];
+    let sibling = container.nextElementSibling;
+    while (sibling) {
+      pageContent.push(sibling);
+      sibling = sibling.nextElementSibling;
+    }
+    container.className = `min-h-screen flex flex-col w-full max-w-full mx-auto ${className}`;
+    container.innerHTML = `
+    <main class="flex-1 w-full max-w-full mx-auto px-4 py-2 overflow-x-hidden">
+      <div class="max-w-6xl mx-auto w-full min-w-0 flex flex-col space-y-6 ">
+        <!-- Navigation Bar -->
+        <div id="navigationBar" class="min-w-0"></div>
+
+        <!-- Page Header -->
+        <div id="pageHeader" class="min-w-0 mx-auto"></div>
+
+        <!-- Page Content Slot -->
+        <div id="pageContent" class="min-w-0 mx-auto"></div>
+      </div>
+    </main>
+  `;
+    if (navbar != null)
+      renderNavigationBar(navbar);
+    if (header != null)
+      renderPageHeader(header);
+    const contentContainer = document.getElementById("pageContent");
+    if (contentContainer) {
+      pageContent.forEach((element) => {
+        contentContainer.appendChild(element);
+      });
+    }
+  }
+  function renderNavigationBar(options = {}) {
+    const {
+      showBackButton = true,
+      showDataButton = true,
+      backText = "Back",
+      containerId = "navigationBar"
+    } = options;
+    const container = document.getElementById(containerId);
+    if (!container) {
+      console.warn(`Navigation container with id "${containerId}" not found`);
+      return;
+    }
+    const hasData = checkForStoredData();
+    const dataButtonText = hasData ? "Manage your data" : "No data currently stored";
+    let navHTML = '<div class="flex flex-wrap items-center justify-between gap-2 mb-4">';
+    if (showBackButton) {
+      navHTML += `
+      <ui-button 
+        id="navBackBtn" 
+        data-type="text"
+      >
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        ${backText}
+      </ui-button>
+    `;
+    } else {
+      navHTML += "<div></div>";
+    }
+    if (showDataButton) {
+      navHTML += `
+      <ui-button 
+        id="navDataBtn" 
+        data-type="text"
+        ${!hasData ? 'style="opacity: 0.6;"' : ""}
+      >
+        ${dataButtonText}
+      </ui-button>
+    `;
+    }
+    navHTML += "</div>";
+    container.innerHTML = navHTML;
+    if (showBackButton) {
+      const backBtn = document.getElementById("navBackBtn");
+      backBtn?.addEventListener("click", () => {
+        goBack();
+      });
+    }
+    if (showDataButton) {
+      const dataBtn = document.getElementById("navDataBtn");
+      dataBtn?.addEventListener("click", () => {
+        navigate("/data-management");
+      });
+    }
+  }
+  function checkForStoredData() {
+    const hasStateAccounts = state_default.accounts && state_default.accounts.length() > 0;
+    const hasMonarchAccounts = state_default.monarchAccounts !== null;
+    const hasMonarchEmail = !!sessionStorage.getItem("monarch_email");
+    const hasMonarchToken = !!sessionStorage.getItem("monarch_token");
+    return hasStateAccounts || hasMonarchAccounts || hasMonarchEmail || hasMonarchToken;
+  }
+  function renderPageHeader(options = {}) {
+    const {
+      title = "",
+      description = "",
+      containerId = "pageHeader",
+      className = ""
+    } = options;
+    const container = document.getElementById(containerId);
+    if (!container) {
+      console.warn(`Page header container with id "${containerId}" not found`);
+      return;
+    }
+    const headerHTML = `
+    <section class="text-center mb-2 ${className}">
+      <div class="inline-flex items-center justify-center gap-2 mb-6">
+        <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
+          ${escapeHtml(title)}
+        </h2>
+      </div>
+
+      <p class="text-gray-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto px-2 leading-relaxed">
+        ${escapeHtml(description)}
+      </p>
+    </section>
+  `;
+    container.innerHTML = headerHTML;
+  }
+  function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // src/views/Home/home.js
+  function initHomeView() {
+    renderPageLayout({
+      header: {
+        title: "YNAB to Monarch Migration",
+        description: "Moving your financial data from YNAB to Monarch made simple and secure. Choose the method that works best for you, and we'll guide you through each step.",
+        containerId: "pageHeader"
+      }
+    });
+    document.getElementById("getStartedButton")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      navigate("/upload");
+    });
+  }
+
+  // src/views/Home/home.html
+  var home_default = `<div id="pageLayout"></div>
+
+<section class="flex flex-col items-center mb-6 max-w-md mx-auto gap-2">
+
+  <!-- Get Started Btn -->
+  <ui-button id="getStartedButton" data-size="large">
+    Start Migrating Your Data
+  </ui-button>
+
+  <!-- Migration Info Modal -->
+  <ui-modal id="migrationInfoModal">
+    <ui-button slot="trigger" data-type="text">
+      How does this work?
+    </ui-button>
+
+    <h3 slot="title">How the Migration Process Works</h3>
+
+    <div slot="content">
+      <div class="space-y-4 text-sm text-gray-600">
+        <div>
+          <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 1: Access Your Data</h4>
+          <p class="text-gray-600 text-sm">Connect your YNAB account or upload your data manually. We'll retrieve your
+            budgets, transactions, categories, and accounts.</p>
+        </div>
+        <div>
+          <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 2: Filter & Process</h4>
+          <p class="text-gray-600 text-sm">Decide what to migrate and make edits as needed.</p>
+        </div>
+        <div>
+          <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 3: Download or Import</h4>
+          <p class="text-gray-600 text-sm">Decide to receive a ready-to-import file that you can upload into Monarch
+            Money yourself, or connect to your Monarch Money account to automatically migrate your data.</p>
+        </div>
+      </div>
+    </div>
+  </ui-modal>
+</section>
+
+<!-- Privacy Info -->
+<section class="max-w-3xl mx-auto mb-8">
+  <info-banner color="green" icon-type="checkmark" has-border>
+    <strong>Your data stays yours, always:</strong> We never store, sell, or share your financial information. You remain in control of your data from start to finish.
+    <ui-modal slot="action" id="privacyInfoModal">
+      <ui-button slot="trigger" data-type="text">
+        Learn more about how we protect your privacy
+      </ui-button>
+
+      <h3 slot="title">Privacy is our top priority</h3>
+
+          <div slot="content">
+            <div class="space-y-4 text-sm text-gray-600">
+              <div>
+                <h4 class="text-gray-900 font-semibold mb-1">No Data Collection</h4>
+                <p>We never collect, store, or share your financial data.</p>
+              </div>
+              <div>
+                <h4 class="text-gray-900 font-semibold mb-1">Secure Connections</h4>
+                <p>We use secure, encrypted, and read-only connections when accessing your YNAB data.</p>
+              </div>
+              <div>
+                <h4 class="text-gray-900 font-semibold mb-1">You're in Control</h4>
+                <p>At any point in time you have full control to wipe your data and stop the migration process.</p>
+              </div>
+              <div>
+                <h4 class="text-gray-900 font-semibold mb-1">Open Source & Auditable</h4>
+                <p>Everything is transparent and can be reviewed by security experts. We have nothing to hide because we
+                  keep no copies. See <a href="https://github.com/your-repo" class="text-blue-600 hover:underline">our
+                    source code</a>.</p>
+              </div>
+            </div>
+
+            <div class="mt-6">
+              <info-banner color="green" icon-type="checkmark" has-border>
+                <strong>100% Private:</strong> Your financial data is sensitive, and we treat it that way. You remain the sole owner of every byte.
+              </info-banner>
+            </div>
+          </div>
+      </ui-modal>
+    </info-banner>
+</section>      </ui-modal>
+  </info-banner>
+</section>`;
+
+  // src/api/ynabOauth.js
+  var AUTHORIZE_BASE_URL = "https://app.ynab.com/oauth/authorize";
+  var CALLBACK_PATH = "/oauth/ynab/callback";
+  var EXPECTED_STATE_KEY = "ynab_oauth_expected_state";
+  var ALERT_MESSAGE = "Could not retrieve YNAB OAuth client ID. Please try again.";
+  var cachedClientId = null;
+  function getRedirectUri() {
+    return `${location.origin}${CALLBACK_PATH}`;
+  }
+  async function getClientId() {
+    if (cachedClientId) {
+      return cachedClientId;
+    }
+    try {
+      const response = await fetch("/.netlify/functions/config");
+      if (!response.ok) {
+        throw new Error("Failed to fetch config");
+      }
+      const config = await response.json();
+      cachedClientId = config.ynabClientId;
+      return cachedClientId;
+    } catch (error) {
+      console.error("Error fetching YNAB client ID:", error);
+      return null;
+    }
+  }
+  function safeSessionStorage() {
+    try {
+      return window.sessionStorage;
+    } catch (error) {
+      console.warn("Session storage unavailable:", error);
+      return null;
+    }
+  }
+  function persistExpectedState(state) {
+    const storage = safeSessionStorage();
+    if (!storage)
+      return;
+    storage.setItem(EXPECTED_STATE_KEY, state);
+  }
+  function grabExpectedState() {
+    const storage = safeSessionStorage();
+    if (!storage)
+      return null;
+    return storage.getItem(EXPECTED_STATE_KEY);
+  }
+  function dropExpectedState() {
+    const storage = safeSessionStorage();
+    if (!storage)
+      return;
+    storage.removeItem(EXPECTED_STATE_KEY);
+  }
+  function buildState() {
+    const cryptoSource = window.crypto || window.msCrypto;
+    if (cryptoSource?.randomUUID) {
+      return cryptoSource.randomUUID();
+    }
+    if (cryptoSource?.getRandomValues) {
+      const array = new Uint8Array(16);
+      cryptoSource.getRandomValues(array);
+      return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("");
+    }
+    return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  }
+  function buildAuthorizeUrl(clientId, stateValue) {
+    const base2 = new URL(AUTHORIZE_BASE_URL);
+    base2.searchParams.set("client_id", clientId);
+    base2.searchParams.set("response_type", "code");
+    base2.searchParams.set("redirect_uri", getRedirectUri());
+    base2.searchParams.set("state", stateValue);
+    return base2.toString();
+  }
+  async function startYnabOauth() {
+    const clientId = await getClientId();
+    if (!clientId) {
+      window.alert(ALERT_MESSAGE);
+      return null;
+    }
+    const state = buildState();
+    persistExpectedState(state);
+    const url = buildAuthorizeUrl(clientId, state);
+    window.location.assign(url);
+    return url;
+  }
+  function getExpectedState() {
+    return grabExpectedState();
+  }
+  function clearExpectedState() {
+    return dropExpectedState();
+  }
+
+  // src/api/ynabTokens.js
+  var isRefreshing = false;
+  var refreshPromise = null;
+  async function exchangeYnabToken(code) {
+    console.group("exchangeYnabToken");
+    try {
+      const response = await fetch("/.netlify/functions/ynabTokenExchange", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ code })
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("Token exchange failed:", error);
+        console.groupEnd();
+        return false;
+      }
+      const data2 = await response.json();
+      console.log("\u2705 YNAB tokens stored in HttpOnly cookies");
+      return data2.success;
+    } catch (error) {
+      console.error("Token exchange error:", error);
+      return false;
+    } finally {
+      console.groupEnd();
+    }
+  }
+  async function refreshYnabToken() {
+    console.group("refreshYnabToken");
+    if (isRefreshing) {
+      return refreshPromise;
+    }
+    isRefreshing = true;
+    refreshPromise = (async () => {
+      try {
+        const response = await fetch("/.netlify/functions/ynabTokenRefresh", {
+          method: "POST",
+          credentials: "include"
+        });
+        if (!response.ok) {
+          console.error("Token refresh failed - redirecting to login");
+          isRefreshing = false;
+          console.groupEnd();
+          window.location.href = "/";
+          return false;
+        }
+        const data2 = await response.json();
+        console.log("\u2705 YNAB tokens refreshed");
+        console.groupEnd();
+        return data2.success;
+      } catch (error) {
+        console.error("Token refresh error:", error);
+        isRefreshing = false;
+        window.location.href = "/";
+        console.groupEnd();
+        return false;
+      } finally {
+        isRefreshing = false;
+        refreshPromise = null;
+      }
+    })();
+    return refreshPromise;
+  }
+  async function ynabApiCall(endpoint, options = {}) {
+    console.group(`ynabApiCall: ${endpoint}`);
+    try {
+      const url = `/.netlify/functions/ynabProxy?endpoint=${encodeURIComponent(endpoint)}`;
+      let response = await fetch(url, {
+        ...options,
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...options.headers
+        }
+      });
+      if (response.status === 401) {
+        const errorData = await response.json();
+        if (errorData.error && errorData.error.includes("No access token found")) {
+          console.warn("No YNAB tokens found - user needs to authenticate");
+          return null;
+        }
+        console.log("Access token expired, refreshing...");
+        const refreshed = await refreshYnabToken();
+        if (!refreshed) {
+          console.error("Token refresh failed");
+          return null;
+        }
+        response = await fetch(url, {
+          ...options,
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            ...options.headers
+          }
+        });
+      }
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error(`YNAB API error (${endpoint}):`, errorData);
+        throw new Error(`YNAB API request failed: ${response.status}`);
+      }
+      const data2 = await response.json();
+      console.log("\u2705 Response received");
+      return data2;
+    } finally {
+      console.groupEnd(`ynabApiCall: ${endpoint}`);
+    }
+  }
+  async function isYnabAuthenticated() {
+    console.group("isYnabAuthenticated");
+    try {
+      const result = await ynabApiCall("/user");
+      const authenticated = result !== null;
+      if (authenticated) {
+        console.log("\u2705 YNAB authenticated");
+      } else {
+        console.warn("\u274C YNAB not authenticated");
+      }
+      console.groupEnd("isYnabAuthenticated");
+      return authenticated;
+    } catch (error) {
+      console.warn("\u274C YNAB authentication check failed:", error.message);
+      console.groupEnd("isYnabAuthenticated");
+      return false;
+    }
+  }
+
+  // src/services/ynabParser.js
+  var import_papaparse = __toESM(require_papaparse_min(), 1);
+  var import_jszip = __toESM(require_jszip_min(), 1);
+
+  // src/schemas/accountSchema.js
+  function createAccountFromOauth(ynabAccount, inferredType = null, inferredSubtype = null) {
+    const balanceCents = Math.round(ynabAccount.balance / 10);
+    const balanceDollars = balanceCents / 100;
+    return {
+      id: ynabAccount.id,
+      name: ynabAccount.name.trim(),
+      modifiedName: ynabAccount.name.trim(),
+      type: inferredType || ynabAccount.type || "depository",
+      subtype: inferredSubtype || null,
+      transactions: [],
+      transactionCount: 0,
+      balanceCents,
+      balance: balanceDollars,
+      included: true,
+      selected: false,
+      status: "unprocessed"
+    };
+  }
+
+  // src/services/ynabParser.js
+  var parserLogger = logger_default("YnabParser");
+  setLoggerConfig({
+    levels: { log: true, debug: true, group: true, groupEnd: true },
+    namespaces: { YnabParser: true, parseCSV: true, parseYnabAccountApi: true }
+  });
+  function inferMonarchType(accountName) {
+    const lowered = accountName.toLowerCase();
+    if (lowered.includes("credit")) {
+      return { type: "credit", subtype: "credit_card" };
+    }
+    if (lowered.includes("loan") || lowered.includes("mortgage") || lowered.includes("student loan")) {
+      return { type: "loan", subtype: "loan" };
+    }
+    if (lowered.includes("savings")) {
+      return { type: "depository", subtype: "savings" };
+    }
+    if (lowered.includes("checking") || lowered.includes("debit")) {
+      return { type: "depository", subtype: "checking" };
+    }
+    const inferred = { type: "depository", subtype: "checking" };
+    parserLogger.debug("inferMonarchType", "inferMonarchType:", accountName, "->", inferred);
+    return inferred;
+  }
+  async function parseYNABCSV(zipFile, monarchAccountTypes) {
+    parserLogger.group("parseYNABCSV");
+    const zip = await import_jszip.default.loadAsync(zipFile);
+    parserLogger.log("parseYNABCSV", "ZIP entries:", Object.keys(zip.files).length);
+    const targetFile = Object.keys(zip.files).find((name) => name.toLowerCase().includes("register") && name.toLowerCase().endsWith(".csv"));
+    if (!targetFile) {
+      parserLogger.error("parseYNABCSV", "\u274C No register CSV found in the ZIP file");
+      parserLogger.groupEnd("parseYNABCSV");
+      throw new Error("No register CSV found in the ZIP file");
+    }
+    const csvContent = await zip.files[targetFile].async("string");
+    parserLogger.log("parseYNABCSV", "Selected CSV file:", targetFile, "size:", csvContent.length);
+    parserLogger.groupEnd("parseYNABCSV");
+    return parseCSV(csvContent, monarchAccountTypes);
+  }
+  function parseCSV(csvContent, monarchAccountTypes) {
+    parserLogger.group("parseCSV");
+    parserLogger.log("parseCSV", "CSV content length:", csvContent?.length || 0);
+    return new Promise((resolve, reject) => {
+      import_papaparse.default.parse(csvContent, {
+        header: true,
+        skipEmptyLines: true,
+        complete: async ({ data: data2 }) => {
+          if (!data2 || data2.length === 0) {
+            parserLogger.groupEnd("parseCSV");
+            return reject(new Error("\u274C CSV file appears to be empty or invalid."));
+          }
+          parserLogger.log("parseCSV", "Parsed CSV rows:", data2.length);
+          const accounts = new Accounts();
+          let tempCount = 0;
+          for (const row of data2) {
+            if (tempCount >= 20)
+              break;
+            parserLogger.group("ProcessingRow", row);
+            try {
+              let account = accounts.getByName(row["Account"]);
+              const accountSnapshot = account ? {
+                id: account.id,
+                name: account._name,
+                type: account._type,
+                subtype: account._subtype,
+                balance: account._balanceDollars,
+                transactionCount: account._transactions.size
+              } : null;
+              const accountsSnapshot = Array.from(accounts._accounts.values()).map((acc) => ({
+                id: acc.id,
+                name: acc._name,
+                type: acc._type,
+                subtype: acc._subtype,
+                balance: acc._balanceDollars,
+                transactionCount: acc._transactions.size
+              }));
+              parserLogger.warn("ProcessingRow", "accounts.getByName snapshot:", accountSnapshot);
+              parserLogger.warn("ProcessingRow", "Current accounts snapshot:", accountsSnapshot);
+              if (account === null) {
+                const { type, subtype } = inferMonarchType(row["Account"], monarchAccountTypes);
+                account = new Account(generateId());
+                account.setName(row["Account"]);
+                account.setType(type);
+                account.setSubtype(subtype);
+                accounts.add(account);
+              }
+              const transaction = new Transaction();
+              transaction.init(row);
+              account.addToBalance(transaction.amount);
+              account.addTransaction(transaction);
+              accounts.addTransaction(transaction.id);
+              parserLogger.groupEnd("ProcessingRow");
+            } catch (err) {
+              parserLogger.error("ProcessingRow", "\u274C Error processing row:", row, err);
+              parserLogger.groupEnd("ProcessingRow");
+            }
+            tempCount++;
+          }
+          parserLogger.log("parseCSV", "Accounts discovered:", accounts.length(), "Total transactions:", accounts.totalTransactionCount());
+          await accounts.saveToDb();
+          parserLogger.groupEnd("parseCSV");
+          resolve(accounts);
+        },
+        error: (err) => reject(err)
+      });
+    });
+  }
+  function parseYnabAccountApi(data2) {
+    parserLogger.group("parseYnabAccountApi");
+    const accountCollection = createAccountCollection();
+    try {
+      parserLogger.log("parseYnabAccountApi", "YNAB API accounts count:", data2?.length || 0);
+      for (const row of data2) {
+        const { type, subtype } = inferMonarchType(row["name"]);
+        const standardizedAccount = createAccountFromOauth(row, type, subtype);
+        addAccountToCollection(accountCollection, standardizedAccount);
+      }
+    } catch (err) {
+      parserLogger.error("parseYnabAccountApi", "\u274C Error parsing YNAB account API data:", err);
+    } finally {
+      parserLogger.log("parseYnabAccountApi", "Parsed accounts collection keys:", Object.keys(accountCollection));
+      parserLogger.groupEnd("parseYnabAccountApi");
+      return accountCollection;
+    }
+  }
+
+  // src/api/ynabApi.js
+  async function redirectToYnabOauth() {
+    await startYnabOauth();
+  }
+  async function getAccounts() {
+    try {
+      const data2 = await ynabApiCall("/budgets/default/accounts");
+      const rawAccounts = data2.data.accounts;
+      const accounts = rawAccounts.filter((acc) => !acc.deleted);
+      return accounts;
+    } catch (error) {
+      console.error("YNAB API call failed:", error);
+      return null;
+    }
+  }
+  async function getTransactions(accountId) {
+    try {
+      const data2 = await ynabApiCall(`/budgets/default/accounts/${accountId}/transactions`);
+      const transactions = data2.data.transactions;
+      return transactions.filter((txn) => !txn.deleted);
+    } catch (error) {
+      console.error(`YNAB transactions API call failed for account ${accountId}:`, error);
+      return [];
+    }
+  }
+  async function handleOauthCallback() {
+    const queryParams = new URLSearchParams(window.location.search);
+    const code = queryParams.get("code");
+    const stateToken = queryParams.get("state");
+    const storedState = getExpectedState();
+    if (!stateToken || stateToken !== storedState) {
+      console.error("Invalid CSRF token on OAuth callback.", { stateToken, storedState });
+      clearExpectedState();
+      throw new Error("Invalid CSRF token on OAuth callback.");
+    }
+    clearExpectedState();
+    if (!code) {
+      console.error("OAuth callback did not contain an authorization code.");
+      throw new Error("OAuth callback did not contain an authorization code.");
+    }
+    const success = await exchangeYnabToken(code);
+    if (success) {
+      const accounts = await getAccounts();
+      if (accounts && accounts.length > 0) {
+        const parsedAccounts = parseYnabAccountApi(accounts);
+        state_default.accounts.init(parsedAccounts);
+        for (const account of accounts) {
+          const transactions = await getTransactions(account.id);
+          if (transactions && transactions.length > 0) {
+            const transformedTransactions = transactions.map((txn) => {
+              const date = txn.date;
+              const amountDollars = (txn.amount / 1e3).toFixed(2);
+              return {
+                Date: date,
+                Merchant: txn.payee_name || "",
+                Category: txn.category_name || "",
+                CategoryGroup: txn.category_group_name || "",
+                Notes: txn.memo || "",
+                Amount: amountDollars,
+                Tags: txn.flag_name || ""
+              };
+            });
+            if (state_default.accounts[account.id]) {
+              state_default.accounts[account.id].transactions = transformedTransactions;
+              state_default.accounts[account.id].transactionCount = transformedTransactions.length;
+            }
+          }
+        }
+        console.table(state_default.accounts);
+        return "success";
+      } else {
+        console.warn("No accounts retrieved from YNAB API.");
+        throw new Error("No accounts retrieved from YNAB API.");
+      }
+    } else {
+      console.error("Failed to exchange authorization code for tokens.");
+      throw new Error("Failed to exchange authorization code for tokens.");
+    }
+  }
+
+  // src/views/Upload/uploadData.js
+  var ZIP_EXTENSIONS = [".zip", ".bin"];
+  var ZIP_FILENAME_PATTERNS = ["ynab", "register", "export"];
+  var ZIP_MIME_TYPES = [
+    "application/zip",
+    "application/x-zip-compressed",
+    "application/octet-stream",
+    "application/x-zip",
+    "multipart/x-zip",
+    "application/x-compressed",
+    "application/binary"
+  ];
+  var MAX_FILE_SIZE = 50 * 1024 * 1024;
+  var MIN_FILE_SIZE = 100;
+  function validateZipFile(file) {
+    if (!file)
+      throw new Error("No file provided");
+    if (file.size > MAX_FILE_SIZE)
+      throw new Error("File too large");
+    if (file.size < MIN_FILE_SIZE)
+      throw new Error("File too small");
+    const fileName = file.name.toLowerCase();
+    const fileType = file.type.toLowerCase();
+    const isZipByExtension = ZIP_EXTENSIONS.some((ext) => fileName.endsWith(ext)) || ZIP_FILENAME_PATTERNS.some((pattern) => fileName.includes(pattern));
+    const isZipByMimeType = ZIP_MIME_TYPES.includes(fileType);
+    const isPotentialZip = isZipByExtension || isZipByMimeType || file.size > 1e3;
+    if (!isPotentialZip) {
+      throw new Error("Invalid file type - must be a ZIP file");
+    }
+  }
+  async function ensureYnabAccess() {
+    const isYnabTokenValid = await isYnabAuthenticated();
+    return { isYnabTokenValid };
+  }
+  async function fetchYnabAccountsAndTransactions() {
+    const rawAccounts = await getAccounts();
+    if (!rawAccounts)
+      return null;
+    const accounts = parseYnabAccountApi(rawAccounts);
+    const activeAccounts = rawAccounts.filter((acc) => !acc.deleted);
+    for (const account of activeAccounts) {
+      const transactions = await getTransactions(account.id);
+      if (transactions && transactions.length > 0) {
+        const transformedTransactions = transactions.map((txn) => {
+          const date = txn.date;
+          const amountDollars = (txn.amount / 1e3).toFixed(2);
+          return {
+            Date: date,
+            Merchant: txn.payee_name || "",
+            Category: txn.category_name || "",
+            CategoryGroup: txn.category_group_name || "",
+            Notes: txn.memo || "",
+            Amount: amountDollars,
+            Tags: txn.flag_name || ""
+          };
+        });
+        if (accounts[account.id]) {
+          accounts[account.id].transactions = transformedTransactions;
+          accounts[account.id].transactionCount = transformedTransactions.length;
+        }
+      }
+    }
+    Object.keys(accounts).forEach((id) => {
+      accounts[id].id = id;
+      accounts[id].included = true;
+      accounts[id].modified = false;
+      accounts[id].originalName = accounts[id].name;
+      accounts[id].originalType = accounts[id].type;
+      accounts[id].originalSubtype = accounts[id].subtype;
+      accounts[id].originalIncluded = accounts[id].included;
+    });
+    await state_default.accounts.init(accounts);
+    await state_default.accounts.save();
+    return accounts;
+  }
+  async function parseUploadedFile(file) {
+    validateZipFile(file);
+    await parseYNABCSV(file);
+  }
+  async function loadAccountsFromDB() {
+    try {
+      if (state_default.accounts.length() > 0) {
+        const accounts = {};
+        for (const account of state_default.accounts._accounts) {
+          accounts[account.id] = {
+            name: account.name,
+            type: account.type,
+            subtype: account.subtype,
+            transactions: account.transactions,
+            transactionCount: account.transactionCount,
+            balance: account.balance,
+            included: account.included,
+            modified: account.isModified(),
+            originalName: account.original.name,
+            originalType: account.original.type,
+            originalSubtype: account.original.subtype,
+            originalIncluded: account.originalIncluded
+          };
+        }
+        return Object.keys(accounts).length > 0 ? accounts : null;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error loading accounts from singleton:", error);
+      return null;
+    }
+  }
+  async function hasStoredAccounts() {
+    try {
+      return state_default.accounts.length() > 0;
+    } catch (error) {
+      console.error("Error checking for stored accounts:", error);
+      return false;
+    }
+  }
+
   // src/views/Upload/upload.js
   async function initUploadView() {
-    const hasExistingAccounts = state_default.accounts && Object.keys(state_default.accounts).length > 0;
-    let ynabAccessToken = sessionStorage.getItem("ynab_access_token");
-    const ynabRefreshToken = sessionStorage.getItem("ynab_refresh_token");
-    const ynabTokenExpiresAt = sessionStorage.getItem("ynab_token_expires_at");
-    let isYnabTokenValid = ynabAccessToken && ynabTokenExpiresAt && Date.now() < parseInt(ynabTokenExpiresAt, 10);
-    if (!isYnabTokenValid && ynabRefreshToken) {
-      console.log("YNAB access token expired, attempting to refresh...");
-      const refreshed = await refreshAccessToken(ynabRefreshToken);
-      if (refreshed && refreshed.access_token) {
-        ynabAccessToken = refreshed.access_token;
-        isYnabTokenValid = true;
-        console.log("YNAB access token successfully refreshed");
-      } else {
-        console.log("Failed to refresh YNAB access token");
-      }
+    try {
+      await indexedDB_default.init();
+    } catch (error) {
+      console.error("Failed to initialize IndexedDB:", error);
+    }
+    const hasExistingAccounts = await hasStoredAccounts();
+    if (hasExistingAccounts) {
+      await loadAccountsFromDB();
+    }
+    let isYnabTokenValid = false;
+    try {
+      const result = await ensureYnabAccess();
+      isYnabTokenValid = result.isYnabTokenValid;
+    } catch (error) {
+      console.warn("Error checking YNAB authentication:", error);
     }
     renderPageLayout({
       navbar: {
@@ -5317,38 +7141,29 @@
     const oauthError = document.getElementById("oauthError");
     const fileUploadError = document.getElementById("fileUploadError");
     const continueWithYnabBtn = document.getElementById("continueWithYnabBtn");
-    const connectYnabBtn = document.getElementById("connectYnabBtn");
     continueWithYnabBtn.hidden = !isYnabTokenValid;
-    document.getElementById("automaticUploadDivider").hidden = !isYnabTokenValid;
+    const connectYnabBtn = document.getElementById("connectYnabBtn");
     connectYnabBtn.textContent = isYnabTokenValid ? "Connect new YNAB Profile" : "Connect to YNAB";
     connectYnabBtn.setAttribute("data-color", isYnabTokenValid ? "white" : "purple");
     connectYnabBtn.applyStyles();
+    document.getElementById("automaticUploadDivider").hidden = !isYnabTokenValid;
     continueWithYnabBtn?.addEventListener("click", async (event) => {
       event.preventDefault();
       oauthError.hide();
-      continueWithYnabBtn.disabled = true;
-      const originalText = continueWithYnabBtn.textContent;
-      continueWithYnabBtn.textContent = "Fetching accounts...";
+      LoadingOverlay_default.show("Fetching accounts...");
       try {
-        const rawAccounts = await getAccounts(ynabAccessToken);
-        if (!rawAccounts) {
-          throw new Error("No response from YNAB API");
-        }
-        const accounts = parseYnabAccountApi(rawAccounts);
+        const accounts = await fetchYnabAccountsAndTransactions();
         if (!accounts || Object.keys(accounts).length === 0) {
+          LoadingOverlay_default.hide();
           oauthError.show("No accounts found in your YNAB profile.", "Make sure you have at least one account in your YNAB budget, then try again.");
-          continueWithYnabBtn.disabled = false;
-          continueWithYnabBtn.textContent = originalText;
           return;
         }
-        state_default.accounts = accounts;
-        persistState();
+        Accounts.init(accounts);
         navigate("/review", false, true);
       } catch (error) {
         console.error("Error fetching YNAB accounts:", error);
+        LoadingOverlay_default.hide();
         oauthError.show("Could not fetch accounts from YNAB.", "Your session may have expired. Try connecting to YNAB again below.");
-        continueWithYnabBtn.disabled = false;
-        continueWithYnabBtn.textContent = originalText;
       }
     });
     connectYnabBtn?.addEventListener("click", async (event) => {
@@ -5365,6 +7180,7 @@
     const manualUploadButton = document.getElementById("manualUploadButton");
     document.getElementById("manualUploadDivider").hidden = !hasExistingAccounts;
     continueWithExistingBtn.hidden = !hasExistingAccounts;
+    const originalButtonText = manualUploadButton.textContent;
     manualUploadButton.textContent = hasExistingAccounts ? "Upload new Data" : "Upload YNAB Data";
     manualUploadButton.setAttribute("data-color", hasExistingAccounts ? "white" : "blue");
     manualUploadButton.applyStyles();
@@ -5386,58 +7202,12 @@
       }
     });
     async function handleFile(csvFile) {
-      if (!csvFile) {
-        fileUploadError.show("No file selected.", "Please select a ZIP file exported from YNAB.");
-        return;
-      }
-      const maxSize = 50 * 1024 * 1024;
-      if (csvFile.size > maxSize) {
-        fileUploadError.show("File is too large.", "Please ensure your YNAB export is under 50MB. If needed, export a smaller date range.");
-        return;
-      }
-      if (csvFile.size < 100) {
-        fileUploadError.show("File appears to be empty or corrupted.", "Please re-export your data from YNAB and try again.");
-        return;
-      }
-      const fileName = csvFile.name.toLowerCase();
-      const fileType = csvFile.type.toLowerCase();
-      const isZipByExtension = fileName.endsWith(".zip") || fileName.endsWith(".bin") || fileName.includes("ynab") || fileName.includes("register") || fileName.includes("export");
-      const isZipByMimeType = [
-        "application/zip",
-        "application/x-zip-compressed",
-        "application/octet-stream",
-        "application/x-zip",
-        "multipart/x-zip",
-        "application/x-compressed",
-        "application/binary"
-      ].includes(fileType);
-      const isPotentialZip = isZipByExtension || isZipByMimeType || csvFile.size > 1e3;
-      if (!isPotentialZip) {
-        fileUploadError.show("Invalid file type.", 'Please upload a ZIP file exported from YNAB. Visit YNAB.com \u2192 Account Menu \u2192 "Export Plan" to download it.');
-        manualFileInput.value = "";
-        return;
-      }
-      manualUploadButton.disabled = true;
-      const originalText = manualUploadButton.textContent;
-      manualUploadButton.textContent = "Processing file...";
       try {
-        const accounts = await parseYNABCSV(csvFile);
-        if (!accounts || typeof accounts !== "object") {
-          throw new Error("Invalid account data structure");
-        }
-        const accountCount = Object.keys(accounts).length;
-        if (accountCount === 0) {
-          fileUploadError.show("No accounts found in the uploaded file.", "Make sure you exported the complete YNAB data including all accounts. Try exporting again from YNAB.com.");
-          manualUploadButton.disabled = false;
-          manualUploadButton.textContent = originalText;
-          manualFileInput.value = "";
-          return;
-        }
-        state_default.accounts = accounts;
-        persistState();
+        await parseUploadedFile(csvFile);
         navigate("/review", false, true);
       } catch (err) {
         console.error("File parsing error:", err);
+        LoadingOverlay_default.hide();
         let errorMessage = "Could not parse the uploaded file.";
         let solution = `Please ensure it's a valid YNAB ZIP export. Try re-exporting from YNAB.com \u2192 Account Menu \u2192 "Export Plan".`;
         const errorMsg = err.message?.toLowerCase() || "";
@@ -5453,10 +7223,19 @@
         } else if (errorMsg.includes("empty") || errorMsg.includes("invalid")) {
           errorMessage = "The file appears to be empty or invalid.";
           solution = 'Please re-export your complete YNAB budget from YNAB.com \u2192 Account Menu \u2192 "Export Plan".';
+        } else if (errorMsg.includes("too large")) {
+          errorMessage = "File is too large.";
+          solution = "Please ensure your YNAB export is under 50MB. If needed, export a smaller date range.";
+        } else if (errorMsg.includes("too small")) {
+          errorMessage = "File appears to be empty or corrupted.";
+          solution = "Please re-export your data from YNAB and try again.";
+        } else if (errorMsg.includes("file type")) {
+          errorMessage = "Invalid file type.";
+          solution = 'Please upload a ZIP file exported from YNAB. Visit YNAB.com \u2192 Account Menu \u2192 "Export Plan" to download it.';
         }
         fileUploadError.show(errorMessage, solution);
         manualUploadButton.disabled = false;
-        manualUploadButton.textContent = originalText;
+        manualUploadButton.textContent = originalButtonText;
         manualFileInput.value = "";
       }
     }
@@ -5612,6 +7391,14 @@
 
   </div>
 </section>`;
+
+  // src/utils/format.js
+  var currencyFormatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
 
   // public/static-data/monarchAccountTypes.json
   var generatedAt = "2025-06-02T06:26:29.704Z";
@@ -6027,14 +7814,6 @@
     data
   };
 
-  // src/utils/format.js
-  var currencyFormatter = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-
   // src/utils/accountTypeUtils.js
   function getAccountTypeByName(typeName) {
     return monarchAccountTypes_default.data.find((t) => t.typeName === typeName);
@@ -6063,1106 +7842,507 @@
     }
   }
 
-  // src/components/ReusableTable.js
-  var ReusableTable = class extends HTMLElement {
+  // src/utils/filters.js
+  var Filters = class {
     constructor() {
-      super();
-      this._data = signal([]);
-      this._columns = signal([]);
-      this._selectedRows = signal(/* @__PURE__ */ new Set());
-      this._visibleRows = signal([]);
-      this._allSelected = computed(() => {
-        const visible = this._visibleRows.value;
-        const selected = this._selectedRows.value;
-        return visible.length > 0 && visible.every((row) => selected.has(this._getRowId(row)));
-      });
-      this._someSelected = computed(() => {
-        const visible = this._visibleRows.value;
-        const selected = this._selectedRows.value;
-        const selectedCount = visible.filter((row) => selected.has(this._getRowId(row))).length;
-        return selectedCount > 0 && selectedCount < visible.length;
-      });
-      this._mobileBreakpoint = "lg";
-      this._enableSelection = true;
-      this._rowIdKey = "id";
-      this._handleMasterCheckboxChange = this._handleMasterCheckboxChange.bind(this);
-      this._handleRowCheckboxChange = this._handleRowCheckboxChange.bind(this);
+      this.pendingFilters = new FilterCriteria();
+      this.activeFilters = new FilterCriteria();
+      this.searchQuery = "";
     }
-    connectedCallback() {
-      this._mobileBreakpoint = this.getAttribute("data-mobile-breakpoint") || "lg";
-      this._enableSelection = this.getAttribute("data-enable-selection") !== "false";
-      this._rowIdKey = this.getAttribute("data-row-id-key") || "id";
-      this._render();
-      this._setupSubscriptions();
+    clearPendingFilters() {
+      this.pendingFilters.clear();
     }
-    disconnectedCallback() {
-      if (this._dataUnsubscribe)
-        this._dataUnsubscribe();
-      if (this._columnsUnsubscribe)
-        this._columnsUnsubscribe();
-      if (this._selectedUnsubscribe)
-        this._selectedUnsubscribe();
-      if (this._visibleUnsubscribe)
-        this._visibleUnsubscribe();
+    clearActiveFilters() {
+      this.activeFilters.clear();
     }
-    _setupSubscriptions() {
-      this._dataUnsubscribe = this._data.subscribe(() => this._updateTable());
-      this._columnsUnsubscribe = this._columns.subscribe(() => this._updateTable());
-      this._selectedUnsubscribe = this._selectedRows.subscribe(() => this._updateSelection());
-      this._visibleUnsubscribe = this._visibleRows.subscribe(() => this._updateMasterCheckbox());
+    applyPendingToActive() {
+      this.activeFilters = Object.assign(new FilterCriteria(), this.pendingFilters);
     }
-    _render() {
-      this.className = "ui-table-container bg-white rounded-lg shadow-sm overflow-hidden";
-      this.innerHTML = `
-      <!-- Mobile Card View -->
-      <div class="mobile-view block ${this._mobileBreakpoint}:hidden bg-gray-50">
-        ${this._enableSelection ? `
-        <div class="border-b border-gray-200 bg-white p-3 sm:p-4">
-          <div class="flex items-center justify-between">
-            <label class="custom-checkbox-container flex items-center">
-              <input id="masterCheckboxMobile" type="checkbox" class="master-checkbox-mobile custom-checkbox-input">
-              <span class="custom-checkbox-visual"></span>
-              <span class="text-sm font-medium text-gray-700 pl-2">Select All</span>
-            </label>
-            <div class="text-xs text-gray-500 font-semibold selection-count-mobile">0 selected</div>
-          </div>
-        </div>
-        ` : ""}
-        <div class="mobile-list space-y-2 p-3 sm:p-4"></div>
-      </div>
-      
-      <!-- Desktop Table View -->
-      <div class="desktop-view hidden ${this._mobileBreakpoint}:block overflow-x-auto">
-        <table class="w-full min-w-[800px]" role="grid">
-          <thead>
-            <tr class="bg-gray-50 border-b border-gray-200" role="row"></tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100"></tbody>
-        </table>
-      </div>
-    `;
-      this._updateTable();
+    getNumberOfActiveFilters() {
+      let count = 0;
+      if (this.activeFilters.accountName)
+        count++;
+      if (this.activeFilters.types.size > 0)
+        count++;
+      if (this.activeFilters.subtypes.size > 0)
+        count++;
+      if (this.activeFilters.transactionsMin !== null)
+        count++;
+      if (this.activeFilters.transactionsMax !== null)
+        count++;
+      if (this.activeFilters.balanceMin !== null)
+        count++;
+      if (this.activeFilters.balanceMax !== null)
+        count++;
+      if (this.activeFilters.inclusion !== "all")
+        count++;
+      return count;
     }
-    _updateTable() {
-      const data2 = this._data.value;
-      const columns = this._columns.value;
-      if (!columns.length || !data2.length)
-        return;
-      this._visibleRows.value = data2;
-      this._renderDesktopTable(data2, columns);
-      this._renderMobileCards(data2, columns);
-      const mobileMasterCheckbox = this.querySelector("#masterCheckboxMobile");
-      if (mobileMasterCheckbox) {
-        mobileMasterCheckbox.removeEventListener("change", this._handleMasterCheckboxChange);
-        mobileMasterCheckbox.addEventListener("change", this._handleMasterCheckboxChange);
-      }
-      this._updateSelection();
+    hasPendingChanges() {
+      return this.accountNameHasPendingChange() || this.typesHavePendingChange() || this.subtypesHavePendingChange() || this.transactionMinHasPendingChange() || this.transactionMaxHasPendingChange() || this.balanceMinHasPendingChange() || this.balanceMaxHasPendingChange() || this.inclusionHasPendingChange();
     }
-    _renderDesktopTable(data2, columns) {
-      const thead = this.querySelector("thead tr");
-      const tbody = this.querySelector("tbody");
-      if (!thead || !tbody)
-        return;
-      thead.innerHTML = "";
-      columns.forEach((col) => {
-        const th = document.createElement("th");
-        th.scope = "col";
-        th.className = col.headerClass || "px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900";
-        if (col.width)
-          th.style.width = col.width;
-        if (col.minWidth)
-          th.style.minWidth = col.minWidth;
-        if (col.type === "checkbox" && col.masterCheckbox) {
-          const checkbox = document.createElement("input");
-          checkbox.type = "checkbox";
-          checkbox.className = "master-checkbox w-4 h-4 sm:w-5 sm:h-5 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2";
-          checkbox.addEventListener("change", this._handleMasterCheckboxChange);
-          th.appendChild(checkbox);
+    passesFilters(account) {
+      if (this.activeFilters.accountName) {
+        const accountName = this.activeFilters.nameCaseSensitive ? account.current.name : account.current.name.toLowerCase();
+        const filterName = this.activeFilters.nameCaseSensitive ? this.activeFilters.accountName : this.activeFilters.accountName.toLowerCase();
+        if (this.activeFilters.nameMatchType === "exact") {
+          if (accountName !== filterName)
+            return false;
         } else {
-          th.textContent = col.header || "";
-        }
-        thead.appendChild(th);
-      });
-      tbody.innerHTML = "";
-      data2.forEach((row) => {
-        const tr = document.createElement("tr");
-        tr.setAttribute("role", "row");
-        tr.className = "border-t border-gray-100";
-        if (row._isModified) {
-          tr.classList.add("bg-amber-50", "border-l-4", "border-l-amber-300");
-        }
-        tr.dataset.rowId = this._getRowId(row);
-        columns.forEach((col) => {
-          const td = document.createElement("td");
-          td.className = col.cellClass || "px-3 sm:px-4 py-3 sm:py-4";
-          this._renderCell(td, col, row);
-          tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-      });
-    }
-    _renderMobileCards(data2, columns) {
-      const mobileList = this.querySelector(".mobile-list");
-      if (!mobileList)
-        return;
-      mobileList.innerHTML = "";
-      data2.forEach((row) => {
-        const card = document.createElement("div");
-        card.className = "mobile-card overflow-hidden";
-        if (row._isModified) {
-          card.classList.add("bg-amber-50", "border-l-4", "border-l-amber-300");
-        } else {
-          card.classList.add("bg-white", "border", "border-gray-100");
-        }
-        card.dataset.rowId = this._getRowId(row);
-        const wrapper = document.createElement("div");
-        wrapper.className = "p-3 sm:p-4";
-        const headerDiv = document.createElement("div");
-        headerDiv.className = "flex items-center gap-3 mb-3 pb-3 border-b border-gray-100";
-        const selectCol = columns.find((c) => c.type === "checkbox" && c.masterCheckbox);
-        if (selectCol && this._enableSelection) {
-          const checkboxContainer = this._createMobileCheckbox(row);
-          checkboxContainer.className = "flex-shrink-0";
-          headerDiv.appendChild(checkboxContainer);
-        }
-        const primaryCol = columns.find((c) => c.key === "modifiedName");
-        if (primaryCol && !primaryCol.mobileHidden) {
-          const primaryDiv = document.createElement("div");
-          primaryDiv.className = "flex-1 min-w-0";
-          const nameValue = document.createElement("div");
-          nameValue.className = "text-sm font-semibold text-gray-900 truncate";
-          nameValue.textContent = row[primaryCol.key] || "";
-          if (primaryCol.clickable) {
-            nameValue.className += " cursor-pointer hover:text-blue-600 transition-colors";
-            if (primaryCol.onClick) {
-              nameValue.addEventListener("click", () => primaryCol.onClick(row));
-            }
-          }
-          primaryDiv.appendChild(nameValue);
-          headerDiv.appendChild(primaryDiv);
-        }
-        wrapper.appendChild(headerDiv);
-        const bodyDiv = document.createElement("div");
-        bodyDiv.className = "grid grid-cols-2 gap-3 sm:gap-4 text-sm";
-        let fieldCount = 0;
-        columns.forEach((col) => {
-          if (col.type === "checkbox" && col.masterCheckbox)
-            return;
-          if (col.key === "modifiedName")
-            return;
-          if (col.mobileHidden)
-            return;
-          if (col.type === "custom" && col.key === "undo")
-            return;
-          if (col.type === "button")
-            return;
-          if (col.mobileLayout === "full")
-            return;
-          fieldCount++;
-          const fieldDiv = document.createElement("div");
-          if (col.mobileLayout === "full") {
-            fieldDiv.className = "col-span-2 flex flex-col gap-1";
-          } else {
-            fieldDiv.className = "flex flex-col gap-1";
-          }
-          if (col.mobileLabel !== false) {
-            const label = document.createElement("span");
-            label.className = "text-xs font-semibold text-gray-500 uppercase tracking-wide";
-            label.textContent = col.mobileLabel || col.header;
-            fieldDiv.appendChild(label);
-          }
-          const valueContainer = document.createElement("div");
-          valueContainer.className = "min-w-0";
-          this._renderCell(valueContainer, col, row, true);
-          fieldDiv.appendChild(valueContainer);
-          bodyDiv.appendChild(fieldDiv);
-        });
-        wrapper.appendChild(bodyDiv);
-        let hasActions = false;
-        const actionButtons = [];
-        columns.forEach((col) => {
-          if (col.type === "button" || col.type === "custom" && col.key === "undo") {
-            hasActions = true;
-            actionButtons.push(col);
-          }
-        });
-        if (hasActions) {
-          const footerDiv = document.createElement("div");
-          footerDiv.className = "mt-3 pt-3 border-t border-gray-100 flex items-center gap-2 flex-wrap";
-          actionButtons.forEach((col) => {
-            const container = document.createElement("div");
-            if (col.type === "button") {
-              container.className = "flex-1 min-w-[120px]";
-            } else {
-              container.className = "flex-shrink-0";
-            }
-            this._renderCell(container, col, row, true);
-            footerDiv.appendChild(container);
-          });
-          wrapper.appendChild(footerDiv);
-        }
-        card.appendChild(wrapper);
-        mobileList.appendChild(card);
-      });
-    }
-    _createMobileCheckbox(row) {
-      const container = document.createElement("label");
-      container.className = "custom-checkbox-container flex-shrink-0";
-      const checkbox = document.createElement("input");
-      checkbox.id = "rowCheckboxMobile_" + this._getRowId(row);
-      checkbox.type = "checkbox";
-      checkbox.className = "row-checkbox custom-checkbox-input";
-      checkbox.dataset.rowId = this._getRowId(row);
-      checkbox.checked = this._selectedRows.value.has(this._getRowId(row));
-      checkbox.addEventListener("change", this._handleRowCheckboxChange);
-      const visual = document.createElement("span");
-      visual.className = "custom-checkbox-visual";
-      container.appendChild(checkbox);
-      container.appendChild(visual);
-      return container;
-    }
-    _renderCell(container, col, row, isMobile = false) {
-      const isDisabled = col.disabled ? col.disabled(row) : false;
-      switch (col.type) {
-        case "checkbox":
-          if (!col.masterCheckbox) {
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.className = "w-5 h-5 rounded border-gray-300 cursor-pointer";
-            checkbox.checked = col.getValue ? col.getValue(row) : row[col.key];
-            checkbox.disabled = isDisabled;
-            if (col.onChange) {
-              checkbox.addEventListener("change", () => col.onChange(row, checkbox.checked));
-            }
-            container.appendChild(checkbox);
-          } else {
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.className = "row-checkbox w-5 h-5 rounded border-gray-300 cursor-pointer";
-            checkbox.dataset.rowId = this._getRowId(row);
-            checkbox.checked = this._selectedRows.value.has(this._getRowId(row));
-            checkbox.disabled = isDisabled;
-            checkbox.addEventListener("change", this._handleRowCheckboxChange);
-            container.appendChild(checkbox);
-          }
-          break;
-        case "text":
-          const text = col.getValue ? col.getValue(row) : row[col.key];
-          container.textContent = text;
-          container.className += " truncate";
-          if (col.clickable && !isDisabled) {
-            container.className += " cursor-pointer hover:text-blue-600 transition-colors duration-200";
-            if (col.onClick) {
-              container.addEventListener("click", () => col.onClick(row));
-            }
-          } else if (isDisabled) {
-            container.className += " text-gray-400 cursor-default";
-          }
-          if (col.tooltip) {
-            container.title = typeof col.tooltip === "function" ? col.tooltip(row) : col.tooltip;
-          }
-          break;
-        case "select":
-          const select = document.createElement("select");
-          const baseClasses = "border border-gray-300 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium";
-          const mobileClasses = "text-xs px-2 py-1.5";
-          const desktopClasses = "text-sm px-2 py-1";
-          select.className = baseClasses + " " + (isMobile ? mobileClasses : desktopClasses);
-          select.disabled = isDisabled;
-          if (isDisabled) {
-            select.className += " text-gray-400 bg-gray-50 cursor-not-allowed";
-          } else {
-            select.className += " cursor-pointer text-gray-900";
-          }
-          const currentValue = col.getValue ? col.getValue(row) : row[col.key];
-          const options = col.options ? typeof col.options === "function" ? col.options(row) : col.options : [];
-          options.forEach((opt) => {
-            const option = document.createElement("option");
-            option.value = opt.value;
-            option.textContent = opt.label;
-            if (opt.value === currentValue)
-              option.selected = true;
-            select.appendChild(option);
-          });
-          if (col.onChange) {
-            select.addEventListener("change", () => col.onChange(row, select.value));
-          }
-          if (col.tooltip) {
-            select.title = typeof col.tooltip === "function" ? col.tooltip(row) : col.tooltip;
-          }
-          container.appendChild(select);
-          break;
-        case "button":
-          const buttonConfig = col.render ? col.render(row) : {};
-          const button = document.createElement("ui-button");
-          button.className = "ui-button";
-          button.dataset.type = buttonConfig.type || "solid";
-          button.dataset.color = buttonConfig.color || "blue";
-          button.dataset.size = buttonConfig.size || (isMobile ? "small" : "medium");
-          button.textContent = buttonConfig.text || "";
-          button.dataset.fullwidth = isMobile ? "true" : "false";
-          button.disabled = isDisabled || buttonConfig.disabled;
-          if (buttonConfig.onClick) {
-            button.addEventListener("click", () => buttonConfig.onClick(row));
-          }
-          if (buttonConfig.tooltip || col.tooltip) {
-            button.title = buttonConfig.tooltip || (typeof col.tooltip === "function" ? col.tooltip(row) : col.tooltip);
-          }
-          container.appendChild(button);
-          break;
-        case "custom":
-          if (col.render) {
-            const customContent = col.render(row, isMobile);
-            if (typeof customContent === "string") {
-              container.innerHTML = customContent;
-            } else if (customContent instanceof HTMLElement) {
-              container.appendChild(customContent);
-            }
-          }
-          break;
-        default:
-          const value = col.getValue ? col.getValue(row) : row[col.key];
-          container.textContent = value || "";
-      }
-      if (col.cellStyle) {
-        const styles = typeof col.cellStyle === "function" ? col.cellStyle(row) : col.cellStyle;
-        Object.assign(container.style, styles);
-      }
-    }
-    _handleMasterCheckboxChange(e) {
-      const visibleRows = this._visibleRows.value;
-      const selected = new Set(this._selectedRows.value);
-      const checkbox = e.target;
-      const shouldSelectAll = checkbox.checked;
-      visibleRows.forEach((row) => {
-        const rowId = this._getRowId(row);
-        if (shouldSelectAll) {
-          selected.add(rowId);
-        } else {
-          selected.delete(rowId);
-        }
-      });
-      this._selectedRows.value = selected;
-      setTimeout(() => {
-        this._emitSelectionChange();
-      }, 0);
-    }
-    _handleRowCheckboxChange(e) {
-      const rowId = e.target.dataset.rowId;
-      const checked = e.target.checked;
-      const selected = new Set(this._selectedRows.value);
-      if (checked) {
-        selected.add(rowId);
-      } else {
-        selected.delete(rowId);
-      }
-      this._selectedRows.value = selected;
-      this._emitSelectionChange();
-    }
-    _updateSelection() {
-      const checkboxes = this.querySelectorAll(".row-checkbox");
-      checkboxes.forEach((checkbox) => {
-        const rowId = checkbox.dataset.rowId;
-        checkbox.checked = this._selectedRows.value.has(rowId);
-      });
-      this._updateMasterCheckbox();
-      this._updateSelectionCount();
-    }
-    _updateMasterCheckbox() {
-      const masterCheckboxes = this.querySelectorAll(".master-checkbox, .master-checkbox-mobile");
-      const visible = this._visibleRows.value;
-      const selected = this._selectedRows.value;
-      const selectedCount = visible.filter((row) => selected.has(this._getRowId(row))).length;
-      const allSelected = visible.length > 0 && selectedCount === visible.length;
-      const someSelected = selectedCount > 0 && selectedCount < visible.length;
-      masterCheckboxes.forEach((checkbox) => {
-        checkbox.checked = allSelected;
-        checkbox.indeterminate = someSelected;
-      });
-    }
-    _updateSelectionCount() {
-      const countElements = this.querySelectorAll(".selection-count-mobile");
-      const count = this._selectedRows.value.size;
-      countElements.forEach((el) => {
-        el.textContent = `${count} selected`;
-      });
-    }
-    _emitSelectionChange() {
-      const selected = Array.from(this._selectedRows.value);
-      const visibleRows = this._visibleRows.value;
-      const selectedRows = visibleRows.filter((row) => this._selectedRows.value.has(this._getRowId(row)));
-      this.dispatchEvent(new CustomEvent("selectionchange", {
-        detail: {
-          selected,
-          selectedRows,
-          count: selected.length,
-          allSelected: this._allSelected.value,
-          someSelected: this._someSelected.value
-        },
-        bubbles: true
-      }));
-    }
-    _getRowId(row) {
-      return String(row[this._rowIdKey] || row.id || JSON.stringify(row));
-    }
-    set data(value) {
-      this._data.value = Array.isArray(value) ? value : [];
-    }
-    get data() {
-      return this._data.value;
-    }
-    set columns(value) {
-      this._columns.value = Array.isArray(value) ? value : [];
-    }
-    get columns() {
-      return this._columns.value;
-    }
-    set selectedRows(value) {
-      this._selectedRows.value = new Set(value);
-      this._updateSelection();
-      this._emitSelectionChange();
-    }
-    get selectedRows() {
-      return Array.from(this._selectedRows.value);
-    }
-    clearSelection() {
-      this._selectedRows.value = /* @__PURE__ */ new Set();
-      this._updateSelection();
-      this._emitSelectionChange();
-    }
-    selectAll() {
-      const selected = /* @__PURE__ */ new Set();
-      this._visibleRows.value.forEach((row) => {
-        selected.add(this._getRowId(row));
-      });
-      this._selectedRows.value = selected;
-      this._updateSelection();
-      this._emitSelectionChange();
-    }
-    refresh() {
-      this._updateTable();
-    }
-  };
-  customElements.define("ui-table", ReusableTable);
-
-  // src/views/AccountReview/review.js
-  var accountsTable;
-  var importBtn;
-  var searchInput;
-  var activeFilters = {
-    accountName: "",
-    nameMatchType: "contains",
-    nameCaseSensitive: false,
-    types: /* @__PURE__ */ new Set(),
-    subtypes: /* @__PURE__ */ new Set(),
-    transactionsMin: null,
-    transactionsMax: null,
-    balanceMin: null,
-    balanceMax: null,
-    inclusion: "all"
-  };
-  var searchQuery = "";
-  var changeHistory = {};
-  var initialAccountsSnapshot = null;
-  function initAccountReviewView() {
-    renderPageLayout({
-      navbar: {
-        showBackButton: true,
-        showDataButton: true
-      },
-      header: {
-        title: "Step 2: Review Accounts",
-        description: "Review and adjust your accounts. Next, we'll choose how to migrate to Monarch.",
-        containerId: "pageHeader"
-      }
-    });
-    accountsTable = document.getElementById("accountsTable");
-    importBtn = document.getElementById("continueBtn");
-    searchInput = document.getElementById("searchInput");
-    initializeChangeTracking();
-    setupTableColumns();
-    renderAccountTable();
-    setTimeout(() => {
-      initializeFiltersModal();
-      const totalAccounts = Object.keys(state_default.accounts).length;
-      updateAccountCountDisplay(totalAccounts, totalAccounts);
-    }, 100);
-    let debounceTimer;
-    searchInput.addEventListener("input", () => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        searchQuery = searchInput.value.toLowerCase();
-        renderAccountTable();
-        persistState();
-      }, 200);
-    });
-    setTimeout(() => {
-      const filtersBtn = document.getElementById("filtersBtn");
-      if (filtersBtn) {
-        filtersBtn.addEventListener("click", (e) => {
-          e.preventDefault();
-          openFiltersModal();
-        });
-      } else {
-        console.error("Filters button not found!");
-      }
-      const filtersApply = document.getElementById("filtersApply");
-      if (filtersApply) {
-        filtersApply.addEventListener("click", applyFilters);
-      }
-      const filtersReset = document.getElementById("filtersReset");
-      if (filtersReset) {
-        filtersReset.addEventListener("click", resetFilters);
-      }
-      const clearAllFiltersBtn = document.getElementById("clearAllFilters");
-      if (clearAllFiltersBtn) {
-        clearAllFiltersBtn.addEventListener("click", clearAllFilters);
-      }
-      const clearFiltersBtn = document.getElementById("clearFiltersBtn");
-      if (clearFiltersBtn) {
-        clearFiltersBtn.addEventListener("click", () => {
-          resetFilters();
-        });
-      }
-    }, 100);
-    document.getElementById("unselectAllBtnMobile").addEventListener("click", () => updateSelection(false));
-    document.getElementById("unselectAllBtnDesktop").addEventListener("click", () => updateSelection(false));
-    document.getElementById("bulkIncludeBtnMobile").addEventListener("click", () => updateInclusion(true));
-    document.getElementById("bulkIncludeBtnDesktop").addEventListener("click", () => updateInclusion(true));
-    document.getElementById("bulkExcludeBtnMobile").addEventListener("click", () => updateInclusion(false));
-    document.getElementById("bulkExcludeBtnDesktop").addEventListener("click", () => updateInclusion(false));
-    document.getElementById("bulkRenameBtnMobile").addEventListener("click", openBulkRenameModal);
-    document.getElementById("bulkRenameBtnDesktop").addEventListener("click", openBulkRenameModal);
-    document.getElementById("bulkTypeBtnMobile").addEventListener("click", openBulkTypeModal);
-    document.getElementById("bulkTypeBtnDesktop").addEventListener("click", openBulkTypeModal);
-    accountsTable.addEventListener("selectionchange", (e) => {
-      const selectedCount = e.detail.count;
-      const bar = document.getElementById("bulkActionBar");
-      if (!bar)
-        return;
-      const mobileCountSpan = document.getElementById("selectedCountMobile");
-      if (mobileCountSpan) {
-        mobileCountSpan.textContent = selectedCount;
-        const mobileLabelSpan = document.getElementById("selectCountMobileLabel");
-        if (mobileLabelSpan) {
-          mobileLabelSpan.textContent = selectedCount === 1 ? "Account" : "Accounts";
+          if (!accountName.includes(filterName))
+            return false;
         }
       }
-      const desktopCountSpan = document.getElementById("selectedCountDesktop");
-      if (desktopCountSpan) {
-        desktopCountSpan.textContent = selectedCount;
-        const desktopLabelSpan = document.getElementById("selectCountDesktopLabel");
-        if (desktopLabelSpan) {
-          desktopLabelSpan.textContent = selectedCount === 1 ? "Account" : "Accounts";
-        }
+      if (this.activeFilters.types.size > 0) {
+        const accountType = getAccountTypeByName(account.current.type);
+        const typeDisplay = accountType ? accountType.typeDisplay : account.current.type || "";
+        if (!this.activeFilters.types.has(typeDisplay))
+          return false;
       }
-      const accounts = Object.values(state_default.accounts);
-      accounts.forEach((acc) => {
-        acc.selected = e.detail.selected.includes(String(acc.id || acc.modifiedName));
-      });
-      if (selectedCount > 0) {
-        bar.classList.remove("hidden");
-        bar.classList.add("active");
-      } else {
-        bar.classList.remove("active");
-        setTimeout(() => {
-          if (!bar.classList.contains("active")) {
-            bar.classList.add("hidden");
-          }
-        }, 300);
+      if (this.activeFilters.subtypes.size > 0) {
+        const accountSubtype = getSubtypeByName(account.current.type, account.current.subtype);
+        const subtypeDisplay = accountSubtype ? accountSubtype.display : account.current.subtype || "";
+        if (!this.activeFilters.subtypes.has(subtypeDisplay))
+          return false;
       }
-    });
-    document.getElementById("continueBtn").addEventListener("click", () => navigate("/method"));
-    setupUndoListeners();
-    renderAccountTable();
-  }
-  function initializeChangeTracking() {
-    changeHistory = {};
-    initialAccountsSnapshot = JSON.parse(JSON.stringify(state_default.accounts));
-    Object.keys(state_default.accounts).forEach((accountId) => {
-      state_default.accounts[accountId]._isModified = false;
-    });
-  }
-  function trackChange(accountId) {
-    if (!changeHistory[accountId]) {
-      const account = state_default.accounts[accountId];
-      changeHistory[accountId] = {
-        modifiedName: account.modifiedName,
-        type: account.type,
-        subtype: account.subtype
-      };
-    }
-    state_default.accounts[accountId]._isModified = true;
-  }
-  function checkAndUpdateModifiedStatus(accountId) {
-    if (!changeHistory[accountId])
-      return;
-    const account = state_default.accounts[accountId];
-    const original = changeHistory[accountId];
-    const isBackToOriginal = account.modifiedName === original.modifiedName && account.type === original.type && account.subtype === original.subtype;
-    if (isBackToOriginal) {
-      delete changeHistory[accountId];
-      account._isModified = false;
-    } else {
-      account._isModified = true;
-    }
-  }
-  function undoRowChanges(accountId) {
-    if (!changeHistory[accountId])
-      return;
-    const original = changeHistory[accountId];
-    const account = state_default.accounts[accountId];
-    account.modifiedName = original.modifiedName;
-    account.type = original.type;
-    account.subtype = original.subtype;
-    account._isModified = false;
-    delete changeHistory[accountId];
-    persistState();
-    renderAccountTable();
-  }
-  function undoAllChanges() {
-    const accountIds = Object.keys(changeHistory);
-    accountIds.forEach((accountId) => {
-      const original = changeHistory[accountId];
-      const account = state_default.accounts[accountId];
-      account.modifiedName = original.modifiedName;
-      account.type = original.type;
-      account.subtype = original.subtype;
-      account._isModified = false;
-      delete changeHistory[accountId];
-    });
-    persistState();
-    renderAccountTable();
-  }
-  function setupUndoListeners() {
-    const undoAllBtn = document.getElementById("undoAllBtn");
-    if (undoAllBtn) {
-      undoAllBtn.addEventListener("click", () => {
-        if (confirm("Are you sure you want to undo all changes? This action cannot be reversed.")) {
-          undoAllChanges();
-        }
-      });
-    }
-    accountsTable.addEventListener("click", (e) => {
-      const undoBtn = e.target.closest("[data-undo-button]");
-      if (undoBtn) {
-        const rowId = undoBtn.dataset.rowId;
-        undoRowChanges(rowId);
-      }
-    });
-  }
-  function setupTableColumns() {
-    accountsTable.columns = [
-      {
-        key: "select",
-        type: "checkbox",
-        header: "",
-        width: "60px",
-        headerClass: "px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 w-[50px] sm:w-[60px]",
-        cellClass: "px-2 py-2 text-center",
-        masterCheckbox: true,
-        disabled: (row) => row.status === "processed",
-        mobileHidden: true
-      },
-      {
-        key: "modifiedName",
-        type: "text",
-        header: "Account Name",
-        minWidth: "200px",
-        headerClass: "px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[200px]",
-        cellClass: "px-2 py-2 max-w-[300px]",
-        clickable: true,
-        tooltip: (row) => row.status === "processed" ? "" : `Click to rename '${row.modifiedName}'`,
-        onClick: (row) => {
-          if (row.status !== "processed") {
-            trackChange(row.id);
-            openNameEditor(row);
-          }
-        },
-        mobileLabel: false,
-        mobileClass: "mb-2"
-      },
-      {
-        key: "type",
-        type: "select",
-        header: "Type",
-        minWidth: "150px",
-        headerClass: "px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[150px]",
-        cellClass: "px-2 py-2",
-        options: monarchAccountTypes_default.data.map((type) => ({
-          value: type.typeName,
-          label: type.typeDisplay
-        })),
-        disabled: (row) => row.status === "processed",
-        tooltip: (row) => getAccountTypeByName(row.type)?.typeDisplay || "",
-        onChange: (row, value) => {
-          trackChange(row.id);
-          row.type = value;
-          const selectedType = getAccountTypeByName(value);
-          row.subtype = selectedType?.subtypes[0]?.name || null;
-          checkAndUpdateModifiedStatus(row.id);
-          persistState();
-          renderAccountTable();
-        },
-        mobileLabel: "Type",
-        mobileLayout: "default"
-      },
-      {
-        key: "subtype",
-        type: "select",
-        header: "Subtype",
-        minWidth: "150px",
-        headerClass: "px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[150px]",
-        cellClass: "px-2 py-2",
-        options: (row) => {
-          const selectedType = getAccountTypeByName(row.type);
-          return (selectedType?.subtypes || []).map((sub) => ({
-            value: sub.name,
-            label: sub.display
-          }));
-        },
-        disabled: (row) => row.status === "processed",
-        tooltip: (row) => getSubtypeByName(row.type, row.subtype)?.display || "",
-        onChange: (row, value) => {
-          trackChange(row.id);
-          row.subtype = value;
-          checkAndUpdateModifiedStatus(row.id);
-          persistState();
-          renderAccountTable();
-        },
-        mobileLabel: "Subtype",
-        mobileLayout: "default"
-      },
-      {
-        key: "transactionCount",
-        type: "text",
-        header: "Transactions",
-        minWidth: "100px",
-        headerClass: "px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[100px] text-center",
-        cellClass: "px-2 py-2 text-center text-[#637988] cursor-default",
-        tooltip: (row) => `${row.transactionCount} transaction${row.transactionCount !== 1 ? "s" : ""}`,
-        cellStyle: (row) => row.status === "processed" ? { color: "#9ca3af" } : {},
-        mobileLabel: "Txns",
-        mobileLayout: "default"
-      },
-      {
-        key: "balance",
-        type: "text",
-        header: "Balance",
-        minWidth: "120px",
-        headerClass: "px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[120px] text-right",
-        cellClass: "px-2 py-2 text-[#637988] cursor-default text-right",
-        getValue: (row) => currencyFormatter.format(row.balance),
-        tooltip: (row) => `Balance: ${currencyFormatter.format(row.balance)}`,
-        cellStyle: (row) => row.status === "processed" ? { color: "#9ca3af" } : {},
-        mobileLabel: "Balance",
-        mobileLayout: "default"
-      },
-      {
-        key: "undo",
-        type: "custom",
-        header: "",
-        minWidth: "50px",
-        width: "50px",
-        headerClass: "px-2 py-3 sm:py-4 text-center",
-        cellClass: "px-2 py-2",
-        render: (row) => {
-          const container = document.createElement("div");
-          container.className = "flex items-center justify-center w-full h-full";
-          if (!row._isModified) {
-            return container;
-          }
-          const button = document.createElement("button");
-          button.className = "p-1.5 rounded hover:bg-amber-100 transition-colors duration-150";
-          button.title = "Undo changes to this account";
-          button.setAttribute("aria-label", "Undo changes");
-          button.innerHTML = `
-          <svg class="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 hover:text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
-          </svg>
-        `;
-          button.addEventListener("click", () => undoRowChanges(row.id));
-          container.appendChild(button);
-          return container;
-        },
-        mobileLabel: "",
-        mobileLayout: "full",
-        mobileHidden: true
-      },
-      {
-        key: "included",
-        type: "button",
-        header: "Migrate?",
-        minWidth: "100px",
-        headerClass: "px-2 sm:px-3 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 min-w-[100px] text-center",
-        cellClass: "px-2 py-2",
-        render: (row) => {
-          const isProcessed = row.status === "processed";
-          const isFailed = row.status === "failed";
-          return {
-            text: isProcessed ? "Processed" : row.included ? "Included" : "Excluded",
-            type: "outline",
-            color: isProcessed ? "grey" : row.included ? "green" : "red",
-            size: "small",
-            disabled: isProcessed,
-            tooltip: isProcessed ? "This account has already been processed" : row.included ? "Click to exclude this account" : "Click to include this account",
-            onClick: () => {
-              if (!isProcessed) {
-                row.included = !row.included;
-                persistState();
-                renderAccountTable();
-              }
-            }
-          };
-        },
-        mobileLabel: "Migrate",
-        mobileLayout: "full"
-      }
-    ];
-  }
-  function updateSelection(shouldSelect) {
-    Object.values(state_default.accounts).forEach((acc) => {
-      if (acc.status !== "processed")
-        acc.selected = shouldSelect;
-    });
-    persistState();
-    renderAccountTable();
-  }
-  function updateInclusion(include) {
-    Object.values(state_default.accounts).forEach((acc) => {
-      if (acc.selected) {
-        acc.included = include;
-      }
-    });
-    persistState();
-    renderAccountTable();
-  }
-  function renderAccountTable() {
-    const accounts = Object.values(state_default.accounts);
-    const visibleAccounts = accounts.filter((account) => {
-      if (!passesFilters(account))
+      const transactionCount = account.transactionCount || 0;
+      if (this.activeFilters.transactionsMin !== null && transactionCount < this.activeFilters.transactionsMin)
         return false;
-      if (searchQuery && !account.modifiedName.toLowerCase().includes(searchQuery))
+      if (this.activeFilters.transactionsMax !== null && transactionCount > this.activeFilters.transactionsMax)
+        return false;
+      const balance = parseFloat(account.balance) || 0;
+      if (this.activeFilters.balanceMin !== null && balance < this.activeFilters.balanceMin)
+        return false;
+      if (this.activeFilters.balanceMax !== null && balance > this.activeFilters.balanceMax)
+        return false;
+      if (this.activeFilters.inclusion === "included" && !account.included)
+        return false;
+      if (this.activeFilters.inclusion === "excluded" && account.included)
         return false;
       return true;
-    });
-    visibleAccounts.forEach((account, index) => {
-      if (!account.id) {
-        account.id = account.modifiedName.replace(/\s+/g, "-") + "-" + index;
-      }
-    });
-    accountsTable.data = visibleAccounts;
-    const selectedIds = accounts.filter((acc) => acc.selected).map((acc) => String(acc.id || acc.modifiedName));
-    accountsTable.selectedRows = selectedIds;
-    updateAccountCountDisplay(visibleAccounts.length, accounts.length);
-    const includedCount = accounts.filter(isIncludedAndUnprocessed).length;
-    const hasIncludedAccounts = includedCount > 0;
-    toggleDisabled(importBtn, !hasIncludedAccounts);
-    importBtn.title = importBtn.disabled ? "At least one account must be included to proceed" : "";
-    if (hasIncludedAccounts) {
-      importBtn.textContent = `Migrate ${includedCount} of ${accounts.length} account${accounts.length !== 1 ? "s" : ""}`;
-    } else {
-      importBtn.textContent = "Continue";
     }
-    updateChangesAlert();
-  }
-  function updateChangesAlert() {
-    const undoAllContainer = document.getElementById("undoAllContainer");
-    if (!undoAllContainer)
-      return;
-    const hasChanges = Object.keys(changeHistory).length > 0;
-    if (hasChanges) {
-      undoAllContainer.classList.remove("hidden");
-    } else {
-      undoAllContainer.classList.add("hidden");
+    accountNameHasPendingChange() {
+      return this.activeFilters.accountName !== this.pendingFilters.accountName || this.activeFilters.nameMatchType !== this.pendingFilters.nameMatchType || this.activeFilters.nameCaseSensitive !== this.pendingFilters.nameCaseSensitive;
     }
-  }
-  function isIncludedAndUnprocessed(account) {
-    return account.included && account.status !== "processed";
-  }
-  function openNameEditor(account) {
-    const overlay = document.createElement("div");
-    overlay.className = "fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 opacity-0 transition-opacity duration-200";
-    document.body.appendChild(overlay);
-    requestAnimationFrame(() => overlay.classList.add("opacity-100"));
-    const popup = document.createElement("div");
-    popup.className = "bg-white rounded-lg shadow-lg p-5 w-[400px]";
-    const title = document.createElement("h2");
-    title.className = "font-bold mb-3 text-lg";
-    title.textContent = "Edit Account Name";
-    popup.appendChild(title);
-    const input = document.createElement("input");
-    input.type = "text";
-    input.value = account.modifiedName;
-    input.setAttribute("aria-label", "Account name input");
-    input.className = "border rounded w-full px-3 py-2 mb-4";
-    popup.appendChild(input);
-    const buttonRow = document.createElement("div");
-    buttonRow.className = "flex justify-end gap-2";
-    const cancelBtn = document.createElement("button");
-    cancelBtn.textContent = "Cancel";
-    cancelBtn.className = "bg-gray-300 px-4 py-2 rounded";
-    cancelBtn.addEventListener("click", () => closeEditor());
-    const saveBtn = document.createElement("button");
-    saveBtn.textContent = "Save";
-    saveBtn.className = "bg-blue-500 text-white px-4 py-2 rounded font-bold";
-    saveBtn.addEventListener("click", save);
-    buttonRow.appendChild(cancelBtn);
-    buttonRow.appendChild(saveBtn);
-    popup.appendChild(buttonRow);
-    overlay.appendChild(popup);
-    input.focus();
-    input.select();
-    overlay.addEventListener("keydown", (e) => {
-      if (e.key === "Escape")
-        closeEditor();
-      if (e.key === "Enter")
-        save();
-    });
-    function closeEditor() {
-      overlay.classList.remove("opacity-100");
-      overlay.classList.add("opacity-0");
-      setTimeout(() => document.body.removeChild(overlay), 200);
+    transactionMinHasPendingChange() {
+      return this.activeFilters.transactionsMin !== this.pendingFilters.transactionsMin;
     }
-    function save() {
-      account.modifiedName = input.value.trim();
-      checkAndUpdateModifiedStatus(account.id);
-      persistState();
-      const table = document.getElementById("accountsTable");
-      if (table) {
-        table.refresh();
-      }
-      closeEditor();
+    transactionMaxHasPendingChange() {
+      return this.activeFilters.transactionsMax !== this.pendingFilters.transactionsMax;
     }
-  }
-  function openBulkRenameModal() {
-    const modal = document.getElementById("bulkRenameModal");
-    const selectedAccounts = Object.values(state_default.accounts).filter((acc) => acc.selected);
-    modal.open();
-    setTimeout(() => {
-      const modalOverlay = Array.from(document.body.children).find((el) => el.classList.contains("ui-modal-overlay") && el.querySelector("#renamePattern"));
-      if (!modalOverlay) {
-        console.error("Modal overlay not found in body");
-        return;
-      }
-      console.log("Found modal overlay:", modalOverlay);
+    balanceMinHasPendingChange() {
+      return this.activeFilters.balanceMin !== this.pendingFilters.balanceMin;
+    }
+    balanceMaxHasPendingChange() {
+      return this.activeFilters.balanceMax !== this.pendingFilters.balanceMax;
+    }
+    typesHavePendingChange() {
+      const af = this.activeFilters;
+      const pf = this.pendingFilters;
+      if (af.types.size !== pf.types.size)
+        return true;
+      return ![...pf.types].every((t) => af.types.has(t));
+    }
+    subtypesHavePendingChange() {
+      const af = this.activeFilters;
+      const pf = this.pendingFilters;
+      if (af.subtypes.size !== pf.subtypes.size)
+        return true;
+      return ![...pf.subtypes].every((s) => af.subtypes.has(s));
+    }
+    inclusionHasPendingChange() {
+      return this.activeFilters.inclusion !== this.pendingFilters.inclusion;
+    }
+    setSearchQuery(str) {
+      this.searchQuery = str.toLowerCase();
+    }
+  };
+  var FilterCriteria = class {
+    constructor() {
+      this.accountName = "";
+      this.nameMatchType = "contains";
+      this.nameCaseSensitive = false;
+      this.types = /* @__PURE__ */ new Set();
+      this.subtypes = /* @__PURE__ */ new Set();
+      this.transactionsMin = null;
+      this.transactionsMax = null;
+      this.balanceMin = null;
+      this.balanceMax = null;
+      this.inclusion = "all";
+    }
+    clear() {
+      this.accountName = "";
+      this.nameMatchType = "contains";
+      this.nameCaseSensitive = false;
+      this.types.clear();
+      this.subtypes.clear();
+      this.transactionsMin = null;
+      this.transactionsMax = null;
+      this.balanceMin = null;
+      this.balanceMax = null;
+      this.inclusion = "all";
+    }
+  };
+
+  // src/views/AccountReview/modals/FiltersModal.js
+  var FiltersModal = class {
+    constructor(filters, onApply, onReset) {
+      this.filters = filters;
+      this.onApply = onApply;
+      this.onReset = onReset;
+      this.modal = null;
+    }
+    open() {
+      this.modal = document.getElementById("filtersModal");
+      this.modal.open();
+      setTimeout(() => {
+        this._setupEventListeners();
+        this._populateFilters();
+        this._updatePendingFilterStyles();
+      }, 10);
+    }
+    _setupEventListeners() {
+      const modalOverlay = this.modal._modalOverlay;
+      const resetBtn = modalOverlay.querySelector("#filtersResetBtn");
+      const applyBtn = modalOverlay.querySelector("#filtersApplyBtn");
+      resetBtn.onclick = () => this._handleReset();
+      applyBtn.onclick = () => this._handleApply();
+      const filterAccountName = modalOverlay.querySelector("#filterAccountName");
+      const clearAccountNameBtn = modalOverlay.querySelector("#clearAccountNameBtn");
+      filterAccountName.addEventListener("input", () => {
+        this.filters.pendingFilters.accountName = filterAccountName.value;
+        clearAccountNameBtn.classList.toggle("hidden", !filterAccountName.value.trim());
+        this._updatePendingFilterStyles();
+      });
+      clearAccountNameBtn.addEventListener("click", () => {
+        filterAccountName.value = "";
+        filterAccountName.dispatchEvent(new Event("input"));
+      });
+      const nameMatchTypeRadios = modalOverlay.querySelectorAll('input[name="nameMatchType"]');
+      nameMatchTypeRadios.forEach((radio) => {
+        radio.addEventListener("change", () => {
+          this.filters.pendingFilters.nameMatchType = radio.value;
+          this._updatePendingFilterStyles();
+        });
+      });
+      const nameCaseSensitive = modalOverlay.querySelector("#nameCaseSensitive");
+      nameCaseSensitive.addEventListener("change", () => {
+        this.filters.pendingFilters.nameCaseSensitive = nameCaseSensitive.checked;
+        this._updatePendingFilterStyles();
+      });
+      const typeSelectAllBtn = modalOverlay.querySelector("#accountTypeSelectAllBtn");
+      const typeDeselectAllBtn = modalOverlay.querySelector("#accountTypeDeselectAllBtn");
+      typeSelectAllBtn.onclick = () => this._selectAllTypes(modalOverlay);
+      typeDeselectAllBtn.onclick = () => this._deselectAllTypes(modalOverlay);
+      const subtypeSelectAllBtn = modalOverlay.querySelector("#accountSubtypeSelectAllBtn");
+      const subtypeDeselectAllBtn = modalOverlay.querySelector("#accountSubtypeDeselectAllBtn");
+      subtypeSelectAllBtn.onclick = () => this._selectAllSubtypes(modalOverlay);
+      subtypeDeselectAllBtn.onclick = () => this._deselectAllSubtypes(modalOverlay);
+      modalOverlay.querySelectorAll('#typeFiltersContainer input[type="checkbox"]').forEach((cb) => {
+        cb.addEventListener("change", () => {
+          if (cb.checked) {
+            this.filters.pendingFilters.types.add(cb.value);
+          } else {
+            this.filters.pendingFilters.types.delete(cb.value);
+          }
+          this._updatePendingFilterStyles();
+        });
+      });
+      modalOverlay.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]').forEach((cb) => {
+        cb.addEventListener("change", () => {
+          if (cb.checked) {
+            this.filters.pendingFilters.subtypes.add(cb.value);
+          } else {
+            this.filters.pendingFilters.subtypes.delete(cb.value);
+          }
+          this._updatePendingFilterStyles();
+        });
+      });
+      const filterTransactionsMin = modalOverlay.querySelector("#filterTransactionsMin");
+      const filterTransactionsMax = modalOverlay.querySelector("#filterTransactionsMax");
+      filterTransactionsMin.addEventListener("input", () => {
+        this.filters.pendingFilters.transactionsMin = filterTransactionsMin.value ? parseInt(filterTransactionsMin.value, 10) : null;
+        this._updatePendingFilterStyles();
+      });
+      filterTransactionsMax.addEventListener("input", () => {
+        this.filters.pendingFilters.transactionsMax = filterTransactionsMax.value ? parseInt(filterTransactionsMax.value, 10) : null;
+        this._updatePendingFilterStyles();
+      });
+      const filterBalanceMin = modalOverlay.querySelector("#filterBalanceMin");
+      const filterBalanceMax = modalOverlay.querySelector("#filterBalanceMax");
+      filterBalanceMin.addEventListener("input", () => {
+        this.filters.pendingFilters.balanceMin = filterBalanceMin.value ? parseFloat(filterBalanceMin.value) : null;
+        this._updatePendingFilterStyles();
+      });
+      filterBalanceMax.addEventListener("input", () => {
+        this.filters.pendingFilters.balanceMax = filterBalanceMax.value ? parseFloat(filterBalanceMax.value) : null;
+        this._updatePendingFilterStyles();
+      });
+      const inclusionRadios = modalOverlay.querySelectorAll('input[name="inclusionFilter"]');
+      inclusionRadios.forEach((radio) => {
+        radio.addEventListener("change", () => {
+          this.filters.pendingFilters.inclusion = radio.value;
+          this._updatePendingFilterStyles();
+        });
+      });
+    }
+    _populateFilters() {
+      const modalOverlay = this.modal._modalOverlay;
+      const filterAccountName = modalOverlay.querySelector("#filterAccountName");
+      filterAccountName.value = this.filters.activeFilters.accountName;
+      const containsRadio = modalOverlay.querySelector('input[name="nameMatchType"][value="contains"]');
+      const exactRadio = modalOverlay.querySelector('input[name="nameMatchType"][value="exact"]');
+      containsRadio.checked = this.filters.activeFilters.nameMatchType === "contains";
+      exactRadio.checked = this.filters.activeFilters.nameMatchType === "exact";
+      const nameCaseSensitive = modalOverlay.querySelector("#nameCaseSensitive");
+      nameCaseSensitive.checked = this.filters.activeFilters.nameCaseSensitive;
+      const isEmpty = !this.filters.activeFilters.accountName.trim();
+      const nameMatchTypeRadios = modalOverlay.querySelectorAll('input[name="nameMatchType"]');
+      nameMatchTypeRadios.forEach((radio) => radio.disabled = isEmpty);
+      nameCaseSensitive.disabled = isEmpty;
+      this._populateTypeFilters(modalOverlay);
+      this._populateSubtypeFilters(modalOverlay);
+      const filterTransactionsMin = modalOverlay.querySelector("#filterTransactionsMin");
+      filterTransactionsMin.value = this.filters.activeFilters.transactionsMin || "";
+      const filterTransactionsMax = modalOverlay.querySelector("#filterTransactionsMax");
+      filterTransactionsMax.value = this.filters.activeFilters.transactionsMax || "";
+      const filterBalanceMin = modalOverlay.querySelector("#filterBalanceMin");
+      filterBalanceMin.value = this.filters.activeFilters.balanceMin || "";
+      const filterBalanceMax = modalOverlay.querySelector("#filterBalanceMax");
+      filterBalanceMax.value = this.filters.activeFilters.balanceMax || "";
+      const inclusionRadios = modalOverlay.querySelectorAll('input[name="inclusionFilter"]');
+      inclusionRadios.forEach((radio) => {
+        radio.checked = radio.value === this.filters.activeFilters.inclusion;
+      });
+    }
+    _populateTypeFilters(modalOverlay) {
+      const container = modalOverlay.querySelector("#typeFiltersContainer");
+      const types = [...new Set(monarchAccountTypes_default.data.map((type) => type.typeDisplay))].sort();
+      container.innerHTML = "";
+      types.forEach((type) => {
+        const isChecked = this.filters.activeFilters.types.has(type);
+        const checkbox = this._createFilterCheckbox("type", type, type, isChecked);
+        container.appendChild(checkbox);
+      });
+    }
+    _populateSubtypeFilters(modalOverlay) {
+      const container = modalOverlay.querySelector("#subtypeFiltersContainer");
+      const subtypes = /* @__PURE__ */ new Set();
+      monarchAccountTypes_default.data.forEach((type) => {
+        type.subtypes.forEach((subtype) => subtypes.add(subtype.display));
+      });
+      const sortedSubtypes = [...subtypes].sort();
+      container.innerHTML = "";
+      sortedSubtypes.forEach((subtype) => {
+        const isChecked = this.filters.activeFilters.subtypes.has(subtype);
+        const checkbox = this._createFilterCheckbox("subtype", subtype, subtype, isChecked);
+        container.appendChild(checkbox);
+      });
+    }
+    _createFilterCheckbox(filterType, value, label, isChecked = false) {
+      const div = document.createElement("div");
+      div.className = "flex items-center";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.id = `filter-${filterType}-${value.replace(/\s+/g, "-")}`;
+      checkbox.value = value;
+      checkbox.className = "w-4 h-4 border-gray-300 rounded";
+      checkbox.style.accentColor = "#111827";
+      checkbox.checked = isChecked;
+      const labelEl = document.createElement("label");
+      labelEl.htmlFor = checkbox.id;
+      labelEl.className = "ml-2 text-sm text-gray-700 cursor-pointer";
+      labelEl.textContent = label;
+      div.appendChild(checkbox);
+      div.appendChild(labelEl);
+      return div;
+    }
+    _selectAllTypes(modalOverlay) {
+      modalOverlay.querySelectorAll('#typeFiltersContainer input[type="checkbox"]').forEach((cb) => {
+        cb.checked = true;
+        this.filters.pendingFilters.types.add(cb.value);
+      });
+      this._updatePendingFilterStyles();
+    }
+    _deselectAllTypes(modalOverlay) {
+      modalOverlay.querySelectorAll('#typeFiltersContainer input[type="checkbox"]').forEach((cb) => {
+        cb.checked = false;
+        this.filters.pendingFilters.types.delete(cb.value);
+      });
+      this._updatePendingFilterStyles();
+    }
+    _selectAllSubtypes(modalOverlay) {
+      modalOverlay.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]').forEach((cb) => {
+        cb.checked = true;
+        this.filters.pendingFilters.subtypes.add(cb.value);
+      });
+      this._updatePendingFilterStyles();
+    }
+    _deselectAllSubtypes(modalOverlay) {
+      modalOverlay.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]').forEach((cb) => {
+        cb.checked = false;
+        this.filters.pendingFilters.subtypes.delete(cb.value);
+      });
+      this._updatePendingFilterStyles();
+    }
+    _updatePendingFilterStyles() {
+      const modalOverlay = this.modal._modalOverlay;
+      const filterAccountName = modalOverlay.querySelector("#filterAccountName");
+      filterAccountName.classList.toggle("filter-modified", this.filters.accountNameHasPendingChange());
+      const transMin = modalOverlay.querySelector("#filterTransactionsMin");
+      transMin.classList.toggle("filter-modified", this.filters.transactionMinHasPendingChange());
+      const transMax = modalOverlay.querySelector("#filterTransactionsMax");
+      transMax.classList.toggle("filter-modified", this.filters.transactionMaxHasPendingChange());
+      const balMin = modalOverlay.querySelector("#filterBalanceMin");
+      balMin.classList.toggle("filter-modified", this.filters.balanceMinHasPendingChange());
+      const balMax = modalOverlay.querySelector("#filterBalanceMax");
+      balMax.classList.toggle("filter-modified", this.filters.balanceMaxHasPendingChange());
+      const typeContainer = modalOverlay.querySelector("#typeFiltersContainer").parentElement;
+      typeContainer.classList.toggle("filter-modified", this.filters.typesHavePendingChange());
+      const subtypeContainer = modalOverlay.querySelector("#subtypeFiltersContainer").parentElement;
+      subtypeContainer.classList.toggle("filter-modified", this.filters.subtypesHavePendingChange());
+      const resetBtn = modalOverlay.querySelector("#filtersResetBtn");
+      resetBtn.disabled = !this.filters.hasPendingChanges();
+    }
+    _handleApply() {
+      this.filters.applyPendingToActive();
+      this.modal.close();
+      if (this.onApply)
+        this.onApply();
+    }
+    _handleReset() {
+      this.filters.clearPendingFilters();
+      this._populateFilters();
+      this._updatePendingFilterStyles();
+      if (this.onReset)
+        this.onReset();
+    }
+  };
+
+  // src/views/AccountReview/modals/BulkRenameModal.js
+  var BulkRenameModal = class {
+    constructor(accounts, onApply) {
+      this.accounts = accounts;
+      this.onApply = onApply;
+      this.modal = null;
+    }
+    open() {
+      this.modal = document.getElementById("bulkRenameModal");
+      this.modal.open();
+      setTimeout(() => {
+        this._setupEventListeners();
+        this._updatePreview();
+      }, 300);
+    }
+    _setupEventListeners() {
+      const modalOverlay = this.modal._modalOverlay;
       const renamePattern = modalOverlay.querySelector("#renamePattern");
       const indexStartInput = modalOverlay.querySelector("#indexStart");
-      const previewDiv = modalOverlay.querySelector("#renamePreview");
       const cancelBtn = modalOverlay.querySelector("#renameCancel");
       const applyBtn = modalOverlay.querySelector("#renameApply");
       const tokenButtons = modalOverlay.querySelectorAll(".token-btn");
-      console.log("Found elements:", { renamePattern, indexStartInput, previewDiv, cancelBtn, applyBtn, tokenButtons: tokenButtons.length });
-      if (!renamePattern || !indexStartInput || !previewDiv || !cancelBtn || !applyBtn) {
-        console.error("Modal elements not found", { renamePattern, indexStartInput, previewDiv, cancelBtn, applyBtn });
-        return;
-      }
-      const updatePreview = () => {
-        const preview = modalOverlay.querySelector("#renamePreview");
-        const patternInput = modalOverlay.querySelector("#renamePattern");
-        const indexInput = modalOverlay.querySelector("#indexStart");
-        if (!preview || !patternInput || !indexInput)
-          return;
-        preview.innerHTML = "";
-        const pattern = patternInput.value;
-        const indexStart = parseInt(indexInput.value, 10) || 1;
-        selectedAccounts.slice(0, 3).forEach((acc, i) => {
-          const previewName = applyPattern(pattern, acc, i + indexStart);
-          const div = document.createElement("div");
-          div.textContent = previewName;
-          preview.appendChild(div);
-        });
-      };
       tokenButtons.forEach((btn) => {
-        console.log("Attaching token button handler", btn);
         btn.onclick = (e) => {
-          console.log("Token button clicked!");
           e.preventDefault();
-          e.stopPropagation();
-          const currentPattern = modalOverlay.querySelector("#renamePattern");
-          if (currentPattern) {
-            const token = btn.dataset.token;
-            currentPattern.value += token;
-            updatePreview();
-          }
+          const token = btn.dataset.token;
+          const cursorPos = renamePattern.selectionStart;
+          const before = renamePattern.value.substring(0, cursorPos);
+          const after = renamePattern.value.substring(renamePattern.selectionEnd);
+          renamePattern.value = before + token + after;
+          renamePattern.selectionStart = renamePattern.selectionEnd = cursorPos + token.length;
+          renamePattern.focus();
+          this._updatePreview();
         };
       });
-      renamePattern.oninput = updatePreview;
-      indexStartInput.oninput = updatePreview;
-      updatePreview();
-      console.log("Attaching cancel handler to:", cancelBtn);
+      renamePattern.oninput = () => this._updatePreview();
+      indexStartInput.oninput = () => this._updatePreview();
       cancelBtn.onclick = (e) => {
-        console.log("Cancel clicked!");
         e.preventDefault();
         e.stopPropagation();
-        modal.close();
+        this.modal.close();
       };
-      console.log("Attaching apply handler to:", applyBtn);
       applyBtn.onclick = (e) => {
-        console.log("Apply clicked!");
         e.preventDefault();
         e.stopPropagation();
-        const currentPattern = modalOverlay.querySelector("#renamePattern");
-        const currentIndexStart = modalOverlay.querySelector("#indexStart");
-        if (!currentPattern || !currentIndexStart)
-          return;
-        const pattern = currentPattern.value;
-        const indexStart = parseInt(currentIndexStart.value, 10) || 1;
-        selectedAccounts.forEach((acc, i) => {
-          trackChange(acc.id);
-          acc.modifiedName = applyPattern(pattern, acc, i + indexStart);
-          checkAndUpdateModifiedStatus(acc.id);
-        });
-        modal.close();
-        persistState();
-        renderAccountTable();
+        this._handleApply(modalOverlay);
       };
       renamePattern.focus();
-    }, 300);
-  }
-  function applyPattern(pattern, account, index) {
-    const today = new Date().toISOString().split("T")[0];
-    return pattern.replace(/{{YNAB}}/g, account.originalYnabName?.trim() || account.name || "Account").replace(/{{Index}}/g, index).replace(/{{Upper}}/g, (account.originalYnabName?.trim() || account.name || "Account").toUpperCase()).replace(/{{Date}}/g, today);
-  }
-  function openBulkTypeModal() {
-    const modal = document.getElementById("bulkTypeModal");
-    modal.open();
-    setTimeout(() => {
-      const modalOverlay = Array.from(document.body.children).find((el) => el.classList.contains("ui-modal-overlay") && el.querySelector("#bulkTypeSelect"));
-      if (!modalOverlay) {
-        console.error("Modal overlay not found in body");
-        return;
+    }
+    _updatePreview() {
+      const modalOverlay = this.modal._modalOverlay;
+      const preview = modalOverlay.querySelector("#renamePreview");
+      const patternInput = modalOverlay.querySelector("#renamePattern");
+      const indexInput = modalOverlay.querySelector("#indexStart");
+      preview.innerHTML = "";
+      const pattern = patternInput.value;
+      const indexStart = parseInt(indexInput.value, 10) || 1;
+      const selectedAccounts = this.accounts.getSelected();
+      selectedAccounts.slice(0, 3).forEach((acc, i) => {
+        const previewName = this._applyPattern(pattern, acc, indexStart + i);
+        const div = document.createElement("div");
+        div.className = "p-2 bg-gray-50 rounded text-sm text-gray-700 border border-gray-200";
+        div.textContent = previewName || "(empty)";
+        preview.appendChild(div);
+      });
+      if (selectedAccounts.length > 3) {
+        const div = document.createElement("div");
+        div.className = "p-2 text-xs text-gray-500 italic";
+        div.textContent = `...and ${selectedAccounts.length - 3} more`;
+        preview.appendChild(div);
       }
-      console.log("Found modal overlay:", modalOverlay);
+    }
+    _applyPattern(pattern, account, index) {
+      const today = new Date().toISOString().split("T")[0];
+      return pattern.replace(/{{YNAB}}/g, account.originalYnabName?.trim() || account.current.name || "Account").replace(/{{Index}}/g, index).replace(/{{Upper}}/g, (account.originalYnabName?.trim() || account.current.name || "Account").toUpperCase()).replace(/{{Date}}/g, today);
+    }
+    _handleApply(modalOverlay) {
+      const patternInput = modalOverlay.querySelector("#renamePattern");
+      const indexStartInput = modalOverlay.querySelector("#indexStart");
+      const pattern = patternInput.value;
+      const indexStart = parseInt(indexStartInput.value, 10) || 1;
+      this.accounts.bulkRename(pattern, indexStart);
+      this.modal.close();
+      if (this.onApply)
+        this.onApply();
+    }
+  };
+
+  // src/views/AccountReview/modals/BulkTypeModal.js
+  var BulkTypeModal = class {
+    constructor(accounts, onApply) {
+      this.accounts = accounts;
+      this.onApply = onApply;
+      this.modal = null;
+    }
+    open() {
+      this.modal = document.getElementById("bulkTypeModal");
+      this.modal.open();
+      setTimeout(() => {
+        this._setupEventListeners();
+        this._populateTypeDropdown();
+        this._updateSubtypeOptions();
+      }, 300);
+    }
+    _setupEventListeners() {
+      const modalOverlay = this.modal._modalOverlay;
       const typeSelect = modalOverlay.querySelector("#bulkTypeSelect");
-      const subtypeSelect = modalOverlay.querySelector("#bulkSubtypeSelect");
       const cancelBtn = modalOverlay.querySelector("#bulkTypeCancel");
       const applyBtn = modalOverlay.querySelector("#bulkTypeApply");
-      console.log("Found elements:", { typeSelect, subtypeSelect, cancelBtn, applyBtn });
-      if (!typeSelect || !subtypeSelect || !cancelBtn || !applyBtn) {
-        console.error("Modal elements not found", { typeSelect, subtypeSelect, cancelBtn, applyBtn });
-        return;
-      }
-      const updateSubtypeOptions = () => {
-        const currentTypeSelect = modalOverlay.querySelector("#bulkTypeSelect");
-        const currentSubtypeSelect = modalOverlay.querySelector("#bulkSubtypeSelect");
-        if (!currentTypeSelect || !currentSubtypeSelect)
-          return;
-        const selectedType = getAccountTypeByName(currentTypeSelect.value);
-        currentSubtypeSelect.innerHTML = "";
-        (selectedType?.subtypes || []).forEach((sub) => {
-          const opt = document.createElement("option");
-          opt.value = sub.name;
-          opt.textContent = sub.display;
-          currentSubtypeSelect.appendChild(opt);
-        });
-        if ((selectedType?.subtypes || []).length === 0) {
-          const opt = document.createElement("option");
-          opt.value = "";
-          opt.textContent = "-";
-          currentSubtypeSelect.appendChild(opt);
-        }
+      typeSelect.onchange = () => this._updateSubtypeOptions();
+      cancelBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.modal.close();
       };
+      applyBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this._handleApply(modalOverlay);
+      };
+    }
+    _populateTypeDropdown() {
+      const modalOverlay = this.modal._modalOverlay;
+      const typeSelect = modalOverlay.querySelector("#bulkTypeSelect");
       typeSelect.innerHTML = "";
       monarchAccountTypes_default.data.forEach((type) => {
         const opt = document.createElement("option");
@@ -7170,394 +8350,678 @@
         opt.textContent = type.typeDisplay;
         typeSelect.appendChild(opt);
       });
-      typeSelect.onchange = updateSubtypeOptions;
-      updateSubtypeOptions();
-      console.log("Attaching cancel handler to:", cancelBtn);
-      cancelBtn.onclick = (e) => {
-        console.log("Cancel clicked!");
-        e.preventDefault();
-        e.stopPropagation();
-        modal.close();
-      };
-      console.log("Attaching apply handler to:", applyBtn);
-      applyBtn.onclick = (e) => {
-        console.log("Apply clicked!");
-        e.preventDefault();
-        e.stopPropagation();
-        const currentTypeSelect = modalOverlay.querySelector("#bulkTypeSelect");
-        const currentSubtypeSelect = modalOverlay.querySelector("#bulkSubtypeSelect");
-        if (!currentTypeSelect || !currentSubtypeSelect)
-          return;
-        const typeValue = currentTypeSelect.value;
-        const subtypeValue = currentSubtypeSelect.value;
-        const selectedAccounts = Object.values(state_default.accounts).filter((acc) => acc.selected);
-        selectedAccounts.forEach((acc) => {
-          trackChange(acc.id);
-          acc.type = typeValue;
-          acc.subtype = subtypeValue || null;
-          checkAndUpdateModifiedStatus(acc.id);
+    }
+    _updateSubtypeOptions() {
+      const modalOverlay = this.modal._modalOverlay;
+      const typeSelect = modalOverlay.querySelector("#bulkTypeSelect");
+      const subtypeSelect = modalOverlay.querySelector("#bulkSubtypeSelect");
+      const selectedType = getAccountTypeByName(typeSelect.value);
+      subtypeSelect.innerHTML = "";
+      (selectedType?.subtypes || []).forEach((sub) => {
+        const opt = document.createElement("option");
+        opt.value = sub.name;
+        opt.textContent = sub.display;
+        subtypeSelect.appendChild(opt);
+      });
+      if ((selectedType?.subtypes || []).length === 0) {
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = "(No subtypes available)";
+        opt.disabled = true;
+        opt.selected = true;
+        subtypeSelect.appendChild(opt);
+      }
+    }
+    _handleApply(modalOverlay) {
+      const typeSelect = modalOverlay.querySelector("#bulkTypeSelect");
+      const subtypeSelect = modalOverlay.querySelector("#bulkSubtypeSelect");
+      const typeValue = typeSelect.value;
+      const subtypeValue = subtypeSelect.value;
+      this.accounts.bulkEditType(typeValue, subtypeValue);
+      this.modal.close();
+      if (this.onApply)
+        this.onApply();
+    }
+  };
+
+  // src/views/AccountReview/modals/NameEditorModal.js
+  var NameEditorModal = class {
+    constructor(account, onSave) {
+      this.account = account;
+      this.onSave = onSave;
+      this.overlay = null;
+      this.input = null;
+    }
+    open() {
+      this._createDOM();
+      this._setupEventListeners();
+      this._show();
+      this.input.focus();
+      this.input.select();
+    }
+    _createDOM() {
+      this.overlay = document.createElement("div");
+      this.overlay.className = "fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 opacity-0 transition-opacity duration-200";
+      document.body.appendChild(this.overlay);
+      const popup = document.createElement("div");
+      popup.className = "bg-white rounded-lg shadow-lg p-5 w-[400px]";
+      const title = document.createElement("h2");
+      title.className = "font-bold mb-3 text-lg";
+      title.textContent = "Edit Account Name";
+      popup.appendChild(title);
+      this.input = document.createElement("input");
+      this.input.type = "text";
+      this.input.value = this.account.current.name;
+      this.input.setAttribute("aria-label", "Account name input");
+      this.input.className = "border rounded w-full px-3 py-2 mb-4";
+      popup.appendChild(this.input);
+      const buttonRow = document.createElement("div");
+      buttonRow.className = "flex justify-end gap-2";
+      const cancelBtn = document.createElement("button");
+      cancelBtn.textContent = "Cancel";
+      cancelBtn.className = "bg-gray-300 px-4 py-2 rounded";
+      cancelBtn.addEventListener("click", () => this.close());
+      const saveBtn = document.createElement("button");
+      saveBtn.textContent = "Save";
+      saveBtn.className = "bg-blue-500 text-white px-4 py-2 rounded font-bold";
+      saveBtn.addEventListener("click", () => this._handleSave());
+      buttonRow.appendChild(cancelBtn);
+      buttonRow.appendChild(saveBtn);
+      popup.appendChild(buttonRow);
+      this.overlay.appendChild(popup);
+    }
+    _setupEventListeners() {
+      this.overlay.addEventListener("keydown", (e) => {
+        if (e.key === "Escape")
+          this.close();
+        if (e.key === "Enter")
+          this._handleSave();
+      });
+    }
+    _show() {
+      requestAnimationFrame(() => this.overlay.classList.add("opacity-100"));
+    }
+    _handleSave() {
+      this.account.setName(this.input.value);
+      if (this.onSave)
+        this.onSave(this.account);
+      this.close();
+    }
+    close() {
+      this.overlay.classList.remove("opacity-100");
+      this.overlay.classList.add("opacity-0");
+      setTimeout(() => {
+        if (this.overlay && this.overlay.parentNode) {
+          document.body.removeChild(this.overlay);
+        }
+      }, 200);
+    }
+  };
+
+  // src/views/AccountReview/controllers/AccountReviewController.js
+  var logger = getLogger("AccountReviewController");
+  setLoggerConfig({
+    namespaces: { "AccountReviewController": false }
+  });
+  var AccountReviewController = class {
+    constructor() {
+      this.filters = new Filters();
+      this.accounts = state_default.accounts;
+      this.accountsTable = null;
+      this.importBtn = null;
+      this.searchInput = null;
+      this.filtersModal = null;
+      this.bulkRenameModal = null;
+      this.bulkTypeModal = null;
+    }
+    async init(data2) {
+      logger.group("init", "Initializing AccountReviewController");
+      if (data2) {
+        logger.log("init", "Loaded accounts data for review:", data2);
+        await this.accounts.init(data2);
+      } else {
+        logger.log("init", "Using existing Accounts singleton");
+        if (this.accounts.length() === 0) {
+          logger.log("init", "Loading accounts from IndexedDB");
+          await this.accounts.load();
+        }
+      }
+      this._renderLayout();
+      this._cacheElements();
+      this._setupTableColumns();
+      this._initializeModals();
+      this._setupEventListeners();
+      this._renderTable(true);
+      logger.groupEnd("init");
+    }
+    _renderLayout() {
+      logger.group("_renderLayout", "AccountReviewController._renderLayout()");
+      try {
+        logger.log("_renderLayout", "Rendering page layout for Account Review");
+        renderPageLayout({
+          navbar: {
+            showBackButton: true,
+            showDataButton: true
+          },
+          header: {
+            title: "Step 2: Review Accounts",
+            description: "Review and adjust your accounts. Next, we'll choose how to migrate to Monarch.",
+            containerId: "pageHeader"
+          }
         });
-        modal.close();
-        persistState();
-        renderAccountTable();
-      };
-    }, 300);
-  }
-  function initializeFiltersModal() {
-    try {
-      populateTypeFilters();
-      populateSubtypeFilters();
-      updateFilterDisplay();
-    } catch (error) {
-      console.error("Error initializing filters modal:", error);
+        logger.log("_renderLayout", "Page layout rendered successfully");
+      } catch (error) {
+        logger.error("_renderLayout", "Error rendering layout:", error);
+      } finally {
+        logger.groupEnd("_renderLayout");
+      }
     }
-  }
-  function populateTypeFilters() {
-    const container = document.getElementById("typeFiltersContainer");
-    if (!container) {
-      console.error("typeFiltersContainer not found");
-      return;
+    _cacheElements() {
+      logger.group("_cacheElements", "AccountReviewController._cacheElements()");
+      try {
+        this.accountsTable = document.getElementById("accountsTable");
+        this.importBtn = document.getElementById("continueBtn");
+        this.searchInput = document.getElementById("searchInput");
+        logger.debug("_cacheElements", `Cached elements: accountsTable=${!!this.accountsTable}, importBtn=${!!this.importBtn}, searchInput=${!!this.searchInput}`);
+        logger.log("_cacheElements", "DOM elements cached successfully");
+      } catch (error) {
+        logger.error("_cacheElements", "Error caching DOM elements:", error);
+      } finally {
+        logger.groupEnd("_cacheElements");
+      }
     }
-    const types = [...new Set(monarchAccountTypes_default.data.map((type) => type.typeDisplay))].sort();
-    container.innerHTML = "";
-    types.forEach((type) => {
-      const checkbox = createFilterCheckbox("type", type, type);
-      container.appendChild(checkbox);
-    });
-  }
-  function populateSubtypeFilters() {
-    const container = document.getElementById("subtypeFiltersContainer");
-    if (!container) {
-      console.error("subtypeFiltersContainer not found");
-      return;
+    _initializeModals() {
+      logger.group("_initializeModals", "AccountReviewController._initializeModals()");
+      try {
+        logger.log("_initializeModals", "Initializing modal instances");
+        this.filtersModal = new FiltersModal(this.filters, () => this._onFiltersApplied(), () => this._onFiltersReset());
+        logger.debug("_initializeModals", "FiltersModal initialized");
+        this.bulkRenameModal = new BulkRenameModal(this.accounts, () => this._renderTable());
+        logger.debug("_initializeModals", "BulkRenameModal initialized");
+        this.bulkTypeModal = new BulkTypeModal(this.accounts, () => this._renderTable());
+        logger.debug("_initializeModals", "BulkTypeModal initialized");
+        logger.log("_initializeModals", "All modals initialized successfully");
+      } catch (error) {
+        logger.error("_initializeModals", "Error initializing modals:", error);
+      } finally {
+        logger.groupEnd("_initializeModals");
+      }
     }
-    const subtypes = /* @__PURE__ */ new Set();
-    monarchAccountTypes_default.data.forEach((type) => {
-      type.subtypes.forEach((subtype) => {
-        subtypes.add(subtype.display);
+    _setupEventListeners() {
+      logger.group("_setupEventListeners", "Setting up event listeners");
+      let debounceTimer;
+      this.searchInput.addEventListener("input", () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          this.filters.searchQuery = this.searchInput.value.toLowerCase();
+          this._renderTable();
+          persistState();
+        }, 200);
       });
-    });
-    const sortedSubtypes = [...subtypes].sort();
-    container.innerHTML = "";
-    sortedSubtypes.forEach((subtype) => {
-      const checkbox = createFilterCheckbox("subtype", subtype, subtype);
-      container.appendChild(checkbox);
-    });
-  }
-  function createFilterCheckbox(filterType, value, label) {
-    const div = document.createElement("div");
-    div.className = "flex items-center";
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.id = `filter-${filterType}-${value.replace(/\s+/g, "-")}`;
-    checkbox.value = value;
-    checkbox.className = "w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded";
-    checkbox.addEventListener("change", updateFilterDisplay);
-    const labelEl = document.createElement("label");
-    labelEl.htmlFor = checkbox.id;
-    labelEl.className = "ml-2 text-sm text-gray-700 cursor-pointer";
-    labelEl.textContent = label;
-    div.appendChild(checkbox);
-    div.appendChild(labelEl);
-    return div;
-  }
-  function openFiltersModal() {
-    try {
-      const modal = document.getElementById("filtersModal");
-      if (!modal) {
-        console.error("\u274C Modal element not found!");
-        return;
-      }
-      if (typeof modal.close === "function") {
-        modal.close();
-      }
       setTimeout(() => {
-        if (typeof modal.open === "function") {
-          modal.open();
+        document.getElementById("filtersBtn")?.addEventListener("click", (e) => {
+          e.preventDefault();
+          this.filtersModal.open();
+        });
+      }, 100);
+      this._setupBulkActionListeners();
+      this.accountsTable.addEventListener("selectionchange", (e) => this._handleTableSelectionChange(e));
+      this.importBtn.addEventListener("click", () => navigate("/method"));
+      this._setupUndoListeners();
+      setTimeout(async () => {
+        this._updateFilterDisplay();
+        const totalAccounts = this.accounts.length();
+        this._updateAccountCountDisplay(totalAccounts, totalAccounts);
+      }, 100);
+      logger.groupEnd("_setupEventListeners");
+    }
+    _setupBulkActionListeners() {
+      logger.group("_setupBulkActionListeners", "AccountReviewController._setupBulkActionListeners()");
+      try {
+        const buttonConfigs = [
+          { selectors: ["#unselectAllBtnMobile", "#unselectAllBtnDesktop"], handler: () => this._updateAccountSelection(false), name: "Unselect All" },
+          { selectors: ["#bulkIncludeBtnMobile", "#bulkIncludeBtnDesktop"], handler: () => this._updateInclusion(true), name: "Bulk Include" },
+          { selectors: ["#bulkExcludeBtnMobile", "#bulkExcludeBtnDesktop"], handler: () => this._updateInclusion(false), name: "Bulk Exclude" },
+          { selectors: ["#bulkRenameBtnMobile", "#bulkRenameBtnDesktop"], handler: () => this.bulkRenameModal.open(), name: "Bulk Rename" },
+          { selectors: ["#bulkTypeBtnMobile", "#bulkTypeBtnDesktop"], handler: () => this.bulkTypeModal.open(), name: "Bulk Type" }
+        ];
+        buttonConfigs.forEach((config) => {
+          config.selectors.forEach((selector) => {
+            const btn = document.getElementById(selector.slice(1));
+            if (btn) {
+              btn.addEventListener("click", config.handler);
+              logger.debug("_setupBulkActionListeners", `Event listener attached to ${selector}`);
+            }
+          });
+        });
+        logger.log("_setupBulkActionListeners", "All bulk action listeners set up successfully");
+      } catch (error) {
+        logger.error("_setupBulkActionListeners", "Error setting up bulk action listeners:", error);
+      } finally {
+        logger.groupEnd("_setupBulkActionListeners");
+      }
+    }
+    _setupUndoListeners() {
+      logger.group("_setupUndoListeners", "AccountReviewController._setupUndoListeners()");
+      try {
+        const undoAllBtn = document.getElementById("undoAllBtn");
+        if (undoAllBtn) {
+          undoAllBtn.addEventListener("click", () => {
+            logger.log("_setupUndoListeners", "Undo all button clicked");
+            if (confirm("Are you sure you want to undo all changes? This action cannot be reversed.")) {
+              logger.debug("_setupUndoListeners", "User confirmed undo all changes");
+              this._undoAllChanges();
+            } else {
+              logger.debug("_setupUndoListeners", "User cancelled undo all changes");
+            }
+          });
+          logger.debug("_setupUndoListeners", "Undo all button listener attached");
+        }
+        this.accountsTable.addEventListener("click", (e) => {
+          const undoBtn = e.target.closest("[data-undo-button]");
+          if (undoBtn) {
+            logger.debug("_setupUndoListeners", `Undo button clicked for row ${undoBtn.dataset.rowId}`);
+            this._undoRowChanges(undoBtn.dataset.rowId);
+          }
+        });
+        logger.log("_setupUndoListeners", "Undo listeners set up successfully");
+      } catch (error) {
+        logger.error("_setupUndoListeners", "Error setting up undo listeners:", error);
+      } finally {
+        logger.groupEnd("_setupUndoListeners");
+      }
+    }
+    _handleTableSelectionChange(e) {
+      logger.group("_handleTableSelectionChange", "AccountReviewController._handleTableSelectionChange()", { detail: e.detail });
+      try {
+        const selectedCount = e.detail.count;
+        const bar = document.getElementById("bulkActionBar");
+        logger.log("_handleTableSelectionChange", `Selection changed: ${selectedCount} account(s) selected`);
+        document.getElementById("selectedCountMobile").textContent = selectedCount;
+        document.getElementById("selectCountMobileLabel").textContent = selectedCount === 1 ? "Account" : "Accounts";
+        document.getElementById("selectedCountDesktop").textContent = selectedCount;
+        document.getElementById("selectCountDesktopLabel").textContent = selectedCount === 1 ? "Account" : "Accounts";
+        logger.debug("_handleTableSelectionChange", "Selection count displays updated");
+        this.accounts.forEach((acc) => {
+          acc.selected = e.detail.selectedRows.some((row) => row.id === acc.id);
+        });
+        logger.debug("_handleTableSelectionChange", `Account selected states updated: ${e.detail.selectedRows.map((r) => r.id).join(", ") || "none"}`);
+        if (selectedCount > 0) {
+          bar.classList.remove("hidden");
+          bar.classList.add("flex");
+          logger.debug("_handleTableSelectionChange", "Bulk action bar shown");
         } else {
-          console.error("\u274C modal.open is not a function");
-          return;
+          bar.classList.add("hidden");
+          bar.classList.remove("flex");
+          logger.debug("_handleTableSelectionChange", "Bulk action bar hidden");
         }
-      }, 10);
-      setTimeout(() => {
-        try {
-          const filterAccountName = document.getElementById("filterAccountName");
-          if (filterAccountName) {
-            filterAccountName.value = activeFilters.accountName;
-          }
-          const nameMatchType = document.querySelector(`input[name="nameMatchType"][value="${activeFilters.nameMatchType}"]`);
-          if (nameMatchType) {
-            nameMatchType.checked = true;
-          }
-          const nameCaseSensitive = document.getElementById("nameCaseSensitive");
-          if (nameCaseSensitive) {
-            nameCaseSensitive.checked = activeFilters.nameCaseSensitive;
-          }
-          document.querySelectorAll('#typeFiltersContainer input[type="checkbox"]').forEach((cb) => {
-            cb.checked = activeFilters.types.has(cb.value);
-          });
-          document.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]').forEach((cb) => {
-            cb.checked = activeFilters.subtypes.has(cb.value);
-          });
-          const filterTransactionsMin = document.getElementById("filterTransactionsMin");
-          if (filterTransactionsMin) {
-            filterTransactionsMin.value = activeFilters.transactionsMin || "";
-          }
-          const filterTransactionsMax = document.getElementById("filterTransactionsMax");
-          if (filterTransactionsMax) {
-            filterTransactionsMax.value = activeFilters.transactionsMax || "";
-          }
-          const filterBalanceMin = document.getElementById("filterBalanceMin");
-          if (filterBalanceMin) {
-            filterBalanceMin.value = activeFilters.balanceMin || "";
-          }
-          const filterBalanceMax = document.getElementById("filterBalanceMax");
-          if (filterBalanceMax) {
-            filterBalanceMax.value = activeFilters.balanceMax || "";
-          }
-          const inclusionFilter = document.querySelector(`input[name="inclusionFilter"][value="${activeFilters.inclusion}"]`);
-          if (inclusionFilter) {
-            inclusionFilter.checked = true;
-          }
-        } catch (err) {
-          console.error("Error populating filter values:", err);
-        }
-      }, 50);
-    } catch (error) {
-      console.error("\u274C Error in openFiltersModal:", error);
-    }
-  }
-  window.openFiltersModal = openFiltersModal;
-  function applyFilters() {
-    try {
-      const filterAccountName = document.getElementById("filterAccountName");
-      activeFilters.accountName = filterAccountName ? filterAccountName.value.trim() : "";
-      const nameMatchType = document.querySelector('input[name="nameMatchType"]:checked');
-      activeFilters.nameMatchType = nameMatchType ? nameMatchType.value : "contains";
-      const nameCaseSensitive = document.getElementById("nameCaseSensitive");
-      activeFilters.nameCaseSensitive = nameCaseSensitive ? nameCaseSensitive.checked : false;
-      activeFilters.types.clear();
-      document.querySelectorAll('#typeFiltersContainer input[type="checkbox"]:checked').forEach((cb) => {
-        activeFilters.types.add(cb.value);
-      });
-      activeFilters.subtypes.clear();
-      document.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]:checked').forEach((cb) => {
-        activeFilters.subtypes.add(cb.value);
-      });
-      const transMin = document.getElementById("filterTransactionsMin");
-      const transMax = document.getElementById("filterTransactionsMax");
-      activeFilters.transactionsMin = transMin && transMin.value ? parseInt(transMin.value) : null;
-      activeFilters.transactionsMax = transMax && transMax.value ? parseInt(transMax.value) : null;
-      const balMin = document.getElementById("filterBalanceMin");
-      const balMax = document.getElementById("filterBalanceMax");
-      activeFilters.balanceMin = balMin && balMin.value ? parseFloat(balMin.value) : null;
-      activeFilters.balanceMax = balMax && balMax.value ? parseFloat(balMax.value) : null;
-      const inclusionFilter = document.querySelector('input[name="inclusionFilter"]:checked');
-      activeFilters.inclusion = inclusionFilter ? inclusionFilter.value : "all";
-      const modal = document.getElementById("filtersModal");
-      if (modal && modal.close)
-        modal.close();
-      renderAccountTable();
-      updateFilterDisplay();
-      persistState();
-    } catch (error) {
-      console.error("Error applying filters:", error);
-    }
-  }
-  window.applyFilters = applyFilters;
-  function resetFilters() {
-    try {
-      const filterAccountName = document.getElementById("filterAccountName");
-      if (filterAccountName)
-        filterAccountName.value = "";
-      const containsRadio = document.querySelector('input[name="nameMatchType"][value="contains"]');
-      if (containsRadio)
-        containsRadio.checked = true;
-      const nameCaseSensitive = document.getElementById("nameCaseSensitive");
-      if (nameCaseSensitive)
-        nameCaseSensitive.checked = false;
-      document.querySelectorAll('#typeFiltersContainer input[type="checkbox"]').forEach((cb) => cb.checked = false);
-      document.querySelectorAll('#subtypeFiltersContainer input[type="checkbox"]').forEach((cb) => cb.checked = false);
-      const filterTransactionsMin = document.getElementById("filterTransactionsMin");
-      if (filterTransactionsMin)
-        filterTransactionsMin.value = "";
-      const filterTransactionsMax = document.getElementById("filterTransactionsMax");
-      if (filterTransactionsMax)
-        filterTransactionsMax.value = "";
-      const filterBalanceMin = document.getElementById("filterBalanceMin");
-      if (filterBalanceMin)
-        filterBalanceMin.value = "";
-      const filterBalanceMax = document.getElementById("filterBalanceMax");
-      if (filterBalanceMax)
-        filterBalanceMax.value = "";
-      const allRadio = document.querySelector('input[name="inclusionFilter"][value="all"]');
-      if (allRadio)
-        allRadio.checked = true;
-      activeFilters = {
-        accountName: "",
-        nameMatchType: "contains",
-        nameCaseSensitive: false,
-        types: /* @__PURE__ */ new Set(),
-        subtypes: /* @__PURE__ */ new Set(),
-        transactionsMin: null,
-        transactionsMax: null,
-        balanceMin: null,
-        balanceMax: null,
-        inclusion: "all"
-      };
-      renderAccountTable();
-      updateFilterDisplay();
-      persistState();
-    } catch (error) {
-      console.error("Error resetting filters:", error);
-    }
-  }
-  window.resetFilters = resetFilters;
-  function clearAllFilters() {
-    resetFilters();
-  }
-  window.clearAllFilters = clearAllFilters;
-  function updateFilterDisplay() {
-    const filterNotificationBadge = document.getElementById("filterNotificationBadge");
-    const activeFiltersSection = document.getElementById("activeFiltersSection");
-    const activeFiltersContainer = document.getElementById("activeFiltersContainer");
-    if (!filterNotificationBadge || !activeFiltersSection || !activeFiltersContainer) {
-      console.warn("Filter display elements not found in DOM");
-      return;
-    }
-    let activeFilterCount = 0;
-    if (activeFilters.accountName) {
-      activeFilterCount++;
-    }
-    if (activeFilters.types.size > 0) {
-      activeFilterCount++;
-      const typeList = [...activeFilters.types].join(", ");
-    }
-    if (activeFilters.subtypes.size > 0) {
-      activeFilterCount++;
-      const subtypeList = [...activeFilters.subtypes].join(", ");
-    }
-    if (activeFilters.transactionsMin !== null || activeFilters.transactionsMax !== null) {
-      activeFilterCount++;
-      const min = activeFilters.transactionsMin || 0;
-      const max = activeFilters.transactionsMax || "\u221E";
-    }
-    if (activeFilters.balanceMin !== null || activeFilters.balanceMax !== null) {
-      activeFilterCount++;
-      const min = activeFilters.balanceMin !== null ? `$${activeFilters.balanceMin}` : "$0";
-      const max = activeFilters.balanceMax !== null ? `$${activeFilters.balanceMax}` : "\u221E";
-    }
-    if (activeFilters.inclusion !== "all") {
-      activeFilterCount++;
-    }
-    if (activeFilterCount > 0) {
-      filterNotificationBadge.textContent = activeFilterCount;
-      filterNotificationBadge.classList.remove("hidden");
-    } else {
-      filterNotificationBadge.classList.add("hidden");
-    }
-    const clearFiltersBtn = document.getElementById("clearFiltersBtn");
-    if (clearFiltersBtn) {
-      if (activeFilterCount > 0) {
-        clearFiltersBtn.classList.remove("hidden");
-      } else {
-        clearFiltersBtn.classList.add("hidden");
+      } catch (err) {
+        logger.error("_handleTableSelectionChange", "Error handling selection change:", err);
+      } finally {
+        logger.groupEnd("_handleTableSelectionChange");
       }
     }
-  }
-  function passesFilters(account) {
-    if (activeFilters.accountName) {
-      const accountName = activeFilters.nameCaseSensitive ? account.modifiedName : account.modifiedName.toLowerCase();
-      const filterName = activeFilters.nameCaseSensitive ? activeFilters.accountName : activeFilters.accountName.toLowerCase();
-      if (activeFilters.nameMatchType === "exact") {
-        if (accountName !== filterName)
-          return false;
+    _setupTableColumns() {
+      console.group("AccountReviewController._setupTableColumns()");
+      this.accountsTable.columns = [
+        {
+          key: "select",
+          type: "checkbox",
+          header: "",
+          width: "60px",
+          masterCheckbox: true,
+          disabled: (account) => {
+            logger.group("_setupTableColumns", "Determining disabled state for select checkbox", { accountId: account.id });
+            const isDisabled = account.isProcessed();
+            logger.groupEnd("_setupTableColumns");
+            return isDisabled;
+          },
+          mobileHidden: true
+        },
+        {
+          key: "name",
+          type: "text",
+          header: "Account Name",
+          minWidth: "200px",
+          cellClass: "px-2 py-2 max-w-[300px]",
+          disabled: (account) => {
+            logger.group("_setupTableColumns", "Determining disabled state for name", { accountId: account.id });
+            const isDisabled = account.isProcessed();
+            logger.groupEnd("_setupTableColumns");
+            return isDisabled;
+          },
+          clickable: (account) => {
+            logger.group("_setupTableColumns", "Determining clickable state for name", { accountId: account.id });
+            const isClickable = !account.isProcessed();
+            logger.groupEnd("_setupTableColumns");
+            return isClickable;
+          },
+          getValue: (account) => account.current.name,
+          tooltip: (account) => {
+            logger.group("_setupTableColumns", "Getting tooltip for name", { accountId: account.id });
+            const tooltip = account.isProcessed() ? account.current.name : `Click to rename '${account.current.name}'`;
+            logger.groupEnd("_setupTableColumns");
+            return tooltip;
+          },
+          onClick: (account) => {
+            logger.group("_setupTableColumns", "Handling name click", { accountId: account.id });
+            const isEnabled2 = !account.isProcessed();
+            if (isEnabled2)
+              this._openNameEditor(account);
+            logger.groupEnd("_setupTableColumns");
+          },
+          mobileLabel: false,
+          mobileClass: "mb-2"
+        },
+        {
+          key: "type",
+          type: "select",
+          header: "Type",
+          minWidth: "150px",
+          getValue: (account) => account.current.type,
+          options: monarchAccountTypes_default.data.map((type) => ({
+            value: type.typeName,
+            label: type.typeDisplay
+          })),
+          disabled: (account) => {
+            logger.group("_setupTableColumns", "Determining disabled state for type", { accountId: account.id });
+            const isDisabled = account.isProcessed();
+            logger.groupEnd("_setupTableColumns");
+            return isDisabled;
+          },
+          tooltip: (account) => {
+            logger.group("_setupTableColumns", "Getting tooltip for type", { accountId: account.id });
+            const tooltip = getAccountTypeByName(account.current.type)?.typeDisplay || "";
+            logger.groupEnd("_setupTableColumns");
+            return tooltip;
+          },
+          onChange: async (account, value) => {
+            logger.group("_setupTableColumns", "Handling type change", { accountId: account.id, newType: value });
+            const selectedType = getAccountTypeByName(value);
+            const newSubtype = selectedType?.subtypes[0]?.name || null;
+            await account.setType(value);
+            await account.setSubtype(newSubtype);
+            requestAnimationFrame(() => this.accountsTable.updateRow(account.id));
+            logger.groupEnd("_setupTableColumns");
+          },
+          mobileLabel: "Type"
+        },
+        {
+          key: "subtype",
+          type: "select",
+          header: "Subtype",
+          minWidth: "150px",
+          getValue: (account) => account.current.subtype || "",
+          options: (account) => {
+            logger.group("_setupTableColumns", "Getting options for subtype", { accountId: account.id });
+            const selectedType = getAccountTypeByName(account.current.type);
+            const options = (selectedType?.subtypes || []).map((sub) => ({
+              value: sub.name,
+              label: sub.display
+            }));
+            logger.groupEnd("_setupTableColumns");
+            return options;
+          },
+          disabled: (account) => {
+            logger.group("_setupTableColumns", "Determining disabled state for subtype", { accountId: account.id });
+            const isDisabled = account.isProcessed();
+            logger.groupEnd("_setupTableColumns");
+            return isDisabled;
+          },
+          tooltip: (account) => {
+            logger.group("_setupTableColumns", "Getting tooltip for subtype", { accountId: account.id });
+            const tooltip = getSubtypeByName(account.current.type, account.current.subtype)?.display || "";
+            logger.groupEnd("_setupTableColumns");
+            return tooltip;
+          },
+          onChange: async (account, value) => {
+            logger.group("_setupTableColumns", "Handling subtype change", { accountId: account.id, newSubtype: value });
+            await account.setSubtype(value);
+            requestAnimationFrame(() => this.accountsTable.updateRow(account.id));
+            logger.groupEnd("_setupTableColumns");
+          },
+          mobileLabel: "Subtype"
+        },
+        {
+          key: "transactionCount",
+          type: "text",
+          header: "Transactions",
+          minWidth: "100px",
+          getValue: (account) => account.transactionCount,
+          tooltip: (account) => {
+            logger.group("_setupTableColumns", "Getting tooltip for transactionCount", { accountId: account.id });
+            const tooltip = `${account.transactionCount} transaction${account.transactionCount !== 1 ? "s" : ""}`;
+            logger.groupEnd("_setupTableColumns");
+            return tooltip;
+          },
+          cellStyle: (account) => {
+            logger.group("_setupTableColumns", "Determining cellStyle for transactionCount", { accountId: account.id });
+            const style = account.isProcessed() ? { color: "#9ca3af" } : { color: "#727985ff" };
+            logger.groupEnd("_setupTableColumns");
+            return style;
+          },
+          mobileLabel: "Txns"
+        },
+        {
+          key: "balance",
+          type: "text",
+          header: "Balance",
+          minWidth: "120px",
+          getValue: (account) => currencyFormatter.format(account.balance),
+          tooltip: (account) => `Balance: ${currencyFormatter.format(account.balance)}`,
+          cellStyle: (account) => {
+            logger.group("_setupTableColumns", "Determining cellStyle for balance", { accountId: account.id });
+            const style = account.isProcessed() ? { color: "#9ca3af" } : { color: "#727985ff" };
+            logger.groupEnd("_setupTableColumns");
+            return style;
+          },
+          mobileLabel: "Balance"
+        },
+        {
+          key: "undo",
+          type: "custom",
+          header: "",
+          width: "50px",
+          render: (account) => {
+            logger.group("_setupTableColumns", "Rendering 'undo' button for account", { accountId: account.id });
+            const container = document.createElement("div");
+            container.className = "flex items-center justify-center";
+            if (account.isModified()) {
+              const button = document.createElement("button");
+              button.className = "p-1.5 rounded hover:bg-amber-100 transition-colors";
+              button.title = "Undo changes";
+              button.innerHTML = `
+              <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+              </svg>
+            `;
+              button.addEventListener("click", () => this._undoRowChanges(account.id));
+              container.appendChild(button);
+            }
+            logger.groupEnd("_setupTableColumns");
+            return container;
+          },
+          mobileHidden: true
+        },
+        {
+          key: "included",
+          type: "button",
+          header: "Migrate?",
+          minWidth: "100px",
+          render: (account) => {
+            logger.group("_setupTableColumns", "Rendering 'included' button for account", { accountId: account.id });
+            const isProcessed = account.isProcessed();
+            const result = {
+              text: isProcessed ? "Migrated" : account.included ? "Included" : "Excluded",
+              type: "outline",
+              color: isProcessed ? "grey" : account.included ? "green" : "red",
+              size: "small",
+              disabled: isProcessed,
+              tooltip: isProcessed ? "This account has already been processed" : account.included ? "Click to exclude" : "Click to include",
+              onClick: async () => {
+                await account.toggleInclusion();
+                requestAnimationFrame(() => this.accountsTable.updateRow(account.id));
+              }
+            };
+            logger.groupEnd("_setupTableColumns");
+            return result;
+          },
+          mobileLabel: "Migrate"
+        }
+      ];
+      console.groupEnd();
+    }
+    async _renderTable(skipSync = false) {
+      logger.group("_renderTable", "AccountReviewController._renderTable()");
+      const visibleAccounts = this.accounts.getVisible(this.filters);
+      logger.debug("_renderTable", "visible accounts:", visibleAccounts);
+      this.accountsTable.data = visibleAccounts;
+      this._updateAccountCountDisplay(visibleAccounts.length, this.accounts.length());
+      const hasIncludedAccounts = this.accounts.getIncludedAndUnprocessed().length > 0;
+      toggleDisabled(this.importBtn, !hasIncludedAccounts);
+      this.importBtn.title = this.importBtn.disabled ? "At least one account must be included to proceed" : "";
+      if (hasIncludedAccounts) {
+        this.importBtn.textContent = `Migrate ${this.accounts.getIncludedAndUnprocessed().length} of ${this.accounts.length()} account${this.accounts.length() !== 1 ? "s" : ""}`;
       } else {
-        if (!accountName.includes(filterName))
-          return false;
+        this.importBtn.textContent = "Continue";
+      }
+      this._updateChangesAlert();
+      logger.groupEnd("_renderTable");
+    }
+    _openNameEditor(account) {
+      logger.group("_openNameEditor", "AccountReviewController._openNameEditor()");
+      logger.log("_openNameEditor", `Opening name editor for account ${account.id}: "${account.current.name}"`);
+      try {
+        const editor = new NameEditorModal(account, () => {
+          logger.debug("_openNameEditor", "Name editor closed, refreshing table");
+          this.accountsTable.refresh();
+        });
+        editor.open();
+        logger.log("_openNameEditor", "Name editor opened successfully");
+      } catch (error) {
+        logger.error("_openNameEditor", "Error opening name editor:", error);
+      } finally {
+        logger.groupEnd("_openNameEditor");
       }
     }
-    if (activeFilters.types.size > 0) {
-      const accountType = getAccountTypeByName(account.type);
-      const typeDisplay = accountType ? accountType.typeDisplay : account.type || "";
-      if (!activeFilters.types.has(typeDisplay))
-        return false;
+    async _updateInclusion(include) {
+      logger.group("_updateInclusion", "AccountReviewController._updateInclusion()", { include });
+      logger.log("_updateInclusion", `Updating inclusion status to ${include ? "included" : "excluded"}`);
+      if (include) {
+        await this.accounts.includeAll();
+      } else {
+        await this.accounts.excludeAll();
+      }
+      await this._renderTable();
+      logger.groupEnd("_updateInclusion");
     }
-    if (activeFilters.subtypes.size > 0) {
-      const accountSubtype = getSubtypeByName(account.subtype);
-      const subtypeDisplay = accountSubtype ? accountSubtype.display : account.subtype || "";
-      if (!activeFilters.subtypes.has(subtypeDisplay))
-        return false;
+    _updateAccountSelection(shouldSelect) {
+      logger.group("_updateAccountSelection", "AccountReviewController._updateAccountSelection()", { shouldSelect });
+      try {
+        const action = shouldSelect ? "selecting" : "deselecting";
+        logger.log("_updateAccountSelection", `${action.charAt(0).toUpperCase() + action.slice(1)} all ${this.accounts.length()} accounts`);
+        shouldSelect ? this.accounts.selectAll() : this.accounts.deselectAll();
+        logger.debug("_updateAccountSelection", `All accounts now ${shouldSelect ? "selected" : "deselected"}`);
+        this._renderTable();
+        logger.log("_updateAccountSelection", "Account selection updated and table re-rendered");
+      } catch (error) {
+        logger.error("_updateAccountSelection", "Error updating account selection:", error);
+      } finally {
+        logger.groupEnd("_updateAccountSelection");
+      }
     }
-    const transactionCount = account.transactionCount || 0;
-    if (activeFilters.transactionsMin !== null && transactionCount < activeFilters.transactionsMin)
-      return false;
-    if (activeFilters.transactionsMax !== null && transactionCount > activeFilters.transactionsMax)
-      return false;
-    const balance = parseFloat(account.balance) || 0;
-    if (activeFilters.balanceMin !== null && balance < activeFilters.balanceMin)
-      return false;
-    if (activeFilters.balanceMax !== null && balance > activeFilters.balanceMax)
-      return false;
-    if (activeFilters.inclusion === "included" && !account.included)
-      return false;
-    if (activeFilters.inclusion === "excluded" && account.included)
-      return false;
-    return true;
-  }
-  function updateAccountCountDisplay(visibleCount, totalCount) {
-    const visibleAccountCount = document.getElementById("visibleAccountCount");
-    const totalAccountCount = document.getElementById("totalAccountCount");
-    const filterResultsSummary = document.getElementById("filterResultsSummary");
-    const filterNotificationBadge = document.getElementById("filterNotificationBadge");
-    const clearFiltersBtn = document.getElementById("clearFiltersBtn");
-    if (visibleAccountCount)
-      visibleAccountCount.textContent = visibleCount;
-    if (totalAccountCount)
-      totalAccountCount.textContent = totalCount;
-    const hasFilters = hasActiveFilters();
-    const filterCount = countActiveFilters();
-    if (hasFilters && filterCount > 0 && filterNotificationBadge) {
-      filterNotificationBadge.textContent = filterCount;
-      filterNotificationBadge.classList.remove("hidden");
-    } else if (filterNotificationBadge) {
-      filterNotificationBadge.classList.add("hidden");
+    async _undoAllChanges() {
+      logger.group("_undoAllChanges", "AccountReviewController._undoAllChanges()");
+      logger.log("_undoAllChanges", "Undoing all account changes");
+      await this.accounts.undoAllChanges();
+      await this._renderTable();
+      logger.groupEnd("_undoAllChanges");
     }
-    if (hasFilters && clearFiltersBtn) {
-      clearFiltersBtn.classList.remove("hidden");
-    } else if (clearFiltersBtn) {
-      clearFiltersBtn.classList.add("hidden");
+    async _undoRowChanges(accountId) {
+      logger.group("_undoRowChanges", "AccountReviewController._undoRowChanges()", { accountId });
+      logger.log("_undoRowChanges", `Undoing changes for account ${accountId}`);
+      await this.accounts.undoAccountChanges(accountId);
+      await this._renderTable();
+      logger.groupEnd("_undoRowChanges");
     }
-    if (hasFilters && filterResultsSummary) {
-      filterResultsSummary.classList.add("filtered");
-    } else if (filterResultsSummary) {
-      filterResultsSummary.classList.remove("filtered");
+    _onFiltersApplied() {
+      logger.group("_onFiltersApplied", "AccountReviewController._onFiltersApplied()");
+      logger.log("_onFiltersApplied", "Filters applied, re-rendering table");
+      try {
+        this._renderTable();
+        this._updateFilterDisplay();
+        logger.log("_onFiltersApplied", "Filter display updated");
+      } catch (error) {
+        logger.error("_onFiltersApplied", "Error applying filters:", error);
+      } finally {
+        logger.groupEnd("_onFiltersApplied");
+      }
     }
-  }
-  function hasActiveFilters() {
-    return activeFilters.accountName || activeFilters.types.size > 0 || activeFilters.subtypes.size > 0 || activeFilters.transactionsMin !== null || activeFilters.transactionsMax !== null || activeFilters.balanceMin !== null || activeFilters.balanceMax !== null || activeFilters.inclusion !== "all";
-  }
-  function countActiveFilters() {
-    let count = 0;
-    if (activeFilters.accountName) {
-      count++;
+    _onFiltersReset() {
+      logger.group("_onFiltersReset", "AccountReviewController._onFiltersReset()");
+      logger.log("_onFiltersReset", "Filters reset, re-rendering table");
+      try {
+        this._renderTable();
+        this._updateFilterDisplay();
+        logger.log("_onFiltersReset", "Filter display updated");
+      } catch (error) {
+        logger.error("_onFiltersReset", "Error resetting filters:", error);
+      } finally {
+        logger.groupEnd("_onFiltersReset");
+      }
     }
-    if (activeFilters.types.size > 0) {
-      count++;
+    _updateFilterDisplay() {
+      logger.group("_updateFilterDisplay", "AccountReviewController._updateFilterDisplay()");
+      try {
+        const filterNotificationBadge = document.getElementById("filterNotificationBadge");
+        const numberOfActiveFilters = this.filters.getNumberOfActiveFilters();
+        logger.log("_updateFilterDisplay", `Number of active filters: ${numberOfActiveFilters}`);
+        filterNotificationBadge.classList.toggle("hidden", numberOfActiveFilters === 0);
+        filterNotificationBadge.textContent = numberOfActiveFilters;
+        logger.debug("_updateFilterDisplay", "Filter badge updated");
+      } catch (error) {
+        logger.error("_updateFilterDisplay", "Error updating filter display:", error);
+      } finally {
+        logger.groupEnd("_updateFilterDisplay");
+      }
     }
-    if (activeFilters.subtypes.size > 0) {
-      count++;
+    _updateAccountCountDisplay(visibleCount, totalCount) {
+      logger.group("_updateAccountCountDisplay", "AccountReviewController._updateAccountCountDisplay()");
+      try {
+        logger.log("_updateAccountCountDisplay", `Displaying ${visibleCount} visible accounts out of ${totalCount} total`);
+        document.getElementById("visibleAccountCount").innerHTML = visibleCount;
+        document.getElementById("totalAccountCount").innerHTML = totalCount;
+        logger.debug("_updateAccountCountDisplay", "Account count displays updated");
+        const filterCount = this.filters.getNumberOfActiveFilters();
+        const filterNotificationBadge = document.getElementById("filterNotificationBadge");
+        filterNotificationBadge.textContent = filterCount;
+        filterNotificationBadge.classList.toggle("hidden", filterCount === 0);
+        logger.debug("_updateAccountCountDisplay", `Filter count badge set to ${filterCount}`);
+        const filterResultsSummary = document.getElementById("filterResultsSummary");
+        filterResultsSummary.classList.toggle("filtered", filterCount > 0);
+        logger.debug("_updateAccountCountDisplay", `Filter results summary ${filterCount > 0 ? "marked" : "unmarked"} as filtered`);
+      } catch (error) {
+        logger.error("_updateAccountCountDisplay", "Error updating account count display:", error);
+      } finally {
+        logger.groupEnd("_updateAccountCountDisplay");
+      }
     }
-    if (activeFilters.transactionsMin !== null || activeFilters.transactionsMax !== null) {
-      count++;
+    async _updateChangesAlert() {
+      logger.group("_updateChangesAlert", "AccountReviewController._updateChangesAlert()");
+      const undoAllContainer = document.getElementById("undoAllContainer");
+      const hasChanges = await this.accounts.hasChanges();
+      logger.log("_updateChangesAlert", `Has changes: ${hasChanges}`);
+      undoAllContainer.classList.toggle("hidden", !hasChanges);
+      logger.debug("_updateChangesAlert", `Undo all container ${hasChanges ? "shown" : "hidden"}`);
+      logger.groupEnd("_updateChangesAlert");
     }
-    if (activeFilters.balanceMin !== null || activeFilters.balanceMax !== null) {
-      count++;
-    }
-    if (activeFilters.inclusion !== "all") {
-      count++;
-    }
-    return count;
+  };
+
+  // src/views/AccountReview/review.js
+  var controller;
+  function initAccountReviewView() {
+    controller = new AccountReviewController();
+    controller.init();
   }
 
   // src/views/AccountReview/review.html
@@ -7595,6 +9059,7 @@
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
+        <!-- TODO: Reduce height to match the "Filters" button, and the width to be 100% on mobile -->
         <input id="searchInput" type="text" placeholder="Search accounts..." style="padding-left: 2.75rem !important;"
           class="block w-full pr-3 py-2 sm:py-3 text-sm sm:text-base
                           border border-gray-300 rounded-lg placeholder-gray-400 
@@ -7753,7 +9218,7 @@
 </div>
 
 <!-- Bulk Rename Modal -->
-<ui-modal id="bulkRenameModal">
+<ui-modal id="bulkRenameModal" has-footer>
   <h3 slot="title">Bulk Rename Accounts</h3>
   <div slot="content" class="space-y-4">
     <div>
@@ -7800,7 +9265,7 @@
 </ui-modal>
 
 <!-- Bulk Type Edit Modal -->
-<ui-modal id="bulkTypeModal">
+<ui-modal id="bulkTypeModal" has-footer>
   <h3 slot="title">Bulk Edit Account Type</h3>
   <div slot="content" class="space-y-4">
     <div>
@@ -7822,12 +9287,12 @@
 </ui-modal>
 
 <!-- Advanced Filters Modal -->
-<ui-modal id="filtersModal">
+<ui-modal id="filtersModal" has-footer>
   <h3 slot="title">Advanced Filters</h3>
-  <div slot="content" class="space-y-6">
+  <div slot="content" class="divide-y divide-gray-200 space-y-6">
 
     <!-- Active Filters Display -->
-    <div id="activeFiltersSection" class="hidden">
+    <div id="activeFiltersSection" class="hidden pb-3 mb-3 border-b border-gray-200">
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-sm font-medium text-gray-700">Active Filters</h3>
         <!-- TODO: Move event handling into .js file -->
@@ -7837,30 +9302,40 @@
         </ui-button>
       </div>
       <div id="activeFiltersContainer" class="flex flex-wrap gap-2"></div>
-      <hr class="mt-4">
     </div>
 
     <!-- Account Name Filter -->
     <div class="space-y-3">
       <div class="space-y-3">
         <label for="filterAccountName" class="block text-sm font-medium text-gray-900">Account Name</label>
-        <input id="filterAccountName" name="filterAccountName" type="text" placeholder="Enter account name..."
-          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        <div class="relative">
+          <input id="filterAccountName" name="filterAccountName" type="text" placeholder="Enter account name..."
+            class="w-full px-3 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          <button id="clearAccountNameBtn" type="button" 
+            class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors duration-150"
+            aria-label="Clear account name filter"
+            title="Clear">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
-        <div class="flex flex-wrap gap-4">
+        <div class="flex flex-wrap gap-4 items-center">
           <label class="flex items-center">
             <input id="nameMatchTypeContains" type="radio" name="nameMatchType" value="contains" checked
-              class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+              class="w-4 h-4 border-gray-300" style="accent-color: #111827;">
             <span class="ml-2 text-sm text-gray-700">Contains</span>
           </label>
           <label class="flex items-center">
             <input id="nameMatchTypeExact" type="radio" name="nameMatchType" value="exact"
-              class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+              class="w-4 h-4 border-gray-300" style="accent-color: #111827;">
             <span class="ml-2 text-sm text-gray-700">Exact match</span>
           </label>
+          <div class="h-4 w-px bg-gray-300"></div>
           <label class="flex items-center">
             <input id="nameCaseSensitive" name="nameCaseSensitive" type="checkbox"
-              class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+              class="w-4 h-4 border-gray-300 rounded" style="accent-color: #111827;">
             <span class="ml-2 text-sm text-gray-700">Case sensitive</span>
           </label>
         </div>
@@ -7868,11 +9343,12 @@
     </div>
 
     <!-- Account Type Filter -->
-    <div class="space-y-3">
+    <div class="pt-6 space-y-3">
       <div class="flex items-center justify-between">
         <h3 class="text-sm font-medium text-gray-900">Account Type</h3>
-        <div class="flex gap-1">
+        <div class="flex items-center gap-1">
           <ui-button id="accountTypeSelectAllBtn" data-type="text" data-size="small">Select All</ui-button>
+          <div class="h-4 w-px bg-gray-300"></div>
           <ui-button id="accountTypeDeselectAllBtn" data-type="text" data-size="small">Deselect All</ui-button>
         </div>
       </div>
@@ -7884,11 +9360,12 @@
     </div>
 
     <!-- Account Subtype Filter -->
-    <div class="space-y-3">
+    <div class="pt-6 space-y-3">
       <div class="flex items-center justify-between">
         <h3 class="text-sm font-medium text-gray-900">Account Subtype</h3>
-        <div class="flex gap-1">
+        <div class="flex items-center gap-1">
           <ui-button id="accountSubtypeSelectAllBtn" data-type="text" data-size="small">Select All</ui-button>
+          <div class="h-4 w-px bg-gray-300"></div>
           <ui-button id="accountSubtypeDeselectAllBtn" data-type="text" data-size="small">Deselect All</ui-button>
         </div>
       </div>
@@ -7900,7 +9377,7 @@
     </div>
 
     <!-- Transactions Count Filter -->
-    <div class="space-y-3">
+    <div class="pt-6 space-y-3">
       <h3 class="text-sm font-medium text-gray-900">Transaction Count</h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
@@ -7917,7 +9394,7 @@
     </div>
 
     <!-- Balance Filter -->
-    <div class="space-y-3">
+    <div class="pt-6 space-y-3">
       <h3 class="text-sm font-medium text-gray-900">Balance</h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
@@ -7934,42 +9411,53 @@
     </div>
 
     <!-- Inclusion Status Filter -->
-    <div class="space-y-3">
+    <div class="pt-6 pb-0 space-y-3">
       <h3 class="text-sm font-medium text-gray-900">Include Status</h3>
       <div class="flex flex-wrap gap-4">
         <label class="flex items-center">
           <input id="inclusionFilterAll" type="radio" name="inclusionFilter" value="all" checked
-            class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+            class="w-4 h-4 border-gray-300" style="accent-color: #111827;">
           <span class="ml-2 text-sm text-gray-700">All accounts</span>
         </label>
         <label class="flex items-center">
           <input id="inclusionFilterIncluded" type="radio" name="inclusionFilter" value="included"
-            class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+            class="w-4 h-4 border-gray-300" style="accent-color: #111827;">
           <span class="ml-2 text-sm text-gray-700">Included only</span>
         </label>
         <label class="flex items-center">
           <input id="inclusionFilterExcluded" type="radio" name="inclusionFilter" value="excluded"
-            class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+            class="w-4 h-4 border-gray-300" style="accent-color: #111827;">
           <span class="ml-2 text-sm text-gray-700">Excluded only</span>
         </label>
       </div>
     </div>
   </div>
-  </div>
 
-  <div slot="footer" class="flex flex-col sm:flex-row justify-end gap-3">
+  <div slot="footer" class="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
     <!-- TODO: Move logic into .js file -->
-    <ui-button id="filtersReset" data-type="secondary" onclick="window.resetFilters && window.resetFilters()">
-      Reset Filters
+    <ui-button id="filtersResetBtn" data-type="outline" data-color="yellow">
+      Remove All Filters
     </ui-button>
     <!-- TODO: Move logic into .js file -->
-    <ui-button id="filtersApply" data-type="primary" onclick="window.applyFilters && window.applyFilters()">
+    <ui-button id="filtersApplyBtn" data-type="solid" onclick="window.applyFilters && window.applyFilters()">
       Apply Filters
     </ui-button>
   </div>
 </ui-modal>
 
 <style>
+  /* Modified filter input styling */
+  .filter-modified {
+    border-color: #eab308 !important;
+    border-width: 1px;
+    background-color: rgba(250, 204, 21, 0.05);
+  }
+
+  .filter-modified:focus {
+    outline: 2px solid #eab308;
+    outline-offset: 2px;
+  }
+
   /* Filter results summary styling */
   #filterResultsSummary {
     transition: all 0.3s ease;
@@ -8164,6 +9652,17 @@
     border-color: #3b82f6;
   }
 
+  /* Disabled form controls styling */
+  input[type="radio"]:disabled + span,
+  input[type="checkbox"]:disabled + span {
+    color: #9ca3af;
+    cursor: not-allowed;
+  }
+
+  label:has(input:disabled) {
+    cursor: not-allowed;
+  }
+
   /* Mobile specific enhancements */
   @media (max-width: 1024px) {
     .custom-checkbox-visual {
@@ -8198,365 +9697,6 @@
   }
 </style>`;
 
-  // src/components/ClickableCard.js
-  var ClickableCard = class extends HTMLElement {
-    constructor() {
-      super();
-      this.attachShadow({ mode: "open" });
-    }
-    connectedCallback() {
-      this._render();
-      this._setupEventListeners();
-    }
-    static get observedAttributes() {
-      return ["data-color", "data-width"];
-    }
-    attributeChangedCallback() {
-      if (this.shadowRoot.innerHTML) {
-        this._updateStyles();
-      }
-    }
-    _getColorClasses() {
-      const color = this.getAttribute("data-color") || "blue";
-      const colorMap = {
-        blue: {
-          border: "#93c5fd",
-          bg: "rgba(219, 234, 254, 0.3)",
-          iconBg: "#dbeafe",
-          iconBgHover: "#bfdbfe",
-          iconColor: "#2563eb",
-          textColor: "#2563eb",
-          textColorHover: "#1d4ed8",
-          decorBg: "#dbeafe"
-        },
-        green: {
-          border: "#86efac",
-          bg: "rgba(220, 252, 231, 0.3)",
-          iconBg: "#dcfce7",
-          iconBgHover: "#bbf7d0",
-          iconColor: "#16a34a",
-          textColor: "#16a34a",
-          textColorHover: "#15803d",
-          decorBg: "#dcfce7"
-        },
-        purple: {
-          border: "#c4b5fd",
-          bg: "rgba(237, 233, 254, 0.3)",
-          iconBg: "#ede9fe",
-          iconBgHover: "#ddd6fe",
-          iconColor: "#7c3aed",
-          textColor: "#7c3aed",
-          textColorHover: "#6d28d9",
-          decorBg: "#ede9fe"
-        },
-        red: {
-          border: "#fca5a5",
-          bg: "rgba(254, 226, 226, 0.3)",
-          iconBg: "#fee2e2",
-          iconBgHover: "#fecaca",
-          iconColor: "#dc2626",
-          textColor: "#dc2626",
-          textColorHover: "#b91c1c",
-          decorBg: "#fee2e2"
-        }
-      };
-      return colorMap[color] || colorMap.blue;
-    }
-    _updateStyles() {
-      const colors = this._getColorClasses();
-      const width = this.getAttribute("data-width") || "full";
-      const widthStyles = {
-        full: "width: 100%;",
-        auto: "width: auto;",
-        fixed: "width: 300px;"
-      };
-      const root = this.shadowRoot.querySelector(".card-container");
-      if (root) {
-        root.style.cssText = widthStyles[width] || widthStyles.full;
-      }
-      if (this.shadowRoot.styleSheets[0]) {
-        const sheet = this.shadowRoot.styleSheets[0];
-        const rule = sheet.cssRules[0];
-        if (rule && rule.style) {
-          rule.style.setProperty("--card-border", colors.border);
-          rule.style.setProperty("--card-bg-hover", colors.bg);
-          rule.style.setProperty("--icon-bg", colors.iconBg);
-          rule.style.setProperty("--icon-bg-hover", colors.iconBgHover);
-          rule.style.setProperty("--icon-color", colors.iconColor);
-          rule.style.setProperty("--text-color", colors.textColor);
-          rule.style.setProperty("--text-color-hover", colors.textColorHover);
-          rule.style.setProperty("--decor-bg", colors.decorBg);
-        }
-      }
-    }
-    _render() {
-      const colors = this._getColorClasses();
-      const width = this.getAttribute("data-width") || "full";
-      const widthStyles = {
-        full: "width: 100%;",
-        auto: "width: auto; min-width: 280px;",
-        fixed: "width: 300px;"
-      };
-      this.shadowRoot.innerHTML = `
-      <style>
-        :host {
-          --card-border: ${colors.border};
-          --card-bg-hover: ${colors.bg};
-          --icon-bg: ${colors.iconBg};
-          --icon-bg-hover: ${colors.iconBgHover};
-          --icon-color: ${colors.iconColor};
-          --text-color: ${colors.textColor};
-          --text-color-hover: ${colors.textColorHover};
-          --decor-bg: ${colors.decorBg};
-          display: block;
-        }
-
-        .card-container {
-          ${widthStyles[width] || widthStyles.full}
-          cursor: pointer;
-          user-select: none;
-        }
-
-        @media (min-width: 1024px) {
-          .card-container {
-            flex: 1;
-          }
-        }
-
-        .card-inner {
-          height: 100%;
-          padding: 1rem;
-          border: 2px solid #e5e7eb;
-          border-radius: 0.75rem;
-          box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-          background-color: white;
-          position: relative;
-          overflow: hidden;
-          transition: all 300ms;
-        }
-
-        @media (min-width: 640px) {
-          .card-inner {
-            padding: 1.5rem;
-          }
-        }
-
-        @media (min-width: 768px) {
-          .card-inner {
-            padding: 2rem;
-          }
-        }
-
-        .card-container:hover .card-inner {
-          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-          border-color: var(--card-border);
-          background-color: var(--card-bg-hover);
-        }
-
-        .decoration {
-          position: absolute;
-          top: 0;
-          right: 0;
-          width: 5rem;
-          height: 5rem;
-          background-color: var(--decor-bg);
-          border-radius: 9999px;
-          transform: translateY(-2.5rem) translateX(2.5rem);
-          opacity: 0.5;
-          transition: opacity 300ms;
-        }
-
-        .card-container:hover .decoration {
-          opacity: 0.75;
-        }
-
-        .card-content {
-          position: relative;
-          z-index: 10;
-        }
-
-        .card-header {
-          display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          margin-bottom: 1rem;
-        }
-
-        .icon-wrapper {
-          width: 2.5rem;
-          height: 2.5rem;
-          background-color: var(--icon-bg);
-          border-radius: 0.5rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: background-color 300ms;
-        }
-
-        @media (min-width: 640px) {
-          .icon-wrapper {
-            width: 3rem;
-            height: 3rem;
-          }
-        }
-
-        .card-container:hover .icon-wrapper {
-          background-color: var(--icon-bg-hover);
-        }
-
-        ::slotted([slot="icon"]) {
-          width: 1.25rem;
-          height: 1.25rem;
-          color: var(--icon-color);
-        }
-
-        @media (min-width: 640px) {
-          ::slotted([slot="icon"]) {
-            width: 1.5rem;
-            height: 1.5rem;
-          }
-        }
-
-        .arrow-wrapper {
-          color: var(--text-color);
-          transition: color 300ms;
-        }
-
-        .card-container:hover .arrow-wrapper {
-          color: var(--text-color-hover);
-        }
-
-        ::slotted([slot="arrow"]) {
-          width: 1.25rem;
-          height: 1.25rem;
-        }
-
-        .card-title {
-          margin-bottom: 0.75rem;
-        }
-
-        ::slotted([slot="title"]) {
-          font-size: 1.125rem;
-          font-weight: 600;
-          color: #111827;
-          margin: 0;
-          line-height: 1.4;
-        }
-
-        @media (min-width: 640px) {
-          ::slotted([slot="title"]) {
-            font-size: 1.25rem;
-          }
-        }
-
-        @media (min-width: 768px) {
-          ::slotted([slot="title"]) {
-            font-size: 1.5rem;
-          }
-        }
-
-        .card-description {
-          margin-bottom: 1.5rem;
-          min-height: 3rem;
-        }
-
-        ::slotted([slot="description"]) {
-          color: #4b5563;
-          font-size: 0.875rem;
-          line-height: 1.6;
-          margin: 0;
-        }
-
-        @media (min-width: 640px) {
-          ::slotted([slot="description"]) {
-            font-size: 1rem;
-          }
-        }
-
-        .card-action {
-          display: flex;
-          align-items: center;
-        }
-
-        ::slotted([slot="action"]) {
-          color: var(--text-color);
-          font-weight: 600;
-          font-size: 0.875rem;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          transition: color 300ms;
-          margin: 0;
-        }
-
-        @media (min-width: 640px) {
-          ::slotted([slot="action"]) {
-            font-size: 1rem;
-          }
-        }
-
-        .card-container:hover ::slotted([slot="action"]) {
-          color: var(--text-color-hover);
-        }
-
-        .action-arrow {
-          width: 1rem;
-          height: 1rem;
-          transition: transform 300ms;
-        }
-
-        .card-container:hover .action-arrow {
-          transform: translateX(0.25rem);
-        }
-      </style>
-
-      <div class="card-container">
-        <div class="card-inner">
-          <div class="decoration"></div>
-          
-          <div class="card-content">
-            <div class="card-header">
-              <div class="icon-wrapper">
-                <slot name="icon"></slot>
-              </div>
-              <div class="arrow-wrapper">
-                <slot name="arrow"></slot>
-              </div>
-            </div>
-
-            <div class="card-title">
-              <slot name="title"></slot>
-            </div>
-
-            <div class="card-description">
-              <slot name="description"></slot>
-            </div>
-
-            <div class="card-action">
-              <slot name="action"></slot>
-              <svg class="action-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-    }
-    _setupEventListeners() {
-      const container = this.shadowRoot.querySelector(".card-container");
-      container.addEventListener("click", () => {
-        this.dispatchEvent(new CustomEvent("card-click", {
-          bubbles: true,
-          composed: true
-        }));
-      });
-    }
-  };
-  if (!customElements.get("clickable-card")) {
-    customElements.define("clickable-card", ClickableCard);
-  }
-
   // src/views/MethodSelect/method.js
   function initMethodSelectView() {
     renderPageLayout({
@@ -8570,8 +9710,8 @@
         containerId: "pageHeader"
       }
     });
-    const totalCount = Object.keys(state_default.accounts).length;
-    const selectedCount = Object.values(state_default.accounts).filter((acc) => acc.included).length;
+    const totalCount = state_default.accounts.length();
+    const selectedCount = state_default.accounts._accounts.filter((acc) => acc.included).length;
     document.getElementById("totalCountDisplay").textContent = totalCount;
     document.getElementById("filesCountDisplay").textContent = selectedCount;
     document.getElementById("manualFileCount").textContent = selectedCount;
@@ -8587,7 +9727,7 @@
   // src/views/MethodSelect/method.html
   var method_default = '<div id="pageLayout"></div>\n\n<!-- Summary Counts -->\n<div class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 md:gap-10 \n          bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 md:p-8 \n          border border-blue-100 w-full max-w-2xl mx-auto shadow-sm mb-12">\n\n  <div class="text-center">\n    <div class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-500" id="totalCountDisplay">0</div>\n    <div class="text-gray-500 text-xs sm:text-sm md:text-base font-medium">Total Accounts</div>\n  </div>\n\n  <div class="hidden sm:block w-px h-12 bg-gray-300"></div>\n  <div class="sm:hidden w-full h-px bg-gray-300"></div>\n\n  <div class="text-center">\n    <div class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-green-600" id="filesCountDisplay">0</div>\n    <div class="text-gray-600 text-xs sm:text-sm md:text-base font-medium">Accounts To Migrate</div>\n  </div>\n</div>\n\n<!-- Migration Options -->\n<div class="flex flex-col lg:flex-row gap-4 sm:gap-6 md:gap-8 w-full max-w-5xl mx-auto">\n\n  <!-- Manual Import -->\n  <clickable-card id="manualImportCard" data-color="blue" data-width="full">\n    <svg slot="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n        d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" />\n    </svg>\n    <svg slot="arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />\n    </svg>\n    <h3 slot="title">Manual Import</h3>\n    <p slot="description">\n      Download <span id="manualFileCount" class="font-semibold text-blue-600">0</span> CSV <span id="manualFileLabel">files</span> and upload them\n      into Monarch Money yourself, one by one.\n    </p>\n    <span slot="action">Select Manual Import</span>\n  </clickable-card>\n\n  <!-- Auto Import -->\n  <clickable-card id="autoImportCard" data-color="green" data-width="full">\n    <svg slot="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />\n    </svg>\n    <svg slot="arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />\n    </svg>\n    <h3 slot="title">Auto Import</h3>\n    <p slot="description">\n      Connect your Monarch Money account and automatically import your selected accounts.\n    </p>\n    <span slot="action">Select Auto Import</span>\n  </clickable-card>\n\n</div>';
 
-  // src/views/ManualInstructions/manualInstructions.js
+  // src/views/ManualInstructions/manualInstructionsData.js
   var import_jszip2 = __toESM(require_jszip_min(), 1);
 
   // shared/generateCsv.js
@@ -8595,6 +9735,32 @@
     const headers = `"Date","Merchant","Category","Account","Original Statement","Notes","Amount","Tags"`;
     const rows = transactions.map((tx) => `"${tx.Date}","${tx.Merchant}","${tx.Category}","${accountName}","","${tx.Notes}","${tx.Amount}","${tx.Tags}"`);
     return [headers, ...rows].join("\n");
+  }
+
+  // src/views/ManualInstructions/manualInstructionsData.js
+  async function generateAccountsZip({ maxRowsPerFile = 1e3 } = {}) {
+    const includedAccounts = state_default.accounts._accounts.filter((acc) => acc.included);
+    const zip = new import_jszip2.default();
+    includedAccounts.forEach((account) => {
+      const safeName = (account.current.name || "").replace(/[\\/:*?"<>|]/g, "_");
+      const transactions = account.transactions || [];
+      const total = transactions.length;
+      if (total <= maxRowsPerFile) {
+        const csv = generateCSV(account.current.name, transactions);
+        zip.file(`${safeName}.csv`, csv);
+      } else {
+        const chunks = Math.ceil(total / maxRowsPerFile);
+        for (let i = 0; i < chunks; i++) {
+          const start = i * maxRowsPerFile;
+          const end = start + maxRowsPerFile;
+          const chunk = transactions.slice(start, end);
+          const chunkCsv = generateCSV(account.current.name, chunk);
+          zip.file(`${safeName}_part${i + 1}.csv`, chunkCsv);
+        }
+      }
+    });
+    const content = await zip.generateAsync({ type: "blob" });
+    return content;
   }
 
   // src/views/ManualInstructions/manualInstructions.js
@@ -8612,43 +9778,20 @@
     });
     const downloadBtn = document.getElementById("downloadBtn");
     const switchBtn = document.getElementById("switchToAuto");
-    const includedAccounts = Object.values(state_default.accounts).filter((acc) => acc.included);
     downloadBtn.addEventListener("click", async (e) => {
       e.preventDefault();
-      const zip = new import_jszip2.default();
-      const MAX_ROWS_PER_FILE = 1e3;
-      includedAccounts.forEach((account) => {
-        const safeName = account.name.replace(/[\\/:*?"<>|]/g, "_");
-        const transactions = account.transactions;
-        const total = transactions.length;
-        if (total <= MAX_ROWS_PER_FILE) {
-          const csv = generateCSV(account.name, transactions);
-          zip.file(`${safeName}.csv`, csv);
-        } else {
-          const chunks = Math.ceil(total / MAX_ROWS_PER_FILE);
-          for (let i = 0; i < chunks; i++) {
-            const start = i * MAX_ROWS_PER_FILE;
-            const end = start + MAX_ROWS_PER_FILE;
-            const chunk = transactions.slice(start, end);
-            const chunkCsv = generateCSV(account.name, chunk);
-            zip.file(`${safeName}_part${i + 1}.csv`, chunkCsv);
-          }
-        }
-      });
       try {
-        const content = await zip.generateAsync({ type: "blob" });
+        const content = await generateAccountsZip();
         const downloadLink = document.createElement("a");
         downloadLink.href = URL.createObjectURL(content);
         downloadLink.download = "accounts_export.zip";
         downloadLink.click();
-      } catch (e2) {
-        console.error("\u274C ZIP generation failed", e2);
+      } catch (err) {
+        console.error("\u274C ZIP generation failed", err);
         alert("Failed to generate ZIP file.");
       }
     });
-    switchBtn.addEventListener("click", () => {
-      navigate("/login");
-    });
+    switchBtn.addEventListener("click", () => navigate("/login"));
   }
 
   // src/views/ManualInstructions/manualInstructions.html
@@ -8973,28 +10116,76 @@
     }
   }
 
-  // src/utils/state.js
-  function patchState(target, updates) {
-    if (!target || typeof target !== "object")
-      throw new Error("Target must be an object");
-    Object.entries(updates).forEach(([key, value]) => {
-      target[key] = value;
+  // src/views/MonarchCredentials/monarchCredentialsData.js
+  function initCredentials() {
+    const creds = state_default.credentials;
+    const email = sessionStorage.getItem("monarch_email");
+    const encryptedPassword = sessionStorage.getItem("monarch_pwd_enc");
+    const token = sessionStorage.getItem("monarch_token");
+    const uuid = sessionStorage.getItem("monarch_uuid");
+    state_default.setCredentials({
+      email: creds.email || email,
+      encryptedPassword: creds.encryptedPassword || encryptedPassword,
+      apiToken: creds.apiToken || token,
+      deviceUuid: creds.deviceUuid || uuid,
+      remember: false
     });
+    if (!creds.deviceUuid || creds.deviceUuid === "") {
+      creds.deviceUuid = v4_default();
+      sessionStorage.setItem("monarch_uuid", creds.deviceUuid);
+    }
+    return { creds };
   }
-  function clearState(target) {
-    if (!target || typeof target !== "object")
-      throw new Error("Target must be an object");
-    Object.keys(target).forEach((key) => {
-      const value = target[key];
-      if (Array.isArray(value))
-        target[key] = [];
-      else if (typeof value === "object" && value !== null)
-        target[key] = {};
-      else if (typeof value === "boolean")
-        target[key] = false;
-      else
-        target[key] = "";
-    });
+  async function attemptLogin({ emailInput, passwordInput, creds, UI }) {
+    const email = emailInput.trim() || sessionStorage.getItem("monarch_email");
+    const plaintextPassword = passwordInput.trim();
+    let encryptedPassword = creds.encryptedPassword || sessionStorage.getItem("monarch_pwd_enc");
+    const uuid = creds.deviceUuid || sessionStorage.getItem("monarch_uuid");
+    if (!encryptedPassword && plaintextPassword) {
+      try {
+        encryptedPassword = await encryptPassword(email, plaintextPassword);
+      } catch (err) {
+        return { error: "Failed to encrypt password." };
+      }
+    }
+    try {
+      const response = await monarchApi.login(email, encryptedPassword, uuid);
+      if (response?.otpRequired) {
+        state_default.saveToLocalStorage({
+          email,
+          encryptedPassword,
+          uuid,
+          remember: creds.remember,
+          tempForOtp: !creds.remember
+        });
+        state_default.setCredentials({ awaitingOtp: true });
+        return { otpRequired: true };
+      }
+      if (response?.token) {
+        state_default.setCredentials({
+          email,
+          encryptedPassword,
+          otp: "",
+          remember: UI.rememberCheckbox.checked,
+          apiToken: response.token,
+          awaitingOtp: false
+        });
+        if (creds.remember) {
+          state_default.saveToLocalStorage({ email, encryptedPassword, token: response.token, remember: true });
+        }
+        return { token: response.token };
+      }
+      const apiError = response?.detail || response?.error || "Unexpected login response.";
+      return { error: apiError };
+    } catch (err) {
+      return { error: err.message || String(err) };
+    }
+  }
+  function clearCredentialsAndReset() {
+    state_default.clearLocalStorage();
+    state_default.credentials.clear();
+    state_default.credentials.deviceUuid = v4_default();
+    state_default.saveToLocalStorage({ uuid: state_default.credentials.deviceUuid });
   }
 
   // src/views/MonarchCredentials/monarchCredentials.js
@@ -9030,23 +10221,11 @@
       securityNoteMsg: $("securityNote"),
       securityNoteIcon: $("securityNoteIcon")
     };
-    const { credentials: creds } = state_default;
-    const { token, email, encryptedPassword, uuid, remember } = getLocalStorage();
-    patchState(creds, {
-      email,
-      encryptedPassword,
-      apiToken: creds.apiToken || token,
-      deviceUuid: creds.deviceUuid || uuid,
-      remember
-    });
-    if (!creds.deviceUuid || creds.deviceUuid === "") {
-      creds.deviceUuid = v4_default();
-      saveToLocalStorage({ uuid: creds.deviceUuid });
-    }
-    if (email && encryptedPassword) {
-      UI.emailInput.value = email;
+    const { creds } = initCredentials(state_default);
+    if (creds.email && creds.encryptedPassword) {
+      UI.emailInput.value = creds.email;
       UI.passwordInput.value = "";
-      UI.rememberedEmail.textContent = `Signed in as ${email}`;
+      UI.rememberedEmail.textContent = `Signed in as ${creds.email}`;
       UI.rememberCheckbox.checked = creds.remember;
       toggleDisabled(UI.emailInput, true);
       toggleDisabled(UI.passwordInput, true);
@@ -9097,57 +10276,25 @@
       UI.connectBtn.click();
     }
     async function handleLoginAttempt() {
-      const storage = getLocalStorage();
-      const email2 = UI.emailInput.value.trim() || storage.email;
-      const plaintextPassword = UI.passwordInput.value.trim();
-      let encryptedPassword2 = creds.encryptedPassword || storage.encryptedPassword;
-      const uuid2 = creds.deviceUuid || storage.uuid;
-      if (!encryptedPassword2 && plaintextPassword) {
-        try {
-          encryptedPassword2 = await encryptPassword(email2, plaintextPassword);
-        } catch (err) {
-          showError("Failed to encrypt password.");
-          return;
-        }
-      }
       toggleDisabled(UI.connectBtn, true);
       UI.connectBtn.textContent = "Connecting\u2026";
       toggleElementVisibility(UI.errorContainer, false);
-      try {
-        const response = await monarchApi.login(email2, encryptedPassword2, uuid2);
-        if (response?.otpRequired) {
-          saveToLocalStorage({
-            email: email2,
-            encryptedPassword: encryptedPassword2,
-            uuid: uuid2,
-            remember: creds.remember,
-            tempForOtp: !creds.remember
-          });
-          creds.awaitingOtp = true;
-          return navigate("/otp");
-        }
-        if (response?.token) {
-          patchState(creds, {
-            email: email2,
-            encryptedPassword: encryptedPassword2,
-            otp: "",
-            remember: UI.rememberCheckbox.checked,
-            apiToken: response.token,
-            awaitingOtp: false
-          });
-          if (creds.remember) {
-            saveToLocalStorage({ email: email2, encryptedPassword: encryptedPassword2, token: response.token, remember: true });
-          }
-          return navigate("/complete");
-        }
-        const apiError = response?.detail || response?.error || "Unexpected login response.";
-        throw new Error(apiError);
-      } catch (err) {
-        showError(err.message);
-      } finally {
+      const result = await attemptLogin({
+        emailInput: UI.emailInput.value,
+        passwordInput: UI.passwordInput.value,
+        creds,
+        UI
+      });
+      if (result.error) {
+        showError(result.error);
         toggleDisabled(UI.connectBtn, false);
         UI.connectBtn.textContent = "Connect to Monarch";
+        return;
       }
+      if (result.otpRequired)
+        return navigate("/otp");
+      if (result.token)
+        return navigate("/complete");
     }
     async function onClickConnect(e) {
       e.preventDefault();
@@ -9155,10 +10302,7 @@
     }
     function onClickClearCredentials(e) {
       e.preventDefault();
-      clearStorage();
-      clearState(creds);
-      creds.deviceUuid = v4_default();
-      saveToLocalStorage({ uuid: creds.deviceUuid });
+      clearCredentialsAndReset(creds);
       UI.emailInput.value = "";
       UI.passwordInput.value = "";
       UI.rememberCheckbox.checked = false;
@@ -9355,6 +10499,43 @@
   }
 </style>`;
 
+  // src/views/MonarchOtp/monarchOtpData.js
+  function initCredentialsFromStorage(state) {
+    const { credentials } = state;
+    const email = sessionStorage.getItem("monarch_email");
+    const encryptedPassword = sessionStorage.getItem("monarch_pwd_enc");
+    const uuid = sessionStorage.getItem("monarch_uuid");
+    state.setCredentials({
+      email: credentials.email || email,
+      encryptedPassword: credentials.encryptedPassword || encryptedPassword,
+      deviceUuid: credentials.deviceUuid || uuid,
+      remember: false
+    });
+    return { email, encryptedPassword, uuid };
+  }
+  async function submitOtp(credentials) {
+    const response = await monarchApi.login(credentials.email, credentials.encryptedPassword, credentials.deviceUuid, credentials.otp);
+    if (response?.token) {
+      state_default.setCredentials({
+        apiToken: response.token,
+        awaitingOtp: false
+      });
+      sessionStorage.setItem("monarch_email", credentials.email);
+      sessionStorage.setItem("monarch_pwd_enc", credentials.encryptedPassword);
+      sessionStorage.setItem("monarch_uuid", credentials.deviceUuid);
+      sessionStorage.setItem("monarch_token", response.token);
+      return { success: true };
+    }
+    return { success: false };
+  }
+  function clearTempCredentialsIfNeeded() {
+    sessionStorage.removeItem("monarch_email");
+    sessionStorage.removeItem("monarch_pwd_enc");
+    sessionStorage.removeItem("monarch_uuid");
+    sessionStorage.removeItem("monarch_token");
+    sessionStorage.removeItem("monarch_otp");
+  }
+
   // src/views/MonarchOtp/monarchOtp.js
   function initMonarchOtpView() {
     renderPageLayout({
@@ -9376,16 +10557,7 @@
       backBtn: $("backBtn")
     };
     const { credentials } = state_default;
-    const storage = getLocalStorage();
-    const { email, encryptedPassword, uuid, remember, tempForOtp } = storage;
-    patchState(credentials, {
-      email: credentials.email || email,
-      encryptedPassword: credentials.encryptedPassword || encryptedPassword,
-      deviceUuid: credentials.deviceUuid || uuid,
-      remember
-    });
-    if (tempForOtp && !remember) {
-    }
+    const { storage, tempForOtp } = initCredentialsFromStorage(state_default);
     if (!credentials.email || !credentials.encryptedPassword) {
       console.warn("Missing credentials for OTP flow, redirecting to login");
       return navigate("/credentials", true);
@@ -9396,23 +10568,8 @@
       toggleElementVisibility(UI.otpError, false);
       credentials.otp = UI.otpInput.value;
       try {
-        const response = await monarchApi.login(credentials.email, credentials.encryptedPassword, credentials.deviceUuid, credentials.otp);
-        if (response?.token) {
-          patchState(credentials, {
-            apiToken: response.token,
-            awaitingOtp: false
-          });
-          if (credentials.remember) {
-            saveToLocalStorage({
-              email: credentials.email,
-              encryptedPassword: credentials.encryptedPassword,
-              uuid: credentials.deviceUuid,
-              token: response.token,
-              remember: true
-            });
-          } else {
-            clearStorage();
-          }
+        const result = await submitOtp(credentials);
+        if (result.success) {
           console.groupEnd("MonarchOtpView");
           return navigate("/complete", true);
         }
@@ -9425,10 +10582,7 @@
       }
     }
     function onClickBack() {
-      const storage2 = getLocalStorage();
-      if (storage2.tempForOtp && !storage2.remember) {
-        clearStorage();
-      }
+      clearTempCredentialsIfNeeded();
       goBack();
     }
     function onOtpInput() {
@@ -9509,6 +10663,89 @@
 
 </div>`;
 
+  // src/views/MonarchComplete/monarchCompleteData.js
+  function ensurePendingStatusForAccounts(state) {
+    state.accounts.accounts.forEach((account) => {
+      if (!account.status) {
+        account.status = "pending";
+      }
+    });
+  }
+  function getIncludedAccountsToProcess(state) {
+    return state.accounts.accounts.filter((account) => account.included && account.status !== "completed").map((account) => ({
+      id: account.id,
+      name: account.current.name,
+      modifiedName: account.current.name,
+      type: account.current.type,
+      subtype: account.current.subtype,
+      transactions: account.transactions,
+      balance: account.balance,
+      included: account.included,
+      status: account.status
+    }));
+  }
+  function splitIntoBatches(allAccounts, batchSize = 5) {
+    const batches = [];
+    for (let i = 0; i < allAccounts.length; i += batchSize) {
+      batches.push(allAccounts.slice(i, i + batchSize));
+    }
+    return batches;
+  }
+  async function createAccountsBatch(token, batch) {
+    return await monarchApi.createAccounts(token, batch);
+  }
+  function markBatchProcessing(state, batch) {
+    batch.forEach((batchAccount) => {
+      const account = state.accounts.accounts.find((acc) => acc.current.name === batchAccount.modifiedName);
+      if (account)
+        account.status = "processing";
+    });
+  }
+  function markBatchFailedDueToApi(state, batch, errorMessage) {
+    batch.forEach((batchAccount) => {
+      const account = state.accounts.accounts.find((acc) => acc.current.name === batchAccount.modifiedName);
+      if (account) {
+        account.status = "failed";
+        account.errorMessage = errorMessage;
+      }
+    });
+  }
+  function markUnprocessedAsFailed(state, batch) {
+    batch.forEach((batchAccount) => {
+      const account = state.accounts.accounts.find((acc) => acc.current.name === batchAccount.modifiedName);
+      if (account && account.status === "processing") {
+        account.status = "failed";
+        account.errorMessage = "Account not processed by server";
+      }
+    });
+  }
+  function handleCreateResponse(state, batch, response) {
+    if (response.failed && response.failed.length > 0) {
+      response.failed.forEach((result) => {
+        const matchingBatchAccount = batch.find((acc) => acc.modifiedName === result.name);
+        if (matchingBatchAccount) {
+          const account = state.accounts.accounts.find((acc) => acc.current.name === matchingBatchAccount.modifiedName);
+          if (account) {
+            account.status = "failed";
+            account.errorMessage = result.error || "Account creation failed";
+          }
+        }
+      });
+    }
+    if (response.success && response.success.length > 0) {
+      response.success.forEach((result) => {
+        const matchingBatchAccount = batch.find((acc) => acc.modifiedName === result.name);
+        if (matchingBatchAccount) {
+          const account = state.accounts.accounts.find((acc) => acc.current.name === matchingBatchAccount.modifiedName);
+          if (account) {
+            account.status = "uploading";
+            account.sessionKeys = result.sessionKeys || [];
+          }
+        }
+      });
+    }
+  }
+
   // src/views/MonarchComplete/monarchComplete.js
   function initMonarchCompleteView() {
     renderPageLayout({
@@ -9539,11 +10776,7 @@
     }
     initializeProcessing();
     function initializeProcessing() {
-      Object.keys(state_default.accounts).forEach((accountName) => {
-        if (!state_default.accounts[accountName].status) {
-          state_default.accounts[accountName].status = "pending";
-        }
-      });
+      ensurePendingStatusForAccounts(state_default);
       updateStatusOverview();
       updateAccountList();
       updateActionButtons();
@@ -9554,10 +10787,10 @@
       const token = state_default.credentials.apiToken;
       if (!token) {
         console.error("No API token available");
-        Object.keys(state_default.accounts).forEach((accountName) => {
-          if (state_default.accounts[accountName].included) {
-            state_default.accounts[accountName].status = "failed";
-            state_default.accounts[accountName].errorMessage = "Authentication required. Please login again.";
+        state_default.accounts._accounts.forEach((account) => {
+          if (account.included) {
+            account.status = "failed";
+            account.errorMessage = "Authentication required. Please login again.";
           }
         });
         updateStatusOverview();
@@ -9565,24 +10798,17 @@
         updateActionButtons();
         return;
       }
-      const allAccountsToProcess = Object.entries(state_default.accounts).filter(([_, account]) => account.included && account.status !== "completed").map(([accountName, account]) => ({ accountName, ...account }));
+      const allAccountsToProcess = getIncludedAccountsToProcess(state_default);
       if (allAccountsToProcess.length === 0) {
         console.log("No accounts to process");
         updateStatusOverview();
         updateActionButtons();
         return;
       }
-      const batches = [];
-      for (let i = 0; i < allAccountsToProcess.length; i += BATCH_SIZE) {
-        batches.push(allAccountsToProcess.slice(i, i + BATCH_SIZE));
-      }
+      const batches = splitIntoBatches(allAccountsToProcess, BATCH_SIZE);
       for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
         const batch = batches[batchIndex];
-        batch.forEach((account) => {
-          if (state_default.accounts[account.accountName]) {
-            state_default.accounts[account.accountName].status = "processing";
-          }
-        });
+        markBatchProcessing(state_default, batch);
         updateStatusOverview();
         updateAccountList();
         await processBatch(token, batch);
@@ -9596,60 +10822,39 @@
     }
     async function processBatch(token, batch) {
       try {
-        const response = await monarchApi.createAccounts(token, batch);
-        if (response.success || response.failed) {
-          if (response.failed && response.failed.length > 0) {
-            response.failed.forEach((result) => {
-              const matchingAccount = batch.find((acc) => acc.name === result.name || acc.modifiedName === result.name);
-              if (matchingAccount && state_default.accounts[matchingAccount.accountName]) {
-                state_default.accounts[matchingAccount.accountName].status = "failed";
-                state_default.accounts[matchingAccount.accountName].errorMessage = result.error || "Account creation failed";
-              }
-            });
-          }
+        const response = await createAccountsBatch(token, batch);
+        if (response && (response.success || response.failed)) {
+          handleCreateResponse(state_default, batch, response);
           if (response.success && response.success.length > 0) {
-            response.success.forEach((result) => {
-              const matchingAccount = batch.find((acc) => acc.name === result.name || acc.modifiedName === result.name);
-              if (matchingAccount && state_default.accounts[matchingAccount.accountName]) {
-                state_default.accounts[matchingAccount.accountName].status = "uploading";
-                state_default.accounts[matchingAccount.accountName].sessionKeys = result.sessionKeys || [];
-              }
-            });
             updateStatusOverview();
             updateAccountList();
             await Promise.all(response.success.map(async (result) => {
-              const matchingAccount = batch.find((acc) => acc.name === result.name || acc.modifiedName === result.name);
-              if (matchingAccount && state_default.accounts[matchingAccount.accountName] && result.sessionKeys) {
-                try {
-                  await monitorUploadStatus(token, matchingAccount.accountName, result.sessionKeys);
-                  state_default.accounts[matchingAccount.accountName].status = "completed";
-                } catch (error) {
-                  state_default.accounts[matchingAccount.accountName].status = "failed";
-                  state_default.accounts[matchingAccount.accountName].errorMessage = error.message || "Transaction upload failed";
+              const matchingBatchAccount = batch.find((acc) => acc.modifiedName === result.name);
+              if (matchingBatchAccount && result.sessionKeys) {
+                const account = state_default.accounts._accounts.find((acc) => acc.current.name === matchingBatchAccount.modifiedName);
+                if (account) {
+                  try {
+                    await monitorUploadStatus(token, matchingBatchAccount.modifiedName, result.sessionKeys);
+                    account.status = "completed";
+                  } catch (error) {
+                    account.status = "failed";
+                    account.errorMessage = error.message || "Transaction upload failed";
+                  }
                 }
               }
             }));
           }
-          batch.forEach((account) => {
-            if (state_default.accounts[account.accountName] && state_default.accounts[account.accountName].status === "processing") {
-              tate.accounts[account.accountName].status = "failed";
-              state_default.accounts[account.accountName].errorMessage = "Account not processed by server";
-            }
-          });
+          markUnprocessedAsFailed(state_default, batch);
         } else {
           const errorMessage = response.error || "Failed to create accounts in Monarch Money";
-          batch.forEach((account) => {
-            if (state_default.accounts[account.accountName]) {
-              state_default.accounts[account.accountName].status = "failed";
-              state_default.accounts[account.accountName].errorMessage = errorMessage;
-            }
-          });
+          markBatchFailedDueToApi(state_default, batch, errorMessage);
         }
       } catch (error) {
-        batch.forEach((account) => {
-          if (state_default.accounts[account.accountName]) {
-            state_default.accounts[account.accountName].status = "failed";
-            state_default.accounts[account.accountName].errorMessage = "Network error. Please check your connection and try again.";
+        batch.forEach((batchAccount) => {
+          const account = state_default.accounts._accounts.find((acc) => acc.current.name === batchAccount.modifiedName);
+          if (account) {
+            account.status = "failed";
+            account.errorMessage = "Network error. Please check your connection and try again.";
           }
         });
       }
@@ -9685,8 +10890,8 @@
       }));
     }
     function updateStatusOverview() {
-      const accounts = state_default.accounts || {};
-      const includedAccounts = Object.values(accounts).filter((acc) => acc.included);
+      const accounts = state_default.accounts?._accounts || [];
+      const includedAccounts = accounts.filter((acc) => acc.included);
       const totalAccounts = includedAccounts.length;
       const completedAccounts = includedAccounts.filter((acc) => acc.status === "completed").length;
       const failedAccounts = includedAccounts.filter((acc) => acc.status === "failed").length;
@@ -9732,9 +10937,9 @@
     function updateAccountList() {
       if (!accountList)
         return;
-      const accounts = state_default.accounts || {};
+      const accounts = state_default.accounts?._accounts || [];
       accountList.innerHTML = "";
-      Object.entries(accounts).forEach(([accountId, account]) => {
+      accounts.forEach((account) => {
         if (!account.included)
           return;
         const accountItem = document.createElement("div");
@@ -9769,24 +10974,24 @@
             statusText = "Pending";
         }
         let accountTypeDisplay = "Unknown Type";
-        if (account.type) {
-          const typeInfo = getAccountTypeByName(account.type);
+        if (account.current.type) {
+          const typeInfo = getAccountTypeByName(account.current.type);
           if (typeInfo) {
             accountTypeDisplay = typeInfo.typeDisplay || typeInfo.displayName || typeInfo.display;
-            if (account.subtype) {
-              const subtypeInfo = getSubtypeByName(account.type, account.subtype);
+            if (account.current.subtype) {
+              const subtypeInfo = getSubtypeByName(account.current.type, account.current.subtype);
               if (subtypeInfo) {
                 accountTypeDisplay = subtypeInfo.display || subtypeInfo.displayName;
               }
             }
           }
         } else {
-          console.log(`Account ${accountId} has no type property`);
+          console.log(`Account ${account.id} has no type property`);
         }
         accountItem.innerHTML = `
         <div class="flex items-start justify-between mb-3">
           <div class="flex-1 min-w-0 pr-4">
-            <div class="font-medium text-gray-900 mb-1">${account.modifiedName || account.account_name || account.name || "Unknown Account"}</div>
+            <div class="font-medium text-gray-900 mb-1">${account.current.name || "Unknown Account"}</div>
             <div class="text-sm text-gray-500">${accountTypeDisplay}</div>
             ${account.monarchAccountId ? `<div class="text-xs text-gray-400 mt-1">Monarch ID: ${account.monarchAccountId}</div>` : ""}
           </div>
@@ -9805,18 +11010,18 @@
       if (!actionButtonsContainer)
         return;
       const accounts = state_default.accounts || {};
-      const failedAccounts = Object.values(accounts).filter((acc) => acc.included && acc.status === "failed");
-      const completedAccounts = Object.values(accounts).filter((acc) => acc.included && acc.status === "completed");
+      const failedAccounts = accounts.filter((acc) => acc.included && acc.status === "failed");
+      const completedAccounts = accounts.filter((acc) => acc.included && acc.status === "completed");
       document.getElementById("retryFailedBtn").hidden = failedAccounts.length === 0;
       document.getElementById("visitMonarchBtn").hidden = completedAccounts.length <= 0;
     }
     function retryFailedAccounts() {
-      const failedAccounts = Object.entries(state_default.accounts).filter(([accountName, acc]) => acc.included && acc.status === "failed");
+      const failedAccounts = state_default.accounts._accounts.filter((acc) => acc.included && acc.status === "failed");
       if (failedAccounts.length === 0)
         return;
-      failedAccounts.forEach(([accountName, account]) => {
-        state_default.accounts[accountName].status = "pending";
-        delete state_default.accounts[accountName].errorMessage;
+      failedAccounts.forEach((account) => {
+        account.status = "pending";
+        delete account.errorMessage;
       });
       updateStatusOverview();
       updateAccountList();
@@ -9997,6 +11202,101 @@
   // src/views/YnabOauthCallback/ynabOauthCallback.html
   var ynabOauthCallback_default = '<div id="pageLayout"></div>\n\n<!-- Content -->\n<div class="flex flex-col items-center justify-center text-center space-y-6 py-12">\n\n  <!-- Loading Spinner (shown by default) -->\n  <div id="loadingSpinner" class="relative w-20 h-20">\n    <div class="absolute inset-0 border-4 border-blue-200 rounded-full"></div>\n    <div class="absolute inset-0 border-4 border-transparent border-t-blue-600 rounded-full animate-spin"></div>\n  </div>\n\n  <!-- Status Icons (hidden by default) -->\n  <div id="successIcon" hidden\n    class="flex items-center justify-center w-20 h-20 rounded-full bg-green-100 text-green-600">\n    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />\n    </svg>\n  </div>\n\n  <div id="errorIcon" hidden class="flex items-center justify-center w-20 h-20 rounded-full bg-red-100 text-red-600">\n    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />\n    </svg>\n  </div>\n\n  <!-- Status Message -->\n  <div class="space-y-2">\n    <h2 id="statusTitle" class="text-2xl sm:text-3xl font-bold text-gray-900">\n      Placeholder Title\n    </h2>\n    <p id="statusMessage" class="text-base sm:text-lg text-gray-600 max-w-md">\n      Placeholder message\n    </p>\n  </div>\n\n  <!-- Manual Redirect Button (hidden by default) -->\n  <div id="manualRedirectContainer" hidden>\n    <ui-button id="continueBtn" data-type="solid" data-size="large" data-color="blue">\n      Placeholder btn\n    </ui-button>\n  </div>\n</div>';
 
+  // src/views/DataManagement/dataManagementData.js
+  function getStateSummary() {
+    const accountCount = state_default.hasAccounts() ? state_default.getAccountsSingleton().length() : 0;
+    const hasYnabAuth = !!sessionStorage.getItem("ynab_access_token");
+    const hasMonarchAuth = !!state_default.credentials?.apiToken;
+    const hasData = accountCount > 0 || hasYnabAuth || hasMonarchAuth;
+    return { accountCount, hasYnabAuth, hasMonarchAuth, hasData };
+  }
+  function getSessionStorageSummary() {
+    const hasYnabToken = !!sessionStorage.getItem("ynab_access_token");
+    const hasYnabRefresh = !!sessionStorage.getItem("ynab_refresh_token");
+    const hasYnabExpiry = !!sessionStorage.getItem("ynab_token_expires_at");
+    const hasYnabAccounts = !!state_default.getPersistedAccounts();
+    const hasMonarchAccounts = !!sessionStorage.getItem("monarch_accounts");
+    const hasMonarchToken = !!sessionStorage.getItem("monarch_api_token");
+    const hasMonarchUuid = !!sessionStorage.getItem("monarch_device_uuid");
+    const hasExpectedState = !!sessionStorage.getItem("ynab_oauth_expected_state");
+    const hasAnyData = hasYnabToken || hasYnabRefresh || hasYnabExpiry || hasYnabAccounts || hasMonarchAccounts || hasMonarchToken || hasMonarchUuid || hasExpectedState;
+    return {
+      hasYnabToken,
+      hasYnabRefresh,
+      hasYnabExpiry,
+      hasYnabAccounts,
+      hasMonarchAccounts,
+      hasMonarchToken,
+      hasMonarchUuid,
+      hasExpectedState,
+      hasAnyData
+    };
+  }
+  function getLocalStorageSummary() {
+    const hasMonarchEmail = !!sessionStorage.getItem("monarch_email");
+    const hasMonarchPassword = !!sessionStorage.getItem("monarch_pwd_enc");
+    const hasMonarchToken = !!sessionStorage.getItem("monarch_token");
+    const hasMonarchUuid = !!sessionStorage.getItem("monarch_uuid");
+    const rememberMe = false;
+    const appState = state_default.loadAppState();
+    let lastPath = null;
+    let lastPathTimestamp = null;
+    if (appState) {
+      lastPath = appState.lastPath;
+      lastPathTimestamp = appState.timestamp;
+    }
+    const hasCredentials = hasMonarchEmail || hasMonarchPassword || hasMonarchToken || hasMonarchUuid;
+    const hasAnyData = hasCredentials || rememberMe || lastPath;
+    return {
+      localData,
+      hasMonarchEmail,
+      hasMonarchPassword,
+      hasMonarchToken,
+      hasMonarchUuid,
+      rememberMe,
+      lastPath,
+      lastPathTimestamp,
+      hasCredentials,
+      hasAnyData
+    };
+  }
+  function collectExportData(state) {
+    const allData = {
+      exportedAt: new Date().toISOString(),
+      state,
+      sessionStorage: {},
+      localStorage: {}
+    };
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      try {
+        allData.sessionStorage[key] = JSON.parse(sessionStorage.getItem(key));
+      } catch {
+        allData.sessionStorage[key] = sessionStorage.getItem(key);
+      }
+    }
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      try {
+        allData.localStorage[key] = JSON.parse(localStorage.getItem(key));
+      } catch {
+        allData.localStorage[key] = localStorage.getItem(key);
+      }
+    }
+    const jsonString = JSON.stringify(allData, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const filename = `ynab-monarch-data-${Date.now()}.json`;
+    return { blob, filename };
+  }
+  function clearAllData(state) {
+    state.clearLocalStorage();
+    clearAppState();
+    sessionStorage.clear();
+    state.credentials.clear();
+    state.clearAccounts();
+    state.oauth.clear();
+  }
+
   // src/views/DataManagement/dataManagement.js
   function initDataManagementView() {
     renderPageLayout({
@@ -10036,7 +11336,7 @@
           modal.close();
         };
       }
-    }, 0);
+    }, 100);
   }
   function toggleCollapse(id) {
     const element = document.getElementById(id);
@@ -10057,11 +11357,7 @@
     const container = document.getElementById("stateDataSection");
     if (!container)
       return;
-    const accountCount = state_default.accounts ? Object.keys(state_default.accounts).length : 0;
-    const monarchCount = state_default.monarchAccounts ? Array.isArray(state_default.monarchAccounts) ? state_default.monarchAccounts.length : Object.keys(state_default.monarchAccounts).length : 0;
-    const hasYnabAuth = !!sessionStorage.getItem("ynab_access_token");
-    const hasMonarchAuth = !!state_default.credentials?.apiToken;
-    const hasData = accountCount > 0 || monarchCount > 0 || hasYnabAuth || hasMonarchAuth;
+    const { accountCount, monarchCount, hasYnabAuth, hasMonarchAuth, hasData } = getStateSummary(state_default);
     if (!hasData) {
       container.innerHTML = '<p class="text-gray-500 text-sm italic">No application state data</p>';
       return;
@@ -10109,16 +11405,8 @@
     const container = document.getElementById("sessionStorageSection");
     if (!container)
       return;
-    const hasYnabToken = !!sessionStorage.getItem("ynab_access_token");
-    const hasYnabRefresh = !!sessionStorage.getItem("ynab_refresh_token");
-    const hasYnabExpiry = !!sessionStorage.getItem("ynab_token_expires_at");
-    const hasYnabAccounts = !!sessionStorage.getItem("ynab_accounts");
-    const hasMonarchAccounts = !!sessionStorage.getItem("monarch_accounts");
-    const hasMonarchToken = !!sessionStorage.getItem("monarch_api_token");
-    const hasMonarchUuid = !!sessionStorage.getItem("monarch_device_uuid");
-    const hasExpectedState = !!sessionStorage.getItem("ynab_oauth_expected_state");
-    const hasAnyData = hasYnabToken || hasYnabRefresh || hasYnabExpiry || hasYnabAccounts || hasMonarchAccounts || hasMonarchToken || hasMonarchUuid || hasExpectedState;
-    if (!hasAnyData) {
+    const summary = getSessionStorageSummary();
+    if (!summary.hasAnyData) {
       container.innerHTML = '<p class="text-gray-500 text-sm italic">No session storage data</p>';
       return;
     }
@@ -10130,38 +11418,38 @@
       </div>
 
       <div class="space-y-2">
-        ${hasYnabToken || hasYnabRefresh || hasYnabExpiry ? `
+        ${summary.hasYnabToken || summary.hasYnabRefresh || summary.hasYnabExpiry ? `
         <div class="p-3 bg-gray-50 rounded border border-gray-200">
           <p class="text-sm font-medium text-gray-900">YNAB Authentication</p>
           <p class="text-sm text-gray-600 mt-1">
-            ${hasYnabToken ? "Access Token: \u2713 Stored<br/>" : ""}
-            ${hasYnabRefresh ? "Refresh Token: \u2713 Stored<br/>" : ""}
-            ${hasYnabExpiry ? "Token Expiry: \u2713 Set" : ""}
+            ${summary.hasYnabToken ? "Access Token: \u2713 Stored<br/>" : ""}
+            ${summary.hasYnabRefresh ? "Refresh Token: \u2713 Stored<br/>" : ""}
+            ${summary.hasYnabExpiry ? "Token Expiry: \u2713 Set" : ""}
           </p>
         </div>
         ` : ""}
 
-        ${hasYnabAccounts || hasMonarchAccounts ? `
+        ${summary.hasYnabAccounts || summary.hasMonarchAccounts ? `
         <div class="p-3 bg-gray-50 rounded border border-gray-200">
           <p class="text-sm font-medium text-gray-900">Account Data</p>
           <p class="text-sm text-gray-600 mt-1">
-            ${hasYnabAccounts ? "YNAB Accounts: \u2713 Cached<br/>" : ""}
-            ${hasMonarchAccounts ? "Monarch Accounts: \u2713 Cached" : ""}
+            ${summary.hasYnabAccounts ? "YNAB Accounts: \u2713 Cached<br/>" : ""}
+            ${summary.hasMonarchAccounts ? "Monarch Accounts: \u2713 Cached" : ""}
           </p>
         </div>
         ` : ""}
 
-        ${hasMonarchToken || hasMonarchUuid ? `
+        ${summary.hasMonarchToken || summary.hasMonarchUuid ? `
         <div class="p-3 bg-gray-50 rounded border border-gray-200">
           <p class="text-sm font-medium text-gray-900">Monarch Authentication</p>
           <p class="text-sm text-gray-600 mt-1">
-            ${hasMonarchToken ? "API Token: \u2713 Stored<br/>" : ""}
-            ${hasMonarchUuid ? "Device UUID: \u2713 Stored" : ""}
+            ${summary.hasMonarchToken ? "API Token: \u2713 Stored<br/>" : ""}
+            ${summary.hasMonarchUuid ? "Device UUID: \u2713 Stored" : ""}
           </p>
         </div>
         ` : ""}
 
-        ${hasExpectedState ? `
+        ${summary.hasExpectedState ? `
         <div class="p-3 bg-gray-50 rounded border border-gray-200">
           <p class="text-sm font-medium text-gray-900">OAuth Flow</p>
           <p class="text-sm text-gray-600 mt-1">
@@ -10178,26 +11466,8 @@
     const container = document.getElementById("localStorageSection");
     if (!container)
       return;
-    const localData = getLocalStorage();
-    const hasMonarchEmail = !!localData.email;
-    const hasMonarchPassword = !!localData.encryptedPassword;
-    const hasMonarchToken = !!localData.token;
-    const hasMonarchUuid = !!localData.uuid;
-    const rememberMe = localData.remember === true;
-    const appStateRaw = localStorage.getItem("app_state");
-    let lastPath = null;
-    let lastPathTimestamp = null;
-    if (appStateRaw) {
-      try {
-        const appState = JSON.parse(appStateRaw);
-        lastPath = appState.lastPath;
-        lastPathTimestamp = appState.timestamp;
-      } catch (e) {
-      }
-    }
-    const hasCredentials = hasMonarchEmail || hasMonarchPassword || hasMonarchToken || hasMonarchUuid;
-    const hasAnyData = hasCredentials || rememberMe || lastPath;
-    if (!hasAnyData) {
+    const summary = getLocalStorageSummary();
+    if (!summary.hasAnyData) {
       container.innerHTML = '<p class="text-gray-500 text-sm italic">No local storage data</p>';
       return;
     }
@@ -10209,19 +11479,19 @@
       </div>
 
       <div class="space-y-2">
-        ${hasCredentials ? `
+        ${summary.hasCredentials ? `
         <div class="p-3 bg-gray-50 rounded border border-gray-200">
           <p class="text-sm font-medium text-gray-900">Monarch Authentication</p>
           <p class="text-sm text-gray-600 mt-1">
-            ${hasMonarchEmail ? "Email Address: \u2713 Stored<br/>" : ""}
-            ${hasMonarchPassword ? "Encrypted Password: \u2713 Stored<br/>" : ""}
-            ${hasMonarchToken ? "API Token: \u2713 Stored<br/>" : ""}
-            ${hasMonarchUuid ? "Device UUID: \u2713 Stored" : ""}
+            ${summary.hasMonarchEmail ? "Email Address: \u2713 Stored<br/>" : ""}
+            ${summary.hasMonarchPassword ? "Encrypted Password: \u2713 Stored<br/>" : ""}
+            ${summary.hasMonarchToken ? "API Token: \u2713 Stored<br/>" : ""}
+            ${summary.hasMonarchUuid ? "Device UUID: \u2713 Stored" : ""}
           </p>
         </div>
         ` : ""}
 
-        ${rememberMe ? `
+        ${summary.rememberMe ? `
         <div class="p-3 bg-gray-50 rounded border border-gray-200">
           <p class="text-sm font-medium text-gray-900">User Preferences</p>
           <p class="text-sm text-gray-600 mt-1">
@@ -10230,12 +11500,12 @@
         </div>
         ` : ""}
 
-        ${lastPath ? `
+        ${summary.lastPath ? `
         <div class="p-3 bg-gray-50 rounded border border-gray-200">
           <p class="text-sm font-medium text-gray-900">Session Information</p>
           <p class="text-sm text-gray-600 mt-1">
-            Last Page: ${escapeHtml2(lastPath)}<br/>
-            Last Visit: ${lastPathTimestamp ? new Date(lastPathTimestamp).toLocaleString() : "Not available"}
+            Last Page: ${escapeHtml2(summary.lastPath)}<br/>
+            Last Visit: ${summary.lastPathTimestamp ? new Date(summary.lastPathTimestamp).toLocaleString() : "Not available"}
           </p>
         </div>
         ` : ""}
@@ -10245,34 +11515,11 @@
     container.innerHTML = html;
   }
   function handleExportData() {
-    const allData = {
-      exportedAt: new Date().toISOString(),
-      state: state_default,
-      sessionStorage: {},
-      localStorage: {}
-    };
-    for (let i = 0; i < sessionStorage.length; i++) {
-      const key = sessionStorage.key(i);
-      try {
-        allData.sessionStorage[key] = JSON.parse(sessionStorage.getItem(key));
-      } catch {
-        allData.sessionStorage[key] = sessionStorage.getItem(key);
-      }
-    }
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      try {
-        allData.localStorage[key] = JSON.parse(localStorage.getItem(key));
-      } catch {
-        allData.localStorage[key] = localStorage.getItem(key);
-      }
-    }
-    const jsonString = JSON.stringify(allData, null, 2);
-    const blob = new Blob([jsonString], { type: "application/json" });
+    const { blob, filename } = collectExportData(state_default);
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `ynab-monarch-data-${Date.now()}.json`;
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -10280,21 +11527,7 @@
   }
   function handleClearAllData() {
     try {
-      clearStorage();
-      clearAppState();
-      sessionStorage.clear();
-      state_default.credentials = {
-        email: "",
-        encryptedPassword: "",
-        otp: "",
-        remember: false,
-        apiToken: "",
-        awaitingOtp: false,
-        deviceUuid: ""
-      };
-      state_default.monarchAccounts = null;
-      state_default.accounts = {};
-      state_default.ynabOauth = { code: null, state: null, error: null };
+      clearAllData(state_default);
     } catch (error) {
       console.error("Error clearing data:", error);
       alert("An error occurred while clearing data. Please try again.");
@@ -10307,7 +11540,7 @@
   }
 
   // src/views/DataManagement/dataManagement.html
-  var dataManagement_default = '<div id="pageLayout"></div>\n\n<!-- Warning Banner -->\n<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-r-lg">\n  <div class="flex items-start">\n    <svg class="w-5 h-5 text-yellow-400 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">\n      <path fill-rule="evenodd"\n        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"\n        clip-rule="evenodd" />\n    </svg>\n    <div>\n      <h3 class="text-sm font-medium text-yellow-800 mb-1">Privacy Notice</h3>\n      <p class="text-sm text-yellow-700">\n        All data shown below is stored locally in your browser only. No data is sent to our servers or any third-party\n        services.\n      </p>\n    </div>\n  </div>\n</div>\n\n<!-- Data Sections Container -->\n<div class="space-y-6">\n\n  <!-- Application State Section -->\n  <div class="bg-white rounded-lg shadow-md overflow-hidden">\n    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-4">\n      <h2 class="text-xl font-semibold text-white flex items-center">\n        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />\n        </svg>\n        Application State\n      </h2>\n      <p class="text-blue-100 text-sm mt-1">Current session data and account information</p>\n    </div>\n    <div id="stateDataSection" class="p-6">\n      <!-- Populated by JavaScript -->\n    </div>\n  </div>\n\n  <!-- Session Storage Section -->\n  <div class="bg-white rounded-lg shadow-md overflow-hidden">\n    <div class="bg-gradient-to-r from-purple-500 to-pink-600 px-6 py-4">\n      <h2 class="text-xl font-semibold text-white flex items-center">\n        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n            d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />\n        </svg>\n        Session Storage\n      </h2>\n      <p class="text-purple-100 text-sm mt-1">Data cleared when browser tab is closed</p>\n    </div>\n    <div id="sessionStorageSection" class="p-6">\n      <!-- Populated by JavaScript -->\n    </div>\n  </div>\n\n  <!-- Local Storage Section -->\n  <div class="bg-white rounded-lg shadow-md overflow-hidden">\n    <div class="bg-gradient-to-r from-green-500 to-teal-600 px-6 py-4">\n      <h2 class="text-xl font-semibold text-white flex items-center">\n        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />\n        </svg>\n        Local Storage\n      </h2>\n      <p class="text-green-100 text-sm mt-1">Persistent data saved across sessions</p>\n    </div>\n    <div id="localStorageSection" class="p-6">\n      <!-- Populated by JavaScript -->\n    </div>\n  </div>\n\n</div>\n\n<!-- Action Buttons -->\n<div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">\n  <ui-button id="exportDataBtn" data-type="outline" data-color="grey">\n    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />\n    </svg>\n    Export Data (JSON)\n  </ui-button>\n\n  <ui-button id="clearAllDataBtn" data-type="solid" data-color="red">\n    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />\n    </svg>\n    Clear All Data\n  </ui-button>\n</div>\n\n<!-- Confirmation Modal -->\n<ui-modal id="confirmClearModal">\n  <div slot="title">\n    <div class="flex-shrink-0">\n      <svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />\n      </svg>\n    </div>\n    <h3 class="text-lg font-semibold text-gray-900 mb-2">Clear All Data?</h3>\n  </div>\n  <div slot="content" class="space-y-4">\n    <p class="text-sm text-gray-600 mb-4">\n      This action cannot be undone. All your YNAB accounts, Monarch credentials, and session data will be\n      permanently deleted from your browser.\n    </p>\n  </div>\n  <div slot="footer">\n    <ui-button id="cancelBtn" data-type="outline" data-color="grey">Cancel</ui-button>\n    <ui-button id="applyBtn" data-type="solid" data-color="red">Yes, wipe my data</ui-button>\n  </div>\n</ui-modal>';
+  var dataManagement_default = '<div id="pageLayout"></div>\n\n<!-- Warning Banner -->\n<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-r-lg">\n  <div class="flex items-start">\n    <svg class="w-5 h-5 text-yellow-400 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">\n      <path fill-rule="evenodd"\n        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"\n        clip-rule="evenodd" />\n    </svg>\n    <div>\n      <h3 class="text-sm font-medium text-yellow-800 mb-1">Privacy Notice</h3>\n      <p class="text-sm text-yellow-700">\n        All data shown below is stored locally in your browser only. No data is sent to our servers or any third-party\n        services.\n      </p>\n    </div>\n  </div>\n</div>\n\n<!-- Data Sections Container -->\n<div class="space-y-6">\n\n  <!-- Application State Section -->\n  <div class="bg-white rounded-lg shadow-md overflow-hidden">\n    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-4">\n      <h2 class="text-xl font-semibold text-white flex items-center">\n        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />\n        </svg>\n        Application State\n      </h2>\n      <p class="text-blue-100 text-sm mt-1">Current session data and account information</p>\n    </div>\n    <div id="stateDataSection" class="p-6">\n      <!-- Populated by JavaScript -->\n    </div>\n  </div>\n\n  <!-- Session Storage Section -->\n  <div class="bg-white rounded-lg shadow-md overflow-hidden">\n    <div class="bg-gradient-to-r from-purple-500 to-pink-600 px-6 py-4">\n      <h2 class="text-xl font-semibold text-white flex items-center">\n        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n            d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />\n        </svg>\n        Session Storage\n      </h2>\n      <p class="text-purple-100 text-sm mt-1">Data cleared when browser tab is closed</p>\n    </div>\n    <div id="sessionStorageSection" class="p-6">\n      <!-- Populated by JavaScript -->\n    </div>\n  </div>\n\n  <!-- Local Storage Section -->\n  <div class="bg-white rounded-lg shadow-md overflow-hidden">\n    <div class="bg-gradient-to-r from-green-500 to-teal-600 px-6 py-4">\n      <h2 class="text-xl font-semibold text-white flex items-center">\n        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />\n        </svg>\n        Local Storage\n      </h2>\n      <p class="text-green-100 text-sm mt-1">Persistent data saved across sessions</p>\n    </div>\n    <div id="localStorageSection" class="p-6">\n      <!-- Populated by JavaScript -->\n    </div>\n  </div>\n\n</div>\n\n<!-- Action Buttons -->\n<div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">\n  <ui-button id="exportDataBtn" data-type="outline" data-color="grey">\n    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />\n    </svg>\n    Export Data (JSON)\n  </ui-button>\n\n  <ui-button id="clearAllDataBtn" data-type="solid" data-color="red">\n    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />\n    </svg>\n    Clear All Data\n  </ui-button>\n</div>\n\n<!-- Confirmation Modal -->\n<ui-modal id="confirmClearModal" has-footer>\n  <div slot="title">\n    <svg class="w-6 h-6 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />\n    </svg>\n    <h3>Clear All Data?</h3>\n  </div>\n  <div slot="content">\n    <p>\n      This action cannot be undone. All your YNAB accounts, Monarch credentials, and session data will be\n      permanently deleted from your browser.\n    </p>\n  </div>\n  <div slot="footer">\n    <ui-button id="cancelBtn" data-type="outline" data-color="grey">Cancel</ui-button>\n    <ui-button id="applyBtn" data-type="solid" data-color="red">Yes, wipe my data</ui-button>\n  </div>\n</ui-modal>';
 
   // src/router.js
   var routes = {
@@ -10411,7 +11644,7 @@
         stateLoaded = true;
       }
       if (!skipRouteGuards && route.requiresAccounts) {
-        const hasAccounts = state_default.accounts && Object.keys(state_default.accounts).length > 0;
+        const hasAccounts = state_default.hasAccounts();
         if (!hasAccounts) {
           console.warn(`Route ${path} requires accounts but none found. Redirecting to upload.`);
           return navigate("/upload", true);
@@ -10443,16 +11676,13 @@
   async function renderRoute(path) {
     const app = document.getElementById("app");
     const route = routes[path] || routes["/upload"];
+    LoadingOverlay_default.reset();
     document.title = route.title;
     if (!stateLoaded) {
       await loadPersistedState();
       stateLoaded = true;
     }
-    if (route.scroll) {
-      document.body.classList.add("always-scroll");
-    } else {
-      document.body.classList.remove("always-scroll");
-    }
+    document.body.classList.toggle("always-scroll", route.scroll);
     window.scrollTo(0, 0);
     app.innerHTML = "";
     app.innerHTML = route.template;
@@ -10467,12 +11697,6 @@
   }
   function persistState() {
     try {
-      if (Object.keys(state_default.accounts).length > 0) {
-        sessionStorage.setItem("ynab_accounts", JSON.stringify(state_default.accounts));
-      }
-      if (state_default.monarchAccounts) {
-        sessionStorage.setItem("monarch_accounts", JSON.stringify(state_default.monarchAccounts));
-      }
       const persistentState = {
         lastPath: getCurrentPath(),
         timestamp: Date.now()
@@ -10484,61 +11708,22 @@
   }
   async function loadPersistedState() {
     try {
-      if (!state_default.accounts) {
-        state_default.accounts = {};
+      const monarchEmail = sessionStorage.getItem("monarch_email");
+      const monarchPwdEnc = sessionStorage.getItem("monarch_pwd_enc");
+      const monarchToken = sessionStorage.getItem("monarch_token");
+      const monarchUuid = sessionStorage.getItem("monarch_uuid");
+      if (monarchEmail || monarchToken) {
+        state_default.monarchCredentials = {
+          email: monarchEmail || state_default.monarchCredentials.email,
+          encryptedPassword: monarchPwdEnc || state_default.monarchCredentials.encryptedPassword,
+          accessToken: monarchToken || state_default.monarchCredentials.accessToken,
+          uuid: monarchUuid || state_default.monarchCredentials.uuid,
+          otp: state_default.monarchCredentials.otp
+        };
       }
-      const localStorageData = getLocalStorage();
-      if (localStorageData.email || localStorageData.token) {
-        state_default.credentials.email = localStorageData.email || state_default.credentials.email;
-        state_default.credentials.encryptedPassword = localStorageData.encryptedPassword || state_default.credentials.encryptedPassword;
-        state_default.credentials.apiToken = localStorageData.token || state_default.credentials.apiToken;
-        state_default.credentials.deviceUuid = localStorageData.uuid || state_default.credentials.deviceUuid;
-        state_default.credentials.remember = localStorageData.remember || state_default.credentials.remember;
-      }
-      const accountsData = sessionStorage.getItem("ynab_accounts");
-      if (accountsData) {
-        try {
-          const parsedAccounts = JSON.parse(accountsData);
-          if (parsedAccounts && typeof parsedAccounts === "object") {
-            state_default.accounts = parsedAccounts;
-          }
-        } catch (e) {
-          console.warn("Failed to parse accounts from sessionStorage:", e);
-          sessionStorage.removeItem("ynab_accounts");
-          state_default.accounts = {};
-        }
-      }
-      const monarchAccountsData = sessionStorage.getItem("monarch_accounts");
-      if (monarchAccountsData) {
-        try {
-          const parsedMonarchAccounts = JSON.parse(monarchAccountsData);
-          if (parsedMonarchAccounts && typeof parsedMonarchAccounts === "object") {
-            state_default.monarchAccounts = parsedMonarchAccounts;
-          }
-        } catch (e) {
-          console.warn("Failed to parse monarch accounts from sessionStorage:", e);
-          sessionStorage.removeItem("monarch_accounts");
-          state_default.monarchAccounts = null;
-        }
-      }
-      const appStateData = localStorage.getItem("app_state");
-      if (appStateData) {
-        try {
-          const appState = JSON.parse(appStateData);
-          if (appState.timestamp && Date.now() - appState.timestamp < 24 * 60 * 60 * 1e3) {
-            console.log("Loaded recent app state from localStorage");
-          } else {
-            localStorage.removeItem("app_state");
-          }
-        } catch (e) {
-          console.warn("Failed to parse app state from localStorage:", e);
-          localStorage.removeItem("app_state");
-        }
-      }
+      console.log("\u2705 Persisted state loaded");
     } catch (error) {
       console.error("Error loading persisted state:", error);
-      state_default.accounts = {};
-      state_default.monarchAccounts = null;
     }
   }
   function getCurrentPath() {
@@ -10549,12 +11734,8 @@
   }
   function clearAppState() {
     try {
-      sessionStorage.removeItem("ynab_accounts");
-      sessionStorage.removeItem("monarch_accounts");
       localStorage.removeItem("app_state");
-      state_default.accounts = {};
-      state_default.monarchAccounts = null;
-      console.log("Application state cleared");
+      state_default.clearAll();
     } catch (error) {
       console.error("Error clearing app state:", error);
     }
@@ -10602,65 +11783,915 @@
     }
   });
 
-  // src/core/ComponentRegistry.js
-  var ComponentRegistry = class {
-    constructor() {
-      this.components = /* @__PURE__ */ new Map();
-      this.initialized = /* @__PURE__ */ new WeakSet();
-      this.observer = null;
+  // src/core/reactiveState.js
+  var Signal = class {
+    constructor(initialValue) {
+      this._value = initialValue;
+      this._subscribers = /* @__PURE__ */ new Set();
     }
-    register(selector, init) {
-      this.components.set(selector, init);
+    get value() {
+      return this._value;
     }
-    start() {
-      if (this.observer)
-        return;
-      this.scanAndInit(document.body);
-      this.observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          mutation.addedNodes.forEach((node) => {
-            if (node.nodeType === Node.ELEMENT_NODE) {
-              this.scanAndInit(node);
-            }
-          });
-        });
-      });
-      this.observer.observe(document.body, {
-        childList: true,
-        subtree: true
-      });
-    }
-    stop() {
-      if (this.observer) {
-        this.observer.disconnect();
-        this.observer = null;
+    set value(newValue) {
+      if (this._value !== newValue) {
+        this._value = newValue;
+        this._notify();
       }
     }
-    scanAndInit(root) {
-      this.components.forEach((init, selector) => {
-        const elements = root.matches?.(selector) ? [root] : Array.from(root.querySelectorAll?.(selector) || []);
-        elements.forEach((element) => {
-          if (!this.initialized.has(element)) {
-            try {
-              init(element);
-              this.initialized.add(element);
-            } catch (error) {
-              console.error(`Failed to initialize component ${selector}:`, error);
-            }
-          }
-        });
+    subscribe(callback) {
+      this._subscribers.add(callback);
+      return () => this._subscribers.delete(callback);
+    }
+    _notify() {
+      this._subscribers.forEach((callback) => {
+        try {
+          callback(this._value);
+        } catch (error) {
+          console.error("Signal callback error:", error);
+        }
       });
     }
-    init(element) {
-      this.scanAndInit(element);
+  };
+  function signal(initialValue) {
+    return new Signal(initialValue);
+  }
+  function computed(compute) {
+    const result = new Signal(compute());
+    const update = () => {
+      result.value = compute();
+    };
+    return { ...result, update };
+  }
+
+  // src/components/ReusableModal.js
+  var ReusableModal = class extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({ mode: "open" });
+      this.isOpen = signal(false);
+      this.isOpen.subscribe((open) => {
+        this._updateModalState(open);
+      });
+    }
+    connectedCallback() {
+      this._render();
+      this._setupEventListeners();
+    }
+    get hasFooter() {
+      return this.hasAttribute("has-footer");
+    }
+    set hasFooter(value) {
+      if (value) {
+        this.setAttribute("has-footer", "");
+      } else {
+        this.removeAttribute("has-footer");
+      }
+    }
+    _render() {
+      this.shadowRoot.innerHTML = `
+      <style>
+        ::slotted([slot="trigger"]) {
+          cursor: pointer;
+        }
+      </style>
+      <slot name="trigger"></slot>
+    `;
+      this._modalOverlay = document.createElement("div");
+      this._modalOverlay.className = "ui-modal-overlay";
+      this._modalOverlay.setAttribute("role", "dialog");
+      this._modalOverlay.setAttribute("aria-modal", "true");
+      this._modalOverlay.innerHTML = `
+      <style>
+        .ui-modal-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 999999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.75rem;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 500ms cubic-bezier(0.4, 0, 0.2, 1);
+          background-color: transparent;
+        }
+
+        .ui-modal-overlay.open {
+          pointer-events: auto;
+          opacity: 1;
+        }
+
+        .ui-modal-backdrop {
+          position: absolute;
+          inset: 0;
+          background-color: rgba(0, 0, 0, 0.5);
+          transition: background-color 500ms cubic-bezier(0.4, 0, 0.2, 1);
+          z-index: -1;
+        }
+
+        .ui-modal-content {
+          position: relative;
+          z-index: 100;
+          background-color: white;
+          border-radius: 0.75rem;
+          margin: 1rem;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+          max-width: 85vw;
+          width: auto;
+          min-width: min(85vw, 500px);
+          transform: translateY(100%);
+          transition: transform 500ms cubic-bezier(0.4, 0, 0.2, 1);
+          max-height: 90vh;
+          display: flex;
+          flex-direction: column;
+          flex-shrink: 0;
+        }
+
+        @media (min-width: 640px) {
+          .ui-modal-content {
+            padding: 0;
+            max-width: 70vw;
+            margin: 1.5rem;
+          }
+        }
+
+        @media (min-width: 768px) {
+          .ui-modal-content {
+            max-width: 40vw;
+            margin: 2rem;
+          }
+        }
+
+        .ui-modal-header {
+          padding: 0.5rem 1rem;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          border-bottom: 1px solid #e5e7eb;
+          flex-shrink: 0;
+        }
+
+        .ui-modal-body {
+          flex: 1;
+          overflow-y: auto;
+          padding: 1rem 1.5rem 2rem 1.5rem; // Top, right, bottom, left
+          color: #4b5563;
+          font-size: 0.875rem;
+          line-height: 1.5;
+        }
+
+        @media (min-width: 640px) {
+          .ui-modal-body {
+            padding: 1rem 2rem 2rem 2rem;
+          }
+        }
+
+        .ui-modal-footer {
+          padding: 1rem;
+          display: none;
+          justify-content: flex-end;
+          gap: 0.75rem;
+          border-top: 1px solid #e5e7eb;
+          flex-shrink: 0;
+        }
+
+        .ui-modal-footer.visible {
+          display: flex;
+        }
+
+        .ui-modal-overlay.open .ui-modal-content {
+          transform: translateY(0);
+        }
+
+        .ui-modal-title {
+          flex: 1;
+          padding-right: 1rem;
+          font-size: 1.125rem;
+          font-weight: 700;
+          color: #111827;
+          line-height: 1.5;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+
+        @media (min-width: 640px) {
+          .ui-modal-title {
+            font-size: 1.25rem;
+          }
+        }
+
+        @media (min-width: 768px) {
+          .ui-modal-title {
+            font-size: 1.5rem;
+          }
+        }
+
+        .ui-modal-close-btn {
+          position: relative;
+          padding: 0;
+          width: 2rem;
+          height: 2rem;
+          min-width: 2rem;
+          min-height: 2rem;
+          max-width: 2rem;
+          max-height: 2rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background-color: transparent;
+          border: none;
+          color: #9ca3af;
+          cursor: pointer;
+          border-radius: 9999px;
+          transition: all 200ms;
+          flex-shrink: 0;
+        }
+
+        .ui-modal-close-btn svg {
+          width: 1.25rem;
+          height: 1.25rem;
+          flex-shrink: 0;
+          object-fit: contain;
+        }
+
+        .ui-modal-close-btn:hover {
+          background-color: #f3f4f6;
+          color: #4b5563;
+        }
+
+        .ui-modal-close-btn:focus {
+          outline: none;
+          ring: 2px;
+          ring-color: #3b82f6;
+        }
+      </style>
+      
+      <div class="ui-modal-backdrop"></div>
+      
+      <div class="ui-modal-content">
+        <div class="ui-modal-header">
+          <div class="ui-modal-title"></div>
+          <button class="ui-modal-close-btn" aria-label="Close modal">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="ui-modal-body"></div>
+        <div class="ui-modal-footer"></div>
+      </div>
+    `;
+      this._updateModalContent();
+    }
+    _updateModalContent() {
+      const titleSlot = this.querySelector('[slot="title"]');
+      const contentSlot = this.querySelector('[slot="content"]');
+      const footerSlot = this.querySelector('[slot="footer"]');
+      const titleContainer = this._modalOverlay.querySelector(".ui-modal-title");
+      const bodyContainer = this._modalOverlay.querySelector(".ui-modal-body");
+      const footerContainer = this._modalOverlay.querySelector(".ui-modal-footer");
+      if (titleSlot && titleContainer) {
+        titleContainer.innerHTML = titleSlot.innerHTML;
+      }
+      if (contentSlot && bodyContainer) {
+        bodyContainer.innerHTML = contentSlot.innerHTML;
+      }
+      if (footerSlot && footerContainer) {
+        footerContainer.innerHTML = Array.from(footerSlot.children).map((child) => child.outerHTML).join("");
+        if (this.hasFooter) {
+          footerContainer.classList.add("visible");
+        }
+      }
+    }
+    querySelector(selector) {
+      const element = super.querySelector(selector);
+      if (element)
+        return element;
+      if (this._modalOverlay) {
+        return this._modalOverlay.querySelector(selector);
+      }
+      return null;
+    }
+    _setupEventListeners() {
+      const backdrop = this._modalOverlay.querySelector(".ui-modal-backdrop");
+      const closeBtn = this._modalOverlay.querySelector(".ui-modal-close-btn");
+      const trigger = this.querySelector('[slot="trigger"]');
+      if (trigger) {
+        trigger.addEventListener("click", () => this.open());
+      }
+      if (closeBtn) {
+        closeBtn.addEventListener("click", () => this.close());
+      }
+      if (backdrop) {
+        backdrop.addEventListener("click", () => this.close());
+      }
+      this._handleEscape = (e) => {
+        if (e.key === "Escape" && this.isOpen.value) {
+          this.close();
+        }
+      };
+    }
+    _updateModalState(open) {
+      if (open) {
+        document.body.appendChild(this._modalOverlay);
+        this._modalOverlay.offsetHeight;
+        this._modalOverlay.classList.add("open");
+        document.body.style.overflow = "hidden";
+        document.addEventListener("keydown", this._handleEscape);
+      } else {
+        this._modalOverlay.classList.remove("open");
+        setTimeout(() => {
+          if (this._modalOverlay.parentNode) {
+            this._modalOverlay.parentNode.removeChild(this._modalOverlay);
+          }
+        }, 500);
+        document.body.style.overflow = "";
+        document.removeEventListener("keydown", this._handleEscape);
+      }
+    }
+    open() {
+      this.isOpen.value = true;
+    }
+    close() {
+      this.isOpen.value = false;
+    }
+    toggle() {
+      this.isOpen.value = !this.isOpen.value;
+    }
+    disconnectedCallback() {
+      document.removeEventListener("keydown", this._handleEscape);
+      if (this._modalOverlay && this._modalOverlay.parentNode) {
+        this._modalOverlay.parentNode.removeChild(this._modalOverlay);
+      }
     }
   };
-  var registry = new ComponentRegistry();
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => registry.start());
-  } else {
-    registry.start();
+  if (!customElements.get("ui-modal")) {
+    customElements.define("ui-modal", ReusableModal);
   }
+
+  // src/components/ReusableTable.js
+  var ReusableTable = class extends HTMLElement {
+    constructor() {
+      super();
+      this._data = signal([]);
+      this._columns = signal([]);
+      this._selectedRows = signal(/* @__PURE__ */ new Set());
+      this._visibleRows = signal([]);
+      this._allSelected = computed(() => {
+        const visible = this._visibleRows.value;
+        const selected = this._selectedRows.value;
+        return visible.length > 0 && visible.every((row) => selected.has(this._getRowId(row)));
+      });
+      this._someSelected = computed(() => {
+        const visible = this._visibleRows.value;
+        const selected = this._selectedRows.value;
+        const selectedCount = visible.filter((row) => selected.has(this._getRowId(row))).length;
+        return selectedCount > 0 && selectedCount < visible.length;
+      });
+      this._mobileBreakpoint = "lg";
+      this._enableSelection = true;
+      this._rowIdKey = "id";
+      this._handleMasterCheckboxChange = this._handleMasterCheckboxChange.bind(this);
+      this._handleRowCheckboxChange = this._handleRowCheckboxChange.bind(this);
+    }
+    connectedCallback() {
+      this._mobileBreakpoint = this.getAttribute("data-mobile-breakpoint") || "lg";
+      this._enableSelection = this.getAttribute("data-enable-selection") !== "false";
+      this._rowIdKey = this.getAttribute("data-row-id-key") || "id";
+      this._render();
+      this._setupSubscriptions();
+    }
+    disconnectedCallback() {
+      if (this._dataUnsubscribe)
+        this._dataUnsubscribe();
+      if (this._columnsUnsubscribe)
+        this._columnsUnsubscribe();
+      if (this._selectedUnsubscribe)
+        this._selectedUnsubscribe();
+      if (this._visibleUnsubscribe)
+        this._visibleUnsubscribe();
+    }
+    _setupSubscriptions() {
+      this._dataUnsubscribe = this._data.subscribe(() => this._updateTable());
+      this._columnsUnsubscribe = this._columns.subscribe(() => this._updateTable());
+      this._selectedUnsubscribe = this._selectedRows.subscribe(() => this._updateSelection());
+      this._visibleUnsubscribe = this._visibleRows.subscribe(() => this._updateMasterCheckbox());
+    }
+    _render() {
+      this.className = "ui-table-container bg-white rounded-lg shadow-sm overflow-hidden";
+      this.innerHTML = `
+      <!-- Mobile Card View -->
+      <div class="mobile-view block ${this._mobileBreakpoint}:hidden bg-gray-50">
+        ${this._enableSelection ? `
+        <div class="border-b border-gray-200 bg-white p-3 sm:p-4">
+          <div class="flex items-center justify-between">
+            <label class="custom-checkbox-container flex items-center">
+              <input id="masterCheckboxMobile" type="checkbox" class="master-checkbox-mobile custom-checkbox-input">
+              <span class="custom-checkbox-visual"></span>
+              <span class="text-sm font-medium text-gray-700 pl-2">Select All</span>
+            </label>
+            <div class="text-xs text-gray-500 font-semibold selection-count-mobile">0 selected</div>
+          </div>
+        </div>
+        ` : ""}
+        <div class="mobile-list space-y-2 p-3 sm:p-4"></div>
+      </div>
+      
+      <!-- Desktop Table View -->
+      <div class="desktop-view hidden ${this._mobileBreakpoint}:block overflow-x-auto">
+        <table class="w-full min-w-[800px]" role="grid">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-200" role="row"></tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100"></tbody>
+        </table>
+      </div>
+    `;
+      this._updateTable();
+    }
+    _updateTable() {
+      const data2 = this._data.value;
+      const columns = this._columns.value;
+      this._visibleRows.value = data2;
+      this._renderDesktopTable(data2, columns);
+      this._renderMobileCards(data2, columns);
+      const mobileMasterCheckbox = this.querySelector("#masterCheckboxMobile");
+      if (mobileMasterCheckbox) {
+        mobileMasterCheckbox.removeEventListener("change", this._handleMasterCheckboxChange);
+        mobileMasterCheckbox.addEventListener("change", this._handleMasterCheckboxChange);
+      }
+      this._updateSelection();
+    }
+    _renderDesktopTable(data2, columns) {
+      const thead = this.querySelector("thead tr");
+      const tbody = this.querySelector("tbody");
+      if (!thead || !tbody)
+        return;
+      thead.innerHTML = "";
+      columns.forEach((col) => {
+        const th = document.createElement("th");
+        th.scope = "col";
+        th.className = col.headerClass || "px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900";
+        if (col.width)
+          th.style.width = col.width;
+        if (col.minWidth)
+          th.style.minWidth = col.minWidth;
+        if (col.type === "checkbox" && col.masterCheckbox) {
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.className = "master-checkbox w-4 h-4 sm:w-5 sm:h-5 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2";
+          checkbox.addEventListener("change", this._handleMasterCheckboxChange);
+          th.appendChild(checkbox);
+        } else {
+          th.textContent = col.header || "";
+        }
+        thead.appendChild(th);
+      });
+      tbody.innerHTML = "";
+      data2.forEach((row) => {
+        console.debug("Rendering row:", row);
+        const tr = document.createElement("tr");
+        tr.setAttribute("role", "row");
+        tr.className = "border-t border-gray-100";
+        if (row.isModified()) {
+          tr.classList.add("bg-amber-50", "border-l-4", "border-l-amber-300");
+        }
+        tr.dataset.rowId = this._getRowId(row);
+        columns.forEach((col) => {
+          const td = document.createElement("td");
+          td.className = col.cellClass || "px-3 sm:px-4 py-3 sm:py-4";
+          this._renderCell(td, col, row);
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    }
+    _renderMobileCards(data2, columns) {
+      const mobileList = this.querySelector(".mobile-list");
+      if (!mobileList)
+        return;
+      mobileList.innerHTML = "";
+      data2.forEach((row) => {
+        const card = document.createElement("div");
+        card.className = "mobile-card overflow-hidden";
+        if (row.isModified()) {
+          card.classList.add("bg-amber-50", "border-l-4", "border-l-amber-300");
+        } else {
+          card.classList.add("bg-white", "border", "border-gray-100");
+        }
+        card.dataset.rowId = this._getRowId(row);
+        const wrapper = document.createElement("div");
+        wrapper.className = "p-3 sm:p-4";
+        const headerDiv = document.createElement("div");
+        headerDiv.className = "flex items-center gap-3 mb-3 pb-3 border-b border-gray-100";
+        const selectCol = columns.find((c) => c.type === "checkbox" && c.masterCheckbox);
+        if (selectCol && this._enableSelection) {
+          const checkboxContainer = this._createMobileCheckbox(row);
+          checkboxContainer.className = "flex-shrink-0";
+          headerDiv.appendChild(checkboxContainer);
+        }
+        const primaryCol = columns.find((c) => c.key === "name");
+        if (primaryCol && !primaryCol.mobileHidden) {
+          const primaryDiv = document.createElement("div");
+          primaryDiv.className = "flex-1 min-w-0";
+          const nameValue = document.createElement("div");
+          nameValue.className = "text-sm font-semibold text-gray-900 truncate";
+          const displayValue = primaryCol.getValue ? primaryCol.getValue(row) : row[primaryCol.key];
+          nameValue.textContent = displayValue || "";
+          const isClickable = primaryCol.clickable ? typeof primaryCol.clickable === "function" ? primaryCol.clickable(row) : primaryCol.clickable : false;
+          if (isClickable) {
+            nameValue.className += " cursor-pointer hover:text-blue-600 transition-colors";
+            if (primaryCol.onClick) {
+              nameValue.addEventListener("click", () => primaryCol.onClick(row));
+            }
+          }
+          primaryDiv.appendChild(nameValue);
+          headerDiv.appendChild(primaryDiv);
+        }
+        wrapper.appendChild(headerDiv);
+        const bodyDiv = document.createElement("div");
+        bodyDiv.className = "grid grid-cols-2 gap-3 sm:gap-4 text-sm";
+        let fieldCount = 0;
+        columns.forEach((col) => {
+          if (col.type === "checkbox" && col.masterCheckbox)
+            return;
+          if (col.key === "name")
+            return;
+          if (col.mobileHidden)
+            return;
+          if (col.type === "custom" && col.key === "undo")
+            return;
+          if (col.type === "button")
+            return;
+          if (col.mobileLayout === "full")
+            return;
+          fieldCount++;
+          const fieldDiv = document.createElement("div");
+          if (col.mobileLayout === "full") {
+            fieldDiv.className = "col-span-2 flex flex-col gap-1";
+          } else {
+            fieldDiv.className = "flex flex-col gap-1";
+          }
+          if (col.mobileLabel !== false) {
+            const label = document.createElement("span");
+            label.className = "text-xs font-semibold text-gray-500 uppercase tracking-wide";
+            label.textContent = col.mobileLabel || col.header;
+            fieldDiv.appendChild(label);
+          }
+          const valueContainer = document.createElement("div");
+          valueContainer.className = "min-w-0";
+          this._renderCell(valueContainer, col, row, true);
+          fieldDiv.appendChild(valueContainer);
+          bodyDiv.appendChild(fieldDiv);
+        });
+        wrapper.appendChild(bodyDiv);
+        let hasActions = false;
+        const actionButtons = [];
+        columns.forEach((col) => {
+          if (col.type === "button" || col.type === "custom" && col.key === "undo") {
+            hasActions = true;
+            actionButtons.push(col);
+          }
+        });
+        if (hasActions) {
+          const footerDiv = document.createElement("div");
+          footerDiv.className = "mt-3 pt-3 border-t border-gray-100 flex items-center gap-2 flex-wrap";
+          actionButtons.forEach((col) => {
+            const container = document.createElement("div");
+            if (col.type === "button") {
+              container.className = "flex-1 min-w-[120px]";
+            } else {
+              container.className = "flex-shrink-0";
+            }
+            this._renderCell(container, col, row, true);
+            footerDiv.appendChild(container);
+          });
+          wrapper.appendChild(footerDiv);
+        }
+        card.appendChild(wrapper);
+        mobileList.appendChild(card);
+      });
+    }
+    _createMobileCheckbox(row) {
+      const container = document.createElement("label");
+      container.className = "custom-checkbox-container flex-shrink-0";
+      const checkbox = document.createElement("input");
+      checkbox.id = "rowCheckboxMobile_" + this._getRowId(row);
+      checkbox.type = "checkbox";
+      checkbox.className = "row-checkbox custom-checkbox-input";
+      checkbox.dataset.rowId = this._getRowId(row);
+      checkbox.checked = this._selectedRows.value.has(this._getRowId(row));
+      checkbox.addEventListener("change", this._handleRowCheckboxChange);
+      const visual = document.createElement("span");
+      visual.className = "custom-checkbox-visual";
+      container.appendChild(checkbox);
+      container.appendChild(visual);
+      return container;
+    }
+    _renderCell(container, col, row, isMobile = false) {
+      const isDisabled = col.disabled ? col.disabled(row) : false;
+      switch (col.type) {
+        case "checkbox":
+          if (!col.masterCheckbox) {
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.className = "w-5 h-5 rounded border-gray-300 cursor-pointer";
+            checkbox.checked = col.getValue ? col.getValue(row) : row[col.key];
+            checkbox.disabled = isDisabled;
+            if (col.onChange) {
+              checkbox.addEventListener("change", () => col.onChange(row, checkbox.checked));
+            }
+            container.appendChild(checkbox);
+          } else {
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.className = "row-checkbox w-5 h-5 rounded border-gray-300 cursor-pointer";
+            checkbox.dataset.rowId = this._getRowId(row);
+            checkbox.checked = this._selectedRows.value.has(this._getRowId(row));
+            checkbox.disabled = isDisabled;
+            checkbox.addEventListener("change", this._handleRowCheckboxChange);
+            container.appendChild(checkbox);
+          }
+          break;
+        case "text":
+          const text = col.getValue ? col.getValue(row) : row[col.key];
+          container.textContent = text;
+          container.className += " truncate";
+          if (col.clickable && !isDisabled) {
+            container.className += " cursor-pointer hover:text-blue-600 transition-colors duration-200";
+            if (col.onClick) {
+              container.addEventListener("click", () => col.onClick(row));
+            }
+          } else if (isDisabled) {
+            container.className += " text-gray-400 cursor-default";
+          }
+          if (col.tooltip) {
+            container.title = typeof col.tooltip === "function" ? col.tooltip(row) : col.tooltip;
+          }
+          break;
+        case "select":
+          const select = document.createElement("select");
+          const baseClasses = "border border-gray-300 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium";
+          const mobileClasses = "text-xs px-2 py-1.5";
+          const desktopClasses = "text-sm px-2 py-1";
+          select.className = baseClasses + " " + (isMobile ? mobileClasses : desktopClasses);
+          select.disabled = isDisabled;
+          if (isDisabled) {
+            select.className += " text-gray-400 bg-gray-50 cursor-not-allowed";
+          } else {
+            select.className += " cursor-pointer text-gray-900";
+          }
+          const currentValue = col.getValue ? col.getValue(row) : row[col.key];
+          const options = col.options ? typeof col.options === "function" ? col.options(row) : col.options : [];
+          options.forEach((opt) => {
+            const option = document.createElement("option");
+            option.value = opt.value;
+            option.textContent = opt.label;
+            if (opt.value === currentValue)
+              option.selected = true;
+            select.appendChild(option);
+          });
+          if (col.onChange) {
+            select.addEventListener("change", (e) => {
+              try {
+                if (e && e.target && row) {
+                  col.onChange(row, select.value);
+                }
+              } catch (error) {
+                console.error("Error in select onChange:", error);
+              }
+            });
+          }
+          if (col.tooltip) {
+            select.title = typeof col.tooltip === "function" ? col.tooltip(row) : col.tooltip;
+          }
+          container.appendChild(select);
+          break;
+        case "button":
+          const buttonConfig = col.render ? col.render(row) : {};
+          const button = document.createElement("ui-button");
+          button.className = "ui-button";
+          button.dataset.type = buttonConfig.type || "solid";
+          button.dataset.color = buttonConfig.color || "blue";
+          button.dataset.size = buttonConfig.size || (isMobile ? "small" : "medium");
+          button.textContent = buttonConfig.text || "";
+          button.dataset.fullwidth = isMobile ? "true" : "false";
+          button.disabled = isDisabled || buttonConfig.disabled;
+          if (buttonConfig.onClick) {
+            button.addEventListener("click", () => buttonConfig.onClick(row));
+          }
+          if (buttonConfig.tooltip || col.tooltip) {
+            button.title = buttonConfig.tooltip || (typeof col.tooltip === "function" ? col.tooltip(row) : col.tooltip);
+          }
+          container.appendChild(button);
+          break;
+        case "custom":
+          if (col.render) {
+            const customContent = col.render(row, isMobile);
+            if (typeof customContent === "string") {
+              container.innerHTML = customContent;
+            } else if (customContent instanceof HTMLElement) {
+              container.appendChild(customContent);
+            }
+          }
+          break;
+        default:
+          const value = col.getValue ? col.getValue(row) : row[col.key];
+          container.textContent = value || "";
+      }
+      if (col.cellStyle) {
+        const styles = typeof col.cellStyle === "function" ? col.cellStyle(row) : col.cellStyle;
+        Object.assign(container.style, styles);
+      }
+    }
+    _handleMasterCheckboxChange(e) {
+      const visibleRows = this._visibleRows.value;
+      const selected = new Set(this._selectedRows.value);
+      const checkbox = e.target;
+      const shouldSelectAll = checkbox.checked;
+      visibleRows.forEach((row) => {
+        const rowId = this._getRowId(row);
+        if (shouldSelectAll) {
+          selected.add(rowId);
+        } else {
+          selected.delete(rowId);
+        }
+      });
+      this._selectedRows.value = selected;
+      setTimeout(() => {
+        this._emitSelectionChange();
+      }, 0);
+    }
+    _handleRowCheckboxChange(e) {
+      if (!e || !e.target)
+        return;
+      const target = e.target;
+      const rowId = target.dataset.rowId;
+      const checked = target.checked;
+      const selected = new Set(this._selectedRows.value);
+      if (checked) {
+        selected.add(rowId);
+      } else {
+        selected.delete(rowId);
+      }
+      this._selectedRows.value = selected;
+      this._emitSelectionChange();
+    }
+    _updateSelection() {
+      const checkboxes = this.querySelectorAll(".row-checkbox");
+      checkboxes.forEach((checkbox) => {
+        const rowId = checkbox.dataset.rowId;
+        checkbox.checked = this._selectedRows.value.has(rowId);
+      });
+      this._updateMasterCheckbox();
+      this._updateSelectionCount();
+    }
+    _updateMasterCheckbox() {
+      const masterCheckboxes = this.querySelectorAll(".master-checkbox, .master-checkbox-mobile");
+      const visible = this._visibleRows.value;
+      const selected = this._selectedRows.value;
+      const selectedCount = visible.filter((row) => selected.has(this._getRowId(row))).length;
+      const allSelected = visible.length > 0 && selectedCount === visible.length;
+      const someSelected = selectedCount > 0 && selectedCount < visible.length;
+      masterCheckboxes.forEach((checkbox) => {
+        checkbox.checked = allSelected;
+        checkbox.indeterminate = someSelected;
+      });
+    }
+    _updateSelectionCount() {
+      const countElements = this.querySelectorAll(".selection-count-mobile");
+      const count = this._selectedRows.value.size;
+      countElements.forEach((el) => {
+        el.textContent = `${count} selected`;
+      });
+    }
+    _emitSelectionChange() {
+      const selected = Array.from(this._selectedRows.value);
+      const visibleRows = this._visibleRows.value;
+      const selectedRows = visibleRows.filter((row) => this._selectedRows.value.has(this._getRowId(row)));
+      this.dispatchEvent(new CustomEvent("selectionchange", {
+        detail: {
+          selected,
+          selectedRows,
+          count: selected.length,
+          allSelected: this._allSelected.value,
+          someSelected: this._someSelected.value
+        },
+        bubbles: true
+      }));
+    }
+    _getRowId(row) {
+      return String(row[this._rowIdKey] || row.id || JSON.stringify(row));
+    }
+    set data(value) {
+      this._data.value = Array.isArray(value) ? value : [];
+    }
+    get data() {
+      return this._data.value;
+    }
+    set columns(value) {
+      this._columns.value = Array.isArray(value) ? value : [];
+    }
+    get columns() {
+      return this._columns.value;
+    }
+    set selectedRows(value) {
+      this._selectedRows.value = new Set(value);
+      this._updateSelection();
+      this._emitSelectionChange();
+    }
+    get selectedRows() {
+      return Array.from(this._selectedRows.value);
+    }
+    clearSelection() {
+      this._selectedRows.value = /* @__PURE__ */ new Set();
+      this._updateSelection();
+      this._emitSelectionChange();
+    }
+    selectAll() {
+      const selected = /* @__PURE__ */ new Set();
+      this._visibleRows.value.forEach((row) => {
+        selected.add(this._getRowId(row));
+      });
+      this._selectedRows.value = selected;
+      this._updateSelection();
+      this._emitSelectionChange();
+    }
+    refresh() {
+      this._updateTable();
+    }
+    updateRow(rowId) {
+      console.group(`Updating row with ID: ${rowId}`);
+      const data2 = this._data.value;
+      const columns = this._columns.value;
+      const row = data2.find((r) => this._getRowId(r) === rowId);
+      if (!row) {
+        console.warn(`Row with ID ${rowId} not found`);
+        console.groupEnd();
+        return;
+      }
+      const desktopRow = this.querySelector(`tr[data-row-id="${rowId}"]`);
+      if (desktopRow) {
+        this._updateTableRow(desktopRow, row, columns);
+      }
+      const mobileCard = this.querySelector(`[data-mobile-card-id="${rowId}"]`);
+      if (mobileCard) {
+        this._updateMobileCard(mobileCard, row, columns);
+      }
+      console.groupEnd();
+    }
+    _updateTableRow(tr, row, columns) {
+      console.group(`Updating desktop table row for ID: ${this._getRowId(row)}`);
+      const isModified = row.isModified?.() || false;
+      tr.classList.toggle("bg-amber-50", isModified);
+      tr.classList.toggle("border-l-4", isModified);
+      tr.classList.toggle("border-l-amber-300", isModified);
+      const cells = tr.querySelectorAll("td");
+      columns.forEach((col, index) => {
+        const td = cells[index];
+        if (td) {
+          td.innerHTML = "";
+          this._renderCell(td, col, row);
+        }
+      });
+      console.groupEnd();
+    }
+    _updateMobileCard(card, row, columns) {
+      console.group(`Updating mobile card for ID: ${this._getRowId(row)}`);
+      card.innerHTML = "";
+      this._renderMobileCardContent(card, row, columns);
+      console.groupEnd();
+    }
+    _renderMobileCardContent(card, row, columns) {
+      console.group("Rendering mobile card content", { rowId: this._getRowId(row) });
+      card.className = "bg-white rounded border border-gray-200 p-3 sm:p-4 space-y-2";
+      if (row.isModified?.()) {
+        card.classList.add("bg-amber-50", "border-l-4", "border-l-amber-300");
+      }
+      card.setAttribute("data-mobile-card-id", this._getRowId(row));
+      columns.forEach((col) => {
+        if (col.mobileHidden) {
+          console.log(`Skipping mobile rendering for column: ${col.header || col.mobileLabel}`);
+          return;
+        }
+        const field = document.createElement("div");
+        field.className = "flex justify-between items-start text-sm";
+        const label = document.createElement("span");
+        label.className = "font-medium text-gray-700";
+        label.textContent = col.mobileLabel || col.header || "";
+        const value = document.createElement("div");
+        value.className = "text-gray-900 text-right flex-1 ml-3";
+        this._renderCell(value, col, row);
+        field.appendChild(label);
+        field.appendChild(value);
+        card.appendChild(field);
+      });
+      console.groupEnd();
+    }
+  };
+  customElements.define("ui-table", ReusableTable);
 })();
 /* @license
 Papa Parse

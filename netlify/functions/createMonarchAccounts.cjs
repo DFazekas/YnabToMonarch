@@ -92,10 +92,6 @@ async function processAccount(token, account) {
     displayBalance: 0.0
   }
 
-  console.log("Monarch account data:", accountInput);
-  console.log(accountInput)
-  console.dir(accountInput, { depth: null });
-
   // Create new account in Monarch
   const { account: newAccount, error } = await createManualAccount(token, accountInput)
   if (error) return { error }

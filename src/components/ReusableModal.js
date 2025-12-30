@@ -25,6 +25,18 @@ class ReusableModal extends HTMLElement {
     this._setupEventListeners();
   }
 
+  get hasFooter() {
+    return this.hasAttribute('has-footer');
+  }
+
+  set hasFooter(value) {
+    if (value) {
+      this.setAttribute('has-footer', '');
+    } else {
+      this.removeAttribute('has-footer');
+    }
+  }
+
   _render() {
     // Render trigger in shadow DOM
     this.shadowRoot.innerHTML = `
@@ -75,7 +87,6 @@ class ReusableModal extends HTMLElement {
           z-index: 100;
           background-color: white;
           border-radius: 0.75rem;
-          padding: 1.5rem;
           margin: 1rem;
           box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
           max-width: 85vw;
@@ -84,13 +95,14 @@ class ReusableModal extends HTMLElement {
           transform: translateY(100%);
           transition: transform 500ms cubic-bezier(0.4, 0, 0.2, 1);
           max-height: 90vh;
-          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
           flex-shrink: 0;
         }
 
         @media (min-width: 640px) {
           .ui-modal-content {
-            padding: 2rem;
+            padding: 0;
             max-width: 70vw;
             margin: 1.5rem;
           }
@@ -98,20 +110,50 @@ class ReusableModal extends HTMLElement {
 
         @media (min-width: 768px) {
           .ui-modal-content {
-            padding: 2.5rem;
             max-width: 40vw;
             margin: 2rem;
           }
         }
 
-        .ui-modal-overlay.open .ui-modal-content {
-          transform: translateY(0);
+        .ui-modal-header {
+          padding: 0.5rem 1rem;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          border-bottom: 1px solid #e5e7eb;
+          flex-shrink: 0;
         }
 
-        .ui-modal-header {
-          display: relative;
-          margin-bottom: 1rem;
-          gap: 1rem;
+        .ui-modal-body {
+          flex: 1;
+          overflow-y: auto;
+          padding: 1rem 1.5rem 2rem 1.5rem; // Top, right, bottom, left
+          color: #4b5563;
+          font-size: 0.875rem;
+          line-height: 1.5;
+        }
+
+        @media (min-width: 640px) {
+          .ui-modal-body {
+            padding: 1rem 2rem 2rem 2rem;
+          }
+        }
+
+        .ui-modal-footer {
+          padding: 1rem;
+          display: none;
+          justify-content: flex-end;
+          gap: 0.75rem;
+          border-top: 1px solid #e5e7eb;
+          flex-shrink: 0;
+        }
+
+        .ui-modal-footer.visible {
+          display: flex;
+        }
+
+        .ui-modal-overlay.open .ui-modal-content {
+          transform: translateY(0);
         }
 
         .ui-modal-title {
@@ -121,6 +163,9 @@ class ReusableModal extends HTMLElement {
           font-weight: 700;
           color: #111827;
           line-height: 1.5;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
         }
 
         @media (min-width: 640px) {
@@ -136,11 +181,14 @@ class ReusableModal extends HTMLElement {
         }
 
         .ui-modal-close-btn {
-          position: absolute;
-          top: 0.75rem;
-          right: 0.75rem;
+          position: relative;
+          padding: 0;
           width: 2rem;
           height: 2rem;
+          min-width: 2rem;
+          min-height: 2rem;
+          max-width: 2rem;
+          max-height: 2rem;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -153,6 +201,13 @@ class ReusableModal extends HTMLElement {
           flex-shrink: 0;
         }
 
+        .ui-modal-close-btn svg {
+          width: 1.25rem;
+          height: 1.25rem;
+          flex-shrink: 0;
+          object-fit: contain;
+        }
+
         .ui-modal-close-btn:hover {
           background-color: #f3f4f6;
           color: #4b5563;
@@ -163,19 +218,6 @@ class ReusableModal extends HTMLElement {
           ring: 2px;
           ring-color: #3b82f6;
         }
-
-        .ui-modal-body {
-          color: #4b5563;
-          font-size: 0.875rem;
-          line-height: 1.5;
-        }
-
-        .ui-modal-footer {
-          margin-top: 1.5rem;
-          display: flex;
-          justify-content: flex-end;
-          gap: 0.75rem;
-        }
       </style>
       
       <div class="ui-modal-backdrop"></div>
@@ -184,7 +226,7 @@ class ReusableModal extends HTMLElement {
         <div class="ui-modal-header">
           <div class="ui-modal-title"></div>
           <button class="ui-modal-close-btn" aria-label="Close modal">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -216,13 +258,17 @@ class ReusableModal extends HTMLElement {
       bodyContainer.innerHTML = contentSlot.innerHTML;
     }
     
-    // For footer, we need to copy the HTML but NOT clone/move actual DOM nodes
-    // This ensures Web Components remain queryable in their original location
+    // For footer, only show if has-footer attribute is set
     if (footerSlot && footerContainer) {
       // Get the inner HTML of the footer slot and render it in the modal
       footerContainer.innerHTML = Array.from(footerSlot.children)
         .map(child => child.outerHTML)
         .join('');
+      
+      // Only show footer if has-footer attribute is present
+      if (this.hasFooter) {
+        footerContainer.classList.add('visible');
+      }
     }
   }
 
@@ -244,17 +290,21 @@ class ReusableModal extends HTMLElement {
     const backdrop = this._modalOverlay.querySelector('.ui-modal-backdrop');
     const closeBtn = this._modalOverlay.querySelector('.ui-modal-close-btn');
 
-    // Trigger button
+    // Trigger button (optional)
     const trigger = this.querySelector('[slot="trigger"]');
     if (trigger) {
       trigger.addEventListener('click', () => this.open());
     }
 
-    // Close button
-    closeBtn.addEventListener('click', () => this.close());
+    // Close button (always exists)
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => this.close());
+    }
 
-    // Backdrop click
-    backdrop.addEventListener('click', () => this.close());
+    // Backdrop click (always exists)
+    if (backdrop) {
+      backdrop.addEventListener('click', () => this.close());
+    }
 
     // Escape key
     this._handleEscape = (e) => {

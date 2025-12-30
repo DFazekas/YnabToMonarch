@@ -1,3 +1,24 @@
+/**
+ * YNAB OAuth Token Exchange
+ * 
+ * Purpose: Handles the initial OAuth authorization code exchange with YNAB.
+ * This is called once during the OAuth callback flow when the user authorizes the app.
+ * 
+ * Request: POST with JSON body containing { code: authorization_code }
+ * Response: Sets HttpOnly cookies with access and refresh tokens, returns { success: true }
+ * 
+ * Flow:
+ * 1. User clicks "Connect to YNAB"
+ * 2. Redirected to YNAB login
+ * 3. User authorizes the app
+ * 4. YNAB redirects back with authorization code
+ * 5. Frontend calls this function with the code
+ * 6. This function exchanges code for tokens and sets HttpOnly cookies
+ * 
+ * Security: Tokens are stored as HttpOnly cookies (not accessible to JavaScript)
+ * See ynabTokenRefresh.cjs for token refresh when access token expires.
+ */
+
 const fetch = require('node-fetch');
 
 exports.handler = async function(event) {
@@ -27,41 +48,24 @@ exports.handler = async function(event) {
     ? JSON.parse(event.body) 
     : event.body;
 
-  // These secrets will be stored in your Netlify environment variables for production
+  // This endpoint handles initial OAuth authorization code exchange only
+  // Token refresh is handled separately in ynabTokenRefresh.cjs
   const { YNAB_CLIENT_ID, YNAB_CLIENT_SECRET, YNAB_REDIRECT_URI } = process.env;
-  const { code, grant_type, refresh_token } = bodyData;
+  const { code } = bodyData;
 
-  console.log("process.env:")
-  console.dir(process.env, { depth: null });
-
-  console.log("bodyData:")
-  console.dir(bodyData, { depth: null });
-
-  if (!grant_type) {
-    return { statusCode: 400, body: 'Missing grant_type' };
+  if (!code) {
+    console.error("ynabTokenExchange ❌ missing authorization code");
+    console.groupEnd("ynabTokenExchange");
+    return { statusCode: 400, body: JSON.stringify({ error: 'Missing authorization code' }) };
   }
 
   const url = new URL('https://app.ynab.com/oauth/token');
   const params = new URLSearchParams();
-  // Use the environment variables for credentials
   params.append('client_id', YNAB_CLIENT_ID);
   params.append('client_secret', YNAB_CLIENT_SECRET);
   params.append('redirect_uri', YNAB_REDIRECT_URI);
-  params.append('grant_type', grant_type);
-
-  if (grant_type === 'authorization_code') {
-    if (!code) {
-      return { statusCode: 400, body: 'Missing authorization code' };
-    }
-    params.append('code', code);
-  } else if (grant_type === 'refresh_token') {
-    if (!refresh_token) {
-      return { statusCode: 400, body: 'Missing refresh token' };
-    }
-    params.append('refresh_token', refresh_token);
-  } else {
-    return { statusCode: 400, body: 'Invalid grant_type' };
-  }
+  params.append('grant_type', 'authorization_code');
+  params.append('code', code);
 
   try {
     const response = await fetch(url, {
@@ -84,12 +88,16 @@ exports.handler = async function(event) {
     }
 
     console.log("ynabTokenExchange ✅ token exchanged successfully");
-    console.log("Response data:");
-    console.dir(data, { depth: null });
     console.groupEnd("ynabTokenExchange");
     return {
       statusCode: 200,
-      body: JSON.stringify(data),
+      headers: {
+        'Set-Cookie': [
+          `ynab_access_token=${data.access_token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=3600`,
+          `ynab_refresh_token=${data.refresh_token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=31536000`
+        ]
+      },
+      body: JSON.stringify({ success: true }),
     };
   } catch (error) {
     console.error('ynabTokenExchange ❌ unexpected error:', error);

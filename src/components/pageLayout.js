@@ -1,6 +1,5 @@
 import { goBack, navigate } from '../router.js';
 import state from '../state.js';
-import { getLocalStorage } from '../utils/storage.js';
 
 /**
  * Page Layout Component
@@ -157,28 +156,24 @@ export function renderNavigationBar(options = {}) {
 }
 
 /**
- * Checks if there's any user data stored in localStorage or sessionStorage
+ * Checks if there's any user data stored (per new storage strategy)
+ * - Monarch credentials: sessionStorage
+ * - Financial data: IndexedDB and in-memory state
  * @returns {boolean} True if any data exists
  */
 function checkForStoredData() {
-  // Check state
-  const hasStateAccounts = state.accounts && Object.keys(state.accounts).length > 0;
+  // Check in-memory state
+  const hasStateAccounts = state.accounts && state.accounts.length() > 0;
   const hasMonarchAccounts = state.monarchAccounts !== null;
 
-  // Check sessionStorage
-  const hasSessionAccounts = sessionStorage.getItem('ynab_accounts') !== null;
-  const hasSessionMonarch = sessionStorage.getItem('monarch_accounts') !== null;
+  // Check sessionStorage for Monarch credentials (new strategy)
+  const hasMonarchEmail = !!sessionStorage.getItem('monarch_email');
+  const hasMonarchToken = !!sessionStorage.getItem('monarch_token');
 
-  // Check localStorage
-  const localStorage = getLocalStorage();
-  const hasLocalStorageData = !!(
-    localStorage.email ||
-    localStorage.encryptedPassword ||
-    localStorage.token ||
-    localStorage.uuid
-  );
+  // Note: IndexedDB is checked asynchronously on upload page init
+  // This function is for quick sync checks only
 
-  return hasStateAccounts || hasMonarchAccounts || hasSessionAccounts || hasSessionMonarch || hasLocalStorageData;
+  return hasStateAccounts || hasMonarchAccounts || hasMonarchEmail || hasMonarchToken;
 }
 
 /**

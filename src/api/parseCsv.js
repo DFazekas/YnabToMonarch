@@ -1,4 +1,4 @@
-import { API } from "../config.js";
+import { API } from "./config.js";
 import { postJson } from "./utils.js";
 
 export const parseCsv = async (csvText) => {

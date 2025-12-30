@@ -1,7 +1,5 @@
 import { navigate } from '../../router.js';
 import { renderPageLayout } from '../../components/pageLayout.js';
-import '../../components/AutoStyledButton.js';
-import '../../components/ReusableModal.js';
 
 export default function initHomeView() {
   // Render layout - components auto-style themselves

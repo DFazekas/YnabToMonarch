@@ -1,36 +1,36 @@
-import state from '../../state.js';
-import { navigate, persistState } from '../../router.js';
-import parseYNABZip, {parseYnabAccountApi} from '../../services/ynabParser.js';
-import { redirectToYnabOauth, refreshAccessToken, getAccounts } from '../../api/ynabApi.js';
+import Accounts from '../../schemas/accounts.js';
+import { navigate } from '../../router.js';
+import { redirectToYnabOauth } from '../../api/ynabApi.js';
+import loadingOverlay from '../../components/LoadingOverlay.js';
+import { ensureYnabAccess, fetchYnabAccountsAndTransactions, parseUploadedFile, loadAccountsFromDB, hasStoredAccounts } from './uploadData.js';
 import { renderPageLayout } from '../../components/pageLayout.js';
-import '../../components/Card.js';
-import '../../components/Divider.js';
-import '../../components/ErrorMessage.js';
+import financialDB from '../../utils/indexedDB.js';
 
 export default async function initUploadView() {
-  // Check if we have existing accounts data
-  const hasExistingAccounts = state.accounts && Object.keys(state.accounts).length > 0;
+  // Initialize IndexedDB
+  try {
+    await financialDB.init();
+  } catch (error) {
+    console.error('Failed to initialize IndexedDB:', error);
+    // Continue anyway - data will just be stored in memory
+  }
 
-  // Check if YNAB tokens are valid or can be refreshed
-  let ynabAccessToken = sessionStorage.getItem('ynab_access_token');
-  const ynabRefreshToken = sessionStorage.getItem('ynab_refresh_token');
-  const ynabTokenExpiresAt = sessionStorage.getItem('ynab_token_expires_at');
+  // Check if we have existing accounts in IndexedDB
+  const hasExistingAccounts = await hasStoredAccounts();
 
-  let isYnabTokenValid = ynabAccessToken &&
-    ynabTokenExpiresAt &&
-    Date.now() < parseInt(ynabTokenExpiresAt, 10);
+  // Load accounts from IndexedDB if they exist
+  if (hasExistingAccounts) {
+    await loadAccountsFromDB();
+  }
 
-  // If token is expired but refresh token exists, try to refresh
-  if (!isYnabTokenValid && ynabRefreshToken) {
-    console.log('YNAB access token expired, attempting to refresh...');
-    const refreshed = await refreshAccessToken(ynabRefreshToken);
-    if (refreshed && refreshed.access_token) {
-      ynabAccessToken = refreshed.access_token;
-      isYnabTokenValid = true;
-      console.log('YNAB access token successfully refreshed');
-    } else {
-      console.log('Failed to refresh YNAB access token');
-    }
+  // Check if YNAB tokens are valid
+  let isYnabTokenValid = false;
+  try {
+    const result = await ensureYnabAccess();
+    isYnabTokenValid = result.isYnabTokenValid;
+  } catch (error) {
+    console.warn('Error checking YNAB authentication:', error);
+    // isYnabTokenValid remains false
   }
 
   renderPageLayout({
@@ -51,64 +51,53 @@ export default async function initUploadView() {
 
   // Update YNAB card based on session state
   const continueWithYnabBtn = document.getElementById('continueWithYnabBtn');
-  const connectYnabBtn = document.getElementById('connectYnabBtn');
   continueWithYnabBtn.hidden = !isYnabTokenValid;
-  document.getElementById('automaticUploadDivider').hidden = !isYnabTokenValid
+
+  const connectYnabBtn = document.getElementById('connectYnabBtn');
   connectYnabBtn.textContent = isYnabTokenValid ? 'Connect new YNAB Profile' : 'Connect to YNAB';
   connectYnabBtn.setAttribute('data-color', isYnabTokenValid ? 'white' : 'purple');
   connectYnabBtn.applyStyles();
 
+  document.getElementById('automaticUploadDivider').hidden = !isYnabTokenValid
+
   // Continue with existing YNAB session
   continueWithYnabBtn?.addEventListener('click', async (event) => {
     event.preventDefault();
-    
+
     // Hide any previous errors
     oauthError.hide();
-    
-    // Disable button and show loading state
-    continueWithYnabBtn.disabled = true;
-    const originalText = continueWithYnabBtn.textContent;
-    continueWithYnabBtn.textContent = 'Fetching accounts...';
-    
+
+    // Show loading overlay and fetch accounts + transactions
+    loadingOverlay.show('Fetching accounts...');
     try {
-      const rawAccounts = await getAccounts(ynabAccessToken);
-      
-      if (!rawAccounts) {
-        throw new Error('No response from YNAB API');
-      }
-      
-      const accounts = parseYnabAccountApi(rawAccounts);
-      
+      const accounts = await fetchYnabAccountsAndTransactions();
       if (!accounts || Object.keys(accounts).length === 0) {
+        loadingOverlay.hide();
         oauthError.show(
           'No accounts found in your YNAB profile.',
           'Make sure you have at least one account in your YNAB budget, then try again.'
         );
-        continueWithYnabBtn.disabled = false;
-        continueWithYnabBtn.textContent = originalText;
         return;
       }
-      
-      state.accounts = accounts;
-      persistState();
+
+      Accounts.init(accounts);
       navigate('/review', false, true);
     } catch (error) {
       console.error('Error fetching YNAB accounts:', error);
+      loadingOverlay.hide();
       oauthError.show(
         'Could not fetch accounts from YNAB.',
         'Your session may have expired. Try connecting to YNAB again below.'
       );
-      continueWithYnabBtn.disabled = false;
-      continueWithYnabBtn.textContent = originalText;
     }
   });
 
   connectYnabBtn?.addEventListener('click', async (event) => {
     event.preventDefault();
-    
+
     // Hide any previous errors when user takes action
     oauthError.hide();
-    
+
     try {
       await redirectToYnabOauth();
     } catch (error) {
@@ -125,6 +114,7 @@ export default async function initUploadView() {
   const manualUploadButton = document.getElementById('manualUploadButton');
   document.getElementById('manualUploadDivider').hidden = !hasExistingAccounts
   continueWithExistingBtn.hidden = !hasExistingAccounts;
+  const originalButtonText = manualUploadButton.textContent; // Save original text
   manualUploadButton.textContent = hasExistingAccounts ? 'Upload new Data' : 'Upload YNAB Data';
   manualUploadButton.setAttribute('data-color', hasExistingAccounts ? 'white' : 'blue');
   manualUploadButton.applyStyles();
@@ -139,122 +129,31 @@ export default async function initUploadView() {
   const manualFileInput = document.getElementById('manualFileInput');
   manualUploadButton?.addEventListener('click', (e) => {
     e.preventDefault();
-    
+
     // Hide any previous errors when user takes action
     fileUploadError.hide();
-    
     manualFileInput?.click();
   });
   manualFileInput?.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Hide any previous errors
       fileUploadError.hide();
       await handleFile(file);
     }
   });
 
   async function handleFile(csvFile) {
-    // Validate file exists
-    if (!csvFile) {
-      fileUploadError.show(
-        'No file selected.',
-        'Please select a ZIP file exported from YNAB.'
-      );
-      return;
-    }
-
-    // Validate file size (max 50MB)
-    const maxSize = 50 * 1024 * 1024; // 50MB
-    if (csvFile.size > maxSize) {
-      fileUploadError.show(
-        'File is too large.',
-        'Please ensure your YNAB export is under 50MB. If needed, export a smaller date range.'
-      );
-      return;
-    }
-
-    // Validate minimum file size
-    if (csvFile.size < 100) {
-      fileUploadError.show(
-        'File appears to be empty or corrupted.',
-        'Please re-export your data from YNAB and try again.'
-      );
-      return;
-    }
-
-    // Check if file is a ZIP file by extension, MIME type, or common patterns
-    const fileName = csvFile.name.toLowerCase();
-    const fileType = csvFile.type.toLowerCase();
-
-    // More permissive extension check - look for common ZIP-related extensions
-    const isZipByExtension = fileName.endsWith('.zip') ||
-      fileName.endsWith('.bin') ||
-      fileName.includes('ynab') ||
-      fileName.includes('register') ||
-      fileName.includes('export');
-
-    const isZipByMimeType = [
-      'application/zip',
-      'application/x-zip-compressed',
-      'application/octet-stream',
-      'application/x-zip',
-      'multipart/x-zip',
-      'application/x-compressed',
-      'application/binary'
-    ].includes(fileType);
-
-    const isPotentialZip = isZipByExtension || isZipByMimeType || csvFile.size > 1000;
-
-    if (!isPotentialZip) {
-      fileUploadError.show(
-        'Invalid file type.',
-        'Please upload a ZIP file exported from YNAB. Visit YNAB.com → Account Menu → "Export Plan" to download it.'
-      );
-      // Reset file input
-      manualFileInput.value = '';
-      return;
-    }
-
-    // Show loading state
-    manualUploadButton.disabled = true;
-    const originalText = manualUploadButton.textContent;
-    manualUploadButton.textContent = 'Processing file...';
-
+    // Validate file and show loading state
     try {
-      const accounts = await parseYNABZip(csvFile);
-
-      // Validate parsed accounts
-      if (!accounts || typeof accounts !== 'object') {
-        throw new Error('Invalid account data structure');
-      }
-
-      const accountCount = Object.keys(accounts).length;
-
-      if (accountCount === 0) {
-        fileUploadError.show(
-          'No accounts found in the uploaded file.',
-          'Make sure you exported the complete YNAB data including all accounts. Try exporting again from YNAB.com.'
-        );
-        manualUploadButton.disabled = false;
-        manualUploadButton.textContent = originalText;
-        manualFileInput.value = '';
-        return;
-      }
-
-      // Success - save and navigate
-      state.accounts = accounts;
-      persistState();
+      await parseUploadedFile(csvFile);
       navigate('/review', false, true);
-
     } catch (err) {
       console.error('File parsing error:', err);
+      loadingOverlay.hide();
 
-      // Provide specific error messages based on error type
       let errorMessage = 'Could not parse the uploaded file.';
       let solution = 'Please ensure it\'s a valid YNAB ZIP export. Try re-exporting from YNAB.com → Account Menu → "Export Plan".';
 
-      // Normalize error message for case-insensitive matching
       const errorMsg = err.message?.toLowerCase() || '';
 
       if (errorMsg.includes('register') || errorMsg.includes('csv')) {
@@ -269,13 +168,20 @@ export default async function initUploadView() {
       } else if (errorMsg.includes('empty') || errorMsg.includes('invalid')) {
         errorMessage = 'The file appears to be empty or invalid.';
         solution = 'Please re-export your complete YNAB budget from YNAB.com → Account Menu → "Export Plan".';
+      } else if (errorMsg.includes('too large')) {
+        errorMessage = 'File is too large.';
+        solution = 'Please ensure your YNAB export is under 50MB. If needed, export a smaller date range.';
+      } else if (errorMsg.includes('too small')) {
+        errorMessage = 'File appears to be empty or corrupted.';
+        solution = 'Please re-export your data from YNAB and try again.';
+      } else if (errorMsg.includes('file type')) {
+        errorMessage = 'Invalid file type.';
+        solution = 'Please upload a ZIP file exported from YNAB. Visit YNAB.com → Account Menu → "Export Plan" to download it.';
       }
 
       fileUploadError.show(errorMessage, solution);
-      
-      // Reset state
       manualUploadButton.disabled = false;
-      manualUploadButton.textContent = originalText;
+      manualUploadButton.textContent = originalButtonText;
       manualFileInput.value = '';
     }
   }

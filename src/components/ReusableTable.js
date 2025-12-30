@@ -16,6 +16,9 @@ import { signal, computed } from '../core/reactiveState.js';
 import '../components/AutoStyledButton.js';
 
 class ReusableTable extends HTMLElement {
+  /**
+   * Initialize the ReusableTable component with reactive state and configuration
+   */
   constructor() {
     super();
 
@@ -49,6 +52,10 @@ class ReusableTable extends HTMLElement {
     this._handleRowCheckboxChange = this._handleRowCheckboxChange.bind(this);
   }
 
+  /**
+   * Lifecycle callback invoked when the element is added to the DOM
+   * Reads attributes and initializes the table
+   */
   connectedCallback() {
     // Read attributes
     this._mobileBreakpoint = this.getAttribute('data-mobile-breakpoint') || 'lg';
@@ -59,6 +66,10 @@ class ReusableTable extends HTMLElement {
     this._setupSubscriptions();
   }
 
+  /**
+   * Lifecycle callback invoked when the element is removed from the DOM
+   * Cleans up all reactive subscriptions to prevent memory leaks
+   */
   disconnectedCallback() {
     // Cleanup subscriptions
     if (this._dataUnsubscribe) this._dataUnsubscribe();
@@ -67,6 +78,10 @@ class ReusableTable extends HTMLElement {
     if (this._visibleUnsubscribe) this._visibleUnsubscribe();
   }
 
+  /**
+   * Set up reactive subscriptions for data, columns, selection, and visible rows
+   * Automatically triggers appropriate updates when reactive state changes
+   */
   _setupSubscriptions() {
     // Re-render when data or columns change
     this._dataUnsubscribe = this._data.subscribe(() => this._updateTable());
@@ -75,6 +90,10 @@ class ReusableTable extends HTMLElement {
     this._visibleUnsubscribe = this._visibleRows.subscribe(() => this._updateMasterCheckbox());
   }
 
+  /**
+   * Initial render of the table structure (both mobile and desktop views)
+   * Creates the HTML skeleton with master checkboxes and empty containers
+   */
   _render() {
     this.className = 'ui-table-container bg-white rounded-lg shadow-sm overflow-hidden';
 
@@ -110,11 +129,13 @@ class ReusableTable extends HTMLElement {
     this._updateTable();
   }
 
+  /**
+   * Update the entire table content (both mobile and desktop views)
+   * Re-renders all rows and sets up event listeners
+   */
   _updateTable() {
     const data = this._data.value;
     const columns = this._columns.value;
-
-    if (!columns.length || !data.length) return;
 
     // Update visible rows (will be filtered externally)
     this._visibleRows.value = data;
@@ -136,6 +157,11 @@ class ReusableTable extends HTMLElement {
     this._updateSelection();
   }
 
+  /**
+   * Render the desktop table view with headers and rows
+   * @param {Account[]} data - Array of Account class instances to display
+   * @param {Array<Object>} columns - Column configuration objects
+   */
   _renderDesktopTable(data, columns) {
     const thead = this.querySelector('thead tr');
     const tbody = this.querySelector('tbody');
@@ -168,12 +194,13 @@ class ReusableTable extends HTMLElement {
     // Render rows
     tbody.innerHTML = '';
     data.forEach(row => {
+      console.debug('Rendering row:', row);
       const tr = document.createElement('tr');
       tr.setAttribute('role', 'row');
       tr.className = 'border-t border-gray-100';
       
       // Subtle visual indicator for modified rows
-      if (row._isModified) {
+      if (row.isModified()) {
         tr.classList.add('bg-amber-50', 'border-l-4', 'border-l-amber-300');
       }
       
@@ -191,6 +218,11 @@ class ReusableTable extends HTMLElement {
     });
   }
 
+  /**
+   * Render the mobile card view with responsive card layout
+   * @param {Account[]} data - Array of Account class instances to display
+   * @param {Array<Object>} columns - Column configuration objects
+   */
   _renderMobileCards(data, columns) {
     const mobileList = this.querySelector('.mobile-list');
     if (!mobileList) return;
@@ -202,7 +234,7 @@ class ReusableTable extends HTMLElement {
       card.className = 'mobile-card overflow-hidden';
       
       // Subtle visual indicator for modified rows on mobile
-      if (row._isModified) {
+      if (row.isModified()) {
         card.classList.add('bg-amber-50', 'border-l-4', 'border-l-amber-300');
       } else {
         card.classList.add('bg-white', 'border', 'border-gray-100');
@@ -227,14 +259,16 @@ class ReusableTable extends HTMLElement {
       }
 
       // Primary field (usually account name) - make prominent
-      const primaryCol = columns.find(c => c.key === 'modifiedName');
+      const primaryCol = columns.find(c => c.key === 'name');
       if (primaryCol && !primaryCol.mobileHidden) {
         const primaryDiv = document.createElement('div');
         primaryDiv.className = 'flex-1 min-w-0';
         const nameValue = document.createElement('div');
         nameValue.className = 'text-sm font-semibold text-gray-900 truncate';
-        nameValue.textContent = row[primaryCol.key] || '';
-        if (primaryCol.clickable) {
+        const displayValue = primaryCol.getValue ? primaryCol.getValue(row) : row[primaryCol.key];
+        nameValue.textContent = displayValue || '';
+        const isClickable = primaryCol.clickable ? (typeof primaryCol.clickable === 'function' ? primaryCol.clickable(row) : primaryCol.clickable) : false;
+        if (isClickable) {
           nameValue.className += ' cursor-pointer hover:text-blue-600 transition-colors';
           if (primaryCol.onClick) {
             nameValue.addEventListener('click', () => primaryCol.onClick(row));
@@ -254,7 +288,7 @@ class ReusableTable extends HTMLElement {
       // Render mobile layout for other columns in a compact grid
       columns.forEach(col => {
         if (col.type === 'checkbox' && col.masterCheckbox) return; // Skip, already rendered
-        if (col.key === 'modifiedName') return; // Skip, already rendered in header
+        if (col.key === 'name') return; // Skip, already rendered in header
         if (col.mobileHidden) return;
         if (col.type === 'custom' && col.key === 'undo') return; // Handle undo separately
         if (col.type === 'button') return; // Skip buttons, handle in footer
@@ -324,6 +358,11 @@ class ReusableTable extends HTMLElement {
     });
   }
 
+  /**
+   * Create a styled checkbox element for mobile card selection
+   * @param {Object} row - The data row object
+   * @returns {HTMLLabelElement} The checkbox container element
+   */
   _createMobileCheckbox(row) {
     const container = document.createElement('label');
     container.className = 'custom-checkbox-container flex-shrink-0';
@@ -344,6 +383,13 @@ class ReusableTable extends HTMLElement {
     return container;
   }
 
+  /**
+   * Render a single cell based on column type and configuration
+   * @param {HTMLElement} container - The DOM element to render the cell content into
+   * @param {Object} col - Column configuration object
+   * @param {Account} row - The data row object
+   * @param {boolean} [isMobile=false] - Whether rendering for mobile view
+   */
   _renderCell(container, col, row, isMobile = false) {
     const isDisabled = col.disabled ? col.disabled(row) : false;
 
@@ -417,7 +463,15 @@ class ReusableTable extends HTMLElement {
         });
 
         if (col.onChange) {
-          select.addEventListener('change', () => col.onChange(row, select.value));
+          select.addEventListener('change', (e) => {
+            try {
+              if (e && e.target && row) {
+                col.onChange(row, select.value);
+              }
+            } catch (error) {
+              console.error('Error in select onChange:', error);
+            }
+          });
         }
 
         if (col.tooltip) {
@@ -472,6 +526,10 @@ class ReusableTable extends HTMLElement {
     }
   }
 
+  /**
+   * Handle master checkbox change to select/deselect all visible rows
+   * @param {Event} e - The change event from the master checkbox
+   */
   _handleMasterCheckboxChange(e) {
     const visibleRows = this._visibleRows.value;
     const selected = new Set(this._selectedRows.value);
@@ -498,9 +556,16 @@ class ReusableTable extends HTMLElement {
     }, 0);
   }
 
+  /**
+   * Handle individual row checkbox change to update selection state
+   * @param {Event} e - The change event from the row checkbox
+   */
   _handleRowCheckboxChange(e) {
-    const rowId = e.target.dataset.rowId;
-    const checked = e.target.checked;
+    if (!e || !e.target) return;
+    const target = e.target;
+    const rowId = target.dataset.rowId;
+    
+    const checked = target.checked;
     const selected = new Set(this._selectedRows.value);
 
     if (checked) {
@@ -513,6 +578,10 @@ class ReusableTable extends HTMLElement {
     this._emitSelectionChange();
   }
 
+  /**
+   * Update the visual state of all row checkboxes based on current selection
+   * Also updates master checkbox and selection count display
+   */
   _updateSelection() {
     // Update all row checkboxes
     const checkboxes = this.querySelectorAll('.row-checkbox');
@@ -526,6 +595,10 @@ class ReusableTable extends HTMLElement {
     this._updateSelectionCount();
   }
 
+  /**
+   * Update master checkbox state (checked, unchecked, or indeterminate)
+   * Reflects the current selection state of visible rows
+   */
   _updateMasterCheckbox() {
     const masterCheckboxes = this.querySelectorAll('.master-checkbox, .master-checkbox-mobile');
 
@@ -543,6 +616,10 @@ class ReusableTable extends HTMLElement {
     });
   }
 
+  /**
+   * Update the selection count display in mobile view
+   * Shows the number of currently selected rows
+   */
   _updateSelectionCount() {
     const countElements = this.querySelectorAll('.selection-count-mobile');
     const count = this._selectedRows.value.size;
@@ -552,6 +629,10 @@ class ReusableTable extends HTMLElement {
     });
   }
 
+  /**
+   * Emit a custom 'selectionchange' event with current selection details
+   * Includes selected row IDs, row objects, count, and selection state flags
+   */
   _emitSelectionChange() {
     const selected = Array.from(this._selectedRows.value);
     const visibleRows = this._visibleRows.value;
@@ -569,27 +650,52 @@ class ReusableTable extends HTMLElement {
     }));
   }
 
+  /**
+   * Get the unique identifier for a row
+   * @param {Object} row - The data row object
+   * @returns {string} The row's unique identifier
+   */
   _getRowId(row) {
     return String(row[this._rowIdKey] || row.id || JSON.stringify(row));
   }
 
   // Public API
+  /**
+   * Set the table data
+   * @param {Array} value - Array of data objects to display
+   */
   set data(value) {
     this._data.value = Array.isArray(value) ? value : [];
   }
 
+  /**
+   * Get the current table data
+   * @returns {Array} Array of data objects
+   */
   get data() {
     return this._data.value;
   }
 
+  /**
+   * Set the table column configuration
+   * @param {Array<Object>} value - Array of column configuration objects
+   */
   set columns(value) {
     this._columns.value = Array.isArray(value) ? value : [];
   }
 
+  /**
+   * Get the current table column configuration
+   * @returns {Array<Object>} Array of column configuration objects
+   */
   get columns() {
     return this._columns.value;
   }
 
+  /**
+   * Set the selected rows programmatically
+   * @param {Array<string>} value - Array of row IDs to select
+   */
   set selectedRows(value) {
     this._selectedRows.value = new Set(value);
     // Trigger DOM update and event emission
@@ -597,16 +703,26 @@ class ReusableTable extends HTMLElement {
     this._emitSelectionChange();
   }
 
+  /**
+   * Get the currently selected row IDs
+   * @returns {Array<string>} Array of selected row IDs
+   */
   get selectedRows() {
     return Array.from(this._selectedRows.value);
   }
 
+  /**
+   * Clear all row selections
+   */
   clearSelection() {
     this._selectedRows.value = new Set();
     this._updateSelection();
     this._emitSelectionChange();
   }
 
+  /**
+   * Select all visible rows in the table
+   */
   selectAll() {
     const selected = new Set();
     this._visibleRows.value.forEach(row => {
@@ -617,8 +733,114 @@ class ReusableTable extends HTMLElement {
     this._emitSelectionChange();
   }
 
+  /**
+   * Refresh the entire table by re-rendering all content
+   */
   refresh() {
     this._updateTable();
+  }
+
+  /**
+   * Update a single row in the table without re-rendering the entire table
+   * @param {string} rowId - The ID of the row to update
+   */
+  updateRow(rowId) {
+    console.group(`Updating row with ID: ${rowId}`);
+    const data = this._data.value;
+    const columns = this._columns.value;
+    const row = data.find(r => this._getRowId(r) === rowId);
+
+    if (!row) {
+      console.warn(`Row with ID ${rowId} not found`);
+      console.groupEnd();
+      return;
+    }
+
+    // Update desktop table row
+    const desktopRow = this.querySelector(`tr[data-row-id="${rowId}"]`);
+    if (desktopRow) {
+      this._updateTableRow(desktopRow, row, columns);
+    }
+
+    // Update mobile card row
+    const mobileCard = this.querySelector(`[data-mobile-card-id="${rowId}"]`);
+    if (mobileCard) {
+      this._updateMobileCard(mobileCard, row, columns);
+    }
+
+    console.groupEnd();
+  }
+
+  /**
+   * Update cells in a desktop table row
+   */
+  _updateTableRow(tr, row, columns) {
+    console.group(`Updating desktop table row for ID: ${this._getRowId(row)}`);
+    // Update visual indicator for modified rows
+    const isModified = row.isModified?.() || false;
+    tr.classList.toggle('bg-amber-50', isModified);
+    tr.classList.toggle('border-l-4', isModified);
+    tr.classList.toggle('border-l-amber-300', isModified);
+
+    // Update cells
+    const cells = tr.querySelectorAll('td');
+    columns.forEach((col, index) => {
+      const td = cells[index];
+      if (td) {
+        td.innerHTML = '';
+        this._renderCell(td, col, row);
+      }
+    });
+    console.groupEnd();
+  }
+
+  /**
+   * Update a mobile card
+   */
+  _updateMobileCard(card, row, columns) {
+    console.group(`Updating mobile card for ID: ${this._getRowId(row)}`);
+    card.innerHTML = '';
+    this._renderMobileCardContent(card, row, columns);
+    console.groupEnd();
+  }
+
+  /**
+   * Render the content of a mobile card
+   * @param {HTMLElement} card - The card container element
+   * @param {Object} row - The data row object
+   * @param {Array<Object>} columns - Column configuration objects
+   */
+  _renderMobileCardContent(card, row, columns) {
+    console.group("Rendering mobile card content", { rowId: this._getRowId(row) });
+    card.className = 'bg-white rounded border border-gray-200 p-3 sm:p-4 space-y-2';
+    if (row.isModified?.()) {
+      card.classList.add('bg-amber-50', 'border-l-4', 'border-l-amber-300');
+    }
+    card.setAttribute('data-mobile-card-id', this._getRowId(row));
+
+    columns.forEach(col => {
+      if (col.mobileHidden) {
+        console.log(`Skipping mobile rendering for column: ${col.header || col.mobileLabel}`);
+        return;
+      }
+
+      const field = document.createElement('div');
+      field.className = 'flex justify-between items-start text-sm';
+
+      const label = document.createElement('span');
+      label.className = 'font-medium text-gray-700';
+      label.textContent = col.mobileLabel || col.header || '';
+
+      const value = document.createElement('div');
+      value.className = 'text-gray-900 text-right flex-1 ml-3';
+
+      this._renderCell(value, col, row);
+
+      field.appendChild(label);
+      field.appendChild(value);
+      card.appendChild(field);
+    });
+    console.groupEnd();
   }
 }
 

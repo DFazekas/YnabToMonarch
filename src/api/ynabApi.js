@@ -1,4 +1,5 @@
 import { startYnabOauth, getExpectedState, clearExpectedState } from './ynabOauth.js';
+import { exchangeYnabToken, ynabApiCall } from './ynabTokens.js';
 import state from '../state.js';
 import { parseYnabAccountApi } from '../services/ynabParser.js';
 
@@ -8,26 +9,13 @@ export async function redirectToYnabOauth() {
   await startYnabOauth();
 }
 
-export async function getBudgets(accessToken, includeAccounts = false) {
-  const url = new URL(`${YNAB_API_BASE_URL}/budgets`);
-  if (includeAccounts) {
-    url.searchParams.append('include_accounts', 'true');
-  }
+export async function getBudgets(includeAccounts = false) {
+  const endpoint = includeAccounts 
+    ? '/budgets?include_accounts=true' 
+    : '/budgets';
 
   try {
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Error fetching YNAB budgets:', errorData);
-      throw new Error(`Failed to fetch YNAB budgets. Status: ${response.status}`);
-    }
-
-    const data = await response.json();
+    const data = await ynabApiCall(endpoint);
     return data.data.budgets;
   } catch (error) {
     console.error('YNAB API call failed:', error);
@@ -35,23 +23,9 @@ export async function getBudgets(accessToken, includeAccounts = false) {
   }
 }
 
-export async function getAccounts(accessToken) {
-  const url = new URL(`${YNAB_API_BASE_URL}/budgets/default/accounts`);
-
+export async function getAccounts() {
   try {
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Error fetching YNAB accounts:', errorData);
-      throw new Error(`Failed to fetch YNAB accounts. Status: ${response.status}`);
-    }
-
-    const data = await response.json();
+    const data = await ynabApiCall('/budgets/default/accounts');
     const rawAccounts = data.data.accounts;
     const accounts = rawAccounts.filter(acc => !acc.deleted);
     return accounts;
@@ -61,96 +35,16 @@ export async function getAccounts(accessToken) {
   }
 }
 
-export async function getTransactions(accessToken, accountId) {
-  const url = new URL(`${YNAB_API_BASE_URL}/budgets/default/accounts/${accountId}/transactions`);
-
+export async function getTransactions(accountId) {
   try {
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error(`Error fetching YNAB transactions for account ${accountId}:`, errorData);
-      throw new Error(`Failed to fetch YNAB transactions. Status: ${response.status}`);
-    }
-
-    const data = await response.json();
+    const data = await ynabApiCall(`/budgets/default/accounts/${accountId}/transactions`);
     const transactions = data.data.transactions;
     
-    // Filter out split transactions and transfer transactions that we don't want to duplicate
-    return transactions.filter(txn => {
-      // Exclude deleted transactions
-      if (txn.deleted) return false;
-      // Include all other transactions
-      return true;
-    });
+    // Filter out deleted transactions
+    return transactions.filter(txn => !txn.deleted);
   } catch (error) {
     console.error(`YNAB transactions API call failed for account ${accountId}:`, error);
     return [];
-  }
-}
-
-async function exchangeCodeForToken(code) {
-  try {
-    const response = await fetch('/.netlify/functions/ynabTokenExchange', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        grant_type: 'authorization_code',
-        code: code,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error('YNAB token exchange failed:', data);
-      throw new Error('Failed to exchange authorization code for a token.');
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Error during token exchange:', error);
-    return null;
-  }
-}
-
-export async function refreshAccessToken(refreshToken) {
-  try {
-    const response = await fetch('/.netlify/functions/ynabTokenExchange', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        grant_type: 'refresh_token',
-        refresh_token: refreshToken,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error('YNAB token refresh failed:', data);
-      throw new Error('Failed to refresh access token.');
-    }
-
-    // Update sessionStorage with new tokens
-    sessionStorage.setItem('ynab_access_token', data.access_token);
-    if (data.refresh_token) {
-      sessionStorage.setItem('ynab_refresh_token', data.refresh_token);
-    }
-    sessionStorage.setItem('ynab_token_expires_at', Date.now() + data.expires_in * 1000);
-
-    return data;
-  } catch (error) {
-    console.error('Error during token refresh:', error);
-    return null;
   }
 }
 
@@ -159,8 +53,6 @@ export async function handleOauthCallback() {
   const code = queryParams.get('code');
   const stateToken = queryParams.get('state');
   const storedState = getExpectedState();
-
-  console.log('OAuth callback params:', { code, stateToken, storedState, fullUrl: window.location.href });
 
   if (!stateToken || stateToken !== storedState) {
     console.error('Invalid CSRF token on OAuth callback.', { stateToken, storedState });
@@ -175,24 +67,20 @@ export async function handleOauthCallback() {
     throw new Error('OAuth callback did not contain an authorization code.');
   }
 
-  const tokenData = await exchangeCodeForToken(code);
+  // Exchange code for tokens (stored as HttpOnly cookies)
+  const success = await exchangeYnabToken(code);
 
-  if (tokenData && tokenData.access_token) {
-    state.ynab_access_token = tokenData.access_token;
-    sessionStorage.setItem('ynab_access_token', tokenData.access_token);
-    sessionStorage.setItem('ynab_refresh_token', tokenData.refresh_token);
-    sessionStorage.setItem('ynab_token_expires_at', Date.now() + tokenData.expires_in * 1000);
-
-    const accounts = await getAccounts(tokenData.access_token);
+  if (success) {
+    // Fetch accounts using new token (from cookies)
+    const accounts = await getAccounts();
     if (accounts && accounts.length > 0) {
-      // Filter out deleted accounts and parse into standardized schema
-      const activeAccounts = accounts.filter(acc => !acc.deleted);
-      state.accounts = parseYnabAccountApi(activeAccounts);
+      // Parse into standardized schema
+      const parsedAccounts = parseYnabAccountApi(accounts);
+      state.accounts.init(parsedAccounts);
 
       // Fetch transactions for each account
-      console.log('Fetching transactions for', activeAccounts.length, 'accounts...');
-      for (const account of activeAccounts) {
-        const transactions = await getTransactions(tokenData.access_token, account.id);
+      for (const account of accounts) {
+        const transactions = await getTransactions(account.id);
         
         if (transactions && transactions.length > 0) {
           // Transform YNAB transactions to match schema
@@ -218,7 +106,6 @@ export async function handleOauthCallback() {
           if (state.accounts[account.id]) {
             state.accounts[account.id].transactions = transformedTransactions;
             state.accounts[account.id].transactionCount = transformedTransactions.length;
-            console.log(`Account ${account.name}: ${transformedTransactions.length} transactions loaded`);
           }
         }
       }
@@ -230,7 +117,7 @@ export async function handleOauthCallback() {
       throw new Error('No accounts retrieved from YNAB API.');
     }
   } else {
-    console.error('Failed to get access token from YNAB.');
-    throw new Error('Failed to get access token from YNAB.');
+    console.error('Failed to exchange authorization code for tokens.');
+    throw new Error('Failed to exchange authorization code for tokens.');
   }
 }

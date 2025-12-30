@@ -1,14 +1,8 @@
-import { v4 as uuidv4 } from 'uuid';
 import state from '../../state.js';
 import { navigate } from '../../router.js';
-import { monarchApi } from '../../api/monarchApi.js';
 import { toggleElementVisibility, toggleDisabled } from '../../utils/dom.js';
-import {
-  saveToLocalStorage, getLocalStorage, clearStorage
-} from '../../utils/storage.js';
-import { encryptPassword } from '../../../shared/crypto.js';
-import { patchState, clearState } from '../../utils/state.js';
 import { renderPageLayout } from '../../components/pageLayout.js';
+import { initCredentials, attemptLogin, clearCredentialsAndReset } from './monarchCredentialsData.js';
 
 
 export default async function initMonarchCredentialsView() {
@@ -45,29 +39,13 @@ export default async function initMonarchCredentialsView() {
     securityNoteIcon: $('securityNoteIcon')
   };
 
-  const { credentials: creds } = state;
-
-  // Load from localStorage into state
-  const { token, email, encryptedPassword, uuid, remember } = getLocalStorage();
-  patchState(creds, {
-    email,
-    encryptedPassword,
-    apiToken: creds.apiToken || token,
-    deviceUuid: creds.deviceUuid || uuid,
-    remember
-  });
-
-  // Generate device UUID once on view load
-  if (!creds.deviceUuid || creds.deviceUuid === '') {
-    creds.deviceUuid = uuidv4();
-    saveToLocalStorage({ uuid: creds.deviceUuid });
-  }
+  const { creds } = initCredentials(state);
 
   // Pre-populate fields if credentials already exist
-  if (email && encryptedPassword) {
-    UI.emailInput.value = email;
-    UI.passwordInput.value = ''
-    UI.rememberedEmail.textContent = `Signed in as ${email}`;
+  if (creds.email && creds.encryptedPassword) {
+    UI.emailInput.value = creds.email;
+    UI.passwordInput.value = '';
+    UI.rememberedEmail.textContent = `Signed in as ${creds.email}`;
     UI.rememberCheckbox.checked = creds.remember;
 
     toggleDisabled(UI.emailInput, true);
@@ -75,10 +53,10 @@ export default async function initMonarchCredentialsView() {
     toggleElementVisibility(UI.rememberMeContainer, false);
     toggleElementVisibility(UI.notYouContainer, true);
     toggleElementVisibility(UI.toggleBtn, false);
-    updateSecurityNote('signed-in')
+    updateSecurityNote('signed-in');
   } else {
     toggleElementVisibility(UI.notYouContainer, false);
-    updateSecurityNote()
+    updateSecurityNote();
   }
 
   function validateForm() {
@@ -126,68 +104,26 @@ export default async function initMonarchCredentialsView() {
   }
 
   async function handleLoginAttempt() {
-    const storage = getLocalStorage();
-    const email = UI.emailInput.value.trim() || storage.email;
-    const plaintextPassword = UI.passwordInput.value.trim();
-    let encryptedPassword = creds.encryptedPassword || storage.encryptedPassword;
-    const uuid = creds.deviceUuid || storage.uuid;
-
-    if (!encryptedPassword && plaintextPassword) {
-      try {
-        encryptedPassword = await encryptPassword(email, plaintextPassword);
-      } catch (err) {
-        showError('Failed to encrypt password.');
-        return;
-      }
-    }
-
     toggleDisabled(UI.connectBtn, true);
     UI.connectBtn.textContent = 'Connecting…';
     toggleElementVisibility(UI.errorContainer, false);
 
-    try {
-      const response = await monarchApi.login(email, encryptedPassword, uuid);
+    const result = await attemptLogin({
+      emailInput: UI.emailInput.value,
+      passwordInput: UI.passwordInput.value,
+      creds,
+      UI
+    });
 
-      if (response?.otpRequired) {
-        // Always store credentials temporarily for OTP flow, regardless of "remember me" setting
-        // We'll handle the permanent storage decision in the OTP page based on the remember flag
-        saveToLocalStorage({
-          email,
-          encryptedPassword,
-          uuid: uuid,
-          remember: creds.remember,
-          tempForOtp: !creds.remember // Flag to indicate this is temporary storage
-        });
-
-        creds.awaitingOtp = true;
-        return navigate("/otp");
-      }
-
-      if (response?.token) {
-        patchState(creds, {
-          email,
-          encryptedPassword,
-          otp: '',
-          remember: UI.rememberCheckbox.checked,
-          apiToken: response.token,
-          awaitingOtp: false
-        });
-
-        if (creds.remember) {
-          saveToLocalStorage({ email, encryptedPassword, token: response.token, remember: true });
-        }
-
-        return navigate('/complete');
-      }
-
-      const apiError = response?.detail || response?.error || "Unexpected login response."
-      throw new Error(apiError);
-    } catch (err) {
-      showError(err.message);
-    } finally {
+    if (result.error) {
+      showError(result.error);
       toggleDisabled(UI.connectBtn, false);
       UI.connectBtn.textContent = 'Connect to Monarch';
+      return;
     }
+
+    if (result.otpRequired) return navigate('/otp');
+    if (result.token) return navigate('/complete');
   }
 
   async function onClickConnect(e) {
@@ -197,12 +133,7 @@ export default async function initMonarchCredentialsView() {
 
   function onClickClearCredentials(e) {
     e.preventDefault();
-    clearStorage();
-    clearState(creds);
-
-    // Generate a new device UUID after clearing credentials
-    creds.deviceUuid = uuidv4();
-    saveToLocalStorage({ uuid: creds.deviceUuid });
+    clearCredentialsAndReset(creds);
 
     UI.emailInput.value = '';
     UI.passwordInput.value = '';

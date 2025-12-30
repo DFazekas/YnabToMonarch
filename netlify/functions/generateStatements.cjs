@@ -44,7 +44,6 @@ module.exports.handler = async (event) => {
       csv: Papa.unparse(accounts[acc])
     }));
     
-    console.log("generateStatements ✅ generated", { fileCount: files.length });
     console.groupEnd("generateStatements");
     
     return { 

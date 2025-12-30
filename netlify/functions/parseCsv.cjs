@@ -59,7 +59,6 @@ module.exports.handler = async (event) => {
       });
     });
 
-    console.log("parseCsv ✅ parsed", { accountCount: Object.keys(accounts).length });
     console.groupEnd("parseCsv");
 
     return {
