@@ -10,7 +10,7 @@ const currencyLogger = getLogger('Currency');
 // Disable logging for the specific method `Currency.parseCurrencyToCents`
 setLoggerConfig({ methods: { 'Currency.parseCurrencyToCents': false } });
 
-export default function parseCurrencyToCents(str) {
+export function parseCurrencyToCents(str) {
   currencyLogger.group('parseCurrencyToCents', str);
   const sanitizedStr = str?.trim() || '';
   if (sanitizedStr.length === 0) {
@@ -32,3 +32,22 @@ export default function parseCurrencyToCents(str) {
   currencyLogger.groupEnd('parseCurrencyToCents');
   return cents;
 }
+
+/**
+ * Convert cents to dollars as a float with 2 decimal places.
+ *
+ * @param {number|null|undefined} cents - The amount in cents (e.g., 143723).
+ * @returns {number} Amount in dollars with 2 decimal places (e.g., 1437.23).
+ */
+export function centsToDollars(cents) {
+  if (cents === null || cents === undefined) {
+    return parseFloat((0).toFixed(2));
+  }
+
+  if (typeof cents !== 'number' || isNaN(cents)) {
+    throw new Error(`Invalid cents value: ${cents}`);
+  }
+
+  return parseFloat((cents / 100).toFixed(2));
+}
+

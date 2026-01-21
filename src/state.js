@@ -15,7 +15,6 @@ class StorageManager {
       tokenExpiresAt: null,
     };
     this.history = [];
-    this.accounts = new Accounts();
     this.userPreferences = {};
   }
 

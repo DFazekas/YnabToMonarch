@@ -129,7 +129,14 @@ function isEnabled(level, ns, methodName) {
  * Each log method includes the namespace and optional method name as a prefix.
  * 
  * @param {string} namespace - Namespace identifier for the logger
- * @returns {Object} Logger instance with group, groupEnd, log, debug, warn, and error methods
+ * @returns {{
+ *   group: (methodName: string, ...args: any[]) => void,
+ *   groupEnd: (methodName: string) => void,
+ *   log: (methodName: string, ...args: any[]) => void,
+ *   debug: (methodName: string, ...args: any[]) => void,
+ *   warn: (methodName: string, ...args: any[]) => void,
+ *   error: (methodName: string, ...args: any[]) => void
+ * }} Logger instance with namespaced logging methods
  * 
  * @example
  * const logger = getLogger('Transaction');

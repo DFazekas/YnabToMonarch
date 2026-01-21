@@ -25,475 +25,6 @@
   };
   var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target, mod));
 
-  // node_modules/papaparse/papaparse.min.js
-  var require_papaparse_min = __commonJS({
-    "node_modules/papaparse/papaparse.min.js"(exports, module) {
-      ((e, t) => {
-        typeof define == "function" && define.amd ? define([], t) : typeof module == "object" && typeof exports != "undefined" ? module.exports = t() : e.Papa = t();
-      })(exports, function r() {
-        var n = typeof self != "undefined" ? self : typeof window != "undefined" ? window : n !== void 0 ? n : {};
-        var d, s = !n.document && !!n.postMessage, a = n.IS_PAPA_WORKER || false, o = {}, h = 0, v = {};
-        function u(e) {
-          this._handle = null, this._finished = false, this._completed = false, this._halted = false, this._input = null, this._baseIndex = 0, this._partialLine = "", this._rowCount = 0, this._start = 0, this._nextChunk = null, this.isFirstChunk = true, this._completeResults = { data: [], errors: [], meta: {} }, function(e2) {
-            var t = w(e2);
-            t.chunkSize = parseInt(t.chunkSize), e2.step || e2.chunk || (t.chunkSize = null);
-            this._handle = new i(t), (this._handle.streamer = this)._config = t;
-          }.call(this, e), this.parseChunk = function(t, e2) {
-            var i2 = parseInt(this._config.skipFirstNLines) || 0;
-            if (this.isFirstChunk && 0 < i2) {
-              let e3 = this._config.newline;
-              e3 || (r2 = this._config.quoteChar || '"', e3 = this._handle.guessLineEndings(t, r2)), t = [...t.split(e3).slice(i2)].join(e3);
-            }
-            this.isFirstChunk && U(this._config.beforeFirstChunk) && (r2 = this._config.beforeFirstChunk(t)) !== void 0 && (t = r2), this.isFirstChunk = false, this._halted = false;
-            var i2 = this._partialLine + t, r2 = (this._partialLine = "", this._handle.parse(i2, this._baseIndex, !this._finished));
-            if (!this._handle.paused() && !this._handle.aborted()) {
-              t = r2.meta.cursor, i2 = (this._finished || (this._partialLine = i2.substring(t - this._baseIndex), this._baseIndex = t), r2 && r2.data && (this._rowCount += r2.data.length), this._finished || this._config.preview && this._rowCount >= this._config.preview);
-              if (a)
-                n.postMessage({ results: r2, workerId: v.WORKER_ID, finished: i2 });
-              else if (U(this._config.chunk) && !e2) {
-                if (this._config.chunk(r2, this._handle), this._handle.paused() || this._handle.aborted())
-                  return void (this._halted = true);
-                this._completeResults = r2 = void 0;
-              }
-              return this._config.step || this._config.chunk || (this._completeResults.data = this._completeResults.data.concat(r2.data), this._completeResults.errors = this._completeResults.errors.concat(r2.errors), this._completeResults.meta = r2.meta), this._completed || !i2 || !U(this._config.complete) || r2 && r2.meta.aborted || (this._config.complete(this._completeResults, this._input), this._completed = true), i2 || r2 && r2.meta.paused || this._nextChunk(), r2;
-            }
-            this._halted = true;
-          }, this._sendError = function(e2) {
-            U(this._config.error) ? this._config.error(e2) : a && this._config.error && n.postMessage({ workerId: v.WORKER_ID, error: e2, finished: false });
-          };
-        }
-        function f(e) {
-          var r2;
-          (e = e || {}).chunkSize || (e.chunkSize = v.RemoteChunkSize), u.call(this, e), this._nextChunk = s ? function() {
-            this._readChunk(), this._chunkLoaded();
-          } : function() {
-            this._readChunk();
-          }, this.stream = function(e2) {
-            this._input = e2, this._nextChunk();
-          }, this._readChunk = function() {
-            if (this._finished)
-              this._chunkLoaded();
-            else {
-              if (r2 = new XMLHttpRequest(), this._config.withCredentials && (r2.withCredentials = this._config.withCredentials), s || (r2.onload = y(this._chunkLoaded, this), r2.onerror = y(this._chunkError, this)), r2.open(this._config.downloadRequestBody ? "POST" : "GET", this._input, !s), this._config.downloadRequestHeaders) {
-                var e2, t = this._config.downloadRequestHeaders;
-                for (e2 in t)
-                  r2.setRequestHeader(e2, t[e2]);
-              }
-              var i2;
-              this._config.chunkSize && (i2 = this._start + this._config.chunkSize - 1, r2.setRequestHeader("Range", "bytes=" + this._start + "-" + i2));
-              try {
-                r2.send(this._config.downloadRequestBody);
-              } catch (e3) {
-                this._chunkError(e3.message);
-              }
-              s && r2.status === 0 && this._chunkError();
-            }
-          }, this._chunkLoaded = function() {
-            r2.readyState === 4 && (r2.status < 200 || 400 <= r2.status ? this._chunkError() : (this._start += this._config.chunkSize || r2.responseText.length, this._finished = !this._config.chunkSize || this._start >= ((e2) => (e2 = e2.getResponseHeader("Content-Range")) !== null ? parseInt(e2.substring(e2.lastIndexOf("/") + 1)) : -1)(r2), this.parseChunk(r2.responseText)));
-          }, this._chunkError = function(e2) {
-            e2 = r2.statusText || e2;
-            this._sendError(new Error(e2));
-          };
-        }
-        function l(e) {
-          (e = e || {}).chunkSize || (e.chunkSize = v.LocalChunkSize), u.call(this, e);
-          var i2, r2, n2 = typeof FileReader != "undefined";
-          this.stream = function(e2) {
-            this._input = e2, r2 = e2.slice || e2.webkitSlice || e2.mozSlice, n2 ? ((i2 = new FileReader()).onload = y(this._chunkLoaded, this), i2.onerror = y(this._chunkError, this)) : i2 = new FileReaderSync(), this._nextChunk();
-          }, this._nextChunk = function() {
-            this._finished || this._config.preview && !(this._rowCount < this._config.preview) || this._readChunk();
-          }, this._readChunk = function() {
-            var e2 = this._input, t = (this._config.chunkSize && (t = Math.min(this._start + this._config.chunkSize, this._input.size), e2 = r2.call(e2, this._start, t)), i2.readAsText(e2, this._config.encoding));
-            n2 || this._chunkLoaded({ target: { result: t } });
-          }, this._chunkLoaded = function(e2) {
-            this._start += this._config.chunkSize, this._finished = !this._config.chunkSize || this._start >= this._input.size, this.parseChunk(e2.target.result);
-          }, this._chunkError = function() {
-            this._sendError(i2.error);
-          };
-        }
-        function c(e) {
-          var i2;
-          u.call(this, e = e || {}), this.stream = function(e2) {
-            return i2 = e2, this._nextChunk();
-          }, this._nextChunk = function() {
-            var e2, t;
-            if (!this._finished)
-              return e2 = this._config.chunkSize, i2 = e2 ? (t = i2.substring(0, e2), i2.substring(e2)) : (t = i2, ""), this._finished = !i2, this.parseChunk(t);
-          };
-        }
-        function p(e) {
-          u.call(this, e = e || {});
-          var t = [], i2 = true, r2 = false;
-          this.pause = function() {
-            u.prototype.pause.apply(this, arguments), this._input.pause();
-          }, this.resume = function() {
-            u.prototype.resume.apply(this, arguments), this._input.resume();
-          }, this.stream = function(e2) {
-            this._input = e2, this._input.on("data", this._streamData), this._input.on("end", this._streamEnd), this._input.on("error", this._streamError);
-          }, this._checkIsFinished = function() {
-            r2 && t.length === 1 && (this._finished = true);
-          }, this._nextChunk = function() {
-            this._checkIsFinished(), t.length ? this.parseChunk(t.shift()) : i2 = true;
-          }, this._streamData = y(function(e2) {
-            try {
-              t.push(typeof e2 == "string" ? e2 : e2.toString(this._config.encoding)), i2 && (i2 = false, this._checkIsFinished(), this.parseChunk(t.shift()));
-            } catch (e3) {
-              this._streamError(e3);
-            }
-          }, this), this._streamError = y(function(e2) {
-            this._streamCleanUp(), this._sendError(e2);
-          }, this), this._streamEnd = y(function() {
-            this._streamCleanUp(), r2 = true, this._streamData("");
-          }, this), this._streamCleanUp = y(function() {
-            this._input.removeListener("data", this._streamData), this._input.removeListener("end", this._streamEnd), this._input.removeListener("error", this._streamError);
-          }, this);
-        }
-        function i(m2) {
-          var n2, s2, a2, t, o2 = Math.pow(2, 53), h2 = -o2, u2 = /^\s*-?(\d+\.?|\.\d+|\d+\.\d+)([eE][-+]?\d+)?\s*$/, d2 = /^((\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)))$/, i2 = this, r2 = 0, f2 = 0, l2 = false, e = false, c2 = [], p2 = { data: [], errors: [], meta: {} };
-          function y2(e2) {
-            return m2.skipEmptyLines === "greedy" ? e2.join("").trim() === "" : e2.length === 1 && e2[0].length === 0;
-          }
-          function g2() {
-            if (p2 && a2 && (k("Delimiter", "UndetectableDelimiter", "Unable to auto-detect delimiting character; defaulted to '" + v.DefaultDelimiter + "'"), a2 = false), m2.skipEmptyLines && (p2.data = p2.data.filter(function(e3) {
-              return !y2(e3);
-            })), _2()) {
-              let t3 = function(e3, t4) {
-                U(m2.transformHeader) && (e3 = m2.transformHeader(e3, t4)), c2.push(e3);
-              };
-              var t2 = t3;
-              if (p2)
-                if (Array.isArray(p2.data[0])) {
-                  for (var e2 = 0; _2() && e2 < p2.data.length; e2++)
-                    p2.data[e2].forEach(t3);
-                  p2.data.splice(0, 1);
-                } else
-                  p2.data.forEach(t3);
-            }
-            function i3(e3, t3) {
-              for (var i4 = m2.header ? {} : [], r4 = 0; r4 < e3.length; r4++) {
-                var n3 = r4, s3 = e3[r4], s3 = ((e4, t4) => ((e5) => (m2.dynamicTypingFunction && m2.dynamicTyping[e5] === void 0 && (m2.dynamicTyping[e5] = m2.dynamicTypingFunction(e5)), (m2.dynamicTyping[e5] || m2.dynamicTyping) === true))(e4) ? t4 === "true" || t4 === "TRUE" || t4 !== "false" && t4 !== "FALSE" && (((e5) => {
-                  if (u2.test(e5)) {
-                    e5 = parseFloat(e5);
-                    if (h2 < e5 && e5 < o2)
-                      return 1;
-                  }
-                })(t4) ? parseFloat(t4) : d2.test(t4) ? new Date(t4) : t4 === "" ? null : t4) : t4)(n3 = m2.header ? r4 >= c2.length ? "__parsed_extra" : c2[r4] : n3, s3 = m2.transform ? m2.transform(s3, n3) : s3);
-                n3 === "__parsed_extra" ? (i4[n3] = i4[n3] || [], i4[n3].push(s3)) : i4[n3] = s3;
-              }
-              return m2.header && (r4 > c2.length ? k("FieldMismatch", "TooManyFields", "Too many fields: expected " + c2.length + " fields but parsed " + r4, f2 + t3) : r4 < c2.length && k("FieldMismatch", "TooFewFields", "Too few fields: expected " + c2.length + " fields but parsed " + r4, f2 + t3)), i4;
-            }
-            var r3;
-            p2 && (m2.header || m2.dynamicTyping || m2.transform) && (r3 = 1, !p2.data.length || Array.isArray(p2.data[0]) ? (p2.data = p2.data.map(i3), r3 = p2.data.length) : p2.data = i3(p2.data, 0), m2.header && p2.meta && (p2.meta.fields = c2), f2 += r3);
-          }
-          function _2() {
-            return m2.header && c2.length === 0;
-          }
-          function k(e2, t2, i3, r3) {
-            e2 = { type: e2, code: t2, message: i3 };
-            r3 !== void 0 && (e2.row = r3), p2.errors.push(e2);
-          }
-          U(m2.step) && (t = m2.step, m2.step = function(e2) {
-            p2 = e2, _2() ? g2() : (g2(), p2.data.length !== 0 && (r2 += e2.data.length, m2.preview && r2 > m2.preview ? s2.abort() : (p2.data = p2.data[0], t(p2, i2))));
-          }), this.parse = function(e2, t2, i3) {
-            var r3 = m2.quoteChar || '"', r3 = (m2.newline || (m2.newline = this.guessLineEndings(e2, r3)), a2 = false, m2.delimiter ? U(m2.delimiter) && (m2.delimiter = m2.delimiter(e2), p2.meta.delimiter = m2.delimiter) : ((r3 = ((e3, t3, i4, r4, n3) => {
-              var s3, a3, o3, h3;
-              n3 = n3 || [",", "	", "|", ";", v.RECORD_SEP, v.UNIT_SEP];
-              for (var u3 = 0; u3 < n3.length; u3++) {
-                for (var d3, f3 = n3[u3], l3 = 0, c3 = 0, p3 = 0, g3 = (o3 = void 0, new E({ comments: r4, delimiter: f3, newline: t3, preview: 10 }).parse(e3)), _3 = 0; _3 < g3.data.length; _3++)
-                  i4 && y2(g3.data[_3]) ? p3++ : (d3 = g3.data[_3].length, c3 += d3, o3 === void 0 ? o3 = d3 : 0 < d3 && (l3 += Math.abs(d3 - o3), o3 = d3));
-                0 < g3.data.length && (c3 /= g3.data.length - p3), (a3 === void 0 || l3 <= a3) && (h3 === void 0 || h3 < c3) && 1.99 < c3 && (a3 = l3, s3 = f3, h3 = c3);
-              }
-              return { successful: !!(m2.delimiter = s3), bestDelimiter: s3 };
-            })(e2, m2.newline, m2.skipEmptyLines, m2.comments, m2.delimitersToGuess)).successful ? m2.delimiter = r3.bestDelimiter : (a2 = true, m2.delimiter = v.DefaultDelimiter), p2.meta.delimiter = m2.delimiter), w(m2));
-            return m2.preview && m2.header && r3.preview++, n2 = e2, s2 = new E(r3), p2 = s2.parse(n2, t2, i3), g2(), l2 ? { meta: { paused: true } } : p2 || { meta: { paused: false } };
-          }, this.paused = function() {
-            return l2;
-          }, this.pause = function() {
-            l2 = true, s2.abort(), n2 = U(m2.chunk) ? "" : n2.substring(s2.getCharIndex());
-          }, this.resume = function() {
-            i2.streamer._halted ? (l2 = false, i2.streamer.parseChunk(n2, true)) : setTimeout(i2.resume, 3);
-          }, this.aborted = function() {
-            return e;
-          }, this.abort = function() {
-            e = true, s2.abort(), p2.meta.aborted = true, U(m2.complete) && m2.complete(p2), n2 = "";
-          }, this.guessLineEndings = function(e2, t2) {
-            e2 = e2.substring(0, 1048576);
-            var t2 = new RegExp(P(t2) + "([^]*?)" + P(t2), "gm"), i3 = (e2 = e2.replace(t2, "")).split("\r"), t2 = e2.split("\n"), e2 = 1 < t2.length && t2[0].length < i3[0].length;
-            if (i3.length === 1 || e2)
-              return "\n";
-            for (var r3 = 0, n3 = 0; n3 < i3.length; n3++)
-              i3[n3][0] === "\n" && r3++;
-            return r3 >= i3.length / 2 ? "\r\n" : "\r";
-          };
-        }
-        function P(e) {
-          return e.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        }
-        function E(C) {
-          var S = (C = C || {}).delimiter, O = C.newline, x = C.comments, I = C.step, A = C.preview, T = C.fastMode, D = null, L = false, F = C.quoteChar == null ? '"' : C.quoteChar, j = F;
-          if (C.escapeChar !== void 0 && (j = C.escapeChar), (typeof S != "string" || -1 < v.BAD_DELIMITERS.indexOf(S)) && (S = ","), x === S)
-            throw new Error("Comment character same as delimiter");
-          x === true ? x = "#" : (typeof x != "string" || -1 < v.BAD_DELIMITERS.indexOf(x)) && (x = false), O !== "\n" && O !== "\r" && O !== "\r\n" && (O = "\n");
-          var z = 0, M = false;
-          this.parse = function(i2, t, r2) {
-            if (typeof i2 != "string")
-              throw new Error("Input must be a string");
-            var n2 = i2.length, e = S.length, s2 = O.length, a2 = x.length, o2 = U(I), h2 = [], u2 = [], d2 = [], f2 = z = 0;
-            if (!i2)
-              return b();
-            if (T || T !== false && i2.indexOf(F) === -1) {
-              for (var l2 = i2.split(O), c2 = 0; c2 < l2.length; c2++) {
-                if (d2 = l2[c2], z += d2.length, c2 !== l2.length - 1)
-                  z += O.length;
-                else if (r2)
-                  return b();
-                if (!x || d2.substring(0, a2) !== x) {
-                  if (o2) {
-                    if (h2 = [], k(d2.split(S)), R(), M)
-                      return b();
-                  } else
-                    k(d2.split(S));
-                  if (A && A <= c2)
-                    return h2 = h2.slice(0, A), b(true);
-                }
-              }
-              return b();
-            }
-            for (var p2 = i2.indexOf(S, z), g2 = i2.indexOf(O, z), _2 = new RegExp(P(j) + P(F), "g"), m2 = i2.indexOf(F, z); ; )
-              if (i2[z] === F)
-                for (m2 = z, z++; ; ) {
-                  if ((m2 = i2.indexOf(F, m2 + 1)) === -1)
-                    return r2 || u2.push({ type: "Quotes", code: "MissingQuotes", message: "Quoted field unterminated", row: h2.length, index: z }), E2();
-                  if (m2 === n2 - 1)
-                    return E2(i2.substring(z, m2).replace(_2, F));
-                  if (F === j && i2[m2 + 1] === j)
-                    m2++;
-                  else if (F === j || m2 === 0 || i2[m2 - 1] !== j) {
-                    p2 !== -1 && p2 < m2 + 1 && (p2 = i2.indexOf(S, m2 + 1));
-                    var y2 = v2((g2 = g2 !== -1 && g2 < m2 + 1 ? i2.indexOf(O, m2 + 1) : g2) === -1 ? p2 : Math.min(p2, g2));
-                    if (i2.substr(m2 + 1 + y2, e) === S) {
-                      d2.push(i2.substring(z, m2).replace(_2, F)), i2[z = m2 + 1 + y2 + e] !== F && (m2 = i2.indexOf(F, z)), p2 = i2.indexOf(S, z), g2 = i2.indexOf(O, z);
-                      break;
-                    }
-                    y2 = v2(g2);
-                    if (i2.substring(m2 + 1 + y2, m2 + 1 + y2 + s2) === O) {
-                      if (d2.push(i2.substring(z, m2).replace(_2, F)), w2(m2 + 1 + y2 + s2), p2 = i2.indexOf(S, z), m2 = i2.indexOf(F, z), o2 && (R(), M))
-                        return b();
-                      if (A && h2.length >= A)
-                        return b(true);
-                      break;
-                    }
-                    u2.push({ type: "Quotes", code: "InvalidQuotes", message: "Trailing quote on quoted field is malformed", row: h2.length, index: z }), m2++;
-                  }
-                }
-              else if (x && d2.length === 0 && i2.substring(z, z + a2) === x) {
-                if (g2 === -1)
-                  return b();
-                z = g2 + s2, g2 = i2.indexOf(O, z), p2 = i2.indexOf(S, z);
-              } else if (p2 !== -1 && (p2 < g2 || g2 === -1))
-                d2.push(i2.substring(z, p2)), z = p2 + e, p2 = i2.indexOf(S, z);
-              else {
-                if (g2 === -1)
-                  break;
-                if (d2.push(i2.substring(z, g2)), w2(g2 + s2), o2 && (R(), M))
-                  return b();
-                if (A && h2.length >= A)
-                  return b(true);
-              }
-            return E2();
-            function k(e2) {
-              h2.push(e2), f2 = z;
-            }
-            function v2(e2) {
-              var t2 = 0;
-              return t2 = e2 !== -1 && (e2 = i2.substring(m2 + 1, e2)) && e2.trim() === "" ? e2.length : t2;
-            }
-            function E2(e2) {
-              return r2 || (e2 === void 0 && (e2 = i2.substring(z)), d2.push(e2), z = n2, k(d2), o2 && R()), b();
-            }
-            function w2(e2) {
-              z = e2, k(d2), d2 = [], g2 = i2.indexOf(O, z);
-            }
-            function b(e2) {
-              if (C.header && !t && h2.length && !L) {
-                var s3 = h2[0], a3 = {}, o3 = new Set(s3);
-                let n3 = false;
-                for (let r3 = 0; r3 < s3.length; r3++) {
-                  let i3 = s3[r3];
-                  if (a3[i3 = U(C.transformHeader) ? C.transformHeader(i3, r3) : i3]) {
-                    let e3, t2 = a3[i3];
-                    for (; e3 = i3 + "_" + t2, t2++, o3.has(e3); )
-                      ;
-                    o3.add(e3), s3[r3] = e3, a3[i3]++, n3 = true, (D = D === null ? {} : D)[e3] = i3;
-                  } else
-                    a3[i3] = 1, s3[r3] = i3;
-                  o3.add(i3);
-                }
-                n3 && console.warn("Duplicate headers found and renamed."), L = true;
-              }
-              return { data: h2, errors: u2, meta: { delimiter: S, linebreak: O, aborted: M, truncated: !!e2, cursor: f2 + (t || 0), renamedHeaders: D } };
-            }
-            function R() {
-              I(b()), h2 = [], u2 = [];
-            }
-          }, this.abort = function() {
-            M = true;
-          }, this.getCharIndex = function() {
-            return z;
-          };
-        }
-        function g(e) {
-          var t = e.data, i2 = o[t.workerId], r2 = false;
-          if (t.error)
-            i2.userError(t.error, t.file);
-          else if (t.results && t.results.data) {
-            var n2 = { abort: function() {
-              r2 = true, _(t.workerId, { data: [], errors: [], meta: { aborted: true } });
-            }, pause: m, resume: m };
-            if (U(i2.userStep)) {
-              for (var s2 = 0; s2 < t.results.data.length && (i2.userStep({ data: t.results.data[s2], errors: t.results.errors, meta: t.results.meta }, n2), !r2); s2++)
-                ;
-              delete t.results;
-            } else
-              U(i2.userChunk) && (i2.userChunk(t.results, n2, t.file), delete t.results);
-          }
-          t.finished && !r2 && _(t.workerId, t.results);
-        }
-        function _(e, t) {
-          var i2 = o[e];
-          U(i2.userComplete) && i2.userComplete(t), i2.terminate(), delete o[e];
-        }
-        function m() {
-          throw new Error("Not implemented.");
-        }
-        function w(e) {
-          if (typeof e != "object" || e === null)
-            return e;
-          var t, i2 = Array.isArray(e) ? [] : {};
-          for (t in e)
-            i2[t] = w(e[t]);
-          return i2;
-        }
-        function y(e, t) {
-          return function() {
-            e.apply(t, arguments);
-          };
-        }
-        function U(e) {
-          return typeof e == "function";
-        }
-        return v.parse = function(e, t) {
-          var i2 = (t = t || {}).dynamicTyping || false;
-          U(i2) && (t.dynamicTypingFunction = i2, i2 = {});
-          if (t.dynamicTyping = i2, t.transform = !!U(t.transform) && t.transform, !t.worker || !v.WORKERS_SUPPORTED)
-            return i2 = null, v.NODE_STREAM_INPUT, typeof e == "string" ? (e = ((e2) => e2.charCodeAt(0) !== 65279 ? e2 : e2.slice(1))(e), i2 = new (t.download ? f : c)(t)) : e.readable === true && U(e.read) && U(e.on) ? i2 = new p(t) : (n.File && e instanceof File || e instanceof Object) && (i2 = new l(t)), i2.stream(e);
-          (i2 = (() => {
-            var e2;
-            return !!v.WORKERS_SUPPORTED && (e2 = (() => {
-              var e3 = n.URL || n.webkitURL || null, t2 = r.toString();
-              return v.BLOB_URL || (v.BLOB_URL = e3.createObjectURL(new Blob(["var global = (function() { if (typeof self !== 'undefined') { return self; } if (typeof window !== 'undefined') { return window; } if (typeof global !== 'undefined') { return global; } return {}; })(); global.IS_PAPA_WORKER=true; ", "(", t2, ")();"], { type: "text/javascript" })));
-            })(), (e2 = new n.Worker(e2)).onmessage = g, e2.id = h++, o[e2.id] = e2);
-          })()).userStep = t.step, i2.userChunk = t.chunk, i2.userComplete = t.complete, i2.userError = t.error, t.step = U(t.step), t.chunk = U(t.chunk), t.complete = U(t.complete), t.error = U(t.error), delete t.worker, i2.postMessage({ input: e, config: t, workerId: i2.id });
-        }, v.unparse = function(e, t) {
-          var n2 = false, _2 = true, m2 = ",", y2 = "\r\n", s2 = '"', a2 = s2 + s2, i2 = false, r2 = null, o2 = false, h2 = ((() => {
-            if (typeof t == "object") {
-              if (typeof t.delimiter != "string" || v.BAD_DELIMITERS.filter(function(e2) {
-                return t.delimiter.indexOf(e2) !== -1;
-              }).length || (m2 = t.delimiter), typeof t.quotes != "boolean" && typeof t.quotes != "function" && !Array.isArray(t.quotes) || (n2 = t.quotes), typeof t.skipEmptyLines != "boolean" && typeof t.skipEmptyLines != "string" || (i2 = t.skipEmptyLines), typeof t.newline == "string" && (y2 = t.newline), typeof t.quoteChar == "string" && (s2 = t.quoteChar), typeof t.header == "boolean" && (_2 = t.header), Array.isArray(t.columns)) {
-                if (t.columns.length === 0)
-                  throw new Error("Option columns is empty");
-                r2 = t.columns;
-              }
-              t.escapeChar !== void 0 && (a2 = t.escapeChar + s2), t.escapeFormulae instanceof RegExp ? o2 = t.escapeFormulae : typeof t.escapeFormulae == "boolean" && t.escapeFormulae && (o2 = /^[=+\-@\t\r].*$/);
-            }
-          })(), new RegExp(P(s2), "g"));
-          typeof e == "string" && (e = JSON.parse(e));
-          if (Array.isArray(e)) {
-            if (!e.length || Array.isArray(e[0]))
-              return u2(null, e, i2);
-            if (typeof e[0] == "object")
-              return u2(r2 || Object.keys(e[0]), e, i2);
-          } else if (typeof e == "object")
-            return typeof e.data == "string" && (e.data = JSON.parse(e.data)), Array.isArray(e.data) && (e.fields || (e.fields = e.meta && e.meta.fields || r2), e.fields || (e.fields = Array.isArray(e.data[0]) ? e.fields : typeof e.data[0] == "object" ? Object.keys(e.data[0]) : []), Array.isArray(e.data[0]) || typeof e.data[0] == "object" || (e.data = [e.data])), u2(e.fields || [], e.data || [], i2);
-          throw new Error("Unable to serialize unrecognized input");
-          function u2(e2, t2, i3) {
-            var r3 = "", n3 = (typeof e2 == "string" && (e2 = JSON.parse(e2)), typeof t2 == "string" && (t2 = JSON.parse(t2)), Array.isArray(e2) && 0 < e2.length), s3 = !Array.isArray(t2[0]);
-            if (n3 && _2) {
-              for (var a3 = 0; a3 < e2.length; a3++)
-                0 < a3 && (r3 += m2), r3 += k(e2[a3], a3);
-              0 < t2.length && (r3 += y2);
-            }
-            for (var o3 = 0; o3 < t2.length; o3++) {
-              var h3 = (n3 ? e2 : t2[o3]).length, u3 = false, d2 = n3 ? Object.keys(t2[o3]).length === 0 : t2[o3].length === 0;
-              if (i3 && !n3 && (u3 = i3 === "greedy" ? t2[o3].join("").trim() === "" : t2[o3].length === 1 && t2[o3][0].length === 0), i3 === "greedy" && n3) {
-                for (var f2 = [], l2 = 0; l2 < h3; l2++) {
-                  var c2 = s3 ? e2[l2] : l2;
-                  f2.push(t2[o3][c2]);
-                }
-                u3 = f2.join("").trim() === "";
-              }
-              if (!u3) {
-                for (var p2 = 0; p2 < h3; p2++) {
-                  0 < p2 && !d2 && (r3 += m2);
-                  var g2 = n3 && s3 ? e2[p2] : p2;
-                  r3 += k(t2[o3][g2], p2);
-                }
-                o3 < t2.length - 1 && (!i3 || 0 < h3 && !d2) && (r3 += y2);
-              }
-            }
-            return r3;
-          }
-          function k(e2, t2) {
-            var i3, r3;
-            return e2 == null ? "" : e2.constructor === Date ? JSON.stringify(e2).slice(1, 25) : (r3 = false, o2 && typeof e2 == "string" && o2.test(e2) && (e2 = "'" + e2, r3 = true), i3 = e2.toString().replace(h2, a2), (r3 = r3 || n2 === true || typeof n2 == "function" && n2(e2, t2) || Array.isArray(n2) && n2[t2] || ((e3, t3) => {
-              for (var i4 = 0; i4 < t3.length; i4++)
-                if (-1 < e3.indexOf(t3[i4]))
-                  return true;
-              return false;
-            })(i3, v.BAD_DELIMITERS) || -1 < i3.indexOf(m2) || i3.charAt(0) === " " || i3.charAt(i3.length - 1) === " ") ? s2 + i3 + s2 : i3);
-          }
-        }, v.RECORD_SEP = String.fromCharCode(30), v.UNIT_SEP = String.fromCharCode(31), v.BYTE_ORDER_MARK = "\uFEFF", v.BAD_DELIMITERS = ["\r", "\n", '"', v.BYTE_ORDER_MARK], v.WORKERS_SUPPORTED = !s && !!n.Worker, v.NODE_STREAM_INPUT = 1, v.LocalChunkSize = 10485760, v.RemoteChunkSize = 5242880, v.DefaultDelimiter = ",", v.Parser = E, v.ParserHandle = i, v.NetworkStreamer = f, v.FileStreamer = l, v.StringStreamer = c, v.ReadableStreamStreamer = p, n.jQuery && ((d = n.jQuery).fn.parse = function(o2) {
-          var i2 = o2.config || {}, h2 = [];
-          return this.each(function(e2) {
-            if (!(d(this).prop("tagName").toUpperCase() === "INPUT" && d(this).attr("type").toLowerCase() === "file" && n.FileReader) || !this.files || this.files.length === 0)
-              return true;
-            for (var t = 0; t < this.files.length; t++)
-              h2.push({ file: this.files[t], inputElem: this, instanceConfig: d.extend({}, i2) });
-          }), e(), this;
-          function e() {
-            if (h2.length === 0)
-              U(o2.complete) && o2.complete();
-            else {
-              var e2, t, i3, r2, n2 = h2[0];
-              if (U(o2.before)) {
-                var s2 = o2.before(n2.file, n2.inputElem);
-                if (typeof s2 == "object") {
-                  if (s2.action === "abort")
-                    return e2 = "AbortError", t = n2.file, i3 = n2.inputElem, r2 = s2.reason, void (U(o2.error) && o2.error({ name: e2 }, t, i3, r2));
-                  if (s2.action === "skip")
-                    return void u2();
-                  typeof s2.config == "object" && (n2.instanceConfig = d.extend(n2.instanceConfig, s2.config));
-                } else if (s2 === "skip")
-                  return void u2();
-              }
-              var a2 = n2.instanceConfig.complete;
-              n2.instanceConfig.complete = function(e3) {
-                U(a2) && a2(e3, n2.file, n2.inputElem), u2();
-              }, v.parse(n2.file, n2.instanceConfig);
-            }
-          }
-          function u2() {
-            h2.splice(0, 1), e();
-          }
-        }), a && (n.onmessage = function(e) {
-          e = e.data;
-          v.WORKER_ID === void 0 && e && (v.WORKER_ID = e.workerId);
-          typeof e.input == "string" ? n.postMessage({ workerId: v.WORKER_ID, results: v.parse(e.input, e.config), finished: true }) : (n.File && e.input instanceof File || e.input instanceof Object) && (e = v.parse(e.input, e.config)) && n.postMessage({ workerId: v.WORKER_ID, results: e, finished: true });
-        }), (f.prototype = Object.create(u.prototype)).constructor = f, (l.prototype = Object.create(u.prototype)).constructor = l, (c.prototype = Object.create(c.prototype)).constructor = c, (p.prototype = Object.create(u.prototype)).constructor = p, v;
-      });
-    }
-  });
-
   // node_modules/jszip/dist/jszip.min.js
   var require_jszip_min = __commonJS({
     "node_modules/jszip/dist/jszip.min.js"(exports, module) {
@@ -4999,6 +4530,982 @@
   var loadingOverlay = new LoadingOverlay();
   var LoadingOverlay_default = loadingOverlay;
 
+  // src/utils/logger.js
+  var DEFAULT_CONFIG = {
+    enabled: true,
+    levels: {
+      log: false,
+      debug: false,
+      warn: true,
+      error: true,
+      group: false,
+      groupEnd: false
+    },
+    namespaces: {},
+    methods: {}
+  };
+  function getConfig() {
+    const g = globalThis;
+    if (!g.__LOG_CFG) {
+      g.__LOG_CFG = { ...DEFAULT_CONFIG };
+    }
+    return g.__LOG_CFG;
+  }
+  function setLoggerConfig(partial) {
+    const current = getConfig();
+    globalThis.__LOG_CFG = {
+      ...current,
+      ...partial,
+      levels: { ...current.levels, ...partial?.levels || {} },
+      namespaces: { ...current.namespaces, ...partial?.namespaces || {} },
+      methods: { ...current.methods, ...partial?.methods || {} }
+    };
+  }
+  function asBool(v) {
+    if (v === true || v === false)
+      return v;
+    if (typeof v === "number")
+      return v !== 0;
+    if (typeof v === "string") {
+      const s = v.trim().toLowerCase();
+      if (s === "false" || s === "0" || s === "off" || s === "no")
+        return false;
+      if (s === "true" || s === "1" || s === "on" || s === "yes")
+        return true;
+      return Boolean(s);
+    }
+    return Boolean(v);
+  }
+  function isEnabled(level, ns, methodName) {
+    const cfg = getConfig();
+    if (!cfg.enabled)
+      return false;
+    const lvl = asBool(cfg.levels[level]);
+    if (!lvl)
+      return false;
+    const methodKey = methodName ? `${ns}.${methodName}` : ns;
+    if (Object.prototype.hasOwnProperty.call(cfg.methods, methodKey)) {
+      return asBool(cfg.methods[methodKey]);
+    }
+    if (Object.prototype.hasOwnProperty.call(cfg.namespaces, ns)) {
+      return asBool(cfg.namespaces[ns]);
+    }
+    if (Object.prototype.hasOwnProperty.call(cfg.namespaces, "*")) {
+      return asBool(cfg.namespaces["*"]);
+    }
+    return true;
+  }
+  function getLogger(namespace) {
+    const ns = String(namespace || "log");
+    const buildPrefix = (m) => `[${ns}${m ? `.${m}` : ""}]`;
+    return {
+      group(methodName, ...args) {
+        if (!isEnabled("group", ns, methodName))
+          return;
+        console.group(buildPrefix(methodName), ...args);
+      },
+      groupEnd(methodName) {
+        const cfg = getConfig();
+        if (!cfg.enabled)
+          return;
+        if (isEnabled("group", ns, methodName) || asBool(cfg.levels.groupEnd)) {
+          console.groupEnd();
+        }
+      },
+      log(methodName, ...args) {
+        if (!isEnabled("log", ns, methodName))
+          return;
+        console.log(buildPrefix(methodName), ...args);
+      },
+      debug(methodName, ...args) {
+        if (!isEnabled("debug", ns, methodName))
+          return;
+        console.debug(buildPrefix(methodName), ...args);
+      },
+      warn(methodName, ...args) {
+        if (!isEnabled("warn", ns, methodName))
+          return;
+        console.warn(buildPrefix(methodName), ...args);
+      },
+      error(methodName, ...args) {
+        if (!isEnabled("error", ns, methodName))
+          return;
+        console.error(buildPrefix(methodName), ...args);
+      }
+    };
+  }
+  var logger_default = getLogger;
+
+  // src/utils/enumYnabAccountType.js
+  var AccountType = Object.freeze({
+    CHECKING: "checking",
+    SAVINGS: "savings",
+    CASH: "cash",
+    CREDIT_CARD: "creditCard",
+    LINE_OF_CREDIT: "lineOfCredit",
+    OTHER_ASSET: "otherAsset",
+    OTHER_LIABILITY: "otherLiability",
+    MORTGAGE: "mortgage",
+    AUTO_LOAN: "autoLoan",
+    STUDENT_LOAN: "studentLoan",
+    PERSONAL_LOAN: "personalLoan",
+    MEDICAL_DEBT: "medicalDebt",
+    OTHER_DEBT: "otherDebt"
+  });
+  var AccountTypeValues = Object.freeze(Object.values(AccountType));
+
+  // src/utils/enumAccountMigrationStatus.js
+  var AccountMigrationStatus = Object.freeze({
+    UNPROCESSED: "unprocessed",
+    IN_PROGRESS: "inProgress",
+    COMPLETED: "completed",
+    FAILED: "failed"
+  });
+  var AccountMigrationStatusValues = Object.freeze(Object.values(AccountMigrationStatus));
+
+  // src/utils/currency.js
+  var currencyLogger = logger_default("Currency");
+  setLoggerConfig({ methods: { "Currency.parseCurrencyToCents": false } });
+  function parseCurrencyToCents(str) {
+    currencyLogger.group("parseCurrencyToCents", str);
+    const sanitizedStr = str?.trim() || "";
+    if (sanitizedStr.length === 0) {
+      currencyLogger.error("parseCurrencyToCents", `Invalid currency string -- Empty input: "${str}"`);
+      currencyLogger.groupEnd("parseCurrencyToCents");
+      throw new Error(`Invalid currency string -- Empty input: "${str}"`);
+    }
+    const normalized = str.replace(/[^0-9.-]+/g, "").trim();
+    const floatVal = parseFloat(normalized);
+    if (isNaN(floatVal)) {
+      currencyLogger.error("parseCurrencyToCents", `Invalid currency string -- Not a number: "${str}"`);
+      currencyLogger.groupEnd("parseCurrencyToCents");
+      throw new Error(`Invalid currency string -- Not a number: "${str}"`);
+    }
+    const cents = Math.round(floatVal * 100);
+    currencyLogger.debug("parseCurrencyToCents", `parseCurrencyToCents: '${str}' -> '${cents}' cents`);
+    currencyLogger.groupEnd("parseCurrencyToCents");
+    return cents;
+  }
+  function centsToDollars(cents) {
+    if (cents === null || cents === void 0) {
+      return parseFloat(0 .toFixed(2));
+    }
+    if (typeof cents !== "number" || isNaN(cents)) {
+      throw new Error(`Invalid cents value: ${cents}`);
+    }
+    return parseFloat((cents / 100).toFixed(2));
+  }
+
+  // src/utils/date.js
+  var dateLogger = logger_default("Date");
+  setLoggerConfig({ methods: { "Date.parseDate": false } });
+  function parseDate(dateStr) {
+    dateLogger.group("parseDate", dateStr);
+    if (!dateStr) {
+      dateLogger.groupEnd("parseDate");
+      return null;
+    }
+    const trimmed = dateStr.trim();
+    const mmddyyyyMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (mmddyyyyMatch) {
+      const [, mm, dd, yyyy] = mmddyyyyMatch;
+      const result = `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+      dateLogger.debug("parseDate", `Date '${dateStr}' parsed as MM/DD/YYYY -> ${result}`);
+      dateLogger.groupEnd("parseDate");
+      return result;
+    }
+    dateLogger.debug("parseDate", `parseDate: unrecognized format -> ${trimmed}`);
+    dateLogger.groupEnd("parseDate");
+    return null;
+  }
+
+  // src/utils/idGenerator.js
+  function generateId() {
+    return "id-" + Math.random().toString(36).slice(2, 11);
+  }
+
+  // src/utils/enumTransactionClearedStatus.js
+  var TransactionClearedStatus = Object.freeze({
+    CLEARED: "cleared",
+    UNCLEARED: "uncleared",
+    RECONCILED: "reconciled"
+  });
+  var TransactionClearedStatusValues = Object.freeze(Object.values(TransactionClearedStatus));
+
+  // src/utils/enumFlagColor.js
+  var FlagColor = Object.freeze({
+    RED: "red",
+    ORANGE: "orange",
+    YELLOW: "yellow",
+    GREEN: "green",
+    BLUE: "blue",
+    PURPLE: "purple"
+  });
+  var FlagColorValues = Object.freeze(Object.values(FlagColor));
+
+  // src/utils/enumTransactionType.js
+  var TransactionType = Object.freeze({
+    PAYMENT: "payment",
+    REFUND: "refund",
+    FEE: "fee",
+    INTEREST: "interest",
+    ESCROW: "escrow",
+    BALANCE_ADJUSTMENT: "balanceAdjustment",
+    CREDIT: "credit",
+    CHARGE: "charge"
+  });
+  var TransactionTypeValues = Object.freeze(Object.values(TransactionType));
+
+  // src/schemas/transaction.js
+  var txnLogger = logger_default("Transaction");
+  setLoggerConfig({
+    namespaces: { Transaction: false },
+    methods: {},
+    levels: { debug: true, group: true, groupEnd: true }
+  });
+  var Transaction = class {
+    constructor(id = null) {
+      this.id = id || generateId();
+      this._date = null;
+      this._amountDollars = 0;
+      this._memo = null;
+      this._clearedStatus = TransactionClearedStatus.CLEARED;
+      this._isApproved = true;
+      this._flagColor = null;
+      this._flagName = null;
+      this._accountId = null;
+      this._payeeId = null;
+      this._categoryId = null;
+      this._transferAccountId = null;
+      this._transferTransactionId = null;
+      this._debtTransactionType = null;
+      this._subtransactionIds = [];
+    }
+    get date() {
+      return this._date;
+    }
+    set date(date) {
+      const methodName = "setDate";
+      txnLogger.group(methodName);
+      const formattedDate = parseDate(date);
+      if (!formattedDate) {
+        txnLogger.error(methodName, "Attempted to set invalid date for transaction ID:", this.id, "Input date:", date);
+        txnLogger.groupEnd(methodName);
+        return;
+      }
+      txnLogger.debug(methodName, `Setting date to '${formattedDate}'`);
+      this._date = formattedDate;
+      txnLogger.groupEnd(methodName);
+    }
+    get amount() {
+      return this._amountDollars;
+    }
+    set amount(amountDollars) {
+      const methodName = "setAmount";
+      txnLogger.group(methodName);
+      if (typeof amountDollars !== "number" || isNaN(amountDollars)) {
+        txnLogger.error(methodName, "Attempted to set invalid amount for transaction ID:", this.id, "Amount:", amountDollars);
+        txnLogger.groupEnd(methodName);
+        return;
+      }
+      txnLogger.debug(methodName, `Setting amount to '${amountDollars}'`);
+      this._amountDollars = amountDollars;
+      txnLogger.groupEnd(methodName);
+    }
+    get memo() {
+      return this._memo;
+    }
+    set memo(memo) {
+      const methodName = "setMemo";
+      txnLogger.group(methodName);
+      const sanitizedMemo = memo?.trim() || null;
+      if (!sanitizedMemo || sanitizedMemo.length === 0) {
+        txnLogger.debug(methodName, "Setting empty memo for transaction ID:", this.id);
+        this._memo = null;
+        txnLogger.groupEnd(methodName);
+        return;
+      }
+      txnLogger.debug(methodName, `Setting memo to '${sanitizedMemo}'`);
+      this._memo = sanitizedMemo;
+      txnLogger.groupEnd(methodName);
+    }
+    get clearedStatus() {
+      return this._clearedStatus;
+    }
+    set clearedStatus(status) {
+      const methodName = "setClearedStatus";
+      txnLogger.group(methodName);
+      const standardizedStatus = status.trim().toLowerCase();
+      if (!TransactionClearedStatusValues.includes(standardizedStatus)) {
+        txnLogger.warn(methodName, `Attempted to set invalid status for transaction ID: '${this.id}', Status: '${standardizedStatus}'. Valid values are: ${TransactionClearedStatusValues.join(", ")}`);
+        txnLogger.groupEnd(methodName);
+        return;
+      }
+      txnLogger.debug(methodName, `Setting status to '${standardizedStatus}'`);
+      this._clearedStatus = standardizedStatus;
+      txnLogger.groupEnd(methodName);
+    }
+    get isApproved() {
+      return this._isApproved;
+    }
+    set isApproved(isApproved) {
+      const methodName = "setIsApproved";
+      txnLogger.group(methodName);
+      if (typeof isApproved !== "boolean") {
+        txnLogger.error(methodName, "Attempted to set invalid isApproved value for transaction ID:", this.id, "Value:", isApproved);
+        txnLogger.groupEnd(methodName);
+        return;
+      }
+      txnLogger.debug(methodName, `Setting isApproved to '${isApproved}'`);
+      this._isApproved = isApproved;
+      txnLogger.groupEnd(methodName);
+    }
+    get flagColor() {
+      return this._flagColor;
+    }
+    set flagColor(color) {
+      const methodName = "setFlagColor";
+      txnLogger.group(methodName);
+      const standardizedColor = color?.trim().toLowerCase() || null;
+      if (!standardizedColor) {
+        txnLogger.debug(methodName, "Setting empty flag color for transaction ID:", this.id);
+        this._flagColor = null;
+        txnLogger.groupEnd(methodName);
+        return;
+      }
+      if (!FlagColorValues.includes(standardizedColor)) {
+        txnLogger.warn(methodName, `Attempted to set invalid flag color for transaction ID: '${this.id}', Color: '${standardizedColor}'. Valid values are: ${FlagColorValues.join(", ")}`);
+        txnLogger.groupEnd(methodName);
+        return;
+      }
+      txnLogger.debug(methodName, `Setting flag color to '${standardizedColor}'`);
+      this._flagColor = standardizedColor;
+      txnLogger.groupEnd(methodName);
+    }
+    get flagName() {
+      return this._flagName;
+    }
+    set flagName(flagName) {
+      const methodName = "setFlagName";
+      txnLogger.group(methodName);
+      const sanitizedFlagName = flagName?.trim() || null;
+      if (!sanitizedFlagName || sanitizedFlagName.length === 0) {
+        txnLogger.debug(methodName, "Setting empty flag name for transaction ID:", this.id);
+        this._flagName = null;
+        txnLogger.groupEnd(methodName);
+        return;
+      }
+      txnLogger.debug(methodName, `Setting flag name to '${sanitizedFlagName}'`);
+      this._flagName = sanitizedFlagName;
+      txnLogger.groupEnd(methodName);
+    }
+    get accountId() {
+      return this._accountId;
+    }
+    set accountId(accountId) {
+      const methodName = "setAccountId";
+      txnLogger.group(methodName);
+      if (!accountId || accountId.trim().length === 0) {
+        txnLogger.warn(methodName, "Attempted to set empty account ID for transaction ID:", this.id);
+        txnLogger.groupEnd(methodName);
+        return;
+      }
+      txnLogger.debug(methodName, `Setting account ID to '${accountId}'`);
+      this._accountId = accountId;
+      txnLogger.groupEnd(methodName);
+    }
+    get payeeId() {
+      return this._payeeId;
+    }
+    set payeeId(payeeId) {
+      const methodName = "setPayeeId";
+      txnLogger.group(methodName);
+      if (!payeeId || payeeId.trim().length === 0) {
+        txnLogger.warn(methodName, "Attempted to set empty payee ID for transaction ID:", this.id);
+        txnLogger.groupEnd(methodName);
+        return;
+      }
+      txnLogger.debug(methodName, `Setting payee ID to '${payeeId}'`);
+      this._payeeId = payeeId;
+      txnLogger.groupEnd(methodName);
+    }
+    get categoryId() {
+      return this._categoryId;
+    }
+    set categoryId(categoryId) {
+      const methodName = "setCategoryId";
+      txnLogger.group(methodName);
+      if (!categoryId || categoryId.trim().length === 0) {
+        txnLogger.warn(methodName, "Attempted to set empty category ID for transaction ID:", this.id);
+        txnLogger.groupEnd(methodName);
+        return;
+      }
+      txnLogger.debug(methodName, `Setting category ID to '${categoryId}'`);
+      this._categoryId = categoryId;
+      txnLogger.groupEnd(methodName);
+    }
+    get transferAccountId() {
+      return this._transferAccountId;
+    }
+    set transferAccountId(transferAccountId) {
+      const methodName = "setTransferAccountId";
+      txnLogger.group(methodName);
+      txnLogger.debug(methodName, `Setting transfer account ID to '${transferAccountId}'`);
+      this._transferAccountId = transferAccountId;
+      txnLogger.groupEnd(methodName);
+    }
+    get transferTransactionId() {
+      return this._transferTransactionId;
+    }
+    set transferTransactionId(transferTransactionId) {
+      const methodName = "setTransferTransactionId";
+      txnLogger.group(methodName);
+      txnLogger.debug(methodName, `Setting transfer transaction ID to '${transferTransactionId}'`);
+      this._transferTransactionId = transferTransactionId;
+      txnLogger.groupEnd(methodName);
+    }
+    get debtTransactionType() {
+      return this._debtTransactionType;
+    }
+    set debtTransactionType(type) {
+      const methodName = "setDebtTransactionType";
+      txnLogger.group(methodName);
+      const standardizedType = type?.trim().toLowerCase() || null;
+      if (!standardizedType) {
+        txnLogger.debug(methodName, "Setting empty debt transaction type for transaction ID:", this.id);
+        this._debtTransactionType = null;
+        txnLogger.groupEnd(methodName);
+        return;
+      }
+      if (!TransactionTypeValues.includes(standardizedType)) {
+        txnLogger.warn(methodName, `Attempted to set invalid debt transaction type for transaction ID: '${this.id}', Type: '${standardizedType}'. Valid values are: ${TransactionTypeValues.join(", ")}`);
+        txnLogger.groupEnd(methodName);
+        return;
+      }
+      txnLogger.debug(methodName, `Setting debt transaction type to '${standardizedType}'`);
+      this._debtTransactionType = standardizedType;
+      txnLogger.groupEnd(methodName);
+    }
+    get subtransactionIds() {
+      return this._subtransactionIds;
+    }
+    set subtransactionIds(subtransactionIds) {
+      const methodName = "setSubtransactionIds";
+      txnLogger.group(methodName);
+      if (!Array.isArray(subtransactionIds)) {
+        txnLogger.error(methodName, "Attempted to set invalid subtransaction IDs for transaction ID:", this.id, "Value:", subtransactionIds);
+        txnLogger.groupEnd(methodName);
+        return;
+      }
+      txnLogger.debug(methodName, `Setting subtransaction IDs to '${subtransactionIds.join(", ")}'`);
+      this._subtransactionIds = subtransactionIds;
+      txnLogger.groupEnd(methodName);
+    }
+    init(data2) {
+      txnLogger.group("init");
+      this._setTransferAccount(data2["Payee"]);
+      this.setDate(data2["Date"]);
+      this.setPayee(data2["Payee"]);
+      this.setFlagName(data2["Flag"]);
+      this.setCategory(data2["Category"], data2["Category Group"]);
+      this.setMemo(data2["Memo"]);
+      this.setState(data2["Cleared"]);
+      this.setAccountId(data2["Account"]);
+      const txnInflowCents = parseCurrencyToCents(data2["Inflow"]);
+      const txnOutflowCents = parseCurrencyToCents(data2["Outflow"]);
+      const txnNetDollars = (txnInflowCents - txnOutflowCents) / 100;
+      this.setAmount(txnNetDollars);
+      txnLogger.groupEnd("init");
+    }
+    initFromApiData(data2) {
+      this.date = data2["date"];
+      this.amount = centsToDollars(data2["amount"]);
+      this.memo = data2["memo"];
+      this.clearedStatus = data2["cleared"];
+      this.isApproved = data2["approved"];
+      this.flagColor = data2["flag_color"];
+      this.flagName = data2["flag_name"];
+      this.accountId = data2["account_id"];
+      this.payeeId = data2["payee_id"];
+      this.categoryId = data2["category_id"];
+      this.transferAccountId = data2["transfer_account_id"];
+      this.transferTransactionId = data2["transfer_transaction_id"];
+      this.matchedTransactionId = data2["matched_transaction_id"];
+      this.importId = data2["import_id"];
+      this.debtTransactionType = data2["debt_transaction_type"];
+      this.subtransactionIds = data2["subtransactions"];
+    }
+    toObject() {
+      return {
+        id: this.id,
+        date: this._date,
+        amountDollars: this._amountDollars,
+        memo: this._memo,
+        clearedStatus: this._clearedStatus,
+        isApproved: this._isApproved,
+        flagColor: this._flagColor,
+        flagName: this._flagName,
+        accountId: this._accountId,
+        payeeId: this._payeeId,
+        categoryId: this._categoryId,
+        transferAccountId: this._transferAccountId,
+        transferTransactionId: this._transferTransactionId,
+        debtTransactionType: this._debtTransactionType,
+        subtransactionIds: this._subtransactionIds
+      };
+    }
+  };
+
+  // src/schemas/account.js
+  var logger = logger_default("Account");
+  setLoggerConfig({
+    namespaces: { Account: true },
+    methods: {},
+    levels: { debug: true, group: true, groupEnd: true }
+  });
+  var Account = class {
+    constructor(id) {
+      this.id = id;
+      this._name = "";
+      this._originalName = "";
+      this._balanceDollars = 0;
+      this._clearedBalanceDollars = 0;
+      this._unclearedBalanceDollars = 0;
+      this._isDirectImportLinked = false;
+      this._lastReconciledAt = null;
+      this._ynabType = null;
+      this._ynabOriginalType = null;
+      this._monarchType = null;
+      this._monarchOriginalType = null;
+      this._monarchSubtype = null;
+      this._monarchOriginalSubtype = null;
+      this._transactions = /* @__PURE__ */ new Map();
+      this._migrationStatus = AccountMigrationStatus.UNPROCESSED;
+      this._isSelected = false;
+      this._isIncluded = true;
+      this._isClosed = false;
+      this._note = null;
+      this._isModified = false;
+      this._isOnBudget = true;
+      this._transferPayeeId = null;
+    }
+    get name() {
+      return this._name;
+    }
+    set name(name) {
+      logger.group("set name");
+      const sanitizedName = name.trim();
+      if (sanitizedName.length === 0) {
+        logger.error("set name", "Attempted to set empty name for account ID:", this.id);
+        logger.groupEnd("set name");
+        throw new Error("Account name cannot be empty.");
+      }
+      logger.debug("set name", `Setting name to '${sanitizedName}'`);
+      this._name = sanitizedName;
+      if (this._originalName === null) {
+        this._originalName = sanitizedName;
+      }
+      logger.groupEnd("set name");
+    }
+    get originalName() {
+      return this._originalName;
+    }
+    get ynabType() {
+      return this._ynabType;
+    }
+    set ynabType(type) {
+      const methodName = "set ynab type";
+      logger.group(methodName);
+      if (!Object.values(AccountType).includes(type)) {
+        logger.error(methodName, `Invalid type '${type}' for account ID: '${this.id}'`);
+        logger.groupEnd(methodName);
+        throw new Error(`Type must be one of: ${AccountTypeValues.join(", ")}`);
+      }
+      logger.debug(methodName, `Setting type to '${type}'`);
+      this._ynabType = type;
+      if (this._ynabOriginalType === null) {
+        this._ynabOriginalType = type;
+      }
+      logger.groupEnd(methodName);
+    }
+    get ynabOriginalType() {
+      return this._ynabOriginalType;
+    }
+    get monarchType() {
+      return this._monarchType;
+    }
+    set monarchType(type) {
+      const methodName = "set monarch type";
+      logger.group(methodName);
+      this._monarchType = type;
+      if (this._monarchOriginalType === null) {
+        this._monarchOriginalType = type;
+      }
+      logger.groupEnd(methodName);
+    }
+    get monarchOriginalType() {
+      return this._monarchOriginalType;
+    }
+    get monarchSubtype() {
+      return this._monarchSubtype;
+    }
+    set monarchSubtype(subtype) {
+      const methodName = "set monarch subtype";
+      logger.group(methodName);
+      this._monarchSubtype = subtype;
+      if (this._monarchOriginalSubtype === null) {
+        this._monarchOriginalSubtype = subtype;
+      }
+      logger.groupEnd(methodName);
+    }
+    get monarchOriginalSubtype() {
+      return this._monarchOriginalSubtype;
+    }
+    get categoryGroup() {
+      return this._categoryGroup;
+    }
+    set categoryGroup(categoryGroup) {
+      logger.group("set categoryGroup");
+      if (!categoryGroup || categoryGroup.trim().length === 0) {
+        logger.error("set categoryGroup", "Attempted to set empty categoryGroup for account ID:", this.id);
+        logger.groupEnd("set categoryGroup");
+        throw new Error("Category group cannot be empty.");
+      }
+      logger.debug("set categoryGroup", `Setting categoryGroup to '${categoryGroup}'`);
+      this._categoryGroup = categoryGroup;
+      logger.groupEnd("set categoryGroup");
+    }
+    get originalCategoryGroup() {
+      return this._originalCategoryGroup;
+    }
+    get balance() {
+      return this._balanceDollars;
+    }
+    set balance(amountDollars) {
+      logger.group("set balance");
+      if (typeof amountDollars !== "number" || isNaN(amountDollars)) {
+        logger.error("set balance", `Attempted to set invalid balance for account ID: '${this.id}', Amount: '${amountDollars}'`);
+        logger.groupEnd("set balance");
+        throw new Error("Account balance must be a valid number.");
+      }
+      logger.debug("set balance", `Setting balance to '${amountDollars}'`);
+      this._balanceDollars = amountDollars;
+      logger.groupEnd("set balance");
+    }
+    addToBalance(amountDollars) {
+      logger.group("addToBalance");
+      if (typeof amountDollars !== "number" || isNaN(amountDollars)) {
+        logger.error("addToBalance", `Attempted to add invalid amount to balance for account ID: '${this.id}', Amount: '${amountDollars}'`);
+        logger.groupEnd("addToBalance");
+        throw new Error("Amount to add to account balance must be a valid number.");
+      }
+      logger.debug("addToBalance", `Adding '${amountDollars}' to current balance '${this._balanceDollars}'`);
+      this._balanceDollars += amountDollars;
+      logger.debug("addToBalance", `New balance is '${this._balanceDollars}'`);
+      logger.groupEnd("addToBalance");
+    }
+    set clearedBalance(amountDollars) {
+      logger.group("set clearedBalance");
+      if (typeof amountDollars !== "number" || isNaN(amountDollars)) {
+        logger.error("set clearedBalance", `Attempted to set invalid cleared balance for account ID: '${this.id}', Amount: '${amountDollars}'`);
+        logger.groupEnd("set clearedBalance");
+        throw new Error("Account cleared balance must be a valid number.");
+      }
+      logger.debug("set clearedBalance", `Setting cleared balance to '${amountDollars}'`);
+      this._clearedBalanceDollars = amountDollars;
+      logger.groupEnd("set clearedBalance");
+    }
+    set unclearedBalance(amountDollars) {
+      logger.group("set unclearedBalance");
+      if (typeof amountDollars !== "number" || isNaN(amountDollars)) {
+        logger.error("set unclearedBalance", `Attempted to set invalid uncleared balance for account ID: '${this.id}', Amount: '${amountDollars}'`);
+        logger.groupEnd("set unclearedBalance");
+        throw new Error("Account uncleared balance must be a valid number.");
+      }
+      logger.debug("set unclearedBalance", `Setting uncleared balance to '${amountDollars}'`);
+      this._unclearedBalanceDollars = amountDollars;
+      logger.groupEnd("set unclearedBalance");
+    }
+    get migrationStatus() {
+      return this._migrationStatus;
+    }
+    set migrationStatus(status) {
+      const methodName = "set migrationStatus";
+      logger.group(methodName);
+      if (!Object.values(AccountMigrationStatus).includes(status)) {
+        logger.error(methodName, `Attempted to set invalid migration status for account ID: '${this.id}', Status: '${status}'`);
+        logger.groupEnd(methodName);
+        throw new Error(`Migration status must be one of: ${Object.values(AccountMigrationStatus).join(", ")}`);
+      }
+      logger.debug(methodName, `Setting migration status to '${status}'`);
+      this._migrationStatus = status;
+      logger.groupEnd(methodName);
+    }
+    get included() {
+      return this._isIncluded;
+    }
+    set included(value) {
+      logger.group("set included");
+      if (typeof value !== "boolean") {
+        logger.error("set included", `Attempted to set invalid included value for account ID: '${this.id}', Value: '${value}'`);
+        throw new Error("Included value must be a boolean.");
+      }
+      this._isIncluded = value;
+      logger.groupEnd("set included");
+    }
+    get selected() {
+      return this._isSelected;
+    }
+    set selected(value) {
+      logger.group("set selected");
+      if (typeof value !== "boolean") {
+        logger.error("set selected", `Attempted to set invalid selected value for account ID: '${this.id}', Value: '${value}'`);
+        throw new Error("Selected value must be a boolean.");
+      }
+      this._isSelected = value;
+      logger.groupEnd("set selected");
+    }
+    get closed() {
+      return this._isClosed === "closed";
+    }
+    set closed(value) {
+      logger.group("set closed");
+      if (typeof value !== "boolean") {
+        logger.error("set closed", `Attempted to set invalid closed value for account ID: '${this.id}', Value: '${value}'`);
+        throw new Error("Closed value must be a boolean.");
+      }
+      this._isClosed = value;
+      logger.groupEnd("set closed");
+    }
+    get transactions() {
+      return Array.from(this._transactions.values());
+    }
+    get transactionCount() {
+      return this._transactions.size;
+    }
+    set transactions(transactions) {
+      logger.group("set transactions");
+      if (!Array.isArray(transactions)) {
+        logger.error("set transactions", `Attempted to set invalid transactions for account ID: '${this.id}'. Type '${typeof transactions}'. Transactions: '${transactions}'`);
+        logger.groupEnd("set transactions");
+        throw new Error("Transactions must be an array of Transaction objects.");
+      }
+      transactions.forEach((txn) => this._transactions.set(txn.id, txn));
+      logger.groupEnd("set transactions");
+    }
+    addTransaction(transaction) {
+      logger.group("addTransaction");
+      if (!(transaction instanceof Transaction)) {
+        logger.error("addTransaction", `Attempted to add invalid transaction to account ID: '${this.id}', Transaction: ${transaction}`);
+        logger.groupEnd("addTransaction");
+        return new Error(`Invalid transaction object for account ID: '${this.id}':`, transaction);
+      }
+      logger.debug("addTransaction", `Adding transaction ID '${transaction.id}' to account ID '${this.id}'`);
+      this._transactions.set(transaction.id, transaction);
+      logger.groupEnd("addTransaction");
+    }
+    set isOnBudget(value) {
+      logger.group("set isOnBudget");
+      if (typeof value !== "boolean") {
+        logger.error("set isOnBudget", `Attempted to set invalid isOnBudget value for account ID: '${this.id}', Value: '${value}'`);
+        throw new Error("isOnBudget value must be a boolean.");
+      }
+      this._isOnBudget = value;
+      logger.groupEnd("set isOnBudget");
+    }
+    set note(value) {
+      logger.group("set note");
+      if (value !== null && typeof value !== "string") {
+        logger.error("set note", `Attempted to set invalid note value for account ID: '${this.id}', Value: '${value}'`);
+        throw new Error("Note value must be a string or null.");
+      }
+      this._note = value;
+      logger.groupEnd("set note");
+    }
+    set debtOriginalBalance(value) {
+      logger.group("set debtOriginalBalance");
+      if (value !== null && typeof value !== "number") {
+        logger.error("set debtOriginalBalance", `Attempted to set invalid debtOriginalBalance value for account ID: '${this.id}', Value: '${value}'`);
+        throw new Error("debtOriginalBalance value must be a number or null.");
+      }
+      this._debtOriginalBalance = value;
+      logger.groupEnd("set debtOriginalBalance");
+    }
+    set debtInterestRates(value) {
+      logger.group("set debtInterestRates");
+      if (value !== null && (typeof value !== "object" || Array.isArray(value))) {
+        logger.error("set debtInterestRates", `Attempted to set invalid debtInterestRates value for account ID: '${this.id}', Value: '${value}'`);
+        throw new Error("debtInterestRates value must be an object or null.");
+      }
+      this._debtInterestRates = value;
+      logger.groupEnd("set debtInterestRates");
+    }
+    set debtMinimumPayments(value) {
+      logger.group("set debtMinimumPayments");
+      if (value !== null && (typeof value !== "object" || Array.isArray(value))) {
+        logger.error("set debtMinimumPayments", `Attempted to set invalid debtMinimumPayments value for account ID: '${this.id}', Value: '${value}'`);
+        throw new Error("debtMinimumPayments value must be an object or null.");
+      }
+      this._debtMinimumPayments = value;
+      logger.groupEnd("set debtMinimumPayments");
+    }
+    set debtEscrowAmounts(value) {
+      logger.group("set debtEscrowAmounts");
+      if (value !== null && (typeof value !== "object" || Array.isArray(value))) {
+        logger.error("set debtEscrowAmounts", `Attempted to set invalid debtEscrowAmounts value for account ID: '${this.id}', Value: '${value}'`);
+        throw new Error("debtEscrowAmounts value must be an object or null.");
+      }
+      this._debtEscrowAmounts = value;
+      logger.groupEnd("set debtEscrowAmounts");
+    }
+    set transferPayeeId(value) {
+      logger.group("set transferPayeeId");
+      if (value !== null && typeof value !== "string") {
+        logger.error("set transferPayeeId", `Attempted to set invalid transferPayeeId value for account ID: '${this.id}', Value: '${value}'`);
+        throw new Error("transferPayeeId value must be a string or null.");
+      }
+      this._transferPayeeId = value;
+      logger.groupEnd("set transferPayeeId");
+    }
+    set isDirectImportLinked(value) {
+      logger.group("set isDirectImportLinked");
+      if (typeof value !== "boolean") {
+        logger.error("set isDirectImportLinked", `Attempted to set invalid isDirectImportLinked value for account ID: '${this.id}', Value: '${value}'`);
+        throw new Error("isDirectImportLinked value must be a boolean.");
+      }
+      this._isDirectImportLinked = value;
+      logger.groupEnd("set isDirectImportLinked");
+    }
+    set isDirectImportOnError(value) {
+      logger.group("set isDirectImportOnError");
+      if (typeof value !== "boolean") {
+        logger.error("set isDirectImportOnError", `Attempted to set invalid isDirectImportOnError value for account ID: '${this.id}', Value: '${value}'`);
+        throw new Error("isDirectImportOnError value must be a boolean.");
+      }
+      this._isDirectImportOnError = value;
+      logger.groupEnd("set isDirectImportOnError");
+    }
+    set lastReconciledAt(value) {
+      logger.group("set lastReconciledAt");
+      if (value !== null && !(value instanceof Date)) {
+        logger.error("set lastReconciledAt", `Attempted to set invalid lastReconciledAt value for account ID: '${this.id}', Value: '${value}'`);
+        throw new Error("lastReconciledAt value must be a Date object or null.");
+      }
+      this._lastReconciledAt = value;
+      logger.groupEnd("set lastReconciledAt");
+    }
+    get isModified() {
+      const methodName = "get isModified";
+      logger.group(methodName);
+      const hasNameChanged = this._name !== this._originalName;
+      const hasTypeChanged = this._ynabType !== this._ynabOriginalType;
+      const hasSubtypeChanged = this._subtype !== this._originalSubtype;
+      const modified = hasNameChanged || hasTypeChanged || hasSubtypeChanged;
+      logger.debug(methodName, `Account ID: '${this.id}', isModified: '${modified}'`);
+      logger.groupEnd(methodName);
+      return modified;
+    }
+    set isModified(value) {
+      logger.group("set modified");
+      if (typeof value !== "boolean") {
+        logger.error("set modified", `Attempted to set invalid modified value for account ID: '${this.id}', Value: '${value}'`);
+        throw new Error("Modified value must be a boolean.");
+      }
+      this._isModified = value;
+      logger.groupEnd("set modified");
+    }
+    async undoChanges() {
+      logger.group("undoChanges");
+      this._name = this._originalName;
+      this._category = this._originalCategory;
+      this._categoryGroup = this._originalCategoryGroup;
+      this._isModified = false;
+      await indexedDB_default.updateAccountModification(this.id, {
+        name: this._name,
+        type: this._category,
+        subtype: this._categoryGroup,
+        modified: this._isModified
+      });
+      logger.groupEnd("undoChanges");
+    }
+    async syncDbModifications() {
+      logger.group("syncDbModifications");
+      const accountInDb = await indexedDB_default.getAccount(this.id);
+      if (!accountInDb) {
+        logger.error("syncDbModifications", `Account ID '${this.id}' not found in database; cannot sync modifications.`);
+        logger.groupEnd("syncDbModifications");
+        throw new Error(`Account ID '${this.id}' not found in database.`);
+      }
+      const modifications = {};
+      if (this._name !== this._originalName && this._name !== accountInDb.name) {
+        modifications.name = this._name;
+      }
+      if (this._ynabType !== this._ynabOriginalType && this._ynabType !== accountInDb.type) {
+        modifications.type = this._ynabType;
+      }
+      if (this._subtype !== this._originalSubtype && this._subtype !== accountInDb.subtype) {
+        modifications.subtype = this._subtype;
+      }
+      if (Object.keys(modifications).length > 0) {
+        if (this._isModified === false) {
+          modifications.modified = true;
+          this._isModified = true;
+        }
+      } else {
+        if (this._isModified === true) {
+          modifications.modified = false;
+          this._isModified = false;
+        }
+      }
+      modifications.included = this._isIncluded;
+      modifications.selected = this._isSelected;
+      if (Object.keys(modifications).length > 0) {
+        logger.debug("syncDbModifications", `Updating account ID '${this.id}' with modifications:`, modifications);
+        await indexedDB_default.updateAccountModification(this.id, modifications);
+      } else {
+        logger.debug("syncDbModifications", `No modifications to sync for account ID '${this.id}'`);
+      }
+      logger.groupEnd("syncDbModifications");
+    }
+    initFromApiData(data2) {
+      this._name = data2["name"];
+      this.isOnBudget = data2["on_budget"];
+      this.note = data2["note"];
+      this.balance = centsToDollars(data2["balance"]);
+      this.clearedBalance = centsToDollars(data2["cleared_balance"]);
+      this.unclearedBalance = centsToDollars(data2["uncleared_balance"]);
+      this.transferPayeeId = data2["transfer_payee_id"];
+      this.isDirectImportLinked = data2["direct_import_linked"];
+      this.isDirectImportOnError = data2["direct_import_in_error"];
+      this.lastReconciledAt = parseDate(data2["last_reconciled_at"]);
+      this.debtOriginalBalance = data2["debt_original_balance"];
+      this.debtInterestRates = data2["debt_interest_rates"];
+      this.debtMinimumPayments = data2["debt_minimum_payments"];
+      this.debtEscrowAmounts = data2["debt_escrow_amounts"];
+    }
+    toObject() {
+      return {
+        id: this.id,
+        name: this._name,
+        originalName: this._originalName,
+        balanceDollars: this._balanceDollars,
+        clearedBalanceDollars: this._clearedBalanceDollars,
+        unclearedBalanceDollars: this._unclearedBalanceDollars,
+        isDirectImportLinked: this._isDirectImportLinked,
+        lastReconciledAt: this._lastReconciledAt,
+        type: this._ynabType,
+        originalType: this._ynabType,
+        transactions: Array.from(this._transactions.values()).map((txn) => txn.id),
+        migrationStatus: this._migrationStatus,
+        isSelected: this._isSelected,
+        isIncluded: this._isIncluded,
+        isClosed: this._isClosed,
+        note: this._note,
+        isModified: this._isModified
+      };
+    }
+  };
+
   // src/utils/indexedDB.js
   var DB_NAME = "YnabToMonarchDB";
   var DB_VERSION = 2;
@@ -5033,10 +5540,10 @@
           resolve();
         };
         request.onupgradeneeded = (event) => {
-          const db = event.target.result;
+          const db2 = event.target.result;
           let accountStore;
-          if (!db.objectStoreNames.contains("accounts")) {
-            accountStore = db.createObjectStore("accounts", { keyPath: "id" });
+          if (!db2.objectStoreNames.contains("accounts")) {
+            accountStore = db2.createObjectStore("accounts", { keyPath: "id" });
             console.log('Created "accounts" object store');
           } else {
             accountStore = event.target.transaction.objectStore("accounts");
@@ -5057,20 +5564,20 @@
           if (accountStore && !accountStore.indexNames.contains("syncedAt")) {
             accountStore.createIndex("syncedAt", "syncedAt", { unique: false });
           }
-          if (!db.objectStoreNames.contains("transactions")) {
-            const txnStore = db.createObjectStore("transactions", { keyPath: "id", autoIncrement: true });
+          if (!db2.objectStoreNames.contains("transactions")) {
+            const txnStore = db2.createObjectStore("transactions", { keyPath: "id", autoIncrement: true });
             txnStore.createIndex("accountId", "accountId", { unique: false });
             txnStore.createIndex("date", "date", { unique: false });
             console.log('Created "transactions" object store');
           }
-          if (!db.objectStoreNames.contains("uploadStates")) {
-            const uploadStore = db.createObjectStore("uploadStates", { keyPath: "itemId" });
+          if (!db2.objectStoreNames.contains("uploadStates")) {
+            const uploadStore = db2.createObjectStore("uploadStates", { keyPath: "itemId" });
             uploadStore.createIndex("status", "status", { unique: false });
             uploadStore.createIndex("timestamp", "timestamp", { unique: false });
             console.log('Created "uploadStates" object store');
           }
-          if (!db.objectStoreNames.contains("metadata")) {
-            db.createObjectStore("metadata", { keyPath: "key" });
+          if (!db2.objectStoreNames.contains("metadata")) {
+            db2.createObjectStore("metadata", { keyPath: "key" });
             console.log('Created "metadata" object store');
           }
           console.groupEnd();
@@ -5079,12 +5586,17 @@
     }
     async saveAccounts(accountsData) {
       console.group("saveAccounts:");
+      if (!(accountsData instanceof Accounts)) {
+        console.error("Invalid accountsData provided, expected Accounts instance");
+        console.groupEnd();
+        throw new Error("Invalid accountsData provided, expected Accounts instance");
+      }
       if (!isIndexedDBAvailable || !this.db) {
         console.warn("IndexedDB not initialized, skipping save");
         console.groupEnd();
         return;
       }
-      console.log(`Saving ${Object.keys(accountsData).length} accounts to IndexedDB`);
+      console.log(`Saving ${accountsData.accounts.length} accounts to IndexedDB`);
       return new Promise((resolve, reject) => {
         const tx = this.db.transaction(["accounts", "transactions"], "readwrite");
         const accountStore = tx.objectStore("accounts");
@@ -5092,54 +5604,29 @@
         console.log("Clearing existing accounts and transactions...");
         accountStore.clear();
         txnStore.clear();
-        console.log("First entry to save:", accountsData[Object.keys(accountsData)[0]]);
-        for (const [accountId, accountData] of Object.entries(accountsData)) {
-          const now = Date.now();
-          console.debug(`Account data for ${accountId}:`, accountData);
-          const transactionIds = [];
-          if (accountData.transactions && Array.isArray(accountData.transactions)) {
-            console.log(`Processing ${accountData.transactions.length} transactions for account ${accountId}`);
-            for (const txn of accountData.transactions) {
-              try {
-                const txnToStore = {
-                  ...txn,
-                  accountId
-                };
-                console.debug(`Storing transaction:`, txnToStore);
-                txnStore.put(txnToStore);
-                transactionIds.push(txn.id);
-              } catch (e) {
-                console.error(`Error storing transaction for account ${accountId}:`, e);
-              }
+        for (const account of accountsData.accounts) {
+          console.debug(`Account data for '${account.id}':`, account);
+          const transactionIds = /* @__PURE__ */ new Set();
+          console.log(`Processing (${account.transactions.length}) transactions for account '${account.id}'`);
+          for (const txn of account.transactions) {
+            try {
+              console.debug(`Storing transaction:`, txn);
+              txnStore.put(txn.toObject());
+              transactionIds.add(txn.id);
+            } catch (e) {
+              console.error(`Error storing transaction for account ${account.id}:`, e);
             }
           }
-          const account = {
-            id: accountId,
-            balance: accountData.balance || 0,
-            included: accountData.included !== void 0 ? accountData.included : true,
-            modified: accountData.modified !== void 0 ? accountData.modified : false,
-            name: accountData.name,
-            originalName: accountData.originalName || accountData.name,
-            selected: accountData.selected || false,
-            status: accountData.status || "pending",
-            type: accountData.type,
-            originalType: accountData.originalType || accountData.type,
-            subtype: accountData.subtype,
-            originalSubtype: accountData.originalSubtype || accountData.subtype,
-            transactionIds,
-            lastModified: accountData.lastModified || now,
-            syncedAt: now
-          };
-          console.log(`Saving account '${account.name}' with ID '${accountId}' with ${transactionIds.length} transaction IDs`);
-          accountStore.put(account);
+          console.log(`Saving account '${account.name}' with ID '${account.id}' with (${transactionIds.size}) transaction IDs`);
+          accountStore.put(account.toObject());
         }
         tx.oncomplete = () => {
-          console.log(`\u2705 Saved ${Object.keys(accountsData).length} accounts to IndexedDB`);
+          console.log(`Saved (${accountsData.accounts.length}) accounts to IndexedDB.`);
           console.groupEnd();
           resolve();
         };
         tx.onerror = () => {
-          console.error("Error saving accounts:", tx.error);
+          console.error("Error saving accounts to IndexedDB:", tx.error);
           console.groupEnd();
           reject(tx.error);
         };
@@ -5148,32 +5635,34 @@
     async getAccounts() {
       console.group("getAccounts:");
       if (!isIndexedDBAvailable || !this.db) {
-        console.warn("IndexedDB not initialized, returning empty");
+        console.warn("IndexedDB not initialized, returning empty Accounts");
         console.groupEnd();
-        return {};
+        throw new Error("IndexedDB not initialized");
       }
       return new Promise((resolve, reject) => {
         const tx = this.db.transaction(["accounts", "transactions"], "readonly");
         const accountStore = tx.objectStore("accounts");
         const txnStore = tx.objectStore("transactions");
-        const accounts = {};
+        const accountsData = {};
         const cursorRequest = accountStore.openCursor();
-        cursorRequest.onsuccess = (event) => {
+        cursorRequest.onsuccess = async (event) => {
           const cursor = event.target.result;
           if (!cursor) {
-            console.debug(`\u2705 Retrieved ${Object.keys(accounts).length} accounts from IndexedDB`);
+            console.debug(`\u2705 Retrieved ${Object.keys(accountsData).length} accounts from IndexedDB`);
+            const accounts = new Accounts();
+            await accounts.init(accountsData);
             console.groupEnd();
             resolve(accounts);
             return;
           }
-          const account = cursor.value;
-          const accountId = account.id;
+          const accountData = cursor.value;
+          const accountId = accountData.id;
           const txnIndex = txnStore.index("accountId");
           const txnRequest = txnIndex.getAll(accountId);
           txnRequest.onsuccess = () => {
-            const { transactionIds, ...accountData } = account;
-            accounts[accountId] = {
-              ...accountData,
+            const { transactionIds, ...restAccountData } = accountData;
+            accountsData[accountId] = {
+              ...restAccountData,
               transactions: txnRequest.result.map((txn) => {
                 const { accountId: accountId2, ...rest } = txn;
                 return rest;
@@ -5486,577 +5975,38 @@
       console.groupEnd();
     }
   };
-  var financialDBInstance = null;
-  function getFinancialDB() {
-    if (!financialDBInstance) {
-      financialDBInstance = new FinancialDataDB();
-    }
-    return financialDBInstance;
-  }
-  var indexedDB_default = {
-    get init() {
-      return getFinancialDB().init.bind(getFinancialDB());
-    },
-    get saveAccounts() {
-      return getFinancialDB().saveAccounts.bind(getFinancialDB());
-    },
-    get getAccounts() {
-      return getFinancialDB().getAccounts.bind(getFinancialDB());
-    },
-    get getAccount() {
-      return getFinancialDB().getAccount.bind(getFinancialDB());
-    },
-    get saveTransaction() {
-      return getFinancialDB().saveTransaction.bind(getFinancialDB());
-    },
-    get hasAccounts() {
-      return getFinancialDB().hasAccounts.bind(getFinancialDB());
-    },
-    get clearAccounts() {
-      return getFinancialDB().clearAccounts.bind(getFinancialDB());
-    },
-    get updateAccountModification() {
-      return getFinancialDB().updateAccountModification.bind(getFinancialDB());
-    },
-    get saveUploadState() {
-      return getFinancialDB().saveUploadState.bind(getFinancialDB());
-    },
-    get getUploadStatesByStatus() {
-      return getFinancialDB().getUploadStatesByStatus.bind(getFinancialDB());
-    },
-    get clearUploadStates() {
-      return getFinancialDB().clearUploadStates.bind(getFinancialDB());
-    },
-    get saveMetadata() {
-      return getFinancialDB().saveMetadata.bind(getFinancialDB());
-    },
-    get getMetadata() {
-      return getFinancialDB().getMetadata.bind(getFinancialDB());
-    },
-    get close() {
-      return getFinancialDB().close.bind(getFinancialDB());
-    }
-  };
-
-  // src/utils/logger.js
-  var DEFAULT_CONFIG = {
-    enabled: true,
-    levels: {
-      log: false,
-      debug: false,
-      warn: true,
-      error: true,
-      group: false,
-      groupEnd: false
-    },
-    namespaces: {},
-    methods: {}
-  };
-  function getConfig() {
-    const g = globalThis;
-    if (!g.__LOG_CFG) {
-      g.__LOG_CFG = { ...DEFAULT_CONFIG };
-    }
-    return g.__LOG_CFG;
-  }
-  function setLoggerConfig(partial) {
-    const current = getConfig();
-    globalThis.__LOG_CFG = {
-      ...current,
-      ...partial,
-      levels: { ...current.levels, ...partial?.levels || {} },
-      namespaces: { ...current.namespaces, ...partial?.namespaces || {} },
-      methods: { ...current.methods, ...partial?.methods || {} }
-    };
-  }
-  function asBool(v) {
-    if (v === true || v === false)
-      return v;
-    if (typeof v === "number")
-      return v !== 0;
-    if (typeof v === "string") {
-      const s = v.trim().toLowerCase();
-      if (s === "false" || s === "0" || s === "off" || s === "no")
-        return false;
-      if (s === "true" || s === "1" || s === "on" || s === "yes")
-        return true;
-      return Boolean(s);
-    }
-    return Boolean(v);
-  }
-  function isEnabled(level, ns, methodName) {
-    const cfg = getConfig();
-    if (!cfg.enabled)
-      return false;
-    const lvl = asBool(cfg.levels[level]);
-    if (!lvl)
-      return false;
-    const methodKey = methodName ? `${ns}.${methodName}` : ns;
-    if (Object.prototype.hasOwnProperty.call(cfg.methods, methodKey)) {
-      return asBool(cfg.methods[methodKey]);
-    }
-    if (Object.prototype.hasOwnProperty.call(cfg.namespaces, ns)) {
-      return asBool(cfg.namespaces[ns]);
-    }
-    if (Object.prototype.hasOwnProperty.call(cfg.namespaces, "*")) {
-      return asBool(cfg.namespaces["*"]);
-    }
-    return true;
-  }
-  function getLogger(namespace) {
-    const ns = String(namespace || "log");
-    const buildPrefix = (m) => `[${ns}${m ? `.${m}` : ""}]`;
-    return {
-      group(methodName, ...args) {
-        if (!isEnabled("group", ns, methodName))
-          return;
-        console.group(buildPrefix(methodName), ...args);
-      },
-      groupEnd(methodName) {
-        const cfg = getConfig();
-        if (!cfg.enabled)
-          return;
-        if (isEnabled("group", ns, methodName) || asBool(cfg.levels.groupEnd)) {
-          console.groupEnd();
-        }
-      },
-      log(methodName, ...args) {
-        if (!isEnabled("log", ns, methodName))
-          return;
-        console.log(buildPrefix(methodName), ...args);
-      },
-      debug(methodName, ...args) {
-        if (!isEnabled("debug", ns, methodName))
-          return;
-        console.debug(buildPrefix(methodName), ...args);
-      },
-      warn(methodName, ...args) {
-        if (!isEnabled("warn", ns, methodName))
-          return;
-        console.warn(buildPrefix(methodName), ...args);
-      },
-      error(methodName, ...args) {
-        if (!isEnabled("error", ns, methodName))
-          return;
-        console.error(buildPrefix(methodName), ...args);
-      }
-    };
-  }
-  var logger_default = getLogger;
-
-  // src/utils/date.js
-  var dateLogger = logger_default("Date");
-  setLoggerConfig({ methods: { "Date.parseDate": false } });
-  function parseDate(dateStr) {
-    dateLogger.group("parseDate", dateStr);
-    if (!dateStr) {
-      dateLogger.groupEnd("parseDate");
-      return null;
-    }
-    const trimmed = dateStr.trim();
-    const mmddyyyyMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if (mmddyyyyMatch) {
-      const [, mm, dd, yyyy] = mmddyyyyMatch;
-      const result = `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
-      dateLogger.debug("parseDate", `Date '${dateStr}' parsed as MM/DD/YYYY -> ${result}`);
-      dateLogger.groupEnd("parseDate");
-      return result;
-    }
-    dateLogger.debug("parseDate", `parseDate: unrecognized format -> ${trimmed}`);
-    dateLogger.groupEnd("parseDate");
-    return null;
-  }
-
-  // src/utils/idGenerator.js
-  function generateId() {
-    return "id-" + Math.random().toString(36).slice(2, 11);
-  }
-
-  // src/utils/currency.js
-  var currencyLogger = logger_default("Currency");
-  setLoggerConfig({ methods: { "Currency.parseCurrencyToCents": false } });
-  function parseCurrencyToCents(str) {
-    currencyLogger.group("parseCurrencyToCents", str);
-    const sanitizedStr = str?.trim() || "";
-    if (sanitizedStr.length === 0) {
-      currencyLogger.error("parseCurrencyToCents", `Invalid currency string -- Empty input: "${str}"`);
-      currencyLogger.groupEnd("parseCurrencyToCents");
-      throw new Error(`Invalid currency string -- Empty input: "${str}"`);
-    }
-    const normalized = str.replace(/[^0-9.-]+/g, "").trim();
-    const floatVal = parseFloat(normalized);
-    if (isNaN(floatVal)) {
-      currencyLogger.error("parseCurrencyToCents", `Invalid currency string -- Not a number: "${str}"`);
-      currencyLogger.groupEnd("parseCurrencyToCents");
-      throw new Error(`Invalid currency string -- Not a number: "${str}"`);
-    }
-    const cents = Math.round(floatVal * 100);
-    currencyLogger.debug("parseCurrencyToCents", `parseCurrencyToCents: '${str}' -> '${cents}' cents`);
-    currencyLogger.groupEnd("parseCurrencyToCents");
-    return cents;
-  }
+  var db = new FinancialDataDB();
+  var indexedDB_default = db;
 
   // src/schemas/accounts.js
-  var txnLogger = logger_default("Transaction");
-  var accountLogger = logger_default("Account");
   var accountsLogger = logger_default("Accounts");
   setLoggerConfig({
-    namespaces: { Accounts: false, Account: false, Transaction: false },
+    namespaces: { Accounts: false },
     methods: { "Accounts.getByName": true },
     levels: { debug: true, group: true, groupEnd: true }
   });
-  var Transaction = class {
-    constructor() {
-      this.id = generateId();
-      this._accountId = null;
-      this._flagName = null;
-      this._date = null;
-      this._payee = null;
-      this._categoryGroup = null;
-      this._category = null;
-      this._memo = null;
-      this._amountDollars = 0;
-      this._state = "uncleared";
-      this._deleted = false;
-      this._transferAccountName = null;
-    }
-    init(data2) {
-      txnLogger.group("init");
-      this._setTransferAccount(data2["Payee"]);
-      this.setDate(data2["Date"]);
-      this.setPayee(data2["Payee"]);
-      this.setFlagName(data2["Flag"]);
-      this.setCategory(data2["Category"], data2["Category Group"]);
-      this.setMemo(data2["Memo"]);
-      this.setState(data2["Cleared"]);
-      this.setAccountId(data2["Account"]);
-      const txnInflowCents = parseCurrencyToCents(data2["Inflow"]);
-      const txnOutflowCents = parseCurrencyToCents(data2["Outflow"]);
-      const txnNetDollars = (txnInflowCents - txnOutflowCents) / 100;
-      this.setAmount(txnNetDollars);
-      txnLogger.groupEnd("init");
-    }
-    setAmount(amountDollars) {
-      txnLogger.group("setAmount");
-      if (typeof amountDollars !== "number" || isNaN(amountDollars)) {
-        txnLogger.error("setAmount", "Attempted to set invalid amount for transaction ID:", this.id, "Amount:", amountDollars);
-        txnLogger.groupEnd("setAmount");
-        return;
-      }
-      txnLogger.debug("setAmount", `Setting amount to '${amountDollars}'`);
-      this._amountDollars = amountDollars;
-      txnLogger.groupEnd("setAmount");
-    }
-    get amount() {
-      return this._amountDollars;
-    }
-    setDate(date) {
-      txnLogger.group("setDate");
-      const formattedDate = parseDate(date);
-      if (!formattedDate) {
-        txnLogger.error("setDate", "Attempted to set invalid date for transaction ID:", this.id, "Input date:", date);
-        txnLogger.groupEnd("setDate");
-        return;
-      }
-      txnLogger.debug("setDate", `Setting date to '${formattedDate}'`);
-      this._date = formattedDate;
-      txnLogger.groupEnd("setDate");
-    }
-    setPayee(payee) {
-      txnLogger.group("setPayee");
-      const sanitizedPayee = payee?.trim() || "";
-      if (sanitizedPayee.length === 0) {
-        txnLogger.debug("setPayee", "Setting empty Payee for balance adjustment.");
-        this._payee = null;
-        txnLogger.groupEnd("setPayee");
-        return;
-      }
-      txnLogger.debug("setPayee", `Setting Payee to '${sanitizedPayee}'`);
-      this._payee = sanitizedPayee;
-      txnLogger.groupEnd("setPayee");
-    }
-    setFlagName(flagName) {
-      txnLogger.group("setFlagName");
-      const sanitizedFlagName = flagName.trim();
-      if (sanitizedFlagName.length === 0) {
-        txnLogger.debug("setFlagName", "Setting empty flag name for transaction ID:", this.id);
-        txnLogger.groupEnd("setFlagName");
-        return;
-      }
-      txnLogger.debug("setFlagName", `Setting flag name to '${sanitizedFlagName}'`);
-      this._flagName = sanitizedFlagName;
-      txnLogger.groupEnd("setFlagName");
-    }
-    setCategory(category, categoryGroup) {
-      txnLogger.group("setCategory");
-      const sanitizedCategory = category.trim();
-      const sanitizedCategoryGroup = categoryGroup.trim();
-      const hasCategory = sanitizedCategory.length > 0;
-      const hasCategoryGroup = sanitizedCategoryGroup.length > 0;
-      if (hasCategory !== hasCategoryGroup) {
-        txnLogger.error("setCategory", `Attempted to set Category and Category Group inconsistently; Category: '${sanitizedCategory}' | Category Group: '${sanitizedCategoryGroup}'`);
-        txnLogger.groupEnd("setCategory");
-        return;
-      }
-      if (!hasCategory) {
-        txnLogger.debug("setCategory", "Setting empty Category and Category Group");
-        this._category = null;
-        this._categoryGroup = null;
-      } else {
-        txnLogger.debug("setCategory", `Setting Category to '${sanitizedCategory}' and Category Group to '${sanitizedCategoryGroup}'`);
-        this._category = sanitizedCategory;
-        this._categoryGroup = sanitizedCategoryGroup;
-      }
-      txnLogger.groupEnd("setCategory");
-    }
-    setMemo(memo) {
-      txnLogger.group("setMemo");
-      const sanitizedMemo = memo.trim();
-      if (sanitizedMemo.length === 0) {
-        txnLogger.debug("setMemo", "Setting empty memo for transaction ID:", this.id);
-        txnLogger.groupEnd("setMemo");
-        return;
-      }
-      txnLogger.debug("setMemo", `Setting memo to '${sanitizedMemo}'`);
-      this._memo = sanitizedMemo;
-      txnLogger.groupEnd("setMemo");
-    }
-    setState(state) {
-      txnLogger.group("setState");
-      const sanitizedState = state.trim().toLowerCase();
-      const validStates = ["cleared", "uncleared", "reconciled"];
-      if (!validStates.includes(sanitizedState)) {
-        txnLogger.warn("setState", `Attempted to set invalid state for transaction ID: '${this.id}', State: '${sanitizedState}'`);
-        txnLogger.groupEnd("setState");
-        return;
-      }
-      txnLogger.debug("setState", `Setting state to '${sanitizedState}'`);
-      this._state = sanitizedState;
-      txnLogger.groupEnd("setState");
-    }
-    setAccountId(accountId) {
-      txnLogger.group("setAccountId");
-      if (!accountId || accountId.trim().length === 0) {
-        txnLogger.warn("setAccountId", "Attempted to set empty account ID for transaction ID:", this.id);
-        txnLogger.groupEnd("setAccountId");
-        return;
-      }
-      txnLogger.debug("setAccountId", `Setting account ID to '${accountId}'`);
-      this._accountId = accountId;
-      txnLogger.groupEnd("setAccountId");
-    }
-    _setTransferAccount(payee) {
-      txnLogger.group("_setTransferAccount");
-      const sanitizedPayee = payee?.trim() || "";
-      const transferPrefix = "Transfer : ";
-      if (sanitizedPayee.length === 0) {
-        txnLogger.debug("_setTransferAccount", "Payee is empty; skipping.");
-        txnLogger.groupEnd("_setTransferAccount");
-        return false;
-      }
-      if (!sanitizedPayee.startsWith(transferPrefix)) {
-        txnLogger.debug("_setTransferAccount", "Payee does not indicate a transfer; skipping.");
-        txnLogger.groupEnd("_setTransferAccount");
-        return false;
-      }
-      const accountName = sanitizedPayee.substring(transferPrefix.length).trim();
-      if (accountName.length === 0) {
-        txnLogger.warn("_setTransferAccount", `Transfer payee has no account name specified.`);
-        txnLogger.groupEnd("_setTransferAccount");
-        return false;
-      }
-      txnLogger.debug("_setTransferAccount", `Detected an account transfer to '${accountName}'`);
-      this._transferAccountName = accountName;
-      txnLogger.groupEnd("_setTransferAccount");
-      return true;
-    }
-    toObject() {
-      return {
-        id: this.id,
-        accountId: this._accountId,
-        flagName: this._flagName,
-        date: this._date,
-        payee: this._payee,
-        categoryGroup: this._categoryGroup,
-        category: this._category,
-        memo: this._memo,
-        amountDollars: this._amountDollars,
-        state: this._state,
-        deleted: this._deleted,
-        transferAccountName: this._transferAccountName
-      };
-    }
-  };
-  var Account = class {
-    constructor(id) {
-      this.id = id;
-      this._name = null;
-      this._originalName = null;
-      this._balanceDollars = 0;
-      this._type = null;
-      this._subtype = null;
-      this._transactions = /* @__PURE__ */ new Map();
-      this._status = "unprocessed";
-      this._selected = false;
-      this._included = true;
-      this._isModified = false;
-    }
-    get name() {
-      return this._name;
-    }
-    get type() {
-      return this._type;
-    }
-    get subtype() {
-      return this._subtype;
-    }
-    get status() {
-      return this._status;
-    }
-    get included() {
-      return this._included;
-    }
-    set included(value) {
-      this._included = value;
-    }
-    get selected() {
-      return this._selected;
-    }
-    set selected(value) {
-      this._selected = value;
-    }
-    get transactions() {
-      return Array.from(this._transactions.values());
-    }
-    get transactionCount() {
-      return this._transactions.size;
-    }
-    get balance() {
-      return this._balanceDollars;
-    }
-    get original() {
-      return {
-        name: this._originalName,
-        type: this._type,
-        subtype: this._subtype
-      };
-    }
-    get current() {
-      return {
-        name: this._name,
-        type: this._type,
-        subtype: this._subtype
-      };
-    }
-    isModified() {
-      return this._isModified;
-    }
-    setName(name) {
-      accountLogger.group("setName");
-      const sanitizedName = name.trim();
-      if (sanitizedName.length === 0) {
-        accountLogger.warn("setName", "\u274C Attempted to set empty name for account ID:", this.id);
-        accountLogger.groupEnd("setName");
-        return;
-      }
-      accountLogger.debug("setName", `Setting name to '${sanitizedName}'`);
-      if (!this._originalName) {
-        this._originalName = sanitizedName;
-      }
-      this._name = sanitizedName;
-      accountLogger.groupEnd("setName");
-    }
-    addToBalance(amountDollars) {
-      accountLogger.group("addToBalance");
-      if (typeof amountDollars !== "number" || isNaN(amountDollars)) {
-        accountLogger.warn("addToBalance", "\u274C Attempted to add invalid amount to balance for account ID:", this.id, "Amount:", amountDollars);
-        accountLogger.groupEnd("addToBalance");
-        return;
-      }
-      accountLogger.debug("addToBalance", `Adding '${amountDollars}' to current balance ${this._balanceDollars}`);
-      this._balanceDollars += amountDollars;
-      accountLogger.debug("addToBalance", `New balance is '${this._balanceDollars}'`);
-      accountLogger.groupEnd("addToBalance");
-    }
-    setType(type) {
-      accountLogger.group("setType");
-      if (!type || type.trim().length === 0) {
-        accountLogger.warn("setType", "\u274C Attempted to set empty type for account ID:", this.id);
-        accountLogger.groupEnd("setType");
-        return;
-      }
-      accountLogger.debug("setType", `Setting type to '${type}'`);
-      this._type = type;
-      accountLogger.groupEnd("setType");
-    }
-    setSubtype(subtype) {
-      accountLogger.group("setSubtype");
-      if (!subtype || subtype.trim().length === 0) {
-        accountLogger.warn("setSubtype", "\u274C Attempted to set empty subtype for account ID:", this.id);
-        accountLogger.groupEnd("setSubtype");
-        return;
-      }
-      accountLogger.debug("setSubtype", `Setting subtype to '${subtype}'`);
-      this._subtype = subtype;
-      accountLogger.groupEnd("setSubtype");
-    }
-    async toggleInclusion() {
-      accountLogger.group("toggleInclusion");
-      this._included = !this._included;
-      await indexedDB_default.updateAccountModification(this.id, { included: this._included });
-      accountLogger.groupEnd("toggleInclusion");
-    }
-    async undoChanges() {
-      accountLogger.group("undoChanges");
-      this._name = this._originalName;
-      this._included = true;
-      this._isModified = false;
-      await indexedDB_default.updateAccountModification(this.id, {
-        name: this._originalName,
-        type: this._type,
-        subtype: this._subtype,
-        included: true,
-        modified: false
-      });
-      accountLogger.groupEnd("undoChanges");
-    }
-    isProcessed() {
-      accountLogger.group("isProcessed");
-      const result = this.status === "processed";
-      accountLogger.debug("isProcessed", `Account ID ${this.id} isProcessed ->`, result);
-      accountLogger.groupEnd("isProcessed");
-      return result;
-    }
-    addTransaction(transaction) {
-      accountLogger.group("addTransaction");
-      if (!(transaction instanceof Transaction)) {
-        accountLogger.error("addTransaction", "\u274C Attempted to add invalid transaction to account ID:", this.id, "Transaction:", transaction);
-        accountLogger.groupEnd("addTransaction");
-        return;
-      }
-      accountLogger.debug("addTransaction", `Adding transaction ID '${transaction.id}' to account ID '${this.id}'`);
-      this._transactions.set(transaction.id, transaction);
-      accountLogger.groupEnd("addTransaction");
-    }
-    toObject() {
-      return {
-        id: this.id,
-        name: this._name,
-        originalName: this._originalName,
-        type: this._type,
-        originalType: this._type,
-        subtype: this._subtype,
-        originalSubtype: this._subtype,
-        balance: this._balanceDollars,
-        status: this._status,
-        included: this._included,
-        selected: this._selected,
-        transactions: Array.from(this._transactions.values()).map((txn) => txn.toObject()),
-        modified: this._isModified
-      };
-    }
-  };
   var Accounts = class {
+    static from(accountList) {
+      if (accountList instanceof Accounts) {
+        return accountList;
+      }
+      const instance = new Accounts();
+      if (!Array.isArray(accountList)) {
+        return instance;
+      }
+      accountList.forEach((entry) => {
+        if (entry instanceof Account) {
+          instance._accounts.set(entry.id, entry);
+          return;
+        }
+        if (entry && typeof entry === "object") {
+          const account = new Account(entry.id);
+          instance._populateAccount(account, entry);
+          instance._accounts.set(account.id, account);
+        }
+      });
+      return instance;
+    }
     constructor() {
       this._accounts = /* @__PURE__ */ new Map();
       this._transactionIds = /* @__PURE__ */ new Set();
@@ -6078,6 +6028,9 @@
       }
       this._accounts = map;
       return this;
+    }
+    get accounts() {
+      return Array.from(this._accounts.values());
     }
     _populateAccount(account, data2) {
       account._name = data2.name;
@@ -6139,16 +6092,16 @@ Existing Account:`, this._accounts.get(account.id));
       accountsLogger.group("getByName");
       const sanitizedName = accountName.trim();
       if (sanitizedName.length === 0) {
-        accountsLogger.warn("getByName", "\u274C Attempted to get empty name in Accounts.getByName");
+        accountsLogger.error("getByName", "Attempted to get empty name in Accounts.getByName");
         accountsLogger.groupEnd("getByName");
-        return null;
+        throw new Error("Account name cannot be empty.");
       }
       const account = Array.from(this._accounts.values()).find((acc) => acc._name === sanitizedName) || null;
       accountsLogger.debug("getByName", `Accounts.getByName: retrieving "${sanitizedName}" ->`, account);
       accountsLogger.groupEnd("getByName");
       return account;
     }
-    async load() {
+    async loadFromDb() {
       await indexedDB_default.init();
       const accountsData = await indexedDB_default.getAccounts();
       return this.init(accountsData);
@@ -6156,12 +6109,7 @@ Existing Account:`, this._accounts.get(account.id));
     async saveToDb() {
       accountsLogger.group("saveToDb");
       await indexedDB_default.init();
-      const accountsData = {};
-      for (const account of this._accounts.values()) {
-        console.log(`Preparing to save account:`, account);
-        accountsData[account.id] = account.toObject();
-      }
-      await indexedDB_default.saveAccounts(accountsData);
+      await indexedDB_default.saveAccounts(this);
       accountsLogger.log("saveToDb", "\u2705 All accounts saved successfully");
       accountsLogger.groupEnd("saveToDb");
     }
@@ -6177,11 +6125,11 @@ Existing Account:`, this._accounts.get(account.id));
       return this._transactionIds.size;
     }
     async hasChanges() {
-      return Array.from(this._accounts.values()).some((acc) => acc.isModified());
+      return Array.from(this._accounts.values()).some((acc) => acc.isModified);
     }
     async isAccountModified(accountId) {
       const account = this._accounts.get(accountId);
-      return account ? account.isModified() : false;
+      return account ? account.isModified : false;
     }
     async includeAll() {
       await Promise.all(Array.from(this._accounts.values()).map((account) => {
@@ -6207,7 +6155,7 @@ Existing Account:`, this._accounts.get(account.id));
     async bulkEditType(type, subtype) {
       const selected = Array.from(this._accounts.values()).filter((acc) => acc.selected);
       await Promise.all(selected.map((acc) => {
-        acc._type = type;
+        acc._ynabType = type;
         acc._subtype = subtype;
         acc._isModified = true;
         return indexedDB_default.updateAccountModification(acc.id, { type, subtype });
@@ -6221,7 +6169,7 @@ Existing Account:`, this._accounts.get(account.id));
       return result;
     }
     getIncludedAndUnprocessed() {
-      return Array.from(this._accounts.values()).filter((acc) => acc.included && acc.status !== "processed");
+      return Array.from(this._accounts.values()).filter((acc) => acc.included && acc.migrationStatus !== "processed");
     }
     async undoAccountChanges(accountId) {
       const account = this._accounts.get(accountId);
@@ -6279,7 +6227,6 @@ Existing Account:`, this._accounts.get(account.id));
         tokenExpiresAt: null
       };
       this.history = [];
-      this.accounts = new Accounts();
       this.userPreferences = {};
     }
     _lsGet(key) {
@@ -6334,7 +6281,7 @@ Existing Account:`, this._accounts.get(account.id));
         <div id="pageHeader" class="min-w-0 mx-auto"></div>
 
         <!-- Page Content Slot -->
-        <div id="pageContent" class="min-w-0 mx-auto"></div>
+        <div id="pageContent" class="min-w-0 mx-auto w-full"></div>
       </div>
     </main>
   `;
@@ -6450,7 +6397,7 @@ Existing Account:`, this._accounts.get(account.id));
     renderPageLayout({
       header: {
         title: "YNAB to Monarch Migration",
-        description: "Moving your financial data from YNAB to Monarch made simple and secure. Choose the method that works best for you, and we'll guide you through each step.",
+        description: "Moving your financial data from YNAB to Monarch made simple and secure. We'll guide you through each step.",
         containerId: "pageHeader"
       }
     });
@@ -6482,7 +6429,7 @@ Existing Account:`, this._accounts.get(account.id));
       <div class="space-y-4 text-sm text-gray-600">
         <div>
           <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 1: Access Your Data</h4>
-          <p class="text-gray-600 text-sm">Connect your YNAB account or upload your data manually. We'll retrieve your
+          <p class="text-gray-600 text-sm">Connect your YNAB account so we can retrieve your
             budgets, transactions, categories, and accounts.</p>
         </div>
         <div>
@@ -6502,7 +6449,8 @@ Existing Account:`, this._accounts.get(account.id));
 <!-- Privacy Info -->
 <section class="max-w-3xl mx-auto mb-8">
   <info-banner color="green" icon-type="checkmark" has-border>
-    <strong>Your data stays yours, always:</strong> We never store, sell, or share your financial information. You remain in control of your data from start to finish.
+    <strong>Your data stays yours, always:</strong> We never store, sell, or share your financial information. You
+    remain in control of your data from start to finish.
     <ui-modal slot="action" id="privacyInfoModal">
       <ui-button slot="trigger" data-type="text">
         Learn more about how we protect your privacy
@@ -6510,37 +6458,44 @@ Existing Account:`, this._accounts.get(account.id));
 
       <h3 slot="title">Privacy is our top priority</h3>
 
-          <div slot="content">
-            <div class="space-y-4 text-sm text-gray-600">
-              <div>
-                <h4 class="text-gray-900 font-semibold mb-1">No Data Collection</h4>
-                <p>We never collect, store, or share your financial data.</p>
-              </div>
-              <div>
-                <h4 class="text-gray-900 font-semibold mb-1">Secure Connections</h4>
-                <p>We use secure, encrypted, and read-only connections when accessing your YNAB data.</p>
-              </div>
-              <div>
-                <h4 class="text-gray-900 font-semibold mb-1">You're in Control</h4>
-                <p>At any point in time you have full control to wipe your data and stop the migration process.</p>
-              </div>
-              <div>
-                <h4 class="text-gray-900 font-semibold mb-1">Open Source & Auditable</h4>
-                <p>Everything is transparent and can be reviewed by security experts. We have nothing to hide because we
-                  keep no copies. See <a href="https://github.com/your-repo" class="text-blue-600 hover:underline">our
-                    source code</a>.</p>
-              </div>
-            </div>
-
-            <div class="mt-6">
-              <info-banner color="green" icon-type="checkmark" has-border>
-                <strong>100% Private:</strong> Your financial data is sensitive, and we treat it that way. You remain the sole owner of every byte.
-              </info-banner>
-            </div>
+      <div slot="content">
+        <div class="space-y-4 text-sm text-gray-600">
+          <div>
+            <h4 class="text-gray-900 font-semibold mb-1">No Data Collection</h4>
+            <p>We never collect, store, or share your financial data.</p>
           </div>
-      </ui-modal>
-    </info-banner>
-</section>      </ui-modal>
+          <div>
+            <h4 class="text-gray-900 font-semibold mb-1">Secure Connections</h4>
+            <p>We use secure, encrypted, and read-only connections when accessing your YNAB data.</p>
+          </div>
+          <div>
+            <h4 class="text-gray-900 font-semibold mb-1">You're in Control</h4>
+            <p>At any point in time you have full control to wipe your data and stop the migration process.</p>
+          </div>
+          <div>
+            <h4 class="text-gray-900 font-semibold mb-1">Open Source & Auditable</h4>
+            <p>Everything is transparent and can be reviewed by security experts. We have nothing to hide because we
+              keep no copies. See <a href="https://github.com/your-repo" class="text-blue-600 hover:underline">our
+                source code</a>.</p>
+          </div>
+        </div>
+
+        <div class="mt-6">
+          <info-banner color="green" icon-type="checkmark" has-border>
+            <strong>100% Private:</strong> Your financial data is sensitive, and we treat it that way. You remain the
+            sole owner of every byte.
+          </info-banner>
+        </div>
+      </div>
+    </ui-modal>
+  </info-banner>
+</section>
+
+<!-- FAQ -->
+<section class="max-w-3xl mx-auto mb-8">
+  <info-banner color="gray" icon-type="info" has-border>
+    <strong>Have Questions?</strong> Take a look at our <a href="/faq" class="text-blue-600 hover:underline">FAQ</a> for more
+    information about the migration process, supported data, and more.
   </info-banner>
 </section>`;
 
@@ -6578,11 +6533,11 @@ Existing Account:`, this._accounts.get(account.id));
       return null;
     }
   }
-  function persistExpectedState(state) {
+  function persistExpectedState(state2) {
     const storage = safeSessionStorage();
     if (!storage)
       return;
-    storage.setItem(EXPECTED_STATE_KEY, state);
+    storage.setItem(EXPECTED_STATE_KEY, state2);
   }
   function grabExpectedState() {
     const storage = safeSessionStorage();
@@ -6622,9 +6577,9 @@ Existing Account:`, this._accounts.get(account.id));
       window.alert(ALERT_MESSAGE);
       return null;
     }
-    const state = buildState();
-    persistExpectedState(state);
-    const url = buildAuthorizeUrl(clientId, state);
+    const state2 = buildState();
+    persistExpectedState(state2);
+    const url = buildAuthorizeUrl(clientId, state2);
     window.location.assign(url);
     return url;
   }
@@ -6638,8 +6593,13 @@ Existing Account:`, this._accounts.get(account.id));
   // src/api/ynabTokens.js
   var isRefreshing = false;
   var refreshPromise = null;
+  var logger2 = getLogger("YnabTokens");
+  setLoggerConfig({
+    namespaces: { "YnabTokens": false }
+  });
   async function exchangeYnabToken(code) {
-    console.group("exchangeYnabToken");
+    const methodName = "exchangeYnabToken";
+    logger2.group(methodName);
     try {
       const response = await fetch("/.netlify/functions/ynabTokenExchange", {
         method: "POST",
@@ -6649,23 +6609,26 @@ Existing Account:`, this._accounts.get(account.id));
       });
       if (!response.ok) {
         const error = await response.json();
-        console.error("Token exchange failed:", error);
-        console.groupEnd();
+        logger2.error(methodName, "Token exchange failed:", error);
+        logger2.groupEnd(methodName);
         return false;
       }
       const data2 = await response.json();
-      console.log("\u2705 YNAB tokens stored in HttpOnly cookies");
+      logger2.log(methodName, "\u2705 YNAB tokens stored in HttpOnly cookies");
       return data2.success;
     } catch (error) {
-      console.error("Token exchange error:", error);
+      logger2.error(methodName, "Token exchange error:", error);
       return false;
     } finally {
-      console.groupEnd();
+      logger2.groupEnd(methodName);
     }
   }
   async function refreshYnabToken() {
-    console.group("refreshYnabToken");
+    const methodName = "refreshYnabToken";
+    logger2.group(methodName);
     if (isRefreshing) {
+      logger2.debug(methodName, "Refresh already in progress, waiting for result...");
+      logger2.groupEnd(methodName);
       return refreshPromise;
     }
     isRefreshing = true;
@@ -6676,31 +6639,33 @@ Existing Account:`, this._accounts.get(account.id));
           credentials: "include"
         });
         if (!response.ok) {
-          console.error("Token refresh failed - redirecting to login");
+          logger2.error(methodName, "Token refresh failed - redirecting to login");
           isRefreshing = false;
-          console.groupEnd();
+          logger2.groupEnd(methodName);
           window.location.href = "/";
           return false;
         }
         const data2 = await response.json();
-        console.log("\u2705 YNAB tokens refreshed");
-        console.groupEnd();
+        logger2.log(methodName, "\u2705 YNAB tokens refreshed");
+        logger2.groupEnd(methodName);
         return data2.success;
       } catch (error) {
-        console.error("Token refresh error:", error);
+        logger2.error(methodName, "Token refresh error:", error);
         isRefreshing = false;
         window.location.href = "/";
-        console.groupEnd();
+        logger2.groupEnd(methodName);
         return false;
       } finally {
         isRefreshing = false;
         refreshPromise = null;
       }
     })();
+    logger2.groupEnd(methodName);
     return refreshPromise;
   }
   async function ynabApiCall(endpoint, options = {}) {
-    console.group(`ynabApiCall: ${endpoint}`);
+    const methodName = "ynabApiCall";
+    logger2.group(methodName, `Endpoint: ${endpoint}`);
     try {
       const url = `/.netlify/functions/ynabProxy?endpoint=${encodeURIComponent(endpoint)}`;
       let response = await fetch(url, {
@@ -6714,13 +6679,15 @@ Existing Account:`, this._accounts.get(account.id));
       if (response.status === 401) {
         const errorData = await response.json();
         if (errorData.error && errorData.error.includes("No access token found")) {
-          console.warn("No YNAB tokens found - user needs to authenticate");
+          logger2.warn(methodName, "No YNAB tokens found - user needs to authenticate");
+          logger2.groupEnd(methodName);
           return null;
         }
-        console.log("Access token expired, refreshing...");
+        logger2.log(methodName, "Access token expired, refreshing...");
         const refreshed = await refreshYnabToken();
         if (!refreshed) {
-          console.error("Token refresh failed");
+          logger2.error(methodName, "Token refresh failed");
+          logger2.groupEnd(methodName);
           return null;
         }
         response = await fetch(url, {
@@ -6734,182 +6701,35 @@ Existing Account:`, this._accounts.get(account.id));
       }
       if (!response.ok) {
         const errorData = await response.json();
-        console.error(`YNAB API error (${endpoint}):`, errorData);
+        logger2.error(methodName, `YNAB API error (${endpoint}):`, errorData);
+        logger2.groupEnd(methodName);
         throw new Error(`YNAB API request failed: ${response.status}`);
       }
       const data2 = await response.json();
-      console.log("\u2705 Response received");
+      logger2.log(methodName, "Response received");
+      logger2.groupEnd(methodName);
       return data2;
     } finally {
-      console.groupEnd(`ynabApiCall: ${endpoint}`);
+      logger2.groupEnd(methodName);
     }
   }
   async function isYnabAuthenticated() {
-    console.group("isYnabAuthenticated");
+    const methodName = "isYnabAuthenticated";
+    logger2.group(methodName);
     try {
       const result = await ynabApiCall("/user");
       const authenticated = result !== null;
       if (authenticated) {
-        console.log("\u2705 YNAB authenticated");
+        logger2.log(methodName, "YNAB authenticated");
       } else {
-        console.warn("\u274C YNAB not authenticated");
+        logger2.warn(methodName, "YNAB not authenticated");
       }
-      console.groupEnd("isYnabAuthenticated");
+      logger2.groupEnd(methodName);
       return authenticated;
     } catch (error) {
-      console.warn("\u274C YNAB authentication check failed:", error.message);
-      console.groupEnd("isYnabAuthenticated");
+      logger2.warn(methodName, "YNAB authentication check failed:", error.message);
+      logger2.groupEnd(methodName);
       return false;
-    }
-  }
-
-  // src/services/ynabParser.js
-  var import_papaparse = __toESM(require_papaparse_min(), 1);
-  var import_jszip = __toESM(require_jszip_min(), 1);
-
-  // src/schemas/accountSchema.js
-  function createAccountFromOauth(ynabAccount, inferredType = null, inferredSubtype = null) {
-    const balanceCents = Math.round(ynabAccount.balance / 10);
-    const balanceDollars = balanceCents / 100;
-    return {
-      id: ynabAccount.id,
-      name: ynabAccount.name.trim(),
-      modifiedName: ynabAccount.name.trim(),
-      type: inferredType || ynabAccount.type || "depository",
-      subtype: inferredSubtype || null,
-      transactions: [],
-      transactionCount: 0,
-      balanceCents,
-      balance: balanceDollars,
-      included: true,
-      selected: false,
-      status: "unprocessed"
-    };
-  }
-
-  // src/services/ynabParser.js
-  var parserLogger = logger_default("YnabParser");
-  setLoggerConfig({
-    levels: { log: true, debug: true, group: true, groupEnd: true },
-    namespaces: { YnabParser: true, parseCSV: true, parseYnabAccountApi: true }
-  });
-  function inferMonarchType(accountName) {
-    const lowered = accountName.toLowerCase();
-    if (lowered.includes("credit")) {
-      return { type: "credit", subtype: "credit_card" };
-    }
-    if (lowered.includes("loan") || lowered.includes("mortgage") || lowered.includes("student loan")) {
-      return { type: "loan", subtype: "loan" };
-    }
-    if (lowered.includes("savings")) {
-      return { type: "depository", subtype: "savings" };
-    }
-    if (lowered.includes("checking") || lowered.includes("debit")) {
-      return { type: "depository", subtype: "checking" };
-    }
-    const inferred = { type: "depository", subtype: "checking" };
-    parserLogger.debug("inferMonarchType", "inferMonarchType:", accountName, "->", inferred);
-    return inferred;
-  }
-  async function parseYNABCSV(zipFile, monarchAccountTypes) {
-    parserLogger.group("parseYNABCSV");
-    const zip = await import_jszip.default.loadAsync(zipFile);
-    parserLogger.log("parseYNABCSV", "ZIP entries:", Object.keys(zip.files).length);
-    const targetFile = Object.keys(zip.files).find((name) => name.toLowerCase().includes("register") && name.toLowerCase().endsWith(".csv"));
-    if (!targetFile) {
-      parserLogger.error("parseYNABCSV", "\u274C No register CSV found in the ZIP file");
-      parserLogger.groupEnd("parseYNABCSV");
-      throw new Error("No register CSV found in the ZIP file");
-    }
-    const csvContent = await zip.files[targetFile].async("string");
-    parserLogger.log("parseYNABCSV", "Selected CSV file:", targetFile, "size:", csvContent.length);
-    parserLogger.groupEnd("parseYNABCSV");
-    return parseCSV(csvContent, monarchAccountTypes);
-  }
-  function parseCSV(csvContent, monarchAccountTypes) {
-    parserLogger.group("parseCSV");
-    parserLogger.log("parseCSV", "CSV content length:", csvContent?.length || 0);
-    return new Promise((resolve, reject) => {
-      import_papaparse.default.parse(csvContent, {
-        header: true,
-        skipEmptyLines: true,
-        complete: async ({ data: data2 }) => {
-          if (!data2 || data2.length === 0) {
-            parserLogger.groupEnd("parseCSV");
-            return reject(new Error("\u274C CSV file appears to be empty or invalid."));
-          }
-          parserLogger.log("parseCSV", "Parsed CSV rows:", data2.length);
-          const accounts = new Accounts();
-          let tempCount = 0;
-          for (const row of data2) {
-            if (tempCount >= 20)
-              break;
-            parserLogger.group("ProcessingRow", row);
-            try {
-              let account = accounts.getByName(row["Account"]);
-              const accountSnapshot = account ? {
-                id: account.id,
-                name: account._name,
-                type: account._type,
-                subtype: account._subtype,
-                balance: account._balanceDollars,
-                transactionCount: account._transactions.size
-              } : null;
-              const accountsSnapshot = Array.from(accounts._accounts.values()).map((acc) => ({
-                id: acc.id,
-                name: acc._name,
-                type: acc._type,
-                subtype: acc._subtype,
-                balance: acc._balanceDollars,
-                transactionCount: acc._transactions.size
-              }));
-              parserLogger.warn("ProcessingRow", "accounts.getByName snapshot:", accountSnapshot);
-              parserLogger.warn("ProcessingRow", "Current accounts snapshot:", accountsSnapshot);
-              if (account === null) {
-                const { type, subtype } = inferMonarchType(row["Account"], monarchAccountTypes);
-                account = new Account(generateId());
-                account.setName(row["Account"]);
-                account.setType(type);
-                account.setSubtype(subtype);
-                accounts.add(account);
-              }
-              const transaction = new Transaction();
-              transaction.init(row);
-              account.addToBalance(transaction.amount);
-              account.addTransaction(transaction);
-              accounts.addTransaction(transaction.id);
-              parserLogger.groupEnd("ProcessingRow");
-            } catch (err) {
-              parserLogger.error("ProcessingRow", "\u274C Error processing row:", row, err);
-              parserLogger.groupEnd("ProcessingRow");
-            }
-            tempCount++;
-          }
-          parserLogger.log("parseCSV", "Accounts discovered:", accounts.length(), "Total transactions:", accounts.totalTransactionCount());
-          await accounts.saveToDb();
-          parserLogger.groupEnd("parseCSV");
-          resolve(accounts);
-        },
-        error: (err) => reject(err)
-      });
-    });
-  }
-  function parseYnabAccountApi(data2) {
-    parserLogger.group("parseYnabAccountApi");
-    const accountCollection = createAccountCollection();
-    try {
-      parserLogger.log("parseYnabAccountApi", "YNAB API accounts count:", data2?.length || 0);
-      for (const row of data2) {
-        const { type, subtype } = inferMonarchType(row["name"]);
-        const standardizedAccount = createAccountFromOauth(row, type, subtype);
-        addAccountToCollection(accountCollection, standardizedAccount);
-      }
-    } catch (err) {
-      parserLogger.error("parseYnabAccountApi", "\u274C Error parsing YNAB account API data:", err);
-    } finally {
-      parserLogger.log("parseYnabAccountApi", "Parsed accounts collection keys:", Object.keys(accountCollection));
-      parserLogger.groupEnd("parseYnabAccountApi");
-      return accountCollection;
     }
   }
 
@@ -6917,26 +6737,62 @@ Existing Account:`, this._accounts.get(account.id));
   async function redirectToYnabOauth() {
     await startYnabOauth();
   }
-  async function getAccounts() {
+  async function getBudgets(includeAccounts = false) {
+    const endpoint = includeAccounts ? "/budgets?include_accounts=true" : "/budgets";
     try {
-      const data2 = await ynabApiCall("/budgets/default/accounts");
-      const rawAccounts = data2.data.accounts;
-      const accounts = rawAccounts.filter((acc) => !acc.deleted);
-      return accounts;
+      const data2 = await ynabApiCall(endpoint);
+      return data2.data.budgets;
     } catch (error) {
       console.error("YNAB API call failed:", error);
       return null;
     }
   }
+  async function getAccounts() {
+    try {
+      const response = await ynabApiCall("/budgets/default/accounts");
+      if (response.error) {
+        throw new Error(response.error.id, response.error.name, response.error.detail);
+      }
+      const accountData = response.data.accounts;
+      const accountList = new Accounts();
+      accountData.forEach((acc) => {
+        const account = new Account(acc["id"]);
+        account.initFromApiData(acc);
+        accountList.add(account);
+      });
+      return accountList;
+    } catch (error) {
+      console.error("YNAB API call (getAccounts) failed:", error);
+      throw new Error("Failed to fetch accounts from YNAB API");
+    }
+  }
   async function getTransactions(accountId) {
     try {
-      const data2 = await ynabApiCall(`/budgets/default/accounts/${accountId}/transactions`);
-      const transactions = data2.data.transactions;
-      return transactions.filter((txn) => !txn.deleted);
+      const response = await ynabApiCall(`/budgets/default/accounts/${accountId}/transactions`);
+      if (response.error) {
+        throw new Error(response.error.id, response.error.name, response.error.detail);
+      }
+      const transactionsData = response.data.transactions;
+      const transactionsList = /* @__PURE__ */ new Set();
+      transactionsData.forEach((txn) => {
+        const transaction = new Transaction(txn["id"]);
+        transaction.initFromApiData(txn);
+        transactionsList.add(transaction);
+      });
+      return transactionsList;
     } catch (error) {
-      console.error(`YNAB transactions API call failed for account ${accountId}:`, error);
-      return [];
+      console.error(`YNAB API call (getTransactions) failed for account ${accountId}:`, error);
+      throw new Error("Failed to fetch transactions from YNAB API");
     }
+  }
+  async function getAllData() {
+    const accountList = await getAccounts();
+    await Promise.all(accountList.accounts.map(async (account) => {
+      const transactions = await getTransactions(account.id);
+      console.log(`Fetched transactions for account '${account.id}':`, transactions);
+      account.transactions = Array.from(transactions);
+    }));
+    return accountList;
   }
   async function handleOauthCallback() {
     const queryParams = new URLSearchParams(window.location.search);
@@ -6954,179 +6810,39 @@ Existing Account:`, this._accounts.get(account.id));
       throw new Error("OAuth callback did not contain an authorization code.");
     }
     const success = await exchangeYnabToken(code);
-    if (success) {
-      const accounts = await getAccounts();
-      if (accounts && accounts.length > 0) {
-        const parsedAccounts = parseYnabAccountApi(accounts);
-        state_default.accounts.init(parsedAccounts);
-        for (const account of accounts) {
-          const transactions = await getTransactions(account.id);
-          if (transactions && transactions.length > 0) {
-            const transformedTransactions = transactions.map((txn) => {
-              const date = txn.date;
-              const amountDollars = (txn.amount / 1e3).toFixed(2);
-              return {
-                Date: date,
-                Merchant: txn.payee_name || "",
-                Category: txn.category_name || "",
-                CategoryGroup: txn.category_group_name || "",
-                Notes: txn.memo || "",
-                Amount: amountDollars,
-                Tags: txn.flag_name || ""
-              };
-            });
-            if (state_default.accounts[account.id]) {
-              state_default.accounts[account.id].transactions = transformedTransactions;
-              state_default.accounts[account.id].transactionCount = transformedTransactions.length;
-            }
-          }
-        }
-        console.table(state_default.accounts);
-        return "success";
-      } else {
-        console.warn("No accounts retrieved from YNAB API.");
-        throw new Error("No accounts retrieved from YNAB API.");
-      }
-    } else {
+    if (!success) {
       console.error("Failed to exchange authorization code for tokens.");
       throw new Error("Failed to exchange authorization code for tokens.");
     }
+    console.table(state_default);
+    return "success";
   }
-
-  // src/views/Upload/uploadData.js
-  var ZIP_EXTENSIONS = [".zip", ".bin"];
-  var ZIP_FILENAME_PATTERNS = ["ynab", "register", "export"];
-  var ZIP_MIME_TYPES = [
-    "application/zip",
-    "application/x-zip-compressed",
-    "application/octet-stream",
-    "application/x-zip",
-    "multipart/x-zip",
-    "application/x-compressed",
-    "application/binary"
-  ];
-  var MAX_FILE_SIZE = 50 * 1024 * 1024;
-  var MIN_FILE_SIZE = 100;
-  function validateZipFile(file) {
-    if (!file)
-      throw new Error("No file provided");
-    if (file.size > MAX_FILE_SIZE)
-      throw new Error("File too large");
-    if (file.size < MIN_FILE_SIZE)
-      throw new Error("File too small");
-    const fileName = file.name.toLowerCase();
-    const fileType = file.type.toLowerCase();
-    const isZipByExtension = ZIP_EXTENSIONS.some((ext) => fileName.endsWith(ext)) || ZIP_FILENAME_PATTERNS.some((pattern) => fileName.includes(pattern));
-    const isZipByMimeType = ZIP_MIME_TYPES.includes(fileType);
-    const isPotentialZip = isZipByExtension || isZipByMimeType || file.size > 1e3;
-    if (!isPotentialZip) {
-      throw new Error("Invalid file type - must be a ZIP file");
-    }
-  }
-  async function ensureYnabAccess() {
-    const isYnabTokenValid = await isYnabAuthenticated();
-    return { isYnabTokenValid };
-  }
-  async function fetchYnabAccountsAndTransactions() {
-    const rawAccounts = await getAccounts();
-    if (!rawAccounts)
-      return null;
-    const accounts = parseYnabAccountApi(rawAccounts);
-    const activeAccounts = rawAccounts.filter((acc) => !acc.deleted);
-    for (const account of activeAccounts) {
-      const transactions = await getTransactions(account.id);
-      if (transactions && transactions.length > 0) {
-        const transformedTransactions = transactions.map((txn) => {
-          const date = txn.date;
-          const amountDollars = (txn.amount / 1e3).toFixed(2);
-          return {
-            Date: date,
-            Merchant: txn.payee_name || "",
-            Category: txn.category_name || "",
-            CategoryGroup: txn.category_group_name || "",
-            Notes: txn.memo || "",
-            Amount: amountDollars,
-            Tags: txn.flag_name || ""
-          };
-        });
-        if (accounts[account.id]) {
-          accounts[account.id].transactions = transformedTransactions;
-          accounts[account.id].transactionCount = transformedTransactions.length;
-        }
-      }
-    }
-    Object.keys(accounts).forEach((id) => {
-      accounts[id].id = id;
-      accounts[id].included = true;
-      accounts[id].modified = false;
-      accounts[id].originalName = accounts[id].name;
-      accounts[id].originalType = accounts[id].type;
-      accounts[id].originalSubtype = accounts[id].subtype;
-      accounts[id].originalIncluded = accounts[id].included;
-    });
-    await state_default.accounts.init(accounts);
-    await state_default.accounts.save();
-    return accounts;
-  }
-  async function parseUploadedFile(file) {
-    validateZipFile(file);
-    await parseYNABCSV(file);
-  }
-  async function loadAccountsFromDB() {
-    try {
-      if (state_default.accounts.length() > 0) {
-        const accounts = {};
-        for (const account of state_default.accounts._accounts) {
-          accounts[account.id] = {
-            name: account.name,
-            type: account.type,
-            subtype: account.subtype,
-            transactions: account.transactions,
-            transactionCount: account.transactionCount,
-            balance: account.balance,
-            included: account.included,
-            modified: account.isModified(),
-            originalName: account.original.name,
-            originalType: account.original.type,
-            originalSubtype: account.original.subtype,
-            originalIncluded: account.originalIncluded
-          };
-        }
-        return Object.keys(accounts).length > 0 ? accounts : null;
-      }
-      return null;
-    } catch (error) {
-      console.error("Error loading accounts from singleton:", error);
-      return null;
-    }
-  }
-  async function hasStoredAccounts() {
-    try {
-      return state_default.accounts.length() > 0;
-    } catch (error) {
-      console.error("Error checking for stored accounts:", error);
-      return false;
-    }
-  }
+  var ynabApi = {
+    redirectToYnabOauth,
+    getBudgets,
+    getAccounts,
+    getTransactions,
+    handleOauthCallback,
+    getAllData
+  };
+  var ynabApi_default = ynabApi;
 
   // src/views/Upload/upload.js
   async function initUploadView() {
+    const isYnabTokenValid = await hasYnabAccess();
+    renderLayout();
+    setupYnabContinueButton(isYnabTokenValid);
+    setupYnabConnectButton(isYnabTokenValid);
+  }
+  async function hasYnabAccess() {
     try {
-      await indexedDB_default.init();
-    } catch (error) {
-      console.error("Failed to initialize IndexedDB:", error);
-    }
-    const hasExistingAccounts = await hasStoredAccounts();
-    if (hasExistingAccounts) {
-      await loadAccountsFromDB();
-    }
-    let isYnabTokenValid = false;
-    try {
-      const result = await ensureYnabAccess();
-      isYnabTokenValid = result.isYnabTokenValid;
+      return await isYnabAuthenticated();
     } catch (error) {
       console.warn("Error checking YNAB authentication:", error);
+      return false;
     }
+  }
+  function renderLayout() {
     renderPageLayout({
       navbar: {
         showBackButton: true,
@@ -7138,21 +6854,18 @@ Existing Account:`, this._accounts.get(account.id));
         containerId: "pageHeader"
       }
     });
-    const oauthError = document.getElementById("oauthError");
-    const fileUploadError = document.getElementById("fileUploadError");
+  }
+  function setupYnabContinueButton(isYnabTokenValid) {
     const continueWithYnabBtn = document.getElementById("continueWithYnabBtn");
+    const oauthError = document.getElementById("oauthError");
     continueWithYnabBtn.hidden = !isYnabTokenValid;
-    const connectYnabBtn = document.getElementById("connectYnabBtn");
-    connectYnabBtn.textContent = isYnabTokenValid ? "Connect new YNAB Profile" : "Connect to YNAB";
-    connectYnabBtn.setAttribute("data-color", isYnabTokenValid ? "white" : "purple");
-    connectYnabBtn.applyStyles();
     document.getElementById("automaticUploadDivider").hidden = !isYnabTokenValid;
     continueWithYnabBtn?.addEventListener("click", async (event) => {
       event.preventDefault();
       oauthError.hide();
       LoadingOverlay_default.show("Fetching accounts...");
       try {
-        const accounts = await fetchYnabAccountsAndTransactions();
+        const accounts = await uploadController.fetchYnabAccountsAndTransactions();
         if (!accounts || Object.keys(accounts).length === 0) {
           LoadingOverlay_default.hide();
           oauthError.show("No accounts found in your YNAB profile.", "Make sure you have at least one account in your YNAB budget, then try again.");
@@ -7166,6 +6879,13 @@ Existing Account:`, this._accounts.get(account.id));
         oauthError.show("Could not fetch accounts from YNAB.", "Your session may have expired. Try connecting to YNAB again below.");
       }
     });
+  }
+  function setupYnabConnectButton(isYnabTokenValid) {
+    const connectYnabBtn = document.getElementById("connectYnabBtn");
+    const oauthError = document.getElementById("oauthError");
+    connectYnabBtn.textContent = isYnabTokenValid ? "Connect new YNAB Profile" : "Connect to YNAB";
+    connectYnabBtn.setAttribute("data-color", isYnabTokenValid ? "white" : "purple");
+    connectYnabBtn.applyStyles();
     connectYnabBtn?.addEventListener("click", async (event) => {
       event.preventDefault();
       oauthError.hide();
@@ -7176,69 +6896,6 @@ Existing Account:`, this._accounts.get(account.id));
         oauthError.show("Could not connect to YNAB.", "Please check your internet connection and try again.");
       }
     });
-    const continueWithExistingBtn = document.getElementById("continueWithExistingBtn");
-    const manualUploadButton = document.getElementById("manualUploadButton");
-    document.getElementById("manualUploadDivider").hidden = !hasExistingAccounts;
-    continueWithExistingBtn.hidden = !hasExistingAccounts;
-    const originalButtonText = manualUploadButton.textContent;
-    manualUploadButton.textContent = hasExistingAccounts ? "Upload new Data" : "Upload YNAB Data";
-    manualUploadButton.setAttribute("data-color", hasExistingAccounts ? "white" : "blue");
-    manualUploadButton.applyStyles();
-    continueWithExistingBtn?.addEventListener("click", (event) => {
-      event.preventDefault();
-      navigate("/review", false, true);
-    });
-    const manualFileInput = document.getElementById("manualFileInput");
-    manualUploadButton?.addEventListener("click", (e) => {
-      e.preventDefault();
-      fileUploadError.hide();
-      manualFileInput?.click();
-    });
-    manualFileInput?.addEventListener("change", async (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        fileUploadError.hide();
-        await handleFile(file);
-      }
-    });
-    async function handleFile(csvFile) {
-      try {
-        await parseUploadedFile(csvFile);
-        navigate("/review", false, true);
-      } catch (err) {
-        console.error("File parsing error:", err);
-        LoadingOverlay_default.hide();
-        let errorMessage = "Could not parse the uploaded file.";
-        let solution = `Please ensure it's a valid YNAB ZIP export. Try re-exporting from YNAB.com \u2192 Account Menu \u2192 "Export Plan".`;
-        const errorMsg = err.message?.toLowerCase() || "";
-        if (errorMsg.includes("register") || errorMsg.includes("csv")) {
-          errorMessage = "Missing required data in the ZIP file.";
-          solution = 'The file must contain "register.csv". Make sure you exported the complete YNAB plan from YNAB.com (not just individual account exports).';
-        } else if (errorMsg.includes("zip") || errorMsg.includes("corrupt")) {
-          errorMessage = "The ZIP file appears to be corrupted.";
-          solution = "Try downloading a fresh export from YNAB.com and upload it again.";
-        } else if (errorMsg.includes("parse") || errorMsg.includes("format")) {
-          errorMessage = "The file format is not recognized.";
-          solution = "Make sure you're uploading the ZIP file downloaded directly from YNAB.com, not a modified version.";
-        } else if (errorMsg.includes("empty") || errorMsg.includes("invalid")) {
-          errorMessage = "The file appears to be empty or invalid.";
-          solution = 'Please re-export your complete YNAB budget from YNAB.com \u2192 Account Menu \u2192 "Export Plan".';
-        } else if (errorMsg.includes("too large")) {
-          errorMessage = "File is too large.";
-          solution = "Please ensure your YNAB export is under 50MB. If needed, export a smaller date range.";
-        } else if (errorMsg.includes("too small")) {
-          errorMessage = "File appears to be empty or corrupted.";
-          solution = "Please re-export your data from YNAB and try again.";
-        } else if (errorMsg.includes("file type")) {
-          errorMessage = "Invalid file type.";
-          solution = 'Please upload a ZIP file exported from YNAB. Visit YNAB.com \u2192 Account Menu \u2192 "Export Plan" to download it.';
-        }
-        fileUploadError.show(errorMessage, solution);
-        manualUploadButton.disabled = false;
-        manualUploadButton.textContent = originalButtonText;
-        manualFileInput.value = "";
-      }
-    }
   }
 
   // src/views/Upload/upload.html
@@ -7310,85 +6967,6 @@ Existing Account:`, this._accounts.get(account.id));
         </ui-modal>
       </span>
     </ui-card>
-
-    <!-- Manual Upload -->
-    <ui-card id="manualUploadCard" data-color="blue" data-width="full">
-      
-      <!-- Error message for file upload errors -->
-      <error-message id="fileUploadError" data-severity="error" style="margin-bottom: 1rem;"></error-message>
-      
-      <svg slot="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-6 h-6">
-        <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke-linecap="round" stroke-linejoin="round">
-        </path>
-        <path d="M12 3v12" stroke-linecap="round" stroke-linejoin="round"></path>
-        <path d="M9 10l3-3 3 3" stroke-linecap="round" stroke-linejoin="round"></path>
-      </svg>
-
-      <p slot="eyebrow">Manual</p>
-      <h3 slot="title">Upload a File</h3>
-      <p slot="description">
-        Manually export your data from YNAB, then upload the file here.
-      </p>
-
-      <span slot="actions">
-        <ui-button id="continueWithExistingBtn" data-type="solid" data-size="large" data-color="blue" data-fullwidth>
-          Continue with Existing Data
-        </ui-button>
-
-        <ui-divider id="manualUploadDivider" data-color="blue-400">OR</ui-divider>
-
-        <ui-button id="manualUploadButton" data-type="secondary" data-size="large" data-color="white" data-fullwidth>
-          Upload New Data
-        </ui-button>
-        <input id="manualFileInput" type="file"
-          accept=".zip,.bin,application/zip,application/x-zip-compressed,application/octet-stream,application/binary"
-          class="hidden" />
-      </span>
-
-      <div slot="action-info">
-        <!-- Manual Import Info Modal -->
-        <ui-modal id="manualImportInfoModal">
-          <ui-button slot="trigger" data-type="text">
-            What's the process?
-          </ui-button>
-
-          <h3 slot="title">
-            Where do I find my YNAB data file?
-          </h3>
-
-          <div slot="content">
-            <div class="space-y-4 text-sm text-gray-600">
-              <div>
-                <h4 class="text-gray-900 text-sm font-semibold mb-1">1: Visit YNAB.com</h4>
-                <p class="text-gray-600 text-sm">Visit <a href="https://www.ynab.com" target="_blank"
-                    rel="noopener noreferrer">YNAB.com</a> and log into your account.</p>
-              </div>
-              <div>
-                <h4 class="text-gray-900 text-sm font-semibold mb-1">2: Export your YNAB Data</h4>
-                <p class="text-gray-600 text-sm">Click on your name in the top-left corner to reveal the menu, then
-                  click
-                  "Export Plan". This will download a ZIP file containing all your data.</p>
-              </div>
-              <div>
-                <h4 class="text-gray-900 text-sm font-semibold mb-1">3: Upload the File</h4>
-                <p class="text-gray-600 text-sm">On this page, click the "Choose File to Upload" button, navigate to
-                  where the
-                  ZIP file was downloaded, and select it.</p>
-              </div>
-              <div>
-                <h4 class="text-gray-900 text-sm font-semibold mb-1">4: Review & Filter</h4>
-                <p class="text-gray-600 text-sm">Decide which accounts and transactions to migrate.</p>
-              </div>
-              <div>
-                <h4 class="text-gray-900 text-sm font-semibold mb-1">5: Process</h4>
-                <p class="text-gray-600 text-sm">Decide how to migrate your data.</p>
-              </div>
-            </div>
-          </div>
-        </ui-modal>
-      </div>
-    </ui-card>
-
   </div>
 </section>`;
 
@@ -7405,9 +6983,9 @@ Existing Account:`, this._accounts.get(account.id));
   var generatedBy = "tools/fetchMonarchAccountTypes.js";
   var data = [
     {
-      typeName: "depository",
-      typeDisplay: "Cash",
       group: "asset",
+      typeDisplay: "Cash",
+      typeName: "depository",
       subtypes: [
         {
           name: "cd",
@@ -8459,14 +8037,14 @@ Existing Account:`, this._accounts.get(account.id));
   };
 
   // src/views/AccountReview/controllers/AccountReviewController.js
-  var logger = getLogger("AccountReviewController");
+  var logger3 = getLogger("AccountReviewController");
   setLoggerConfig({
     namespaces: { "AccountReviewController": false }
   });
   var AccountReviewController = class {
     constructor() {
       this.filters = new Filters();
-      this.accounts = state_default.accounts;
+      this.accounts = new Accounts();
       this.accountsTable = null;
       this.importBtn = null;
       this.searchInput = null;
@@ -8474,30 +8052,22 @@ Existing Account:`, this._accounts.get(account.id));
       this.bulkRenameModal = null;
       this.bulkTypeModal = null;
     }
-    async init(data2) {
-      logger.group("init", "Initializing AccountReviewController");
-      if (data2) {
-        logger.log("init", "Loaded accounts data for review:", data2);
-        await this.accounts.init(data2);
-      } else {
-        logger.log("init", "Using existing Accounts singleton");
-        if (this.accounts.length() === 0) {
-          logger.log("init", "Loading accounts from IndexedDB");
-          await this.accounts.load();
-        }
-      }
+    async init() {
+      const methodName = "init";
+      logger3.group(methodName, "Initializing AccountReviewController");
+      await this.accounts.loadFromDb();
       this._renderLayout();
       this._cacheElements();
       this._setupTableColumns();
       this._initializeModals();
       this._setupEventListeners();
       this._renderTable(true);
-      logger.groupEnd("init");
+      logger3.groupEnd(methodName);
     }
     _renderLayout() {
-      logger.group("_renderLayout", "AccountReviewController._renderLayout()");
+      logger3.group("_renderLayout", "AccountReviewController._renderLayout()");
       try {
-        logger.log("_renderLayout", "Rendering page layout for Account Review");
+        logger3.log("_renderLayout", "Rendering page layout for Account Review");
         renderPageLayout({
           navbar: {
             showBackButton: true,
@@ -8509,53 +8079,52 @@ Existing Account:`, this._accounts.get(account.id));
             containerId: "pageHeader"
           }
         });
-        logger.log("_renderLayout", "Page layout rendered successfully");
+        logger3.log("_renderLayout", "Page layout rendered successfully");
       } catch (error) {
-        logger.error("_renderLayout", "Error rendering layout:", error);
+        logger3.error("_renderLayout", "Error rendering layout:", error);
       } finally {
-        logger.groupEnd("_renderLayout");
+        logger3.groupEnd("_renderLayout");
       }
     }
     _cacheElements() {
-      logger.group("_cacheElements", "AccountReviewController._cacheElements()");
+      logger3.group("_cacheElements", "AccountReviewController._cacheElements()");
       try {
         this.accountsTable = document.getElementById("accountsTable");
         this.importBtn = document.getElementById("continueBtn");
         this.searchInput = document.getElementById("searchInput");
-        logger.debug("_cacheElements", `Cached elements: accountsTable=${!!this.accountsTable}, importBtn=${!!this.importBtn}, searchInput=${!!this.searchInput}`);
-        logger.log("_cacheElements", "DOM elements cached successfully");
+        logger3.debug("_cacheElements", `Cached elements: accountsTable=${!!this.accountsTable}, importBtn=${!!this.importBtn}, searchInput=${!!this.searchInput}`);
+        logger3.log("_cacheElements", "DOM elements cached successfully");
       } catch (error) {
-        logger.error("_cacheElements", "Error caching DOM elements:", error);
+        logger3.error("_cacheElements", "Error caching DOM elements:", error);
       } finally {
-        logger.groupEnd("_cacheElements");
+        logger3.groupEnd("_cacheElements");
       }
     }
     _initializeModals() {
-      logger.group("_initializeModals", "AccountReviewController._initializeModals()");
+      logger3.group("_initializeModals", "AccountReviewController._initializeModals()");
       try {
-        logger.log("_initializeModals", "Initializing modal instances");
+        logger3.log("_initializeModals", "Initializing modal instances");
         this.filtersModal = new FiltersModal(this.filters, () => this._onFiltersApplied(), () => this._onFiltersReset());
-        logger.debug("_initializeModals", "FiltersModal initialized");
+        logger3.debug("_initializeModals", "FiltersModal initialized");
         this.bulkRenameModal = new BulkRenameModal(this.accounts, () => this._renderTable());
-        logger.debug("_initializeModals", "BulkRenameModal initialized");
+        logger3.debug("_initializeModals", "BulkRenameModal initialized");
         this.bulkTypeModal = new BulkTypeModal(this.accounts, () => this._renderTable());
-        logger.debug("_initializeModals", "BulkTypeModal initialized");
-        logger.log("_initializeModals", "All modals initialized successfully");
+        logger3.debug("_initializeModals", "BulkTypeModal initialized");
+        logger3.log("_initializeModals", "All modals initialized successfully");
       } catch (error) {
-        logger.error("_initializeModals", "Error initializing modals:", error);
+        logger3.error("_initializeModals", "Error initializing modals:", error);
       } finally {
-        logger.groupEnd("_initializeModals");
+        logger3.groupEnd("_initializeModals");
       }
     }
     _setupEventListeners() {
-      logger.group("_setupEventListeners", "Setting up event listeners");
+      logger3.group("_setupEventListeners", "Setting up event listeners");
       let debounceTimer;
       this.searchInput.addEventListener("input", () => {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
           this.filters.searchQuery = this.searchInput.value.toLowerCase();
           this._renderTable();
-          persistState();
         }, 200);
       });
       setTimeout(() => {
@@ -8573,10 +8142,10 @@ Existing Account:`, this._accounts.get(account.id));
         const totalAccounts = this.accounts.length();
         this._updateAccountCountDisplay(totalAccounts, totalAccounts);
       }, 100);
-      logger.groupEnd("_setupEventListeners");
+      logger3.groupEnd("_setupEventListeners");
     }
     _setupBulkActionListeners() {
-      logger.group("_setupBulkActionListeners", "AccountReviewController._setupBulkActionListeners()");
+      logger3.group("_setupBulkActionListeners", "AccountReviewController._setupBulkActionListeners()");
       try {
         const buttonConfigs = [
           { selectors: ["#unselectAllBtnMobile", "#unselectAllBtnDesktop"], handler: () => this._updateAccountSelection(false), name: "Unselect All" },
@@ -8590,79 +8159,80 @@ Existing Account:`, this._accounts.get(account.id));
             const btn = document.getElementById(selector.slice(1));
             if (btn) {
               btn.addEventListener("click", config.handler);
-              logger.debug("_setupBulkActionListeners", `Event listener attached to ${selector}`);
+              logger3.debug("_setupBulkActionListeners", `Event listener attached to ${selector}`);
             }
           });
         });
-        logger.log("_setupBulkActionListeners", "All bulk action listeners set up successfully");
+        logger3.log("_setupBulkActionListeners", "All bulk action listeners set up successfully");
       } catch (error) {
-        logger.error("_setupBulkActionListeners", "Error setting up bulk action listeners:", error);
+        logger3.error("_setupBulkActionListeners", "Error setting up bulk action listeners:", error);
       } finally {
-        logger.groupEnd("_setupBulkActionListeners");
+        logger3.groupEnd("_setupBulkActionListeners");
       }
     }
     _setupUndoListeners() {
-      logger.group("_setupUndoListeners", "AccountReviewController._setupUndoListeners()");
+      logger3.group("_setupUndoListeners", "AccountReviewController._setupUndoListeners()");
       try {
         const undoAllBtn = document.getElementById("undoAllBtn");
         if (undoAllBtn) {
           undoAllBtn.addEventListener("click", () => {
-            logger.log("_setupUndoListeners", "Undo all button clicked");
+            logger3.log("_setupUndoListeners", "Undo all button clicked");
             if (confirm("Are you sure you want to undo all changes? This action cannot be reversed.")) {
-              logger.debug("_setupUndoListeners", "User confirmed undo all changes");
+              logger3.debug("_setupUndoListeners", "User confirmed undo all changes");
               this._undoAllChanges();
             } else {
-              logger.debug("_setupUndoListeners", "User cancelled undo all changes");
+              logger3.debug("_setupUndoListeners", "User cancelled undo all changes");
             }
           });
-          logger.debug("_setupUndoListeners", "Undo all button listener attached");
+          logger3.debug("_setupUndoListeners", "Undo all button listener attached");
         }
         this.accountsTable.addEventListener("click", (e) => {
           const undoBtn = e.target.closest("[data-undo-button]");
           if (undoBtn) {
-            logger.debug("_setupUndoListeners", `Undo button clicked for row ${undoBtn.dataset.rowId}`);
+            logger3.debug("_setupUndoListeners", `Undo button clicked for row ${undoBtn.dataset.rowId}`);
             this._undoRowChanges(undoBtn.dataset.rowId);
           }
         });
-        logger.log("_setupUndoListeners", "Undo listeners set up successfully");
+        logger3.log("_setupUndoListeners", "Undo listeners set up successfully");
       } catch (error) {
-        logger.error("_setupUndoListeners", "Error setting up undo listeners:", error);
+        logger3.error("_setupUndoListeners", "Error setting up undo listeners:", error);
       } finally {
-        logger.groupEnd("_setupUndoListeners");
+        logger3.groupEnd("_setupUndoListeners");
       }
     }
     _handleTableSelectionChange(e) {
-      logger.group("_handleTableSelectionChange", "AccountReviewController._handleTableSelectionChange()", { detail: e.detail });
+      logger3.group("_handleTableSelectionChange", "AccountReviewController._handleTableSelectionChange()", { detail: e.detail });
       try {
         const selectedCount = e.detail.count;
         const bar = document.getElementById("bulkActionBar");
-        logger.log("_handleTableSelectionChange", `Selection changed: ${selectedCount} account(s) selected`);
+        logger3.log("_handleTableSelectionChange", `Selection changed: ${selectedCount} account(s) selected`);
         document.getElementById("selectedCountMobile").textContent = selectedCount;
         document.getElementById("selectCountMobileLabel").textContent = selectedCount === 1 ? "Account" : "Accounts";
         document.getElementById("selectedCountDesktop").textContent = selectedCount;
         document.getElementById("selectCountDesktopLabel").textContent = selectedCount === 1 ? "Account" : "Accounts";
-        logger.debug("_handleTableSelectionChange", "Selection count displays updated");
+        logger3.debug("_handleTableSelectionChange", "Selection count displays updated");
         this.accounts.forEach((acc) => {
           acc.selected = e.detail.selectedRows.some((row) => row.id === acc.id);
         });
-        logger.debug("_handleTableSelectionChange", `Account selected states updated: ${e.detail.selectedRows.map((r) => r.id).join(", ") || "none"}`);
+        logger3.debug("_handleTableSelectionChange", `Account selected states updated: ${e.detail.selectedRows.map((r) => r.id).join(", ") || "none"}`);
         if (selectedCount > 0) {
           bar.classList.remove("hidden");
           bar.classList.add("flex");
-          logger.debug("_handleTableSelectionChange", "Bulk action bar shown");
+          logger3.debug("_handleTableSelectionChange", "Bulk action bar shown");
         } else {
           bar.classList.add("hidden");
           bar.classList.remove("flex");
-          logger.debug("_handleTableSelectionChange", "Bulk action bar hidden");
+          logger3.debug("_handleTableSelectionChange", "Bulk action bar hidden");
         }
       } catch (err) {
-        logger.error("_handleTableSelectionChange", "Error handling selection change:", err);
+        logger3.error("_handleTableSelectionChange", "Error handling selection change:", err);
       } finally {
-        logger.groupEnd("_handleTableSelectionChange");
+        logger3.groupEnd("_handleTableSelectionChange");
       }
     }
     _setupTableColumns() {
-      console.group("AccountReviewController._setupTableColumns()");
+      const methodName = "_setupTableColumns";
+      console.group(methodName);
       this.accountsTable.columns = [
         {
           key: "select",
@@ -8671,9 +8241,9 @@ Existing Account:`, this._accounts.get(account.id));
           width: "60px",
           masterCheckbox: true,
           disabled: (account) => {
-            logger.group("_setupTableColumns", "Determining disabled state for select checkbox", { accountId: account.id });
-            const isDisabled = account.isProcessed();
-            logger.groupEnd("_setupTableColumns");
+            logger3.group(methodName, "Determining disabled state for select checkbox", { accountId: account.id });
+            const isDisabled = account.migrationStatus === AccountMigrationStatus.COMPLETED;
+            logger3.groupEnd(methodName);
             return isDisabled;
           },
           mobileHidden: true
@@ -8685,30 +8255,30 @@ Existing Account:`, this._accounts.get(account.id));
           minWidth: "200px",
           cellClass: "px-2 py-2 max-w-[300px]",
           disabled: (account) => {
-            logger.group("_setupTableColumns", "Determining disabled state for name", { accountId: account.id });
-            const isDisabled = account.isProcessed();
-            logger.groupEnd("_setupTableColumns");
+            logger3.group(methodName, "Determining disabled state for name", { accountId: account.id });
+            const isDisabled = account.migrationStatus === AccountMigrationStatus.COMPLETED;
+            logger3.groupEnd(methodName);
             return isDisabled;
           },
           clickable: (account) => {
-            logger.group("_setupTableColumns", "Determining clickable state for name", { accountId: account.id });
-            const isClickable = !account.isProcessed();
-            logger.groupEnd("_setupTableColumns");
+            logger3.group(methodName, "Determining clickable state for name", { accountId: account.id });
+            const isClickable = account.migrationStatus !== AccountMigrationStatus.COMPLETED;
+            logger3.groupEnd(methodName);
             return isClickable;
           },
-          getValue: (account) => account.current.name,
+          getValue: (account) => account.name,
           tooltip: (account) => {
-            logger.group("_setupTableColumns", "Getting tooltip for name", { accountId: account.id });
-            const tooltip = account.isProcessed() ? account.current.name : `Click to rename '${account.current.name}'`;
-            logger.groupEnd("_setupTableColumns");
+            logger3.group(methodName, "Getting tooltip for name", { accountId: account.id });
+            const tooltip = account.migrationStatus === AccountMigrationStatus.COMPLETED ? account.name : `Click to rename '${account.name}'`;
+            logger3.groupEnd(methodName);
             return tooltip;
           },
           onClick: (account) => {
-            logger.group("_setupTableColumns", "Handling name click", { accountId: account.id });
-            const isEnabled2 = !account.isProcessed();
+            logger3.group(methodName, "Handling name click", { accountId: account.id });
+            const isEnabled2 = account.migrationStatus !== AccountMigrationStatus.COMPLETED;
             if (isEnabled2)
               this._openNameEditor(account);
-            logger.groupEnd("_setupTableColumns");
+            logger3.groupEnd(methodName);
           },
           mobileLabel: false,
           mobileClass: "mb-2"
@@ -8718,31 +8288,31 @@ Existing Account:`, this._accounts.get(account.id));
           type: "select",
           header: "Type",
           minWidth: "150px",
-          getValue: (account) => account.current.type,
+          getValue: (account) => account.monarchType,
           options: monarchAccountTypes_default.data.map((type) => ({
             value: type.typeName,
             label: type.typeDisplay
           })),
           disabled: (account) => {
-            logger.group("_setupTableColumns", "Determining disabled state for type", { accountId: account.id });
-            const isDisabled = account.isProcessed();
-            logger.groupEnd("_setupTableColumns");
+            logger3.group(methodName, "Determining disabled state for type", { accountId: account.id });
+            const isDisabled = account.migrationStatus === AccountMigrationStatus.COMPLETED;
+            logger3.groupEnd(methodName);
             return isDisabled;
           },
           tooltip: (account) => {
-            logger.group("_setupTableColumns", "Getting tooltip for type", { accountId: account.id });
-            const tooltip = getAccountTypeByName(account.current.type)?.typeDisplay || "";
-            logger.groupEnd("_setupTableColumns");
+            logger3.group(methodName, "Getting tooltip for type", { accountId: account.id });
+            const tooltip = getAccountTypeByName(account.monarchType)?.typeDisplay || "";
+            logger3.groupEnd(methodName);
             return tooltip;
           },
           onChange: async (account, value) => {
-            logger.group("_setupTableColumns", "Handling type change", { accountId: account.id, newType: value });
+            logger3.group(methodName, "Handling type change", { accountId: account.id, newType: value });
             const selectedType = getAccountTypeByName(value);
             const newSubtype = selectedType?.subtypes[0]?.name || null;
-            await account.setType(value);
-            await account.setSubtype(newSubtype);
+            account.monarchType = selectedType?.typeName || null;
+            account.monarchSubtype = newSubtype;
             requestAnimationFrame(() => this.accountsTable.updateRow(account.id));
-            logger.groupEnd("_setupTableColumns");
+            logger3.groupEnd(methodName);
           },
           mobileLabel: "Type"
         },
@@ -8751,34 +8321,34 @@ Existing Account:`, this._accounts.get(account.id));
           type: "select",
           header: "Subtype",
           minWidth: "150px",
-          getValue: (account) => account.current.subtype || "",
+          getValue: (account) => account.monarchSubtype || "",
           options: (account) => {
-            logger.group("_setupTableColumns", "Getting options for subtype", { accountId: account.id });
-            const selectedType = getAccountTypeByName(account.current.type);
+            logger3.group(methodName, "Getting options for subtype", { accountId: account.id });
+            const selectedType = getAccountTypeByName(account.monarchType);
             const options = (selectedType?.subtypes || []).map((sub) => ({
               value: sub.name,
               label: sub.display
             }));
-            logger.groupEnd("_setupTableColumns");
+            logger3.groupEnd(methodName);
             return options;
           },
           disabled: (account) => {
-            logger.group("_setupTableColumns", "Determining disabled state for subtype", { accountId: account.id });
-            const isDisabled = account.isProcessed();
-            logger.groupEnd("_setupTableColumns");
+            logger3.group(methodName, "Determining disabled state for subtype", { accountId: account.id });
+            const isDisabled = account.migrationStatus === AccountMigrationStatus.COMPLETED;
+            logger3.groupEnd(methodName);
             return isDisabled;
           },
           tooltip: (account) => {
-            logger.group("_setupTableColumns", "Getting tooltip for subtype", { accountId: account.id });
-            const tooltip = getSubtypeByName(account.current.type, account.current.subtype)?.display || "";
-            logger.groupEnd("_setupTableColumns");
+            logger3.group(methodName, "Getting tooltip for subtype", { accountId: account.id });
+            const tooltip = getSubtypeByName(account.monarchType, account.monarchSubtype)?.display || "";
+            logger3.groupEnd(methodName);
             return tooltip;
           },
           onChange: async (account, value) => {
-            logger.group("_setupTableColumns", "Handling subtype change", { accountId: account.id, newSubtype: value });
-            await account.setSubtype(value);
+            logger3.group(methodName, "Handling subtype change", { accountId: account.id, newSubtype: value });
+            account.monarchSubtype = value;
             requestAnimationFrame(() => this.accountsTable.updateRow(account.id));
-            logger.groupEnd("_setupTableColumns");
+            logger3.groupEnd(methodName);
           },
           mobileLabel: "Subtype"
         },
@@ -8789,15 +8359,15 @@ Existing Account:`, this._accounts.get(account.id));
           minWidth: "100px",
           getValue: (account) => account.transactionCount,
           tooltip: (account) => {
-            logger.group("_setupTableColumns", "Getting tooltip for transactionCount", { accountId: account.id });
+            logger3.group(methodName, "Getting tooltip for transactionCount", { accountId: account.id });
             const tooltip = `${account.transactionCount} transaction${account.transactionCount !== 1 ? "s" : ""}`;
-            logger.groupEnd("_setupTableColumns");
+            logger3.groupEnd(methodName);
             return tooltip;
           },
           cellStyle: (account) => {
-            logger.group("_setupTableColumns", "Determining cellStyle for transactionCount", { accountId: account.id });
-            const style = account.isProcessed() ? { color: "#9ca3af" } : { color: "#727985ff" };
-            logger.groupEnd("_setupTableColumns");
+            logger3.group(methodName, "Determining cellStyle for transactionCount", { accountId: account.id });
+            const style = account.migrationStatus === AccountMigrationStatus.COMPLETED ? { color: "#9ca3af" } : { color: "#727985ff" };
+            logger3.groupEnd(methodName);
             return style;
           },
           mobileLabel: "Txns"
@@ -8810,9 +8380,9 @@ Existing Account:`, this._accounts.get(account.id));
           getValue: (account) => currencyFormatter.format(account.balance),
           tooltip: (account) => `Balance: ${currencyFormatter.format(account.balance)}`,
           cellStyle: (account) => {
-            logger.group("_setupTableColumns", "Determining cellStyle for balance", { accountId: account.id });
-            const style = account.isProcessed() ? { color: "#9ca3af" } : { color: "#727985ff" };
-            logger.groupEnd("_setupTableColumns");
+            logger3.group(methodName, "Determining cellStyle for balance", { accountId: account.id });
+            const style = account.migrationStatus === AccountMigrationStatus.COMPLETED ? { color: "#9ca3af" } : { color: "#727985ff" };
+            logger3.groupEnd(methodName);
             return style;
           },
           mobileLabel: "Balance"
@@ -8823,10 +8393,10 @@ Existing Account:`, this._accounts.get(account.id));
           header: "",
           width: "50px",
           render: (account) => {
-            logger.group("_setupTableColumns", "Rendering 'undo' button for account", { accountId: account.id });
+            logger3.group(methodName, "Rendering 'undo' button for account", { accountId: account.id });
             const container = document.createElement("div");
             container.className = "flex items-center justify-center";
-            if (account.isModified()) {
+            if (account.isModified) {
               const button = document.createElement("button");
               button.className = "p-1.5 rounded hover:bg-amber-100 transition-colors";
               button.title = "Undo changes";
@@ -8838,7 +8408,7 @@ Existing Account:`, this._accounts.get(account.id));
               button.addEventListener("click", () => this._undoRowChanges(account.id));
               container.appendChild(button);
             }
-            logger.groupEnd("_setupTableColumns");
+            logger3.groupEnd(methodName);
             return container;
           },
           mobileHidden: true
@@ -8849,8 +8419,8 @@ Existing Account:`, this._accounts.get(account.id));
           header: "Migrate?",
           minWidth: "100px",
           render: (account) => {
-            logger.group("_setupTableColumns", "Rendering 'included' button for account", { accountId: account.id });
-            const isProcessed = account.isProcessed();
+            logger3.group(methodName, "Rendering 'included' button for account", { accountId: account.id });
+            const isProcessed = account.migrationStatus === AccountMigrationStatus.COMPLETED;
             const result = {
               text: isProcessed ? "Migrated" : account.included ? "Included" : "Excluded",
               type: "outline",
@@ -8858,23 +8428,23 @@ Existing Account:`, this._accounts.get(account.id));
               size: "small",
               disabled: isProcessed,
               tooltip: isProcessed ? "This account has already been processed" : account.included ? "Click to exclude" : "Click to include",
-              onClick: async () => {
-                await account.toggleInclusion();
-                requestAnimationFrame(() => this.accountsTable.updateRow(account.id));
+              onClick: (account2) => {
+                account2.included = !account2.included;
+                requestAnimationFrame(() => this.accountsTable.updateRow(account2.id));
               }
             };
-            logger.groupEnd("_setupTableColumns");
+            logger3.groupEnd(methodName);
             return result;
           },
           mobileLabel: "Migrate"
         }
       ];
-      console.groupEnd();
+      console.groupEnd(methodName);
     }
-    async _renderTable(skipSync = false) {
-      logger.group("_renderTable", "AccountReviewController._renderTable()");
+    async _renderTable() {
+      logger3.group("_renderTable", "AccountReviewController._renderTable()");
       const visibleAccounts = this.accounts.getVisible(this.filters);
-      logger.debug("_renderTable", "visible accounts:", visibleAccounts);
+      logger3.debug("_renderTable", "visible accounts:", visibleAccounts);
       this.accountsTable.data = visibleAccounts;
       this._updateAccountCountDisplay(visibleAccounts.length, this.accounts.length());
       const hasIncludedAccounts = this.accounts.getIncludedAndUnprocessed().length > 0;
@@ -8886,134 +8456,134 @@ Existing Account:`, this._accounts.get(account.id));
         this.importBtn.textContent = "Continue";
       }
       this._updateChangesAlert();
-      logger.groupEnd("_renderTable");
+      logger3.groupEnd("_renderTable");
     }
     _openNameEditor(account) {
-      logger.group("_openNameEditor", "AccountReviewController._openNameEditor()");
-      logger.log("_openNameEditor", `Opening name editor for account ${account.id}: "${account.current.name}"`);
+      logger3.group("_openNameEditor", "AccountReviewController._openNameEditor()");
+      logger3.log("_openNameEditor", `Opening name editor for account ${account.id}: "${account.current.name}"`);
       try {
         const editor = new NameEditorModal(account, () => {
-          logger.debug("_openNameEditor", "Name editor closed, refreshing table");
+          logger3.debug("_openNameEditor", "Name editor closed, refreshing table");
           this.accountsTable.refresh();
         });
         editor.open();
-        logger.log("_openNameEditor", "Name editor opened successfully");
+        logger3.log("_openNameEditor", "Name editor opened successfully");
       } catch (error) {
-        logger.error("_openNameEditor", "Error opening name editor:", error);
+        logger3.error("_openNameEditor", "Error opening name editor:", error);
       } finally {
-        logger.groupEnd("_openNameEditor");
+        logger3.groupEnd("_openNameEditor");
       }
     }
     async _updateInclusion(include) {
-      logger.group("_updateInclusion", "AccountReviewController._updateInclusion()", { include });
-      logger.log("_updateInclusion", `Updating inclusion status to ${include ? "included" : "excluded"}`);
+      logger3.group("_updateInclusion", "AccountReviewController._updateInclusion()", { include });
+      logger3.log("_updateInclusion", `Updating inclusion status to ${include ? "included" : "excluded"}`);
       if (include) {
         await this.accounts.includeAll();
       } else {
         await this.accounts.excludeAll();
       }
       await this._renderTable();
-      logger.groupEnd("_updateInclusion");
+      logger3.groupEnd("_updateInclusion");
     }
     _updateAccountSelection(shouldSelect) {
-      logger.group("_updateAccountSelection", "AccountReviewController._updateAccountSelection()", { shouldSelect });
+      logger3.group("_updateAccountSelection", "AccountReviewController._updateAccountSelection()", { shouldSelect });
       try {
         const action = shouldSelect ? "selecting" : "deselecting";
-        logger.log("_updateAccountSelection", `${action.charAt(0).toUpperCase() + action.slice(1)} all ${this.accounts.length()} accounts`);
+        logger3.log("_updateAccountSelection", `${action.charAt(0).toUpperCase() + action.slice(1)} all ${this.accounts.length()} accounts`);
         shouldSelect ? this.accounts.selectAll() : this.accounts.deselectAll();
-        logger.debug("_updateAccountSelection", `All accounts now ${shouldSelect ? "selected" : "deselected"}`);
+        logger3.debug("_updateAccountSelection", `All accounts now ${shouldSelect ? "selected" : "deselected"}`);
         this._renderTable();
-        logger.log("_updateAccountSelection", "Account selection updated and table re-rendered");
+        logger3.log("_updateAccountSelection", "Account selection updated and table re-rendered");
       } catch (error) {
-        logger.error("_updateAccountSelection", "Error updating account selection:", error);
+        logger3.error("_updateAccountSelection", "Error updating account selection:", error);
       } finally {
-        logger.groupEnd("_updateAccountSelection");
+        logger3.groupEnd("_updateAccountSelection");
       }
     }
     async _undoAllChanges() {
-      logger.group("_undoAllChanges", "AccountReviewController._undoAllChanges()");
-      logger.log("_undoAllChanges", "Undoing all account changes");
+      logger3.group("_undoAllChanges", "AccountReviewController._undoAllChanges()");
+      logger3.log("_undoAllChanges", "Undoing all account changes");
       await this.accounts.undoAllChanges();
       await this._renderTable();
-      logger.groupEnd("_undoAllChanges");
+      logger3.groupEnd("_undoAllChanges");
     }
     async _undoRowChanges(accountId) {
-      logger.group("_undoRowChanges", "AccountReviewController._undoRowChanges()", { accountId });
-      logger.log("_undoRowChanges", `Undoing changes for account ${accountId}`);
+      logger3.group("_undoRowChanges", "AccountReviewController._undoRowChanges()", { accountId });
+      logger3.log("_undoRowChanges", `Undoing changes for account ${accountId}`);
       await this.accounts.undoAccountChanges(accountId);
       await this._renderTable();
-      logger.groupEnd("_undoRowChanges");
+      logger3.groupEnd("_undoRowChanges");
     }
     _onFiltersApplied() {
-      logger.group("_onFiltersApplied", "AccountReviewController._onFiltersApplied()");
-      logger.log("_onFiltersApplied", "Filters applied, re-rendering table");
+      logger3.group("_onFiltersApplied", "AccountReviewController._onFiltersApplied()");
+      logger3.log("_onFiltersApplied", "Filters applied, re-rendering table");
       try {
         this._renderTable();
         this._updateFilterDisplay();
-        logger.log("_onFiltersApplied", "Filter display updated");
+        logger3.log("_onFiltersApplied", "Filter display updated");
       } catch (error) {
-        logger.error("_onFiltersApplied", "Error applying filters:", error);
+        logger3.error("_onFiltersApplied", "Error applying filters:", error);
       } finally {
-        logger.groupEnd("_onFiltersApplied");
+        logger3.groupEnd("_onFiltersApplied");
       }
     }
     _onFiltersReset() {
-      logger.group("_onFiltersReset", "AccountReviewController._onFiltersReset()");
-      logger.log("_onFiltersReset", "Filters reset, re-rendering table");
+      logger3.group("_onFiltersReset", "AccountReviewController._onFiltersReset()");
+      logger3.log("_onFiltersReset", "Filters reset, re-rendering table");
       try {
         this._renderTable();
         this._updateFilterDisplay();
-        logger.log("_onFiltersReset", "Filter display updated");
+        logger3.log("_onFiltersReset", "Filter display updated");
       } catch (error) {
-        logger.error("_onFiltersReset", "Error resetting filters:", error);
+        logger3.error("_onFiltersReset", "Error resetting filters:", error);
       } finally {
-        logger.groupEnd("_onFiltersReset");
+        logger3.groupEnd("_onFiltersReset");
       }
     }
     _updateFilterDisplay() {
-      logger.group("_updateFilterDisplay", "AccountReviewController._updateFilterDisplay()");
+      logger3.group("_updateFilterDisplay", "AccountReviewController._updateFilterDisplay()");
       try {
         const filterNotificationBadge = document.getElementById("filterNotificationBadge");
         const numberOfActiveFilters = this.filters.getNumberOfActiveFilters();
-        logger.log("_updateFilterDisplay", `Number of active filters: ${numberOfActiveFilters}`);
+        logger3.log("_updateFilterDisplay", `Number of active filters: ${numberOfActiveFilters}`);
         filterNotificationBadge.classList.toggle("hidden", numberOfActiveFilters === 0);
         filterNotificationBadge.textContent = numberOfActiveFilters;
-        logger.debug("_updateFilterDisplay", "Filter badge updated");
+        logger3.debug("_updateFilterDisplay", "Filter badge updated");
       } catch (error) {
-        logger.error("_updateFilterDisplay", "Error updating filter display:", error);
+        logger3.error("_updateFilterDisplay", "Error updating filter display:", error);
       } finally {
-        logger.groupEnd("_updateFilterDisplay");
+        logger3.groupEnd("_updateFilterDisplay");
       }
     }
     _updateAccountCountDisplay(visibleCount, totalCount) {
-      logger.group("_updateAccountCountDisplay", "AccountReviewController._updateAccountCountDisplay()");
+      logger3.group("_updateAccountCountDisplay", "AccountReviewController._updateAccountCountDisplay()");
       try {
-        logger.log("_updateAccountCountDisplay", `Displaying ${visibleCount} visible accounts out of ${totalCount} total`);
+        logger3.log("_updateAccountCountDisplay", `Displaying ${visibleCount} visible accounts out of ${totalCount} total`);
         document.getElementById("visibleAccountCount").innerHTML = visibleCount;
         document.getElementById("totalAccountCount").innerHTML = totalCount;
-        logger.debug("_updateAccountCountDisplay", "Account count displays updated");
+        logger3.debug("_updateAccountCountDisplay", "Account count displays updated");
         const filterCount = this.filters.getNumberOfActiveFilters();
         const filterNotificationBadge = document.getElementById("filterNotificationBadge");
         filterNotificationBadge.textContent = filterCount;
         filterNotificationBadge.classList.toggle("hidden", filterCount === 0);
-        logger.debug("_updateAccountCountDisplay", `Filter count badge set to ${filterCount}`);
+        logger3.debug("_updateAccountCountDisplay", `Filter count badge set to ${filterCount}`);
         const filterResultsSummary = document.getElementById("filterResultsSummary");
         filterResultsSummary.classList.toggle("filtered", filterCount > 0);
-        logger.debug("_updateAccountCountDisplay", `Filter results summary ${filterCount > 0 ? "marked" : "unmarked"} as filtered`);
+        logger3.debug("_updateAccountCountDisplay", `Filter results summary ${filterCount > 0 ? "marked" : "unmarked"} as filtered`);
       } catch (error) {
-        logger.error("_updateAccountCountDisplay", "Error updating account count display:", error);
+        logger3.error("_updateAccountCountDisplay", "Error updating account count display:", error);
       } finally {
-        logger.groupEnd("_updateAccountCountDisplay");
+        logger3.groupEnd("_updateAccountCountDisplay");
       }
     }
     async _updateChangesAlert() {
-      logger.group("_updateChangesAlert", "AccountReviewController._updateChangesAlert()");
+      logger3.group("_updateChangesAlert", "AccountReviewController._updateChangesAlert()");
       const undoAllContainer = document.getElementById("undoAllContainer");
       const hasChanges = await this.accounts.hasChanges();
-      logger.log("_updateChangesAlert", `Has changes: ${hasChanges}`);
+      logger3.log("_updateChangesAlert", `Has changes: ${hasChanges}`);
       undoAllContainer.classList.toggle("hidden", !hasChanges);
-      logger.debug("_updateChangesAlert", `Undo all container ${hasChanges ? "shown" : "hidden"}`);
-      logger.groupEnd("_updateChangesAlert");
+      logger3.debug("_updateChangesAlert", `Undo all container ${hasChanges ? "shown" : "hidden"}`);
+      logger3.groupEnd("_updateChangesAlert");
     }
   };
 
@@ -9728,7 +9298,7 @@ Existing Account:`, this._accounts.get(account.id));
   var method_default = '<div id="pageLayout"></div>\n\n<!-- Summary Counts -->\n<div class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 md:gap-10 \n          bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 md:p-8 \n          border border-blue-100 w-full max-w-2xl mx-auto shadow-sm mb-12">\n\n  <div class="text-center">\n    <div class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-500" id="totalCountDisplay">0</div>\n    <div class="text-gray-500 text-xs sm:text-sm md:text-base font-medium">Total Accounts</div>\n  </div>\n\n  <div class="hidden sm:block w-px h-12 bg-gray-300"></div>\n  <div class="sm:hidden w-full h-px bg-gray-300"></div>\n\n  <div class="text-center">\n    <div class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-green-600" id="filesCountDisplay">0</div>\n    <div class="text-gray-600 text-xs sm:text-sm md:text-base font-medium">Accounts To Migrate</div>\n  </div>\n</div>\n\n<!-- Migration Options -->\n<div class="flex flex-col lg:flex-row gap-4 sm:gap-6 md:gap-8 w-full max-w-5xl mx-auto">\n\n  <!-- Manual Import -->\n  <clickable-card id="manualImportCard" data-color="blue" data-width="full">\n    <svg slot="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n        d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" />\n    </svg>\n    <svg slot="arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />\n    </svg>\n    <h3 slot="title">Manual Import</h3>\n    <p slot="description">\n      Download <span id="manualFileCount" class="font-semibold text-blue-600">0</span> CSV <span id="manualFileLabel">files</span> and upload them\n      into Monarch Money yourself, one by one.\n    </p>\n    <span slot="action">Select Manual Import</span>\n  </clickable-card>\n\n  <!-- Auto Import -->\n  <clickable-card id="autoImportCard" data-color="green" data-width="full">\n    <svg slot="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />\n    </svg>\n    <svg slot="arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />\n    </svg>\n    <h3 slot="title">Auto Import</h3>\n    <p slot="description">\n      Connect your Monarch Money account and automatically import your selected accounts.\n    </p>\n    <span slot="action">Select Auto Import</span>\n  </clickable-card>\n\n</div>';
 
   // src/views/ManualInstructions/manualInstructionsData.js
-  var import_jszip2 = __toESM(require_jszip_min(), 1);
+  var import_jszip = __toESM(require_jszip_min(), 1);
 
   // shared/generateCsv.js
   function generateCSV(accountName, transactions) {
@@ -9740,7 +9310,7 @@ Existing Account:`, this._accounts.get(account.id));
   // src/views/ManualInstructions/manualInstructionsData.js
   async function generateAccountsZip({ maxRowsPerFile = 1e3 } = {}) {
     const includedAccounts = state_default.accounts._accounts.filter((acc) => acc.included);
-    const zip = new import_jszip2.default();
+    const zip = new import_jszip.default();
     includedAccounts.forEach((account) => {
       const safeName = (account.current.name || "").replace(/[\\/:*?"<>|]/g, "_");
       const transactions = account.transactions || [];
@@ -10500,12 +10070,12 @@ Existing Account:`, this._accounts.get(account.id));
 </style>`;
 
   // src/views/MonarchOtp/monarchOtpData.js
-  function initCredentialsFromStorage(state) {
-    const { credentials } = state;
+  function initCredentialsFromStorage(state2) {
+    const { credentials } = state2;
     const email = sessionStorage.getItem("monarch_email");
     const encryptedPassword = sessionStorage.getItem("monarch_pwd_enc");
     const uuid = sessionStorage.getItem("monarch_uuid");
-    state.setCredentials({
+    state2.setCredentials({
       email: credentials.email || email,
       encryptedPassword: credentials.encryptedPassword || encryptedPassword,
       deviceUuid: credentials.deviceUuid || uuid,
@@ -10664,15 +10234,15 @@ Existing Account:`, this._accounts.get(account.id));
 </div>`;
 
   // src/views/MonarchComplete/monarchCompleteData.js
-  function ensurePendingStatusForAccounts(state) {
-    state.accounts.accounts.forEach((account) => {
+  function ensurePendingStatusForAccounts(state2) {
+    state2.accounts.accounts.forEach((account) => {
       if (!account.status) {
         account.status = "pending";
       }
     });
   }
-  function getIncludedAccountsToProcess(state) {
-    return state.accounts.accounts.filter((account) => account.included && account.status !== "completed").map((account) => ({
+  function getIncludedAccountsToProcess(state2) {
+    return state2.accounts.accounts.filter((account) => account.included && account.status !== "completed").map((account) => ({
       id: account.id,
       name: account.current.name,
       modifiedName: account.current.name,
@@ -10694,37 +10264,37 @@ Existing Account:`, this._accounts.get(account.id));
   async function createAccountsBatch(token, batch) {
     return await monarchApi.createAccounts(token, batch);
   }
-  function markBatchProcessing(state, batch) {
+  function markBatchProcessing(state2, batch) {
     batch.forEach((batchAccount) => {
-      const account = state.accounts.accounts.find((acc) => acc.current.name === batchAccount.modifiedName);
+      const account = state2.accounts.accounts.find((acc) => acc.current.name === batchAccount.modifiedName);
       if (account)
         account.status = "processing";
     });
   }
-  function markBatchFailedDueToApi(state, batch, errorMessage) {
+  function markBatchFailedDueToApi(state2, batch, errorMessage) {
     batch.forEach((batchAccount) => {
-      const account = state.accounts.accounts.find((acc) => acc.current.name === batchAccount.modifiedName);
+      const account = state2.accounts.accounts.find((acc) => acc.current.name === batchAccount.modifiedName);
       if (account) {
         account.status = "failed";
         account.errorMessage = errorMessage;
       }
     });
   }
-  function markUnprocessedAsFailed(state, batch) {
+  function markUnprocessedAsFailed(state2, batch) {
     batch.forEach((batchAccount) => {
-      const account = state.accounts.accounts.find((acc) => acc.current.name === batchAccount.modifiedName);
+      const account = state2.accounts.accounts.find((acc) => acc.current.name === batchAccount.modifiedName);
       if (account && account.status === "processing") {
         account.status = "failed";
         account.errorMessage = "Account not processed by server";
       }
     });
   }
-  function handleCreateResponse(state, batch, response) {
+  function handleCreateResponse(state2, batch, response) {
     if (response.failed && response.failed.length > 0) {
       response.failed.forEach((result) => {
         const matchingBatchAccount = batch.find((acc) => acc.modifiedName === result.name);
         if (matchingBatchAccount) {
-          const account = state.accounts.accounts.find((acc) => acc.current.name === matchingBatchAccount.modifiedName);
+          const account = state2.accounts.accounts.find((acc) => acc.current.name === matchingBatchAccount.modifiedName);
           if (account) {
             account.status = "failed";
             account.errorMessage = result.error || "Account creation failed";
@@ -10736,7 +10306,7 @@ Existing Account:`, this._accounts.get(account.id));
       response.success.forEach((result) => {
         const matchingBatchAccount = batch.find((acc) => acc.modifiedName === result.name);
         if (matchingBatchAccount) {
-          const account = state.accounts.accounts.find((acc) => acc.current.name === matchingBatchAccount.modifiedName);
+          const account = state2.accounts.accounts.find((acc) => acc.current.name === matchingBatchAccount.modifiedName);
           if (account) {
             account.status = "uploading";
             account.sessionKeys = result.sessionKeys || [];
@@ -11167,12 +10737,14 @@ Existing Account:`, this._accounts.get(account.id));
     try {
       statusTitle.textContent = "Processing...";
       statusMessage.innerHTML = "We're fetching your account data now.</br>You should be redirected automatically.";
-      await handleOauthCallback();
+      await ynabApi_default.handleOauthCallback();
+      const accountList = await ynabApi_default.getAllData();
+      console.log("Fetched accounts after OAuth callback:", accountList);
+      await accountList.saveToDb();
       loadingSpinner.hidden = true;
       successIcon.hidden = false;
       statusTitle.textContent = "We got your data!";
       statusMessage.innerHTML = "Still here? Sorry, sometimes redirections don't work.</br>Click the button below to review your data.";
-      persistState();
       setTimeout(() => {
         navigate("/review", true);
       }, 1500);
@@ -11260,10 +10832,10 @@ Existing Account:`, this._accounts.get(account.id));
       hasAnyData
     };
   }
-  function collectExportData(state) {
+  function collectExportData(state2) {
     const allData = {
       exportedAt: new Date().toISOString(),
-      state,
+      state: state2,
       sessionStorage: {},
       localStorage: {}
     };
@@ -11288,13 +10860,13 @@ Existing Account:`, this._accounts.get(account.id));
     const filename = `ynab-monarch-data-${Date.now()}.json`;
     return { blob, filename };
   }
-  function clearAllData(state) {
-    state.clearLocalStorage();
+  function clearAllData(state2) {
+    state2.clearLocalStorage();
     clearAppState();
     sessionStorage.clear();
-    state.credentials.clear();
-    state.clearAccounts();
-    state.oauth.clear();
+    state2.credentials.clear();
+    state2.clearAccounts();
+    state2.oauth.clear();
   }
 
   // src/views/DataManagement/dataManagement.js
@@ -11542,6 +11114,125 @@ Existing Account:`, this._accounts.get(account.id));
   // src/views/DataManagement/dataManagement.html
   var dataManagement_default = '<div id="pageLayout"></div>\n\n<!-- Warning Banner -->\n<div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-r-lg">\n  <div class="flex items-start">\n    <svg class="w-5 h-5 text-yellow-400 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">\n      <path fill-rule="evenodd"\n        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"\n        clip-rule="evenodd" />\n    </svg>\n    <div>\n      <h3 class="text-sm font-medium text-yellow-800 mb-1">Privacy Notice</h3>\n      <p class="text-sm text-yellow-700">\n        All data shown below is stored locally in your browser only. No data is sent to our servers or any third-party\n        services.\n      </p>\n    </div>\n  </div>\n</div>\n\n<!-- Data Sections Container -->\n<div class="space-y-6">\n\n  <!-- Application State Section -->\n  <div class="bg-white rounded-lg shadow-md overflow-hidden">\n    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-4">\n      <h2 class="text-xl font-semibold text-white flex items-center">\n        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />\n        </svg>\n        Application State\n      </h2>\n      <p class="text-blue-100 text-sm mt-1">Current session data and account information</p>\n    </div>\n    <div id="stateDataSection" class="p-6">\n      <!-- Populated by JavaScript -->\n    </div>\n  </div>\n\n  <!-- Session Storage Section -->\n  <div class="bg-white rounded-lg shadow-md overflow-hidden">\n    <div class="bg-gradient-to-r from-purple-500 to-pink-600 px-6 py-4">\n      <h2 class="text-xl font-semibold text-white flex items-center">\n        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n            d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />\n        </svg>\n        Session Storage\n      </h2>\n      <p class="text-purple-100 text-sm mt-1">Data cleared when browser tab is closed</p>\n    </div>\n    <div id="sessionStorageSection" class="p-6">\n      <!-- Populated by JavaScript -->\n    </div>\n  </div>\n\n  <!-- Local Storage Section -->\n  <div class="bg-white rounded-lg shadow-md overflow-hidden">\n    <div class="bg-gradient-to-r from-green-500 to-teal-600 px-6 py-4">\n      <h2 class="text-xl font-semibold text-white flex items-center">\n        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />\n        </svg>\n        Local Storage\n      </h2>\n      <p class="text-green-100 text-sm mt-1">Persistent data saved across sessions</p>\n    </div>\n    <div id="localStorageSection" class="p-6">\n      <!-- Populated by JavaScript -->\n    </div>\n  </div>\n\n</div>\n\n<!-- Action Buttons -->\n<div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">\n  <ui-button id="exportDataBtn" data-type="outline" data-color="grey">\n    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />\n    </svg>\n    Export Data (JSON)\n  </ui-button>\n\n  <ui-button id="clearAllDataBtn" data-type="solid" data-color="red">\n    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />\n    </svg>\n    Clear All Data\n  </ui-button>\n</div>\n\n<!-- Confirmation Modal -->\n<ui-modal id="confirmClearModal" has-footer>\n  <div slot="title">\n    <svg class="w-6 h-6 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">\n      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"\n        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />\n    </svg>\n    <h3>Clear All Data?</h3>\n  </div>\n  <div slot="content">\n    <p>\n      This action cannot be undone. All your YNAB accounts, Monarch credentials, and session data will be\n      permanently deleted from your browser.\n    </p>\n  </div>\n  <div slot="footer">\n    <ui-button id="cancelBtn" data-type="outline" data-color="grey">Cancel</ui-button>\n    <ui-button id="applyBtn" data-type="solid" data-color="red">Yes, wipe my data</ui-button>\n  </div>\n</ui-modal>';
 
+  // src/components/FaqCard.js
+  function createFaqCard({ question, body }, index) {
+    const card = document.createElement("div");
+    card.className = "faq-item w-full border border-gray-200 rounded-lg overflow-hidden hover:border-blue-300 transition-colors";
+    const button = document.createElement("button");
+    button.className = "faq-toggle w-full flex items-center justify-between px-5 py-4 bg-white hover:bg-gray-50 transition-colors text-left";
+    button.dataset.index = String(index);
+    button.innerHTML = `
+    <span class="font-semibold text-gray-900">${question}</span>
+    <svg class="faq-icon w-5 h-5 text-gray-500 flex-shrink-0 ml-3 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+    </svg>
+  `;
+    card.appendChild(button);
+    const content = document.createElement("div");
+    content.className = "faq-content hidden overflow-hidden max-h-0 transition-all duration-300";
+    content.dataset.index = String(index);
+    content.innerHTML = `
+    <div class="px-5 py-4 bg-gray-50 border-t border-gray-200 text-gray-700 text-sm space-y-2">
+      ${body}
+    </div>
+  `;
+    card.appendChild(content);
+    return card;
+  }
+
+  // src/views/Faq/faq.js
+  var FAQ_ITEMS = [
+    {
+      question: "Does this tool create bank-connected accounts in Monarch Money?",
+      body: `<p>No, not directly; this tool can only create <strong>manual</strong> accounts in Monarch Money. However, there are two solutions:
+            <br/><br/>(1) Migrate data to an <strong>existing</strong> bank-connected account.
+            <br/><br/>(2) Use this tool to create a new manual account, then in Monarch Money, use their <strong>Transfer</strong> tool to migrate data from the manual account to the bank-connected account.</p>
+          <p class="text-xs text-gray-600">Follow Monarch Money's official guide on their Transfer tool to migrate data between accounts: <a href="https://help.monarch.com/hc/en-us/articles/14329385694484-Transfer-Balance-and-or-Transaction-History-to-Another-Account" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline">https://help.monarch.com/hc/en-us/articles/14329385694484-Transfer-Balance-and-or-Transaction-History-to-Another-Account</a></p>`
+    },
+    {
+      question: "Is my data secure and private?",
+      body: `<p>Yes, your data is completely secure. We use end-to-end encryption and never store your financial information on our servers. Your data is processed temporarily during migration and then permanently deleted.</p>
+          <p class="text-xs text-gray-600">We comply with industry-standard security protocols and are committed to protecting your privacy.</p>`
+    },
+    {
+      question: "How long does the migration process take?",
+      body: `<p>The migration typically takes 5-15 minutes depending on the amount of data in your YNAB account. Most users complete the process in under 10 minutes.</p>
+          <p class="text-xs text-gray-600">The actual data transfer is instantaneous; the time is mostly spent reviewing and customizing your accounts.</p>`
+    },
+    {
+      question: "Will my transaction history be preserved?",
+      body: `<p>Yes, all your transaction history, payees, categories, and account information are preserved during migration. You can choose to import historical data or start fresh.</p>
+          <p class="text-xs text-gray-600">You have full control over which data to migrate during the review step.</p>`
+    },
+    {
+      question: "Can I migrate only specific accounts?",
+      body: `<p>Absolutely! During the review step, you can select which accounts to migrate and even rename them for Monarch Money. Unselected accounts will be ignored.</p>
+          <p class="text-xs text-gray-600">This gives you complete flexibility to customize your migration to match your needs.</p>`
+    },
+    {
+      question: "What if I encounter an error during migration?",
+      body: `<p>If you encounter an error, try the following: refresh the page, clear your browser cache, or use a different browser. Most errors are temporary and resolve on retry.</p>
+          <p class="text-xs text-gray-600">If the problem persists, contact our support team for assistance. Your data is always safe and you can restart at any time.</p>`
+    }
+  ];
+  function initFaqView() {
+    const layoutElement = document.getElementById("pageLayout");
+    const backText = layoutElement?.dataset.backText || "Back to App";
+    renderPageLayout({
+      navbar: {
+        showBackButton: true,
+        showDataButton: false,
+        backText
+      },
+      header: {
+        title: "Frequently Asked Questions",
+        description: "Find answers to common questions about the YNAB to Monarch migration process.",
+        containerId: "pageHeader"
+      }
+    });
+    const faqContainer = document.querySelector("#faqContainer");
+    if (!faqContainer) {
+      return;
+    }
+    faqContainer.innerHTML = "";
+    FAQ_ITEMS.forEach((item, index) => {
+      faqContainer.appendChild(createFaqCard(item, index));
+    });
+    faqContainer.querySelectorAll(".faq-toggle").forEach((button) => {
+      button.addEventListener("click", () => {
+        toggleFaqItem(button);
+      });
+    });
+  }
+  function toggleFaqItem(button) {
+    const index = button.dataset.index;
+    const content = document.querySelector(`.faq-content[data-index="${index}"]`);
+    const icon = button.querySelector(".faq-icon");
+    const item = button.closest(".faq-item");
+    if (!content || !icon || !item) {
+      return;
+    }
+    const isOpen = content.classList.contains("open");
+    if (isOpen) {
+      content.classList.remove("open");
+      content.classList.add("hidden");
+      content.style.maxHeight = "0";
+      icon.style.transform = "rotate(0deg)";
+      item.classList.remove("border-blue-300", "bg-blue-50");
+    } else {
+      content.classList.remove("hidden");
+      content.classList.add("open");
+      const innerContent = content.querySelector("div");
+      const scrollHeight = innerContent ? innerContent.scrollHeight : 0;
+      content.style.maxHeight = scrollHeight + 16 + "px";
+      icon.style.transform = "rotate(180deg)";
+      item.classList.add("border-blue-300", "bg-blue-50");
+    }
+  }
+
+  // src/views/Faq/faq.html
+  var faq_default = '<div id="pageLayout" data-back-text="Back to App"></div>\n\n<section class="w-full mb-8">\n  <div id="faqContainer" class="space-y-3 w-full"></div>\n</section>\n';
+
   // src/router.js
   var routes = {
     "/": {
@@ -11619,10 +11310,16 @@ Existing Account:`, this._accounts.get(account.id));
       scroll: true,
       title: "Data Management - YNAB to Monarch",
       requiresAuth: false
+    },
+    "/faq": {
+      template: faq_default,
+      init: initFaqView,
+      scroll: true,
+      title: "FAQ - YNAB to Monarch",
+      requiresAuth: false
     }
   };
   var isNavigating = false;
-  var stateLoaded = false;
   var navigationHistory = [];
   var MAX_HISTORY_SIZE = 50;
   async function navigate(path, replace = false, skipRouteGuards = false) {
@@ -11638,17 +11335,6 @@ Existing Account:`, this._accounts.get(account.id));
         console.error(`Route not found: ${path}`);
         path = "/upload";
         return navigate(path, replace);
-      }
-      if (!stateLoaded) {
-        await loadPersistedState();
-        stateLoaded = true;
-      }
-      if (!skipRouteGuards && route.requiresAccounts) {
-        const hasAccounts = state_default.hasAccounts();
-        if (!hasAccounts) {
-          console.warn(`Route ${path} requires accounts but none found. Redirecting to upload.`);
-          return navigate("/upload", true);
-        }
       }
       const currentPath = getCurrentPath();
       const urlToSet = path === "/oauth/ynab/callback" ? window.location.href : path;
@@ -11678,10 +11364,6 @@ Existing Account:`, this._accounts.get(account.id));
     const route = routes[path] || routes["/upload"];
     LoadingOverlay_default.reset();
     document.title = route.title;
-    if (!stateLoaded) {
-      await loadPersistedState();
-      stateLoaded = true;
-    }
     document.body.classList.toggle("always-scroll", route.scroll);
     window.scrollTo(0, 0);
     app.innerHTML = "";
@@ -11695,37 +11377,6 @@ Existing Account:`, this._accounts.get(account.id));
       }
     }
   }
-  function persistState() {
-    try {
-      const persistentState = {
-        lastPath: getCurrentPath(),
-        timestamp: Date.now()
-      };
-      localStorage.setItem("app_state", JSON.stringify(persistentState));
-    } catch (error) {
-      console.error("Error persisting state:", error);
-    }
-  }
-  async function loadPersistedState() {
-    try {
-      const monarchEmail = sessionStorage.getItem("monarch_email");
-      const monarchPwdEnc = sessionStorage.getItem("monarch_pwd_enc");
-      const monarchToken = sessionStorage.getItem("monarch_token");
-      const monarchUuid = sessionStorage.getItem("monarch_uuid");
-      if (monarchEmail || monarchToken) {
-        state_default.monarchCredentials = {
-          email: monarchEmail || state_default.monarchCredentials.email,
-          encryptedPassword: monarchPwdEnc || state_default.monarchCredentials.encryptedPassword,
-          accessToken: monarchToken || state_default.monarchCredentials.accessToken,
-          uuid: monarchUuid || state_default.monarchCredentials.uuid,
-          otp: state_default.monarchCredentials.otp
-        };
-      }
-      console.log("\u2705 Persisted state loaded");
-    } catch (error) {
-      console.error("Error loading persisted state:", error);
-    }
-  }
   function getCurrentPath() {
     return window.location.pathname;
   }
@@ -11735,7 +11386,7 @@ Existing Account:`, this._accounts.get(account.id));
   function clearAppState() {
     try {
       localStorage.removeItem("app_state");
-      state_default.clearAll();
+      state.clearAll();
     } catch (error) {
       console.error("Error clearing app state:", error);
     }
@@ -12135,7 +11786,7 @@ Existing Account:`, this._accounts.get(account.id));
   var ReusableTable = class extends HTMLElement {
     constructor() {
       super();
-      this._data = signal([]);
+      this._data = signal(new Accounts());
       this._columns = signal([]);
       this._selectedRows = signal(/* @__PURE__ */ new Set());
       this._visibleRows = signal([]);
@@ -12212,7 +11863,7 @@ Existing Account:`, this._accounts.get(account.id));
       this._updateTable();
     }
     _updateTable() {
-      const data2 = this._data.value;
+      const data2 = this._getAccountRows();
       const columns = this._columns.value;
       this._visibleRows.value = data2;
       this._renderDesktopTable(data2, columns);
@@ -12224,7 +11875,7 @@ Existing Account:`, this._accounts.get(account.id));
       }
       this._updateSelection();
     }
-    _renderDesktopTable(data2, columns) {
+    _renderDesktopTable(accountList, columns) {
       const thead = this.querySelector("thead tr");
       const tbody = this.querySelector("tbody");
       if (!thead || !tbody)
@@ -12250,19 +11901,19 @@ Existing Account:`, this._accounts.get(account.id));
         thead.appendChild(th);
       });
       tbody.innerHTML = "";
-      data2.forEach((row) => {
-        console.debug("Rendering row:", row);
+      accountList.forEach((account) => {
+        console.debug("Rendering row:", account);
         const tr = document.createElement("tr");
         tr.setAttribute("role", "row");
         tr.className = "border-t border-gray-100";
-        if (row.isModified()) {
+        if (account.migrationStatus === AccountMigrationStatus.COMPLETED) {
           tr.classList.add("bg-amber-50", "border-l-4", "border-l-amber-300");
         }
-        tr.dataset.rowId = this._getRowId(row);
+        tr.dataset.rowId = this._getRowId(account);
         columns.forEach((col) => {
           const td = document.createElement("td");
           td.className = col.cellClass || "px-3 sm:px-4 py-3 sm:py-4";
-          this._renderCell(td, col, row);
+          this._renderCell(td, col, account);
           tr.appendChild(td);
         });
         tbody.appendChild(tr);
@@ -12276,7 +11927,7 @@ Existing Account:`, this._accounts.get(account.id));
       data2.forEach((row) => {
         const card = document.createElement("div");
         card.className = "mobile-card overflow-hidden";
-        if (row.isModified()) {
+        if (row.migrationStatus === AccountMigrationStatus.COMPLETED) {
           card.classList.add("bg-amber-50", "border-l-4", "border-l-amber-300");
         } else {
           card.classList.add("bg-white", "border", "border-gray-100");
@@ -12585,11 +12236,17 @@ Existing Account:`, this._accounts.get(account.id));
     _getRowId(row) {
       return String(row[this._rowIdKey] || row.id || JSON.stringify(row));
     }
+    _getAccountRows() {
+      if (this._data.value instanceof Accounts) {
+        return this._data.value.accounts;
+      }
+      return Array.isArray(this._data.value) ? this._data.value : [];
+    }
     set data(value) {
-      this._data.value = Array.isArray(value) ? value : [];
+      this._data.value = Accounts.from(value);
     }
     get data() {
-      return this._data.value;
+      return this._getAccountRows();
     }
     set columns(value) {
       this._columns.value = Array.isArray(value) ? value : [];
@@ -12624,7 +12281,7 @@ Existing Account:`, this._accounts.get(account.id));
     }
     updateRow(rowId) {
       console.group(`Updating row with ID: ${rowId}`);
-      const data2 = this._data.value;
+      const data2 = this._getAccountRows();
       const columns = this._columns.value;
       const row = data2.find((r) => this._getRowId(r) === rowId);
       if (!row) {
@@ -12644,7 +12301,7 @@ Existing Account:`, this._accounts.get(account.id));
     }
     _updateTableRow(tr, row, columns) {
       console.group(`Updating desktop table row for ID: ${this._getRowId(row)}`);
-      const isModified = row.isModified?.() || false;
+      const isModified = row.migrationStatus === AccountMigrationStatus.COMPLETED;
       tr.classList.toggle("bg-amber-50", isModified);
       tr.classList.toggle("border-l-4", isModified);
       tr.classList.toggle("border-l-amber-300", isModified);
@@ -12667,7 +12324,7 @@ Existing Account:`, this._accounts.get(account.id));
     _renderMobileCardContent(card, row, columns) {
       console.group("Rendering mobile card content", { rowId: this._getRowId(row) });
       card.className = "bg-white rounded border border-gray-200 p-3 sm:p-4 space-y-2";
-      if (row.isModified?.()) {
+      if (row.migrationStatus === AccountMigrationStatus.COMPLETED) {
         card.classList.add("bg-amber-50", "border-l-4", "border-l-amber-300");
       }
       card.setAttribute("data-mobile-card-id", this._getRowId(row));
@@ -12693,12 +12350,6 @@ Existing Account:`, this._accounts.get(account.id));
   };
   customElements.define("ui-table", ReusableTable);
 })();
-/* @license
-Papa Parse
-v5.5.2
-https://github.com/mholt/PapaParse
-License: MIT
-*/
 /*!
 
 JSZip v3.10.1 - A JavaScript class for generating and reading zip files

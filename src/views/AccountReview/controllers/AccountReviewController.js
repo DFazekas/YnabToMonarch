@@ -4,7 +4,7 @@
  * Separates UI concerns from data logic
  */
 
-import { navigate, persistState } from '../../../router.js';
+import { navigate } from '../../../router.js';
 import { renderPageLayout } from '../../../components/pageLayout.js';
 import { currencyFormatter } from '../../../utils/format.js';
 import { getAccountTypeByName, getSubtypeByName } from '../../../utils/accountTypeUtils.js';
@@ -15,8 +15,10 @@ import BulkRenameModal from '../modals/BulkRenameModal.js';
 import BulkTypeModal from '../modals/BulkTypeModal.js';
 import NameEditorModal from '../modals/NameEditorModal.js';
 import monarchAccountTypes from '../../../../public/static-data/monarchAccountTypes.json';
-import state from '../../../state.js';
 import { getLogger, setLoggerConfig } from '../../../utils/logger.js';
+import Accounts from '../../../schemas/accounts.js';
+import Account from '../../../schemas/account.js';
+import { AccountMigrationStatus } from '../../../utils/enumAccountMigrationStatus.js';
 
 const logger = getLogger('AccountReviewController');
 
@@ -27,7 +29,7 @@ setLoggerConfig({
 export default class AccountReviewController {
   constructor() {
     this.filters = new Filters();
-    this.accounts = state.accounts;
+    this.accounts = new Accounts();
     this.accountsTable = null;
     this.importBtn = null;
     this.searchInput = null;
@@ -41,19 +43,11 @@ export default class AccountReviewController {
   /**
    * Initialize the view
    */
-  async init(data) {
-    logger.group('init', 'Initializing AccountReviewController');
+  async init() {
+    const methodName = 'init';
+    logger.group(methodName, 'Initializing AccountReviewController');
 
-    if (data) {
-      logger.log('init', 'Loaded accounts data for review:', data);
-      await this.accounts.init(data);
-    } else {
-      logger.log('init', 'Using existing Accounts singleton');
-      if (this.accounts.length() === 0) {
-        logger.log('init', 'Loading accounts from IndexedDB');
-        await this.accounts.load();
-      }
-    }
+    await this.accounts.loadFromDb();
 
     this._renderLayout();
     this._cacheElements();
@@ -62,7 +56,7 @@ export default class AccountReviewController {
     this._setupEventListeners();
     this._renderTable(true);
 
-    logger.groupEnd('init');
+    logger.groupEnd(methodName);
   }
 
   /**
@@ -154,7 +148,6 @@ export default class AccountReviewController {
       debounceTimer = setTimeout(() => {
         this.filters.searchQuery = this.searchInput.value.toLowerCase();
         this._renderTable();
-        persistState();
       }, 200);
     });
 
@@ -299,7 +292,8 @@ export default class AccountReviewController {
    * Setup table columns configuration
    */
   _setupTableColumns() {
-    console.group("AccountReviewController._setupTableColumns()");
+    const methodName = '_setupTableColumns';
+    console.group(methodName);
     this.accountsTable.columns = [
       {
         key: 'select',
@@ -309,10 +303,14 @@ export default class AccountReviewController {
         masterCheckbox: true,
         // TODO: Disabled state still have cursor pointer.
         // TODO: On change doesn't show floating action bar.
+        /** Renders the select checkbox for an account.
+         * @param {Account} account - The account object
+         * @return {boolean} Whether the checkbox is disabled
+         */
         disabled: (account) => {
-          logger.group('_setupTableColumns', 'Determining disabled state for select checkbox', { accountId: account.id });
-          const isDisabled = account.isProcessed();
-          logger.groupEnd('_setupTableColumns');
+          logger.group(methodName, 'Determining disabled state for select checkbox', { accountId: account.id });
+          const isDisabled = account.migrationStatus === AccountMigrationStatus.COMPLETED;
+          logger.groupEnd(methodName);
           return isDisabled;
         },
         mobileHidden: true
@@ -323,30 +321,50 @@ export default class AccountReviewController {
         header: 'Account Name',
         minWidth: '200px',
         cellClass: 'px-2 py-2 max-w-[300px]',
+        /** Sets the disabled state for the account name field.
+         * @param {Account} account - The account object
+         * @return {boolean} Whether the field is disabled
+         */
         disabled: (account) => {
-          logger.group('_setupTableColumns', 'Determining disabled state for name', { accountId: account.id });
-          const isDisabled = account.isProcessed();
-          logger.groupEnd('_setupTableColumns');
+          logger.group(methodName, 'Determining disabled state for name', { accountId: account.id });
+          const isDisabled = account.migrationStatus === AccountMigrationStatus.COMPLETED;
+          logger.groupEnd(methodName);
           return isDisabled;
         },
+        /** Sets the clickable state for the account name field.
+         * @param {Account} account - The account object
+         * @return {boolean} Whether the field is clickable
+         */
         clickable: (account) => {
-          logger.group('_setupTableColumns', 'Determining clickable state for name', { accountId: account.id });
-          const isClickable = !account.isProcessed();
-          logger.groupEnd('_setupTableColumns');
+          logger.group(methodName, 'Determining clickable state for name', { accountId: account.id });
+          const isClickable = account.migrationStatus !== AccountMigrationStatus.COMPLETED;
+          logger.groupEnd(methodName);
           return isClickable;
         },
-        getValue: (account) => account.current.name,
+        /** Gets the current name of the account.
+         * @param {Account} account - The account object
+         * @return {string} The account name
+         */
+        getValue: (account) => account.name,
+        /** Gets the tooltip text for the account name field.
+         * @param {Account} account - The account object
+         * @return {string} The tooltip text
+         */
         tooltip: (account) => {
-          logger.group('_setupTableColumns', 'Getting tooltip for name', { accountId: account.id });
-          const tooltip = account.isProcessed() ? account.current.name : `Click to rename '${account.current.name}'`;
-          logger.groupEnd('_setupTableColumns');
+          logger.group(methodName, 'Getting tooltip for name', { accountId: account.id });
+          const tooltip = account.migrationStatus === AccountMigrationStatus.COMPLETED ? account.name : `Click to rename '${account.name}'`;
+          logger.groupEnd(methodName);
           return tooltip;
         },
+        /** Sets the click handler for the account name field.
+         * @param {Account} account - The account object
+         * @return {void}
+         */
         onClick: (account) => {
-          logger.group('_setupTableColumns', 'Handling name click', { accountId: account.id });
-          const isEnabled = !account.isProcessed();
+          logger.group(methodName, 'Handling name click', { accountId: account.id });
+          const isEnabled = account.migrationStatus !== AccountMigrationStatus.COMPLETED;
           if (isEnabled) this._openNameEditor(account);
-          logger.groupEnd('_setupTableColumns');
+          logger.groupEnd(methodName);
         },
         mobileLabel: false,
         mobileClass: 'mb-2'
@@ -356,31 +374,49 @@ export default class AccountReviewController {
         type: 'select',
         header: 'Type',
         minWidth: '150px',
-        getValue: (account) => account.current.type,
+        /** Gets the current account Monarch type.
+         * @param {Account} account - The account object
+         * @return {string} The Monarch account type
+         */
+        getValue: (account) => account.monarchType,
         options: monarchAccountTypes.data.map(type => ({
           value: type.typeName,
           label: type.typeDisplay
         })),
+        /** Sets the disabled state for the account type field.
+         * @param {Account} account - The account object
+         * @return {boolean} Whether the field is disabled
+         */
         disabled: (account) => {
-          logger.group('_setupTableColumns', 'Determining disabled state for type', { accountId: account.id });
-          const isDisabled = account.isProcessed();
-          logger.groupEnd('_setupTableColumns');
+          logger.group(methodName, 'Determining disabled state for type', { accountId: account.id });
+          const isDisabled = account.migrationStatus === AccountMigrationStatus.COMPLETED;
+          logger.groupEnd(methodName);
           return isDisabled;
         },
+        /** Gets the tooltip text for the account type field.
+         * @param {Account} account - The account object
+         * @return {string} The tooltip text
+         */
         tooltip: (account) => {
-          logger.group('_setupTableColumns', 'Getting tooltip for type', { accountId: account.id });
-          const tooltip = getAccountTypeByName(account.current.type)?.typeDisplay || '';
-          logger.groupEnd('_setupTableColumns');
+          logger.group(methodName, 'Getting tooltip for type', { accountId: account.id });
+          const tooltip = getAccountTypeByName(account.monarchType)?.typeDisplay || '';
+          logger.groupEnd(methodName);
           return tooltip;
         },
+        /** Sets the new account type.
+         * @param {Account} account - The account object
+         * @param {string} value - The new account type
+         * @return {Promise<void>}
+         */
         onChange: async (account, value) => {
-          logger.group('_setupTableColumns', 'Handling type change', { accountId: account.id, newType: value });
+          logger.group(methodName, 'Handling type change', { accountId: account.id, newType: value });
           const selectedType = getAccountTypeByName(value);
+          // TODO: Code smell - shouldn't this be a string?
           const newSubtype = selectedType?.subtypes[0]?.name || null;
-          await account.setType(value);
-          await account.setSubtype(newSubtype);
+          account.monarchType = selectedType?.typeName || null;
+          account.monarchSubtype = newSubtype;
           requestAnimationFrame(() => this.accountsTable.updateRow(account.id));
-          logger.groupEnd('_setupTableColumns');
+          logger.groupEnd(methodName);
         },
         mobileLabel: 'Type'
       },
@@ -389,34 +425,55 @@ export default class AccountReviewController {
         type: 'select',
         header: 'Subtype',
         minWidth: '150px',
-        getValue: (account) => account.current.subtype || '',
+        /** Gets the current account Monarch subtype.
+         * @param {Account} account - The account object
+         * @return {string} The Monarch account subtype
+         */
+        getValue: (account) => account.monarchSubtype || '',
+        /** Sets the options for the account Monarch subtype.
+         * @param {Account} account - The account object
+         * @return {Array} The options for the subtype select
+         */
         options: (account) => {
-          logger.group('_setupTableColumns', 'Getting options for subtype', { accountId: account.id });
-          const selectedType = getAccountTypeByName(account.current.type);
+          logger.group(methodName, 'Getting options for subtype', { accountId: account.id });
+          const selectedType = getAccountTypeByName(account.monarchType);
           const options = (selectedType?.subtypes || []).map(sub => ({
             value: sub.name,
             label: sub.display
           }));
-          logger.groupEnd('_setupTableColumns');
+          logger.groupEnd(methodName);
           return options;
         },
+        /** Sets the disabled state for the account Monarch subtype.
+         * @param {Account} account - The account object
+         * @return {boolean} Whether the field is disabled
+         */
         disabled: (account) => {
-          logger.group('_setupTableColumns', 'Determining disabled state for subtype', { accountId: account.id });
-          const isDisabled = account.isProcessed();
-          logger.groupEnd('_setupTableColumns');
+          logger.group(methodName, 'Determining disabled state for subtype', { accountId: account.id });
+          const isDisabled = account.migrationStatus === AccountMigrationStatus.COMPLETED;
+          logger.groupEnd(methodName);
           return isDisabled;
         },
+        /** Gets the tooltip text for the account Monarch subtype.
+         * @param {Account} account - The account object
+         * @return {string} The tooltip text
+         */
         tooltip: (account) => {
-          logger.group('_setupTableColumns', 'Getting tooltip for subtype', { accountId: account.id });
-          const tooltip = getSubtypeByName(account.current.type, account.current.subtype)?.display || '';
-          logger.groupEnd('_setupTableColumns');
+          logger.group(methodName, 'Getting tooltip for subtype', { accountId: account.id });
+          const tooltip = getSubtypeByName(account.monarchType, account.monarchSubtype)?.display || '';
+          logger.groupEnd(methodName);
           return tooltip;
         },
+        /** Handles the change event for the account Monarch subtype.
+         * @param {Account} account - The account object
+         * @param {string} value - The new subtype value
+         * @return {Promise<void>}
+         */
         onChange: async (account, value) => {
-          logger.group('_setupTableColumns', 'Handling subtype change', { accountId: account.id, newSubtype: value });
-          await account.setSubtype(value);
+          logger.group(methodName, 'Handling subtype change', { accountId: account.id, newSubtype: value });
+          account.monarchSubtype = value;
           requestAnimationFrame(() => this.accountsTable.updateRow(account.id));
-          logger.groupEnd('_setupTableColumns');
+          logger.groupEnd(methodName);
         },
         mobileLabel: 'Subtype'
       },
@@ -425,17 +482,29 @@ export default class AccountReviewController {
         type: 'text',
         header: 'Transactions',
         minWidth: '100px',
+        /** Gets the transaction count for the account.
+         * @param {Account} account - The account object
+         * @return {number} The transaction count
+         */
         getValue: (account) => account.transactionCount,
+        /** Gets the tooltip text for the transaction count.
+         * @param {Account} account - The account object
+         * @return {string} The tooltip text
+         */
         tooltip: (account) => {
-          logger.group('_setupTableColumns', 'Getting tooltip for transactionCount', { accountId: account.id });
+          logger.group(methodName, 'Getting tooltip for transactionCount', { accountId: account.id });
           const tooltip = `${account.transactionCount} transaction${account.transactionCount !== 1 ? 's' : ''}`;
-          logger.groupEnd('_setupTableColumns');
+          logger.groupEnd(methodName);
           return tooltip;
         },
+        /** Gets the cell style for the transaction count.
+         * @param {Account} account - The account object
+         * @return {Object} The cell style
+         */
         cellStyle: (account) => {
-          logger.group('_setupTableColumns', 'Determining cellStyle for transactionCount', { accountId: account.id });
-          const style = account.isProcessed() ? { color: '#9ca3af' } : { color: '#727985ff' };
-          logger.groupEnd('_setupTableColumns');
+          logger.group(methodName, 'Determining cellStyle for transactionCount', { accountId: account.id });
+          const style = account.migrationStatus === AccountMigrationStatus.COMPLETED ? { color: '#9ca3af' } : { color: '#727985ff' };
+          logger.groupEnd(methodName);
           return style;
         },
         mobileLabel: 'Txns'
@@ -445,12 +514,24 @@ export default class AccountReviewController {
         type: 'text',
         header: 'Balance',
         minWidth: '120px',
+        /** Gets the formatted balance for the account.
+         * @param {Account} account - The account object
+         * @return {string} The formatted balance
+         */
         getValue: (account) => currencyFormatter.format(account.balance),
+        /** Gets the tooltip text for the balance.
+         * @param {Account} account - The account object
+         * @return {string} The tooltip text
+         */
         tooltip: (account) => `Balance: ${currencyFormatter.format(account.balance)}`,
+        /** Gets the cell style for the balance.
+         * @param {Account} account - The account object
+         * @return {Object} The cell style
+         */
         cellStyle: (account) => {
-          logger.group('_setupTableColumns', 'Determining cellStyle for balance', { accountId: account.id });
-          const style = account.isProcessed() ? { color: '#9ca3af' } : { color: '#727985ff' };
-          logger.groupEnd('_setupTableColumns');
+          logger.group(methodName, 'Determining cellStyle for balance', { accountId: account.id });
+          const style = account.migrationStatus === AccountMigrationStatus.COMPLETED ? { color: '#9ca3af' } : { color: '#727985ff' };
+          logger.groupEnd(methodName);
           return style;
         },
         mobileLabel: 'Balance'
@@ -460,11 +541,15 @@ export default class AccountReviewController {
         type: 'custom',
         header: '',
         width: '50px',
+        /** Renders the undo button for an account.
+         * @param {Account} account - The account object
+         * @returns {HTMLElement} The undo button element
+         */
         render: (account) => {
-          logger.group('_setupTableColumns', 'Rendering \'undo\' button for account', { accountId: account.id });
+          logger.group(methodName, 'Rendering \'undo\' button for account', { accountId: account.id });
           const container = document.createElement('div');
           container.className = 'flex items-center justify-center';
-          if (account.isModified()) {
+          if (account.isModified) {
             const button = document.createElement('button');
             button.className = 'p-1.5 rounded hover:bg-amber-100 transition-colors';
             button.title = 'Undo changes';
@@ -476,7 +561,7 @@ export default class AccountReviewController {
             button.addEventListener('click', () => this._undoRowChanges(account.id));
             container.appendChild(button);
           }
-          logger.groupEnd('_setupTableColumns');
+          logger.groupEnd(methodName);
           return container;
         },
         mobileHidden: true
@@ -487,37 +572,49 @@ export default class AccountReviewController {
         type: 'button',
         header: 'Migrate?',
         minWidth: '100px',
+        /** Renders the included button for an account.
+         * @param {Account} account - The account object
+         * @returns {Object} The button configuration
+         */
         render: (account) => {
-          logger.group('_setupTableColumns', 'Rendering \'included\' button for account', { accountId: account.id });
-          const isProcessed = account.isProcessed();
+          logger.group(methodName, 'Rendering \'included\' button for account', { accountId: account.id });
+          const isProcessed = account.migrationStatus === AccountMigrationStatus.COMPLETED;
           const result = {
             text: isProcessed ? 'Migrated' : (account.included ? 'Included' : 'Excluded'),
             type: 'outline',
             color: isProcessed ? 'grey' : (account.included ? 'green' : 'red'),
             size: 'small',
             disabled: isProcessed,
+            // TODO: Code smell - Shouldn't this expect an account argument?
+            /** Gets the tooltip text for the included button.
+             * @param {Account} account - The account object
+             * @return {string} The tooltip text
+             */
             tooltip: isProcessed
               ? 'This account has already been processed'
               : (account.included ? 'Click to exclude' : 'Click to include'),
-            onClick: async () => {
-              await account.toggleInclusion();
+            /** Toggles the inclusion status of the account.
+             * @param {Account} account - The account object
+             */
+            onClick: (account) => {
+              account.included = !account.included;
               requestAnimationFrame(() => this.accountsTable.updateRow(account.id));
             }
           };
-          logger.groupEnd('_setupTableColumns');
+          logger.groupEnd(methodName);
           return result;
         },
         mobileLabel: 'Migrate'
       }
     ];
-    console.groupEnd();
+    console.groupEnd(methodName);
   }
 
   /**
    * Render the accounts table
    * @param {boolean} skipSync - Skip IndexedDB sync if data is already fresh
    */
-  async _renderTable(skipSync = false) {
+  async _renderTable() {
     logger.group('_renderTable', 'AccountReviewController._renderTable()');
 
     const visibleAccounts = this.accounts.getVisible(this.filters);

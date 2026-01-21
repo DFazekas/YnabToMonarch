@@ -6,7 +6,7 @@ export default function initHomeView() {
   renderPageLayout({
     header: {
       title: 'YNAB to Monarch Migration',
-      description: 'Moving your financial data from YNAB to Monarch made simple and secure. Choose the method that works best for you, and we\'ll guide you through each step.',
+      description: 'Moving your financial data from YNAB to Monarch made simple and secure. We\'ll guide you through each step.',
       containerId: 'pageHeader'
     }
   });

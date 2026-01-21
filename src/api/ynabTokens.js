@@ -14,10 +14,17 @@
  *   const budgets = await ynabApiCall('/budgets');
  */
 
+import { getLogger, setLoggerConfig } from '../utils/logger.js';
+
 const YNAB_API_BASE_URL = 'https://api.ynab.com/v1';
 
 let isRefreshing = false;
 let refreshPromise = null;
+
+const logger = getLogger('YnabTokens');
+setLoggerConfig({
+  namespaces: { 'YnabTokens': false }
+});
 
 /**
  * Exchange authorization code for access/refresh tokens
@@ -27,7 +34,8 @@ let refreshPromise = null;
  * @returns {Promise<boolean>} Success status
  */
 export async function exchangeYnabToken(code) {
-  console.group("exchangeYnabToken");
+  const methodName = "exchangeYnabToken";
+  logger.group(methodName);
   try {
     const response = await fetch('/.netlify/functions/ynabTokenExchange', {
       method: 'POST',
@@ -38,19 +46,19 @@ export async function exchangeYnabToken(code) {
 
     if (!response.ok) {
       const error = await response.json();
-      console.error('Token exchange failed:', error);
-      console.groupEnd();
+      logger.error(methodName, 'Token exchange failed:', error);
+      logger.groupEnd(methodName);
       return false;
     }
 
     const data = await response.json();
-    console.log('✅ YNAB tokens stored in HttpOnly cookies');
+    logger.log(methodName, '✅ YNAB tokens stored in HttpOnly cookies');
     return data.success;
   } catch (error) {
-    console.error('Token exchange error:', error);
+    logger.error(methodName, 'Token exchange error:', error);
     return false;
   } finally {
-    console.groupEnd();
+    logger.groupEnd(methodName);
   }
 }
 
@@ -61,10 +69,13 @@ export async function exchangeYnabToken(code) {
  * @returns {Promise<boolean>} Success status
  */
 async function refreshYnabToken() {
-  console.group("refreshYnabToken");
+  const methodName = "refreshYnabToken";
+  logger.group(methodName);
 
   // Prevent multiple simultaneous refresh attempts
   if (isRefreshing) {
+    logger.debug(methodName, 'Refresh already in progress, waiting for result...');
+    logger.groupEnd(methodName);
     return refreshPromise;
   }
 
@@ -77,23 +88,22 @@ async function refreshYnabToken() {
       });
 
       if (!response.ok) {
-        console.error('Token refresh failed - redirecting to login');
+        logger.error(methodName, 'Token refresh failed - redirecting to login');
         isRefreshing = false;
-        // Redirect to home/login page
-        console.groupEnd();
-        window.location.href = '/';
+        logger.groupEnd(methodName);
+        window.location.href = '/'; // Redirect to home/login page
         return false;
       }
 
       const data = await response.json();
-      console.log('✅ YNAB tokens refreshed');
-      console.groupEnd();
+      logger.log(methodName, '✅ YNAB tokens refreshed');
+      logger.groupEnd(methodName);
       return data.success;
     } catch (error) {
-      console.error('Token refresh error:', error);
+      logger.error(methodName, 'Token refresh error:', error);
       isRefreshing = false;
       window.location.href = '/';
-      console.groupEnd();
+      logger.groupEnd(methodName);
       return false;
     } finally {
       isRefreshing = false;
@@ -101,6 +111,7 @@ async function refreshYnabToken() {
     }
   })();
 
+  logger.groupEnd(methodName);
   return refreshPromise;
 }
 
@@ -116,7 +127,8 @@ async function refreshYnabToken() {
  * @returns {Promise<any>} Response data or null on error
  */
 export async function ynabApiCall(endpoint, options = {}) {
-  console.group(`ynabApiCall: ${endpoint}`);
+  const methodName = "ynabApiCall";
+  logger.group(methodName, `Endpoint: ${endpoint}`);
 
   try {
     // Use a Netlify function proxy to add the Authorization header from HttpOnly cookie
@@ -134,18 +146,20 @@ export async function ynabApiCall(endpoint, options = {}) {
     // Token expired or missing - attempt refresh only if we have a refresh token
     if (response.status === 401) {
       const errorData = await response.json();
-      
+
       // If error message indicates no token (not expired), don't attempt refresh
       if (errorData.error && errorData.error.includes('No access token found')) {
-        console.warn('No YNAB tokens found - user needs to authenticate');
+        logger.warn(methodName, 'No YNAB tokens found - user needs to authenticate');
+        logger.groupEnd(methodName);
         return null;
       }
 
-      console.log('Access token expired, refreshing...');
+      logger.log(methodName, 'Access token expired, refreshing...');
       const refreshed = await refreshYnabToken();
 
       if (!refreshed) {
-        console.error('Token refresh failed');
+        logger.error(methodName, 'Token refresh failed');
+        logger.groupEnd(methodName);
         return null;
       }
 
@@ -162,15 +176,17 @@ export async function ynabApiCall(endpoint, options = {}) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error(`YNAB API error (${endpoint}):`, errorData);
+      logger.error(methodName, `YNAB API error (${endpoint}):`, errorData);
+      logger.groupEnd(methodName);
       throw new Error(`YNAB API request failed: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('✅ Response received');
+    logger.log(methodName, 'Response received');
+    logger.groupEnd(methodName);
     return data;
   } finally {
-    console.groupEnd(`ynabApiCall: ${endpoint}`);
+    logger.groupEnd(methodName);
   }
 }
 
@@ -181,20 +197,21 @@ export async function ynabApiCall(endpoint, options = {}) {
  * @returns {Promise<boolean>} True if authenticated
  */
 export async function isYnabAuthenticated() {
-  console.group("isYnabAuthenticated");
+  const methodName = "isYnabAuthenticated";
+  logger.group(methodName);
   try {
     const result = await ynabApiCall('/user');
     const authenticated = result !== null;
     if (authenticated) {
-      console.log('✅ YNAB authenticated');
+      logger.log(methodName, 'YNAB authenticated');
     } else {
-      console.warn('❌ YNAB not authenticated');
+      logger.warn(methodName, 'YNAB not authenticated');
     }
-    console.groupEnd("isYnabAuthenticated");
+    logger.groupEnd(methodName);
     return authenticated;
   } catch (error) {
-    console.warn('❌ YNAB authentication check failed:', error.message);
-    console.groupEnd("isYnabAuthenticated");
+    logger.warn(methodName, 'YNAB authentication check failed:', error.message);
+    logger.groupEnd(methodName);
     return false;
   }
 }
@@ -204,13 +221,14 @@ export async function isYnabAuthenticated() {
  * Redirects to home page
  */
 export async function logoutYnab() {
-  console.group("logoutYnab");
+  const methodName = "logoutYnab";
+  logger.group(methodName);
 
   // Clear cookies by setting expired cookies
   document.cookie = 'ynab_access_token=; Max-Age=0; Path=/;';
   document.cookie = 'ynab_refresh_token=; Max-Age=0; Path=/;';
 
-  console.log('✅ Logged out from YNAB');
-  console.groupEnd("logoutYnab");
+  logger.log(methodName, 'Logged out from YNAB');
+  logger.groupEnd(methodName);
   window.location.href = '/';
 }

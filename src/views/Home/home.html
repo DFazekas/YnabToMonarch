@@ -19,7 +19,7 @@
       <div class="space-y-4 text-sm text-gray-600">
         <div>
           <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 1: Access Your Data</h4>
-          <p class="text-gray-600 text-sm">Connect your YNAB account or upload your data manually. We'll retrieve your
+          <p class="text-gray-600 text-sm">Connect your YNAB account so we can retrieve your
             budgets, transactions, categories, and accounts.</p>
         </div>
         <div>
@@ -39,7 +39,8 @@
 <!-- Privacy Info -->
 <section class="max-w-3xl mx-auto mb-8">
   <info-banner color="green" icon-type="checkmark" has-border>
-    <strong>Your data stays yours, always:</strong> We never store, sell, or share your financial information. You remain in control of your data from start to finish.
+    <strong>Your data stays yours, always:</strong> We never store, sell, or share your financial information. You
+    remain in control of your data from start to finish.
     <ui-modal slot="action" id="privacyInfoModal">
       <ui-button slot="trigger" data-type="text">
         Learn more about how we protect your privacy
@@ -47,36 +48,43 @@
 
       <h3 slot="title">Privacy is our top priority</h3>
 
-          <div slot="content">
-            <div class="space-y-4 text-sm text-gray-600">
-              <div>
-                <h4 class="text-gray-900 font-semibold mb-1">No Data Collection</h4>
-                <p>We never collect, store, or share your financial data.</p>
-              </div>
-              <div>
-                <h4 class="text-gray-900 font-semibold mb-1">Secure Connections</h4>
-                <p>We use secure, encrypted, and read-only connections when accessing your YNAB data.</p>
-              </div>
-              <div>
-                <h4 class="text-gray-900 font-semibold mb-1">You're in Control</h4>
-                <p>At any point in time you have full control to wipe your data and stop the migration process.</p>
-              </div>
-              <div>
-                <h4 class="text-gray-900 font-semibold mb-1">Open Source & Auditable</h4>
-                <p>Everything is transparent and can be reviewed by security experts. We have nothing to hide because we
-                  keep no copies. See <a href="https://github.com/your-repo" class="text-blue-600 hover:underline">our
-                    source code</a>.</p>
-              </div>
-            </div>
-
-            <div class="mt-6">
-              <info-banner color="green" icon-type="checkmark" has-border>
-                <strong>100% Private:</strong> Your financial data is sensitive, and we treat it that way. You remain the sole owner of every byte.
-              </info-banner>
-            </div>
+      <div slot="content">
+        <div class="space-y-4 text-sm text-gray-600">
+          <div>
+            <h4 class="text-gray-900 font-semibold mb-1">No Data Collection</h4>
+            <p>We never collect, store, or share your financial data.</p>
           </div>
-      </ui-modal>
-    </info-banner>
-</section>      </ui-modal>
+          <div>
+            <h4 class="text-gray-900 font-semibold mb-1">Secure Connections</h4>
+            <p>We use secure, encrypted, and read-only connections when accessing your YNAB data.</p>
+          </div>
+          <div>
+            <h4 class="text-gray-900 font-semibold mb-1">You're in Control</h4>
+            <p>At any point in time you have full control to wipe your data and stop the migration process.</p>
+          </div>
+          <div>
+            <h4 class="text-gray-900 font-semibold mb-1">Open Source & Auditable</h4>
+            <p>Everything is transparent and can be reviewed by security experts. We have nothing to hide because we
+              keep no copies. See <a href="https://github.com/your-repo" class="text-blue-600 hover:underline">our
+                source code</a>.</p>
+          </div>
+        </div>
+
+        <div class="mt-6">
+          <info-banner color="green" icon-type="checkmark" has-border>
+            <strong>100% Private:</strong> Your financial data is sensitive, and we treat it that way. You remain the
+            sole owner of every byte.
+          </info-banner>
+        </div>
+      </div>
+    </ui-modal>
+  </info-banner>
+</section>
+
+<!-- FAQ -->
+<section class="max-w-3xl mx-auto mb-8">
+  <info-banner color="gray" icon-type="info" has-border>
+    <strong>Have Questions?</strong> Take a look at our <a href="/faq" class="text-blue-600 hover:underline">FAQ</a> for more
+    information about the migration process, supported data, and more.
   </info-banner>
 </section>

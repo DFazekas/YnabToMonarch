@@ -14,23 +14,11 @@
 
 <body class="bg-white text-[#111518] font-inter min-h-screen flex flex-col">
 
-  <!-- App Header -->
-  <header class="border-b border-[#f0f3f4] py-3 sm:py-4 md:py-5 px-3 sm:px-6 lg:px-8 bg-white sticky top-0 z-40">
-    <div class="flex items-center justify-between max-w-7xl mx-auto">
-      <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-        <div class="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-[#005B96] flex-shrink-0">
-          <svg viewBox="0 0 48 48" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-            <path d="M4 4H17.3334V17.3334H30.6666V30.6666H44V44H4V4Z" />
-          </svg>
-        </div>
-        <h1 class="font-bold text-sm sm:text-base md:text-lg truncate">YNAB to Monarch Money</h1>
-      </div>
-      <a href="/" class="text-blue-600 hover:text-blue-800 text-sm font-medium">← Back to App</a>
-    </div>
-  </header>
+  <div data-layout-root data-subpage="true" class="flex flex-col flex-1">
+    <div data-navbar></div>
 
-  <!-- Main Content -->
-  <main class="flex-1 px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <!-- Main Content -->
+    <main class="flex-1 px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
     <div class="max-w-4xl mx-auto">
       <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6 sm:p-8">
         
@@ -216,48 +204,12 @@
 
         </div>
       </div>
-    </div>
-  </main>
+    </main>
 
-  <!-- App Footer Component -->
-  <!-- This footer should be consistent across all pages -->
-  <footer class="border-t border-[#f0f3f4] py-3 sm:py-4 px-3 sm:px-6 lg:px-8 text-xs sm:text-sm bg-white">
-    <div class="max-w-7xl mx-auto">
-      <!-- Main Footer Content -->
-      <div class="flex flex-col sm:flex-row justify-between items-center gap-2 mb-3">
-        <span class="text-center sm:text-left">© 2025 Fazekas Solutions</span>
-        <div class="flex gap-4 text-center sm:text-right">
-          <a href="/privacy.html" class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200">
-            Privacy Policy
-          </a>
-          <a href="/terms.html" class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200">
-            Terms of Service
-          </a>
-          <a href="/support.html" class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200">
-            Support
-          </a>
-          <a href="https://github.com/DFazekas/YnabToMonarch" 
-             class="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200" 
-             target="_blank" rel="noopener noreferrer">
-            GitHub
-          </a>
-        </div>
-      </div>
-      
-      <!-- YNAB and Monarch Money Disclaimers (Required by API Terms) -->
-      <div class="text-center text-gray-500 text-xs border-t border-gray-100 pt-3">
-        <p class="mb-2">
-          We are not affiliated, associated, or in any way officially connected with YNAB or any of its subsidiaries or affiliates. 
-          The official YNAB website can be found at <a href="https://www.ynab.com" class="text-blue-600 hover:text-blue-800 hover:underline" target="_blank" rel="noopener noreferrer">https://www.ynab.com</a>.
-          The names YNAB and You Need A Budget, as well as related names, tradenames, marks, trademarks, emblems, and images are registered trademarks of YNAB.
-        </p>
-        <p>
-          We are not affiliated, associated, or in any way officially connected with Monarch Money or any of its subsidiaries or affiliates. 
-          The official Monarch Money website can be found at <a href="https://www.monarchmoney.com" class="text-blue-600 hover:text-blue-800 hover:underline" target="_blank" rel="noopener noreferrer">https://www.monarchmoney.com</a>.
-        </p>
-      </div>
-    </div>
-  </footer>
+    <div data-footer></div>
+  </div>
+
+  <script src="/layout.js" defer></script>
 
 </body>
 </html>

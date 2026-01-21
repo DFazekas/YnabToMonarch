@@ -3,9 +3,9 @@
   "generatedBy": "tools/fetchMonarchAccountTypes.js",
   "data": [
     {
-      "typeName": "depository",
-      "typeDisplay": "Cash",
       "group": "asset",
+      "typeDisplay": "Cash",
+      "typeName": "depository",
       "subtypes": [
         {
           "name": "cd",

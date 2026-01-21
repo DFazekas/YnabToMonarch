@@ -12,6 +12,10 @@
  *   const accounts = await db.getAccounts();
  */
 
+import Account from '../schemas/account.js';
+import Accounts from '../schemas/accounts.js';
+import Transaction from '../schemas/transaction.js';
+
 const DB_NAME = 'YnabToMonarchDB';
 const DB_VERSION = 2;
 
@@ -117,19 +121,25 @@ class FinancialDataDB {
 
   /**
    * Save all accounts to IndexedDB
-   * @param {Object} accountsData - Accounts object with account IDs as keys
+   * @param {Accounts} accountsData - Accounts object with account IDs as keys
    * @returns {Promise<void>}
    */
   async saveAccounts(accountsData) {
     console.group('saveAccounts:');
-    
+
+    if (!(accountsData instanceof Accounts)) {
+      console.error('Invalid accountsData provided, expected Accounts instance');
+      console.groupEnd();
+      throw new Error('Invalid accountsData provided, expected Accounts instance');
+    }
+
     if (!isIndexedDBAvailable || !this.db) {
       console.warn('IndexedDB not initialized, skipping save');
       console.groupEnd();
       return;
     }
 
-    console.log(`Saving ${Object.keys(accountsData).length} accounts to IndexedDB`);
+    console.log(`Saving ${accountsData.accounts.length} accounts to IndexedDB`);
 
     return new Promise((resolve, reject) => {
       const tx = this.db.transaction(['accounts', 'transactions'], 'readwrite');
@@ -141,63 +151,36 @@ class FinancialDataDB {
       accountStore.clear();
       txnStore.clear();
 
-      console.log("First entry to save:", accountsData[Object.keys(accountsData)[0]]);
-
       // Save each account and its transactions
-      for (const [accountId, accountData] of Object.entries(accountsData)) {
-        const now = Date.now();
-        console.debug(`Account data for ${accountId}:`, accountData);
-        
-        const transactionIds = [];
-        
-        // Save transactions to transactions store and collect IDs
-        if (accountData.transactions && Array.isArray(accountData.transactions)) {
-          console.log(`Processing ${accountData.transactions.length} transactions for account ${accountId}`);
-          for (const txn of accountData.transactions) {
-            try {
-              const txnToStore = {
-                ...txn,
-                accountId: accountId
-              };
-              console.debug(`Storing transaction:`, txnToStore);
-              txnStore.put(txnToStore);
-              transactionIds.push(txn.id);
-            } catch (e) {
-              console.error(`Error storing transaction for account ${accountId}:`, e);
-            }
+      for (const account of accountsData.accounts) {
+        console.debug(`Account data for '${account.id}':`, account);
+
+        const transactionIds = new Set();
+
+        // Save transactions to Transactions store and collect IDs
+        console.log(`Processing (${account.transactions.length}) transactions for account '${account.id}'`);
+        for (const txn of account.transactions) {
+          try {
+            console.debug(`Storing transaction:`, txn);
+            txnStore.put(txn.toObject());
+            transactionIds.add(txn.id);
+          } catch (e) {
+            console.error(`Error storing transaction for account ${account.id}:`, e);
           }
         }
-        
-        const account = {
-          id: accountId,
-          balance: accountData.balance || 0,
-          included: accountData.included !== undefined ? accountData.included : true,
-          modified: accountData.modified !== undefined ? accountData.modified : false,
-          name: accountData.name,
-          originalName: accountData.originalName || accountData.name,
-          selected: accountData.selected || false,
-          status: accountData.status || 'pending',
-          type: accountData.type,
-          originalType: accountData.originalType || accountData.type,
-          subtype: accountData.subtype,
-          originalSubtype: accountData.originalSubtype || accountData.subtype,
-          transactionIds: transactionIds,
-          lastModified: accountData.lastModified || now,
-          syncedAt: now
-        };
-        
-        console.log(`Saving account '${account.name}' with ID '${accountId}' with ${transactionIds.length} transaction IDs`);
-        accountStore.put(account);
+
+        console.log(`Saving account '${account.name}' with ID '${account.id}' with (${transactionIds.size}) transaction IDs`);
+        accountStore.put(account.toObject());
       }
 
       tx.oncomplete = () => {
-        console.log(`✅ Saved ${Object.keys(accountsData).length} accounts to IndexedDB`);
+        console.log(`Saved (${accountsData.accounts.length}) accounts to IndexedDB.`);
         console.groupEnd();
         resolve();
       };
 
       tx.onerror = () => {
-        console.error('Error saving accounts:', tx.error);
+        console.error('Error saving accounts to IndexedDB:', tx.error);
         console.groupEnd();
         reject(tx.error);
       };
@@ -206,45 +189,47 @@ class FinancialDataDB {
 
   /**
    * Get all accounts with their transactions
-   * @returns {Promise<Object>} Accounts object with account IDs as keys
+   * @returns {Promise<Accounts>} Accounts instance containing Account and Transaction instances
    */
   async getAccounts() {
     console.group('getAccounts:');
     if (!isIndexedDBAvailable || !this.db) {
-      console.warn('IndexedDB not initialized, returning empty');
+      console.warn('IndexedDB not initialized, returning empty Accounts');
       console.groupEnd();
-      return {};
+      throw new Error('IndexedDB not initialized');
     }
 
     return new Promise((resolve, reject) => {
       const tx = this.db.transaction(['accounts', 'transactions'], 'readonly');
       const accountStore = tx.objectStore('accounts');
       const txnStore = tx.objectStore('transactions');
-      const accounts = {};
+      const accountsData = {};
 
       const cursorRequest = accountStore.openCursor();
 
-      cursorRequest.onsuccess = (event) => {
+      cursorRequest.onsuccess = async (event) => {
         const cursor = event.target.result;
-        
+
         if (!cursor) {
-          console.debug(`✅ Retrieved ${Object.keys(accounts).length} accounts from IndexedDB`);
+          console.debug(`✅ Retrieved ${Object.keys(accountsData).length} accounts from IndexedDB`);
+          const accounts = new Accounts();
+          await accounts.init(accountsData);
           console.groupEnd();
           resolve(accounts);
           return;
         }
 
-        const account = cursor.value;
-        const accountId = account.id;
+        const accountData = cursor.value;
+        const accountId = accountData.id;
 
         // Get transactions for this account from transactions store
         const txnIndex = txnStore.index('accountId');
         const txnRequest = txnIndex.getAll(accountId);
 
         txnRequest.onsuccess = () => {
-          const { transactionIds, ...accountData } = account;
-          accounts[accountId] = {
-            ...accountData,
+          const { transactionIds, ...restAccountData } = accountData;
+          accountsData[accountId] = {
+            ...restAccountData,
             transactions: txnRequest.result.map(txn => {
               const { accountId, ...rest } = txn;
               return rest;
@@ -291,7 +276,7 @@ class FinancialDataDB {
 
       getRequest.onsuccess = () => {
         const account = getRequest.result;
-        
+
         if (!account) {
           console.warn(`Account ${accountId} not found`);
           console.groupEnd();
@@ -419,14 +404,14 @@ class FinancialDataDB {
       const tx = this.db.transaction('accounts', 'readonly');
       const store = tx.objectStore('accounts');
       const request = store.count();
-      
+
       request.onsuccess = () => {
         const hasAccounts = request.result > 0;
         console.log(`✅ Database has ${request.result} accounts`);
         console.groupEnd();
         resolve(hasAccounts);
       };
-      
+
       request.onerror = () => {
         console.error('Error checking accounts:', request.error);
         console.groupEnd();
@@ -453,13 +438,13 @@ class FinancialDataDB {
 
     return new Promise((resolve, reject) => {
       console.log(`Updating account ${accountId} with`, updates);
-      
+
       const getRequest = store.get(accountId);
-      
+
       getRequest.onsuccess = () => {
         const current = getRequest.result;
         console.log('Current account data:', current);
-        
+
         if (!current) {
           console.warn(`Account ${accountId} not found`);
           console.groupEnd();
@@ -481,20 +466,20 @@ class FinancialDataDB {
         console.log('Updated account data:', updated);
 
         const putRequest = store.put(updated);
-        
+
         putRequest.onsuccess = () => {
           console.log(`✅ Account ${accountId} updated successfully`);
           console.groupEnd();
           resolve();
         };
-        
+
         putRequest.onerror = () => {
           console.error('Error updating account modification:', putRequest.error);
           console.groupEnd();
           reject(putRequest.error);
         };
       };
-      
+
       getRequest.onerror = () => {
         console.error('Error retrieving account:', getRequest.error);
         console.groupEnd();
@@ -517,7 +502,7 @@ class FinancialDataDB {
 
     return new Promise((resolve, reject) => {
       const tx = this.db.transaction(['accounts', 'transactions'], 'readwrite');
-      
+
       tx.objectStore('accounts').clear();
       tx.objectStore('transactions').clear();
 
@@ -731,31 +716,6 @@ class FinancialDataDB {
   }
 }
 
-// Export singleton instance with lazy initialization
-let financialDBInstance = null;
-
-function getFinancialDB() {
-  if (!financialDBInstance) {
-    financialDBInstance = new FinancialDataDB();
-  }
-  return financialDBInstance;
-}
-
-// Export as default with getter to avoid instantiation at module load
-export default {
-  get init() { return getFinancialDB().init.bind(getFinancialDB()); },
-  get saveAccounts() { return getFinancialDB().saveAccounts.bind(getFinancialDB()); },
-  get getAccounts() { return getFinancialDB().getAccounts.bind(getFinancialDB()); },
-  get getAccount() { return getFinancialDB().getAccount.bind(getFinancialDB()); },
-  get saveTransaction() { return getFinancialDB().saveTransaction.bind(getFinancialDB()); },
-  // get saveAccount() { return getFinancialDB().saveAccount.bind(getFinancialDB()); },
-  get hasAccounts() { return getFinancialDB().hasAccounts.bind(getFinancialDB()); },
-  get clearAccounts() { return getFinancialDB().clearAccounts.bind(getFinancialDB()); },
-  get updateAccountModification() { return getFinancialDB().updateAccountModification.bind(getFinancialDB()); },
-  get saveUploadState() { return getFinancialDB().saveUploadState.bind(getFinancialDB()); },
-  get getUploadStatesByStatus() { return getFinancialDB().getUploadStatesByStatus.bind(getFinancialDB()); },
-  get clearUploadStates() { return getFinancialDB().clearUploadStates.bind(getFinancialDB()); },
-  get saveMetadata() { return getFinancialDB().saveMetadata.bind(getFinancialDB()); },
-  get getMetadata() { return getFinancialDB().getMetadata.bind(getFinancialDB()); },
-  get close() { return getFinancialDB().close.bind(getFinancialDB()); }
-};
+// Export singleton instance - created once on module load
+const db = new FinancialDataDB();
+export default db;

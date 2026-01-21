@@ -1,6 +1,6 @@
-import { handleOauthCallback } from '../../api/ynabApi.js';
+import ynabApi from '../../api/ynabApi.js';
 import { renderPageLayout } from '../../components/pageLayout.js';
-import { navigate, persistState } from '../../router.js';
+import { navigate } from '../../router.js';
 
 export default async function initYnabOauthCallbackView() {
   // Render page layout
@@ -21,16 +21,17 @@ export default async function initYnabOauthCallbackView() {
     statusMessage.innerHTML = 'We\'re fetching your account data now.</br>You should be redirected automatically.';
 
     // Handle OAuth callback (token exchange + fetch accounts)
-    await handleOauthCallback();
+    await ynabApi.handleOauthCallback();
 
+    const accountList = await ynabApi.getAllData();
+    console.log('Fetched accounts after OAuth callback:', accountList);
+    await accountList.saveToDb();
+    
     // Success - hide spinner, show success icon
     loadingSpinner.hidden = true;
     successIcon.hidden = false;
     statusTitle.textContent = 'We got your data!';
     statusMessage.innerHTML = 'Still here? Sorry, sometimes redirections don\'t work.</br>Click the button below to review your data.';
-    
-    // Persist state before redirect
-    persistState();
     
     // Redirect after a short delay to show success state
     setTimeout(() => {

@@ -28,7 +28,8 @@ import ynabOauthCallbackTemplate from './views/YnabOauthCallback/ynabOauthCallba
 import initDataManagementView from './views/DataManagement/dataManagement.js';
 import dataManagementTemplate from './views/DataManagement/dataManagement.html';
 
-import state from './state.js';
+import initFaqView from './views/Faq/faq.js';
+import faqTemplate from './views/Faq/faq.html';
 
 import loadingOverlay from './components/LoadingOverlay.js';
 
@@ -110,11 +111,17 @@ const routes = {
     scroll: true,
     title: 'Data Management - YNAB to Monarch',
     requiresAuth: false
+  },
+  '/faq': {
+    template: faqTemplate,
+    init: initFaqView,
+    scroll: true,
+    title: 'FAQ - YNAB to Monarch',
+    requiresAuth: false
   }
 };
 
 let isNavigating = false;
-let stateLoaded = false;
 
 // Navigation history stack to track visited pages
 const navigationHistory = [];
@@ -135,22 +142,6 @@ export async function navigate(path, replace = false, skipRouteGuards = false) {
       console.error(`Route not found: ${path}`);
       path = '/upload';
       return navigate(path, replace);
-    }
-
-    // Ensure state is loaded before checking route guards
-    if (!stateLoaded) {
-      await loadPersistedState();
-      stateLoaded = true;
-    }
-
-    // Check route guards (skip if explicitly requested)
-    if (!skipRouteGuards && route.requiresAccounts) {
-      const hasAccounts = state.hasAccounts();
-
-      if (!hasAccounts) {
-        console.warn(`Route ${path} requires accounts but none found. Redirecting to upload.`);
-        return navigate('/upload', true);
-      }
     }
 
     // Track navigation history
@@ -198,12 +189,6 @@ async function renderRoute(path) {
   // Set page title
   document.title = route.title;
 
-  // Load state only once on app initialization, not on every route change
-  if (!stateLoaded) {
-    await loadPersistedState();
-    stateLoaded = true;
-  }
-
   // Dynamically control page overflow
   document.body.classList.toggle('always-scroll', route.scroll);
 
@@ -223,48 +208,6 @@ async function renderRoute(path) {
     if (path !== '/upload') {
       navigate('/upload', true);
     }
-  }
-}
-
-export function persistState() {
-  try {
-    // Also persist some state to localStorage for cross-session persistence
-    const persistentState = {
-      lastPath: getCurrentPath(),
-      timestamp: Date.now()
-    };
-
-    localStorage.setItem('app_state', JSON.stringify(persistentState));
-  } catch (error) {
-    console.error('Error persisting state:', error);
-  }
-}
-
-// Enhanced state loading with error recovery
-async function loadPersistedState() {
-  try {
-    // Load Monarch credentials from sessionStorage (not localStorage - see storage strategy)
-    const monarchEmail = sessionStorage.getItem('monarch_email');
-    const monarchPwdEnc = sessionStorage.getItem('monarch_pwd_enc');
-    const monarchToken = sessionStorage.getItem('monarch_token');
-    const monarchUuid = sessionStorage.getItem('monarch_uuid');
-
-    if (monarchEmail || monarchToken) {
-      state.monarchCredentials = {
-        email: monarchEmail || state.monarchCredentials.email,
-        encryptedPassword: monarchPwdEnc || state.monarchCredentials.encryptedPassword,
-        accessToken: monarchToken || state.monarchCredentials.accessToken,
-        uuid: monarchUuid || state.monarchCredentials.uuid,
-        otp: state.monarchCredentials.otp
-      };
-    }
-
-    // Note: YNAB tokens are now in HttpOnly cookies, not accessible here
-    // Note: Financial data is loaded from IndexedDB on the upload page
-
-    console.log('✅ Persisted state loaded');
-  } catch (error) {
-    console.error('Error loading persisted state:', error);
   }
 }
 

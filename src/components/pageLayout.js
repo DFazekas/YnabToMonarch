@@ -48,7 +48,7 @@ export function renderPageLayout(options = {}) {
         <div id="pageHeader" class="min-w-0 mx-auto"></div>
 
         <!-- Page Content Slot -->
-        <div id="pageContent" class="min-w-0 mx-auto"></div>
+        <div id="pageContent" class="min-w-0 mx-auto w-full"></div>
       </div>
     </main>
   `;

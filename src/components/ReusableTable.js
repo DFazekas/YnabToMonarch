@@ -14,6 +14,9 @@
 
 import { signal, computed } from '../core/reactiveState.js';
 import '../components/AutoStyledButton.js';
+import Account from '../schemas/account.js';
+import Accounts from '../schemas/accounts.js';
+import {AccountMigrationStatus} from '../utils/enumAccountMigrationStatus.js';
 
 class ReusableTable extends HTMLElement {
   /**
@@ -23,7 +26,7 @@ class ReusableTable extends HTMLElement {
     super();
 
     // Reactive state
-    this._data = signal([]);
+    this._data = signal(new Accounts());
     this._columns = signal([]);
     this._selectedRows = signal(new Set());
     this._visibleRows = signal([]);
@@ -134,7 +137,7 @@ class ReusableTable extends HTMLElement {
    * Re-renders all rows and sets up event listeners
    */
   _updateTable() {
-    const data = this._data.value;
+    const data = this._getAccountRows();
     const columns = this._columns.value;
 
     // Update visible rows (will be filtered externally)
@@ -159,10 +162,10 @@ class ReusableTable extends HTMLElement {
 
   /**
    * Render the desktop table view with headers and rows
-   * @param {Account[]} data - Array of Account class instances to display
+   * @param {Accounts} accountList - Accounts instance.
    * @param {Array<Object>} columns - Column configuration objects
    */
-  _renderDesktopTable(data, columns) {
+  _renderDesktopTable(accountList, columns) {
     const thead = this.querySelector('thead tr');
     const tbody = this.querySelector('tbody');
 
@@ -193,24 +196,24 @@ class ReusableTable extends HTMLElement {
 
     // Render rows
     tbody.innerHTML = '';
-    data.forEach(row => {
-      console.debug('Rendering row:', row);
+    accountList.forEach(account => {
+      console.debug('Rendering row:', account);
       const tr = document.createElement('tr');
       tr.setAttribute('role', 'row');
       tr.className = 'border-t border-gray-100';
       
       // Subtle visual indicator for modified rows
-      if (row.isModified()) {
+      if (account.migrationStatus === AccountMigrationStatus.COMPLETED) {
         tr.classList.add('bg-amber-50', 'border-l-4', 'border-l-amber-300');
       }
       
-      tr.dataset.rowId = this._getRowId(row);
+      tr.dataset.rowId = this._getRowId(account);
 
       columns.forEach(col => {
         const td = document.createElement('td');
         td.className = col.cellClass || 'px-3 sm:px-4 py-3 sm:py-4';
 
-        this._renderCell(td, col, row);
+        this._renderCell(td, col, account);
         tr.appendChild(td);
       });
 
@@ -234,7 +237,7 @@ class ReusableTable extends HTMLElement {
       card.className = 'mobile-card overflow-hidden';
       
       // Subtle visual indicator for modified rows on mobile
-      if (row.isModified()) {
+      if (row.migrationStatus === AccountMigrationStatus.COMPLETED) {
         card.classList.add('bg-amber-50', 'border-l-4', 'border-l-amber-300');
       } else {
         card.classList.add('bg-white', 'border', 'border-gray-100');
@@ -659,13 +662,20 @@ class ReusableTable extends HTMLElement {
     return String(row[this._rowIdKey] || row.id || JSON.stringify(row));
   }
 
+  _getAccountRows() {
+    if (this._data.value instanceof Accounts) {
+      return this._data.value.accounts;
+    }
+    return Array.isArray(this._data.value) ? this._data.value : [];
+  }
+
   // Public API
   /**
    * Set the table data
    * @param {Array} value - Array of data objects to display
    */
   set data(value) {
-    this._data.value = Array.isArray(value) ? value : [];
+    this._data.value = Accounts.from(value);
   }
 
   /**
@@ -673,7 +683,7 @@ class ReusableTable extends HTMLElement {
    * @returns {Array} Array of data objects
    */
   get data() {
-    return this._data.value;
+    return this._getAccountRows();
   }
 
   /**
@@ -746,7 +756,7 @@ class ReusableTable extends HTMLElement {
    */
   updateRow(rowId) {
     console.group(`Updating row with ID: ${rowId}`);
-    const data = this._data.value;
+    const data = this._getAccountRows();
     const columns = this._columns.value;
     const row = data.find(r => this._getRowId(r) === rowId);
 
@@ -773,11 +783,14 @@ class ReusableTable extends HTMLElement {
 
   /**
    * Update cells in a desktop table row
+   * @param {HTMLElement} tr - The table row element to update
+   * @param {Account} row - The account instance.
+   * @param {Array<Object>} columns - Column configuration objects
    */
   _updateTableRow(tr, row, columns) {
     console.group(`Updating desktop table row for ID: ${this._getRowId(row)}`);
     // Update visual indicator for modified rows
-    const isModified = row.isModified?.() || false;
+    const isModified = row.migrationStatus === AccountMigrationStatus.COMPLETED;
     tr.classList.toggle('bg-amber-50', isModified);
     tr.classList.toggle('border-l-4', isModified);
     tr.classList.toggle('border-l-amber-300', isModified);
@@ -795,7 +808,10 @@ class ReusableTable extends HTMLElement {
   }
 
   /**
-   * Update a mobile card
+   * Update a mobile card.
+   * @param {HTMLElement} card - The card container element
+   * @param {Account} row - The account instance.
+   * @param {Array<Object>} columns - Column configuration objects
    */
   _updateMobileCard(card, row, columns) {
     console.group(`Updating mobile card for ID: ${this._getRowId(row)}`);
@@ -807,13 +823,13 @@ class ReusableTable extends HTMLElement {
   /**
    * Render the content of a mobile card
    * @param {HTMLElement} card - The card container element
-   * @param {Object} row - The data row object
+   * @param {Account} row - The account instance.
    * @param {Array<Object>} columns - Column configuration objects
    */
   _renderMobileCardContent(card, row, columns) {
     console.group("Rendering mobile card content", { rowId: this._getRowId(row) });
     card.className = 'bg-white rounded border border-gray-200 p-3 sm:p-4 space-y-2';
-    if (row.isModified?.()) {
+    if (row.migrationStatus === AccountMigrationStatus.COMPLETED) {
       card.classList.add('bg-amber-50', 'border-l-4', 'border-l-amber-300');
     }
     card.setAttribute('data-mobile-card-id', this._getRowId(row));
