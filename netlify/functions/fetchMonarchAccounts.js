@@ -22,7 +22,7 @@ module.exports.handler = async (event, context) => {
       }
     }
 
-    const response = await fetch('https://api.monarchmoney.com/graphql', {
+    const response = await fetch('https://api.monarch.com/graphql', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
