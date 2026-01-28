@@ -26,7 +26,7 @@ This is an independent, community-created tool designed to help users transfer t
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v14 or later)
+- [Node.js](https://nodejs.org/) v20.19.0 (use `.nvmrc` to pin locally)
 - [npm](https://www.npmjs.com/)
 
 ### Installation
@@ -38,14 +38,21 @@ This is an independent, community-created tool designed to help users transfer t
    cd ynabtomonarch
    ```
 
-2. Install dependencies:
+2. Match the required Node version:
+
+   ```sh
+   nvm install
+   nvm use
+   ```
+
+3. Install dependencies:
 
    ```sh
    npm install
    ```
 
-3. Run the cloud functions locally: `npm run functions`.
-4. Run the website locally: `npm run website`.
+4. Run the cloud functions locally: `npm run functions`.
+5. Run the website locally: `npm run website`.
 
 ## Usage
 

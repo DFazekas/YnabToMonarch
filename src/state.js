@@ -9,11 +9,6 @@ class StorageManager {
       uuid: null,
       otp: null,
     };
-    this.ynabCredentials = {
-      accessToken: null,
-      refreshToken: null,
-      tokenExpiresAt: null,
-    };
     this.history = [];
     this.userPreferences = {};
   }
@@ -63,9 +58,9 @@ const State = new StorageManager();
 export default State;
 
 /** TODOS
- * YNAB OAuth Tokens: 
- *   - Cookies (HttpOnly)
- *   - use `sessionStorage` if JS needs access.
+ * YNAB OAuth Tokens:
+ *   - Managed via HttpOnly cookies only; never expose to sessionStorage/localStorage
+ *   - Use /.netlify/functions/ynabAuthStatus to check auth state from the client
  * Financial data -> IndexedDB
  * - Edits -> IndexedDB + sessionStorage backup
  *   - Periodically persist to IndexedDB

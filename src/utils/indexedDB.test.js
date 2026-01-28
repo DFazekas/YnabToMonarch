@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+let Accounts;
+let Account;
+let Transaction;
+
 describe('FinancialDataDB', () => {
   let mockIDBDatabase;
   let mockTransaction;
@@ -7,9 +11,8 @@ describe('FinancialDataDB', () => {
   let mockIndex;
   let mockOpenRequest;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.resetModules();
-    
     mockIndex = {
       getAll: vi.fn()
     };
@@ -49,6 +52,10 @@ describe('FinancialDataDB', () => {
     global.indexedDB = {
       open: vi.fn(() => mockOpenRequest)
     };
+
+    ({ default: Accounts } = await import('../schemas/accounts.js'));
+    ({ default: Account } = await import('../schemas/account.js'));
+    ({ default: Transaction } = await import('../schemas/transaction.js'));
   });
 
   describe('init', () => {
@@ -82,21 +89,20 @@ describe('FinancialDataDB', () => {
   describe('saveAccounts', () => {
     it('saves accounts with transactions', async () => {
       const FinancialDataDB = (await import('./indexedDB.js')).default;
-      
+
       const initPromise = FinancialDataDB.init();
       mockOpenRequest.onsuccess?.();
       await initPromise;
 
-      const accountsData = {
-        'acc1': {
-          name: 'Checking',
-          type: 'checking',
-          balance: 1000,
-          transactions: [{ id: 'txn1', amount: 100 }]
-        }
-      };
+      const accounts = new Accounts();
+      const account = new Account('acc1');
+      account.name = 'Checking';
+      const txn = new Transaction('txn1');
+      txn.accountId = 'acc1';
+      account.transactions = [txn];
+      accounts.add(account);
 
-      const savePromise = FinancialDataDB.saveAccounts(accountsData);
+      const savePromise = FinancialDataDB.saveAccounts(accounts);
       mockTransaction.oncomplete?.();
       await savePromise;
 

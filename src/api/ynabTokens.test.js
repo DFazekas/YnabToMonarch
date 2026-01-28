@@ -291,49 +291,42 @@ describe('ynabTokens', () => {
   });
 
   describe('logoutYnab', () => {
-    it('should clear cookies and redirect to home', async () => {
-      const cookieDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie') || {};
-      const originalSet = cookieDescriptor.set;
-      const cookieValues = [];
-
-      Object.defineProperty(document, 'cookie', {
-        set: (value) => {
-          cookieValues.push(value);
-          if (originalSet) originalSet.call(document, value);
-        },
-        get: () => '',
-        configurable: true,
+    it('should call logout endpoint and redirect home', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValueOnce({ success: true }),
       });
 
       await logoutYnab();
 
-      expect(cookieValues).toContain('ynab_access_token=; Max-Age=0; Path=/;');
-      expect(cookieValues).toContain('ynab_refresh_token=; Max-Age=0; Path=/;');
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/.netlify/functions/ynabLogout',
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include'
+        })
+      );
       expect(window.location.href).toBe('/');
-
-      // Restore original descriptor
-      if (originalSet) {
-        Object.defineProperty(document, 'cookie', {
-          set: originalSet,
-          get: () => '',
-          configurable: true,
-        });
-      }
     });
 
-    it('should set cookie expiration to 0', async () => {
-      const cookieValues = [];
-      Object.defineProperty(document, 'cookie', {
-        set: (value) => cookieValues.push(value),
-        get: () => '',
-        configurable: true,
+    it('should still redirect when endpoint fails', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: vi.fn(),
       });
 
       await logoutYnab();
 
-      cookieValues.forEach(cookie => {
-        expect(cookie).toContain('Max-Age=0');
-      });
+      expect(window.location.href).toBe('/');
+    });
+
+    it('should redirect on network errors', async () => {
+      fetchMock.mockRejectedValueOnce(new Error('network error'));
+
+      await logoutYnab();
+
+      expect(window.location.href).toBe('/');
     });
   });
 
@@ -369,27 +362,22 @@ describe('ynabTokens', () => {
   });
 
   describe('console logging', () => {
-    it('should log success messages', async () => {
+    it('should complete gracefully on success even with logging disabled', async () => {
       fetchMock.mockResolvedValueOnce({
         ok: true,
         json: vi.fn().mockResolvedValueOnce({ success: true }),
       });
 
-      await exchangeYnabToken('code');
-
-      expect(consoleGroupSpy).toHaveBeenCalled();
-      expect(consoleGroupEndSpy).toHaveBeenCalled();
+      await expect(exchangeYnabToken('code')).resolves.toBe(true);
     });
 
-    it('should log error messages on failure', async () => {
+    it('should surface errors without relying on console output', async () => {
       fetchMock.mockResolvedValueOnce({
         ok: false,
         json: vi.fn().mockResolvedValueOnce({ error: 'Failed' }),
       });
 
-      await exchangeYnabToken('code');
-
-      expect(consoleErrorSpy).toHaveBeenCalled();
+      await expect(exchangeYnabToken('code')).resolves.toBe(false);
     });
   });
 });

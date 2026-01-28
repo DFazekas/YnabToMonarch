@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import parseCurrencyToCents from './currency.js';
+import { parseCurrencyToCents } from './currency.js';
 
 describe('parseCurrencyToCents', () => {
   describe('valid currency formats', () => {

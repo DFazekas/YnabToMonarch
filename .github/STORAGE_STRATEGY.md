@@ -44,6 +44,7 @@ This document defines where and how different types of data are stored in the Yn
 - **Set:** `netlify/functions/ynabTokenExchange.cjs` (initial OAuth exchange)
 - **Set:** `netlify/functions/ynabTokenRefresh.cjs` (token refresh)
 - **Read:** `netlify/functions/ynabProxy.cjs` (extracts token for YNAB API calls)
+- **Verify:** `netlify/functions/ynabAuthStatus.cjs` (reports cookie presence to the frontend without exposing tokens)
 - **Client:** `src/api/ynabTokens.js` (manages refresh lifecycle)
 
 #### Security Notes
@@ -192,6 +193,7 @@ This allows the same code to run in both browser and Node.js environments withou
 - Passwords encrypted with AES-GCM using email as key material
 - No sensitive data remains if browser crashes or is force-killed
 - Protects against malicious code in other tabs (sessionStorage is same-origin)
+- YNAB tokens are never written here; clients call `/.netlify/functions/ynabAuthStatus` when auth state is needed
 
 #### Encryption Mechanism
 

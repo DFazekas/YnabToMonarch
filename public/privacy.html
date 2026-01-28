@@ -23,7 +23,7 @@
       <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6 sm:p-8">
         
         <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
-        <p class="text-gray-600 mb-8">Last Updated: August 2, 2025</p>
+        <p class="text-gray-600 mb-8">Last Updated: January 28, 2026</p>
 
         <div class="prose prose-gray max-w-none">
           
@@ -58,8 +58,9 @@
           </p>
           <ul class="list-disc pl-6 mb-4">
             <li><strong>Primary Purpose:</strong> To transfer your transaction history, account information, and budget data from YNAB to Monarch Money as requested by you.</li>
-            <li><strong>Secondary Purpose:</strong> To provide you with preview capabilities and account mapping tools to ensure accurate data transfer.</li>
-            <li><strong>No Other Uses:</strong> We do not use your data for any other purposes including analytics, marketing, advertising, or any commercial purposes beyond the core functionality described above.</li>
+            <li><strong>Secondary Purpose:</strong> To provide you with preview capabilities, account mapping tools, and migration status messaging to ensure accurate data transfer.</li>
+            <li><strong>Token Management:</strong> We store YNAB-issued OAuth access and refresh tokens in secure HttpOnly cookies so we can make the YNAB API calls you request; these tokens are never shared with third parties and expire automatically (access tokens in ~1 hour, refresh tokens in up to 12 months).</li>
+            <li><strong>No Other Uses:</strong> We do not use your data for analytics, marketing, advertising, or any other commercial purposes beyond the core functionality described above.</li>
           </ul>
 
           <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4">3. Data Collection and Handling</h2>
@@ -76,9 +77,9 @@
           <h3 class="text-lg font-medium text-gray-800 mt-6 mb-3">How We Handle Your Data</h3>
           <ul class="list-disc pl-6 mb-4">
             <li><strong>Secure Processing:</strong> All data is processed securely using industry-standard encryption both in transit and at rest</li>
-            <li><strong>Client-Side Processing:</strong> Your financial data is processed entirely within your browser - we do not store any data on our servers</li>
-            <li><strong>Local Storage Only:</strong> All application data is stored locally in your browser's localStorage and sessionStorage</li>
-            <li><strong>No Server Storage:</strong> We do not have any permanent or temporary server-side storage of your financial data, transaction history, or account information</li>
+            <li><strong>Browser Processing:</strong> Budget, account, and transaction content stays in your browser memory/localStorage/sessionStorage and is never written to our databases because we do not operate any</li>
+            <li><strong>Token Storage Only:</strong> The only data persisted outside your browser is the YNAB OAuth access/refresh tokens, which live in encrypted HttpOnly cookies on our Netlify functions solely so we can call the YNAB API on your behalf</li>
+            <li><strong>Short-Lived Access Tokens:</strong> Access tokens automatically expire after approximately one hour; refresh tokens can be valid for up to one year but can be revoked at any time</li>
             <li><strong>Browser-Based Session:</strong> Session data is stored in your browser only and is automatically cleared when you complete the transfer, close the browser tab, or clear your browser data</li>
           </ul>
 
@@ -103,18 +104,21 @@
 
           <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4">5. Data Storage and Management</h2>
           <ul class="list-disc pl-6 mb-4">
-            <li><strong>Local Storage Only:</strong> All data is stored exclusively in your browser's local storage - no server-side storage exists</li>
+            <li><strong>Browser Storage:</strong> Budget, account, and transaction payloads are stored exclusively in your browser's localStorage/sessionStorage and are never uploaded to our servers</li>
             <li><strong>Session Data:</strong> Temporary transfer data is stored in browser sessionStorage and automatically cleared when you close the browser tab</li>
-            <li><strong>User Control:</strong> You have complete control over your data and can clear it anytime by clearing your browser data or using browser developer tools</li>
-            <li><strong>No Deletion Requests Needed:</strong> Since we don't store any data on our servers, there's nothing for us to delete - all data management is handled locally by your browser</li>
+            <li><strong>Token Cookies:</strong> YNAB OAuth tokens are stored as HttpOnly Secure cookies managed by our Netlify functions; access tokens expire within one hour and refresh tokens within twelve months unless you revoke them earlier, and the in-app "Log Out" control immediately calls our revoke endpoint to clear both cookies</li>
+            <li><strong>Retention Duration:</strong> Outside of those short-lived cookies, YNAB-derived budget data exists only during your active session and is purged when the transfer completes or when you close the tab</li>
+            <li><strong>User Control:</strong> You have complete control over browser-stored data and can clear it anytime by clearing your browser data or using developer tools</li>
+            <li><strong>Deletion Support:</strong> Use the in-app "Log Out" button to clear cookies instantly or email fazekas.devon@gmail.com to request manual token revocation, cookie invalidation, or written confirmation that all YNAB-derived data has been purged</li>
           </ul>
 
           <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4">6. Your Rights and Controls</h2>
           <ul class="list-disc pl-6 mb-4">
-            <li><strong>Access:</strong> You can request information about what data processing occurs in your browser</li>
-            <li><strong>Local Control:</strong> You have complete control over your data through browser storage management</li>
-            <li><strong>Revocation:</strong> You can revoke access permissions through your YNAB account settings</li>
-            <li><strong>Data Portability:</strong> Since we don't store your data permanently, all your data remains in your original YNAB account</li>
+            <li><strong>Access:</strong> You can request information about what data processing occurs in your browser and what tokens we currently store</li>
+            <li><strong>Local Control:</strong> You have complete control over browser storage via your own device settings</li>
+            <li><strong>Revocation:</strong> Revoke OAuth access directly from your YNAB account or contact us to revoke tokens and invalidate refresh cookies immediately</li>
+            <li><strong>Data Portability:</strong> Since we don't store your budget data, everything remains in your YNAB account unless you export it</li>
+            <li><strong>Deletion Requests:</strong> Trigger the built-in "Log Out" action at any time to erase stored tokens, or email fazekas.devon@gmail.com for manual confirmation and revocation</li>
           </ul>
 
           <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4">7. Security Measures</h2>
@@ -178,6 +182,16 @@
               before using this transfer tool.
             </p>
           </div>
+
+          <h2 class="text-xl font-semibold text-gray-900 mt-8 mb-4">12. YNAB OAuth Compliance</h2>
+          <ul class="list-disc pl-6 mb-4">
+            <li><strong>Minimum Scope Access:</strong> We request only the YNAB OAuth scopes needed to read the budgets, accounts, and transactions that you specifically select for transfer</li>
+            <li><strong>No Credentials Handling:</strong> We never request or store YNAB usernames, passwords, or other financial account credentials beyond the OAuth tokens issued directly by YNAB</li>
+            <li><strong>Policy Availability:</strong> This privacy policy URL is embedded in our OAuth client configuration and prominently displayed inside the application interface</li>
+            <li><strong>Consent for Changes:</strong> If we ever need additional scopes or new categories of YNAB data, we will first update this policy and prompt you to review and re-consent before any access occurs</li>
+            <li><strong>Token Retention Transparency:</strong> Access tokens live in HttpOnly cookies for roughly one hour and refresh tokens for up to one year; either expires sooner if you revoke access or request deletion</li>
+            <li><strong>Data Deletion Support:</strong> Use the in-app "Log Out" control to immediately hit our Netlify revoke endpoint (which expires the cookies) or contact fazekas.devon@gmail.com for manual confirmation</li>
+          </ul>
 
         </div>
       </div>

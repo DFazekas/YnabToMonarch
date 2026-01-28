@@ -216,19 +216,30 @@ export async function isYnabAuthenticated() {
   }
 }
 
-/**
- * Logout by clearing YNAB tokens
- * Redirects to home page
- */
 export async function logoutYnab() {
   const methodName = "logoutYnab";
   logger.group(methodName);
 
-  // Clear cookies by setting expired cookies
-  document.cookie = 'ynab_access_token=; Max-Age=0; Path=/;';
-  document.cookie = 'ynab_refresh_token=; Max-Age=0; Path=/;';
+  try {
+    const response = await fetch('/.netlify/functions/ynabLogout', {
+      method: 'POST',
+      credentials: 'include'
+    });
 
-  logger.log(methodName, 'Logged out from YNAB');
-  logger.groupEnd(methodName);
-  window.location.href = '/';
+    if (!response.ok) {
+      logger.warn(methodName, 'Failed to revoke YNAB tokens', response.status);
+    } else {
+      const data = await response.json().catch(() => ({}));
+      if (data?.success) {
+        logger.log(methodName, 'Logged out from YNAB');
+      } else {
+        logger.warn(methodName, 'Logout endpoint responded without success flag');
+      }
+    }
+  } catch (error) {
+    logger.error(methodName, 'Logout failed:', error);
+  } finally {
+    logger.groupEnd(methodName);
+    window.location.href = '/';
+  }
 }

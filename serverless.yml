@@ -43,3 +43,9 @@ functions:
       - http:
           path: getUploadStatus
           method: post
+  ynabAuthStatus:
+    handler: netlify/functions/ynabAuthStatus.handler
+    events:
+      - http:
+          path: ynabAuthStatus
+          method: get

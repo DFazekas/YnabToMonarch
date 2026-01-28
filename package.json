@@ -51,6 +51,7 @@
     "@vitest/ui": "^4.0.16",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.5",
+    "happy-dom": "^17.6.1",
     "jsdom": "^27.4.0",
     "live-server": "^1.2.2",
     "netlify-cli": "^23.13.0",

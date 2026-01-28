@@ -1,31 +1,69 @@
 import state from '../../state.js';
 import { clearAppState } from '../../router.js';
 
-export function getStateSummary() {
-  const accountCount = state.hasAccounts() ? state.getAccountsSingleton().length() : 0;
-  const hasYnabAuth = !!sessionStorage.getItem('ynab_access_token');
-  const hasMonarchAuth = !!state.credentials?.apiToken;
-  const hasData = accountCount > 0 || hasYnabAuth || hasMonarchAuth;
-  return { accountCount, hasYnabAuth, hasMonarchAuth, hasData };
+const YNAB_AUTH_STATUS_ENDPOINT = '/.netlify/functions/ynabAuthStatus';
+const DEFAULT_YNAB_AUTH_STATUS = Object.freeze({
+  authenticated: false,
+  hasAccessToken: false,
+  hasRefreshToken: false
+});
+
+let ynabAuthStatusCache = null;
+let ynabAuthStatusPromise = null;
+
+async function fetchYnabAuthStatus() {
+  if (ynabAuthStatusCache) {
+    return ynabAuthStatusCache;
+  }
+
+  if (!ynabAuthStatusPromise) {
+    ynabAuthStatusPromise = (async () => {
+      try {
+        const response = await fetch(YNAB_AUTH_STATUS_ENDPOINT, { headers: { 'Cache-Control': 'no-store' } });
+        if (!response.ok) {
+          throw new Error(`Status ${response.status}`);
+        }
+        const payload = await response.json();
+        ynabAuthStatusCache = {
+          authenticated: Boolean(payload.authenticated),
+          hasAccessToken: Boolean(payload.hasAccessToken),
+          hasRefreshToken: Boolean(payload.hasRefreshToken)
+        };
+      } catch (error) {
+        console.warn('Unable to fetch YNAB auth status', error);
+        ynabAuthStatusCache = DEFAULT_YNAB_AUTH_STATUS;
+      } finally {
+        ynabAuthStatusPromise = null;
+      }
+
+      return ynabAuthStatusCache;
+    })();
+  }
+
+  return ynabAuthStatusPromise;
 }
 
-export function getSessionStorageSummary() {
-  const hasYnabToken = !!sessionStorage.getItem('ynab_access_token');
-  const hasYnabRefresh = !!sessionStorage.getItem('ynab_refresh_token');
-  const hasYnabExpiry = !!sessionStorage.getItem('ynab_token_expires_at');
+export async function getStateSummary() {
+  const accountCount = state.hasAccounts() ? state.getAccountsSingleton().length() : 0;
+  const ynabAuth = await fetchYnabAuthStatus();
+  const hasMonarchAuth = !!state.credentials?.apiToken;
+  const hasData = accountCount > 0 || ynabAuth.authenticated || hasMonarchAuth;
+  return { accountCount, hasYnabAuth: ynabAuth.authenticated, hasMonarchAuth, hasData };
+}
+
+export async function getSessionStorageSummary() {
+  const ynabAuth = await fetchYnabAuthStatus();
   const hasYnabAccounts = !!state.getPersistedAccounts();
   const hasMonarchAccounts = !!sessionStorage.getItem('monarch_accounts');
   const hasMonarchToken = !!sessionStorage.getItem('monarch_api_token');
   const hasMonarchUuid = !!sessionStorage.getItem('monarch_device_uuid');
   const hasExpectedState = !!sessionStorage.getItem('ynab_oauth_expected_state');
 
-  const hasAnyData = hasYnabToken || hasYnabRefresh || hasYnabExpiry || hasYnabAccounts ||
-    hasMonarchAccounts || hasMonarchToken || hasMonarchUuid || hasExpectedState;
+  const hasAnyData = hasYnabAccounts || hasMonarchAccounts || hasMonarchToken || hasMonarchUuid ||
+    hasExpectedState || ynabAuth.hasAccessToken || ynabAuth.hasRefreshToken;
 
   return {
-    hasYnabToken,
-    hasYnabRefresh,
-    hasYnabExpiry,
+    ynabAuth,
     hasYnabAccounts,
     hasMonarchAccounts,
     hasMonarchToken,
@@ -55,7 +93,6 @@ export function getLocalStorageSummary() {
   const hasAnyData = hasCredentials || rememberMe || lastPath;
 
   return {
-    localData,
     hasMonarchEmail,
     hasMonarchPassword,
     hasMonarchToken,

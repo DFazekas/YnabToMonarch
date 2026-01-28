@@ -87,120 +87,132 @@ function toggleCollapse(id) {
 /**
  * Display current application state data
  */
-function displayStateData() {
+async function displayStateData() {
   const container = document.getElementById('stateDataSection');
   if (!container) return;
 
-  const { accountCount, monarchCount, hasYnabAuth, hasMonarchAuth, hasData } = getStateSummary(state);
-  if (!hasData) {
-    container.innerHTML = '<p class="text-gray-500 text-sm italic">No application state data</p>';
-    return;
+  try {
+    container.innerHTML = '<p class="text-gray-500 text-sm italic">Loading…</p>';
+    const { accountCount, monarchCount, hasYnabAuth, hasMonarchAuth, hasData } = await getStateSummary();
+    if (!hasData) {
+      container.innerHTML = '<p class="text-gray-500 text-sm italic">No application state data</p>';
+      return;
+    }
+
+    const html = `
+      <div class="space-y-3">
+        <div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <p class="text-sm text-blue-800 font-medium">Data Summary</p>
+        </div>
+        
+        <div class="space-y-2">
+          ${accountCount > 0 ? `
+          <div class="p-3 bg-gray-50 rounded border border-gray-200">
+            <p class="text-sm font-medium text-gray-900">YNAB Data</p>
+            <p class="text-sm text-gray-600 mt-1">
+              ✓ ${accountCount} account${accountCount !== 1 ? 's' : ''} imported
+            </p>
+          </div>
+          ` : ''}
+
+          ${monarchCount > 0 ? `
+          <div class="p-3 bg-gray-50 rounded border border-gray-200">
+            <p class="text-sm font-medium text-gray-900">Monarch Money Data</p>
+            <p class="text-sm text-gray-600 mt-1">
+              ✓ ${monarchCount} account${monarchCount !== 1 ? 's' : ''} synced
+            </p>
+          </div>
+          ` : ''}
+
+          ${hasYnabAuth || hasMonarchAuth ? `
+          <div class="p-3 bg-gray-50 rounded border border-gray-200">
+            <p class="text-sm font-medium text-gray-900">Authentication Status</p>
+            <p class="text-sm text-gray-600 mt-1">
+              ${hasYnabAuth ? 'YNAB: ✓ Connected<br/>' : ''}
+              ${hasMonarchAuth ? 'Monarch: ✓ Connected' : ''}
+            </p>
+          </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Unable to render state data', error);
+    container.innerHTML = '<p class="text-red-500 text-sm">Failed to load application state.</p>';
   }
-
-  const html = `
-    <div class="space-y-3">
-      <div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
-        <p class="text-sm text-blue-800 font-medium">Data Summary</p>
-      </div>
-      
-      <div class="space-y-2">
-        ${accountCount > 0 ? `
-        <div class="p-3 bg-gray-50 rounded border border-gray-200">
-          <p class="text-sm font-medium text-gray-900">YNAB Data</p>
-          <p class="text-sm text-gray-600 mt-1">
-            ✓ ${accountCount} account${accountCount !== 1 ? 's' : ''} imported
-          </p>
-        </div>
-        ` : ''}
-
-        ${monarchCount > 0 ? `
-        <div class="p-3 bg-gray-50 rounded border border-gray-200">
-          <p class="text-sm font-medium text-gray-900">Monarch Money Data</p>
-          <p class="text-sm text-gray-600 mt-1">
-            ✓ ${monarchCount} account${monarchCount !== 1 ? 's' : ''} synced
-          </p>
-        </div>
-        ` : ''}
-
-        ${hasYnabAuth || hasMonarchAuth ? `
-        <div class="p-3 bg-gray-50 rounded border border-gray-200">
-          <p class="text-sm font-medium text-gray-900">Authentication Status</p>
-          <p class="text-sm text-gray-600 mt-1">
-            ${hasYnabAuth ? 'YNAB: ✓ Connected<br/>' : ''}
-            ${hasMonarchAuth ? 'Monarch: ✓ Connected' : ''}
-          </p>
-        </div>
-        ` : ''}
-      </div>
-    </div>
-  `;
-  container.innerHTML = html;
 }
 
 /**
  * Display session storage data
  */
-function displaySessionStorageData() {
+async function displaySessionStorageData() {
   const container = document.getElementById('sessionStorageSection');
   if (!container) return;
-  const summary = getSessionStorageSummary();
-  if (!summary.hasAnyData) {
-    container.innerHTML = '<p class="text-gray-500 text-sm italic">No session storage data</p>';
-    return;
+  try {
+    container.innerHTML = '<p class="text-gray-500 text-sm italic">Loading…</p>';
+    const summary = await getSessionStorageSummary();
+    if (!summary.hasAnyData) {
+      container.innerHTML = '<p class="text-gray-500 text-sm italic">No session storage data</p>';
+      return;
+    }
+
+    const html = `
+      <div class="space-y-3">
+        <div class="p-3 bg-purple-50 rounded-lg border border-purple-200">
+          <p class="text-sm text-purple-800 font-medium">Session Data Overview</p>
+          <p class="text-xs text-purple-700 mt-1">Data in session storage is cleared when this tab closes</p>
+        </div>
+
+        <div class="space-y-2">
+          ${(summary.ynabAuth.hasAccessToken || summary.ynabAuth.hasRefreshToken) ? `
+          <div class="p-3 bg-gray-50 rounded border border-gray-200">
+            <p class="text-sm font-medium text-gray-900">YNAB Authentication</p>
+            <p class="text-sm text-gray-600 mt-1">
+              ${summary.ynabAuth.hasAccessToken ? 'Access Token: ✓ Active (HttpOnly cookie)<br/>' : 'Access Token: Not Active<br/>'}
+              ${summary.ynabAuth.hasRefreshToken ? 'Refresh Token: ✓ Active (HttpOnly cookie)' : 'Refresh Token: Not Active'}
+            </p>
+            <p class="text-xs text-gray-500 mt-2">Tokens never enter sessionStorage—they live in secure HttpOnly cookies managed by Netlify Functions.</p>
+          </div>
+          ` : ''}
+
+          ${summary.hasYnabAccounts || summary.hasMonarchAccounts ? `
+          <div class="p-3 bg-gray-50 rounded border border-gray-200">
+            <p class="text-sm font-medium text-gray-900">Account Data</p>
+            <p class="text-sm text-gray-600 mt-1">
+              ${summary.hasYnabAccounts ? 'YNAB Accounts: ✓ Cached<br/>' : ''}
+              ${summary.hasMonarchAccounts ? 'Monarch Accounts: ✓ Cached' : ''}
+            </p>
+          </div>
+          ` : ''}
+
+          ${summary.hasMonarchToken || summary.hasMonarchUuid ? `
+          <div class="p-3 bg-gray-50 rounded border border-gray-200">
+            <p class="text-sm font-medium text-gray-900">Monarch Authentication</p>
+            <p class="text-sm text-gray-600 mt-1">
+              ${summary.hasMonarchToken ? 'API Token: ✓ Stored<br/>' : ''}
+              ${summary.hasMonarchUuid ? 'Device UUID: ✓ Stored' : ''}
+            </p>
+          </div>
+          ` : ''}
+
+          ${summary.hasExpectedState ? `
+          <div class="p-3 bg-gray-50 rounded border border-gray-200">
+            <p class="text-sm font-medium text-gray-900">OAuth Flow</p>
+            <p class="text-sm text-gray-600 mt-1">
+              CSRF Token: ✓ Stored
+            </p>
+          </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Unable to render session storage data', error);
+    container.innerHTML = '<p class="text-red-500 text-sm">Failed to load session storage data.</p>';
   }
-
-  const html = `
-    <div class="space-y-3">
-      <div class="p-3 bg-purple-50 rounded-lg border border-purple-200">
-        <p class="text-sm text-purple-800 font-medium">Session Data Overview</p>
-        <p class="text-xs text-purple-700 mt-1">Data in session storage is cleared when this tab closes</p>
-      </div>
-
-      <div class="space-y-2">
-        ${summary.hasYnabToken || summary.hasYnabRefresh || summary.hasYnabExpiry ? `
-        <div class="p-3 bg-gray-50 rounded border border-gray-200">
-          <p class="text-sm font-medium text-gray-900">YNAB Authentication</p>
-          <p class="text-sm text-gray-600 mt-1">
-            ${summary.hasYnabToken ? 'Access Token: ✓ Stored<br/>' : ''}
-            ${summary.hasYnabRefresh ? 'Refresh Token: ✓ Stored<br/>' : ''}
-            ${summary.hasYnabExpiry ? 'Token Expiry: ✓ Set' : ''}
-          </p>
-        </div>
-        ` : ''}
-
-        ${summary.hasYnabAccounts || summary.hasMonarchAccounts ? `
-        <div class="p-3 bg-gray-50 rounded border border-gray-200">
-          <p class="text-sm font-medium text-gray-900">Account Data</p>
-          <p class="text-sm text-gray-600 mt-1">
-            ${summary.hasYnabAccounts ? 'YNAB Accounts: ✓ Cached<br/>' : ''}
-            ${summary.hasMonarchAccounts ? 'Monarch Accounts: ✓ Cached' : ''}
-          </p>
-        </div>
-        ` : ''}
-
-        ${summary.hasMonarchToken || summary.hasMonarchUuid ? `
-        <div class="p-3 bg-gray-50 rounded border border-gray-200">
-          <p class="text-sm font-medium text-gray-900">Monarch Authentication</p>
-          <p class="text-sm text-gray-600 mt-1">
-            ${summary.hasMonarchToken ? 'API Token: ✓ Stored<br/>' : ''}
-            ${summary.hasMonarchUuid ? 'Device UUID: ✓ Stored' : ''}
-          </p>
-        </div>
-        ` : ''}
-
-        ${summary.hasExpectedState ? `
-        <div class="p-3 bg-gray-50 rounded border border-gray-200">
-          <p class="text-sm font-medium text-gray-900">OAuth Flow</p>
-          <p class="text-sm text-gray-600 mt-1">
-            CSRF Token: ✓ Stored
-          </p>
-        </div>
-        ` : ''}
-      </div>
-    </div>
-  `;
-
-  container.innerHTML = html;
 }
 
 /**
