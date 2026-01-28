@@ -6,7 +6,7 @@ const MONARCH_API_TOKEN = 'cd9ba5e39fd7a23725abb0cb3c5e061eebd70b1716a58587c8980
 const DEVICE_UUID = '57a59b6d-d1c6-449a-9e1c-699c23f9d1bd';
 const OTP = '094376';
 
-const API_URL = 'https://api.monarchmoney.com/graphql';
+const API_URL = 'https://api.monarch.com/graphql';
 const OUTPUT_FILE_PATH = './public/static-data/monarchAccountTypes.json';
 
 async function fetchAccountTypeOptions() {

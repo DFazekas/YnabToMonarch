@@ -49,9 +49,13 @@ export async function handler(event) {
       'Accept': 'application/json',
       'client-platform': 'web',
       'device-uuid': deviceUuid,
+      'monarch-client': 'monarch-core-web-app-rest',
+      'monarch-client-version': 'v1.0.1079',
+      'origin': 'https://app.monarch.com',
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36',
     }
 
-    const response = await fetch('https://api.monarchmoney.com/auth/login/', {
+    const response = await fetch('https://api.monarch.com/auth/login/', {
       method: 'POST',
       headers: headers,
       body: JSON.stringify(body)

@@ -12,8 +12,8 @@ const OTP_CODE = "116401"; // Set to '123456' if you have an OTP code
 // Leave as null to generate a new one (will be displayed for future use)
 const DEVICE_UUID_PROVIDED = "da5bfb56-1cb4-402e-861d-b3c07887119c"; // Set to 'uuid-value' if you have one from previous runs
 
-const API_URL = 'https://api.monarchmoney.com/graphql';
-const LOGIN_URL = 'https://api.monarchmoney.com/auth/login/';
+const API_URL = 'https://api.monarch.com/graphql';
+const LOGIN_URL = 'https://api.monarch.com/auth/login/';
 
 // Generate or use provided device UUID
 const DEVICE_UUID = DEVICE_UUID_PROVIDED || uuidv4();

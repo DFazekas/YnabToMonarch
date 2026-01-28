@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 
-const MONARCH_GRAPHQL_ENDPOINT = 'https://api.monarchmoney.com/graphql';
+const MONARCH_GRAPHQL_ENDPOINT = 'https://api.monarch.com/graphql';
 
 export async function handler(event) {
   console.group("getUploadStatus")

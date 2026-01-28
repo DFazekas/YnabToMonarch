@@ -4,8 +4,8 @@ import { Readable } from 'stream';
 import generateCSV from '../../shared/generateCsv.js';
 
 // Constants for configuration
-const GRAPHQL_ENDPOINT = 'https://api.monarchmoney.com/graphql'
-const STATEMENTS_UPLOAD_URL = 'https://api.monarchmoney.com/statements/upload-async/'
+const GRAPHQL_ENDPOINT = 'https://api.monarch.com/graphql'
+const STATEMENTS_UPLOAD_URL = 'https://api.monarch.com/statements/upload-async/'
 
 export async function handler(event, context) {
   console.group("CreateMonarchAccounts Lambda Handler")
