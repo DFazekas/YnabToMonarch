@@ -21,9 +21,10 @@ import Account from '../../../schemas/account.js';
 import { AccountMigrationStatus } from '../../../utils/enumAccountMigrationStatus.js';
 
 const logger = getLogger('AccountReviewController');
-
 setLoggerConfig({
-  namespaces: { 'AccountReviewController': false }
+  namespaces: { AccountReviewController: true },
+  methods: {},
+  levels: { debug: true, group: true, groupEnd: true },
 });
 
 export default class AccountReviewController {
@@ -33,6 +34,7 @@ export default class AccountReviewController {
     this.accountsTable = null;
     this.importBtn = null;
     this.searchInput = null;
+    this.bulkActionBar = null;
 
     // Modal instances
     this.filtersModal = null;
@@ -46,7 +48,6 @@ export default class AccountReviewController {
   async init() {
     const methodName = 'init';
     logger.group(methodName, 'Initializing AccountReviewController');
-
     await this.accounts.loadFromDb();
 
     this._renderLayout();
@@ -54,7 +55,7 @@ export default class AccountReviewController {
     this._setupTableColumns();
     this._initializeModals();
     this._setupEventListeners();
-    this._renderTable(true);
+    this._renderTable();
 
     logger.groupEnd(methodName);
   }
@@ -94,7 +95,8 @@ export default class AccountReviewController {
       this.accountsTable = document.getElementById('accountsTable');
       this.importBtn = document.getElementById('continueBtn');
       this.searchInput = document.getElementById('searchInput');
-      logger.debug('_cacheElements', `Cached elements: accountsTable=${!!this.accountsTable}, importBtn=${!!this.importBtn}, searchInput=${!!this.searchInput}`);
+      this.bulkActionBar = document.getElementById('bulkActionBar');
+      logger.debug('_cacheElements', `Cached elements: accountsTable=${!!this.accountsTable}, importBtn=${!!this.importBtn}, searchInput=${!!this.searchInput}, bulkActionBar=${!!this.bulkActionBar}`);
       logger.log('_cacheElements', 'DOM elements cached successfully');
     } catch (error) {
       logger.error('_cacheElements', 'Error caching DOM elements:', error);
@@ -171,7 +173,6 @@ export default class AccountReviewController {
     // Undo
     this._setupUndoListeners();
 
-    // Initialize display
     setTimeout(async () => {
       this._updateFilterDisplay();
       const totalAccounts = this.accounts.length();
@@ -255,7 +256,6 @@ export default class AccountReviewController {
     logger.group('_handleTableSelectionChange', 'AccountReviewController._handleTableSelectionChange()', { detail: e.detail });
     try {
       const selectedCount = e.detail.count;
-      const bar = document.getElementById('bulkActionBar');
       logger.log('_handleTableSelectionChange', `Selection changed: ${selectedCount} account(s) selected`);
 
       // Update selection count displays
@@ -271,20 +271,32 @@ export default class AccountReviewController {
       });
       logger.debug('_handleTableSelectionChange', `Account selected states updated: ${e.detail.selectedRows.map(r => r.id).join(', ') || 'none'}`);
 
-      // Update bulk action bar visibility
-      if (selectedCount > 0) {
-        bar.classList.remove('hidden');
-        bar.classList.add('flex');
-        logger.debug('_handleTableSelectionChange', 'Bulk action bar shown');
-      } else {
-        bar.classList.add('hidden');
-        bar.classList.remove('flex');
-        logger.debug('_handleTableSelectionChange', 'Bulk action bar hidden');
-      }
+      this._toggleBulkActionBar(selectedCount > 0);
     } catch (err) {
       logger.error('_handleTableSelectionChange', 'Error handling selection change:', err);
     } finally {
       logger.groupEnd('_handleTableSelectionChange');
+    }
+  }
+
+  _toggleBulkActionBar(isVisible) {
+    if (!this.bulkActionBar) {
+      this.bulkActionBar = document.getElementById('bulkActionBar');
+    }
+
+    if (!this.bulkActionBar) {
+      logger.warn('_toggleBulkActionBar', 'Bulk action bar element not found');
+      return;
+    }
+
+    if (isVisible) {
+      this.bulkActionBar.classList.remove('hidden');
+      this.bulkActionBar.classList.add('flex', 'active');
+      logger.debug('_toggleBulkActionBar', 'Bulk action bar shown');
+    } else {
+      this.bulkActionBar.classList.remove('flex', 'active');
+      this.bulkActionBar.classList.add('hidden');
+      logger.debug('_toggleBulkActionBar', 'Bulk action bar hidden');
     }
   }
 
@@ -345,14 +357,14 @@ export default class AccountReviewController {
          * @param {Account} account - The account object
          * @return {string} The account name
          */
-        getValue: (account) => account.name,
+        getValue: (account) => account.ynabName,
         /** Gets the tooltip text for the account name field.
          * @param {Account} account - The account object
          * @return {string} The tooltip text
          */
         tooltip: (account) => {
           logger.group(methodName, 'Getting tooltip for name', { accountId: account.id });
-          const tooltip = account.migrationStatus === AccountMigrationStatus.COMPLETED ? account.name : `Click to rename '${account.name}'`;
+          const tooltip = account.migrationStatus === AccountMigrationStatus.COMPLETED ? account.ynabName : `Click to rename '${account.ynabName}'`;
           logger.groupEnd(methodName);
           return tooltip;
         },
@@ -596,9 +608,10 @@ export default class AccountReviewController {
             /** Toggles the inclusion status of the account.
              * @param {Account} account - The account object
              */
-            onClick: (account) => {
-              account.included = !account.included;
+            onClick: async () => {
+              await this.accounts.toggleInclusion(account.id);
               requestAnimationFrame(() => this.accountsTable.updateRow(account.id));
+              this._updateMigrationControls();
             }
           };
           logger.groupEnd(methodName);
@@ -616,26 +629,27 @@ export default class AccountReviewController {
    */
   async _renderTable() {
     logger.group('_renderTable', 'AccountReviewController._renderTable()');
-
+    console.warn("Can you see me?")
     const visibleAccounts = this.accounts.getVisible(this.filters);
     logger.debug('_renderTable', 'visible accounts:', visibleAccounts);
 
     this.accountsTable.data = visibleAccounts;
-
-    this._updateAccountCountDisplay(visibleAccounts.length, this.accounts.length());
-
-    const hasIncludedAccounts = this.accounts.getIncludedAndUnprocessed().length > 0;
-    toggleDisabled(this.importBtn, !hasIncludedAccounts);
-    this.importBtn.title = this.importBtn.disabled ? 'At least one account must be included to proceed' : '';
-
-    if (hasIncludedAccounts) {
-      this.importBtn.textContent = `Migrate ${this.accounts.getIncludedAndUnprocessed().length} of ${this.accounts.length()} account${this.accounts.length() !== 1 ? 's' : ''}`;
-    } else {
-      this.importBtn.textContent = 'Continue';
-    }
+    this._updateMigrationControls(visibleAccounts);
 
     this._updateChangesAlert();
     logger.groupEnd('_renderTable');
+  }
+
+  _updateMigrationControls(visibleAccounts = null) {
+    const visible = visibleAccounts ?? this.accounts.getVisible(this.filters);
+    const total = this.accounts.length();
+    this._updateAccountCountDisplay(visible.length, total);
+
+    const includedCount = this.accounts.getIncludedAndUnprocessed().length;
+    const hasIncludedAccounts = includedCount > 0;
+    toggleDisabled(this.importBtn, !hasIncludedAccounts);
+    this.importBtn.title = hasIncludedAccounts ? '' : 'At least one account must be included to proceed';
+    this.importBtn.textContent = `Migrate ${includedCount} of ${total} account${total !== 1 ? 's' : ''}`;
   }
 
   /**
@@ -664,11 +678,15 @@ export default class AccountReviewController {
   async _updateInclusion(include) {
     logger.group('_updateInclusion', 'AccountReviewController._updateInclusion()', { include });
     logger.log('_updateInclusion', `Updating inclusion status to ${include ? 'included' : 'excluded'}`);
-    if (include) {
-      await this.accounts.includeAll();
-    } else {
-      await this.accounts.excludeAll();
+    const selectedAccounts = this.accounts.getSelected();
+
+    if (selectedAccounts.length === 0) {
+      logger.warn('_updateInclusion', 'No accounts selected for bulk inclusion update');
+      logger.groupEnd('_updateInclusion');
+      return;
     }
+
+    await this.accounts.setInclusionFor(selectedAccounts.map(acc => acc.id), include);
     await this._renderTable();
     logger.groupEnd('_updateInclusion');
   }
@@ -676,20 +694,16 @@ export default class AccountReviewController {
   /**
    * Update account selection
    */
-  _updateAccountSelection(shouldSelect) {
-    logger.group('_updateAccountSelection', 'AccountReviewController._updateAccountSelection()', { shouldSelect });
-    try {
-      const action = shouldSelect ? 'selecting' : 'deselecting';
-      logger.log('_updateAccountSelection', `${action.charAt(0).toUpperCase() + action.slice(1)} all ${this.accounts.length()} accounts`);
-      shouldSelect ? this.accounts.selectAll() : this.accounts.deselectAll();
-      logger.debug('_updateAccountSelection', `All accounts now ${shouldSelect ? 'selected' : 'deselected'}`);
-      this._renderTable();
-      logger.log('_updateAccountSelection', 'Account selection updated and table re-rendered');
-    } catch (error) {
-      logger.error('_updateAccountSelection', 'Error updating account selection:', error);
-    } finally {
-      logger.groupEnd('_updateAccountSelection');
+  async _updateAccountSelection(shouldSelect) {
+    if (shouldSelect) {
+      await this.accounts.selectAll();
+      this.accountsTable.selectAll();
+    } else {
+      await this.accounts.deselectAll();
+      this.accountsTable.clearSelection();
     }
+    logger.debug('_updateAccountSelection', `All accounts now ${shouldSelect ? 'selected' : 'deselected'}`);
+    await this._renderTable();
   }
 
   /**

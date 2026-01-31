@@ -25,6 +25,12 @@ import monarchCompleteTemplate from './views/MonarchComplete/monarchComplete.htm
 import initYnabOauthCallbackView from './views/YnabOauthCallback/ynabOauthCallback.js';
 import ynabOauthCallbackTemplate from './views/YnabOauthCallback/ynabOauthCallback.html';
 
+import initYnabAccountSelectView from './views/YnabAccountSelect/ynabAccountSelect.js';
+import ynabAccountSelectTemplate from './views/YnabAccountSelect/ynabAccountSelect.html';
+
+import initAccountMappingView from './views/AccountMapping/accountMapping.js';
+import accountMappingTemplate from './views/AccountMapping/accountMapping.html';
+
 import initDataManagementView from './views/DataManagement/dataManagement.js';
 import dataManagementTemplate from './views/DataManagement/dataManagement.html';
 
@@ -39,16 +45,18 @@ const routes = {
   '/': {
     template: homeTemplate,
     init: initHomeView,
-    scroll: false,
+    scroll: true,
     title: 'Home - YNAB to Monarch',
-    requiresAuth: false
+    requiresAuth: false,
+    layoutType: 'document'
   },
   '/upload': {
     template: uploadTemplate,
     init: initUploadView,
     scroll: false,
     title: 'Upload - YNAB to Monarch',
-    requiresAuth: false
+    requiresAuth: false,
+    layoutType: 'document'
   },
   '/review': {
     template: reviewTemplate,
@@ -56,7 +64,8 @@ const routes = {
     scroll: true,
     title: 'Review Accounts - YNAB to Monarch',
     requiresAuth: false,
-    requiresAccounts: true
+    requiresAccounts: true,
+    layoutType: 'document'
   },
   '/method': {
     template: methodTemplate,
@@ -64,7 +73,8 @@ const routes = {
     scroll: false,
     title: 'Select Method - YNAB to Monarch',
     requiresAuth: false,
-    requiresAccounts: true
+    requiresAccounts: true,
+    layoutType: 'document'
   },
   '/manual': {
     template: manualInstructionsTemplate,
@@ -72,7 +82,8 @@ const routes = {
     scroll: true,
     title: 'Manual Import - YNAB to Monarch',
     requiresAuth: false,
-    requiresAccounts: true
+    requiresAccounts: true,
+    layoutType: 'document'
   },
   '/login': {
     template: monarchCredentialsTemplate,
@@ -80,7 +91,8 @@ const routes = {
     scroll: false,
     title: 'Login to Monarch - YNAB to Monarch',
     requiresAuth: false,
-    requiresAccounts: true
+    requiresAccounts: true,
+    layoutType: 'document'
   },
   '/otp': {
     template: monarchOtpTemplate,
@@ -88,7 +100,8 @@ const routes = {
     scroll: false,
     title: 'Enter OTP - YNAB to Monarch',
     requiresAuth: false,
-    requiresAccounts: true
+    requiresAccounts: true,
+    layoutType: 'document'
   },
   '/complete': {
     template: monarchCompleteTemplate,
@@ -96,28 +109,50 @@ const routes = {
     scroll: false,
     title: 'Migration Complete - YNAB to Monarch',
     requiresAuth: false,
-    requiresAccounts: true
+    requiresAccounts: true,
+    layoutType: 'document'
   },
   '/oauth/ynab/callback': {
     template: ynabOauthCallbackTemplate,
     init: initYnabOauthCallbackView,
     scroll: false,
     title: 'Authorize YNAB - YNAB to Monarch',
-    requiresAuth: false
+    requiresAuth: false,
+    layoutType: 'document'
+  },
+  '/select-accounts': {
+    template: ynabAccountSelectTemplate,
+    init: initYnabAccountSelectView,
+    scroll: false,
+    title: 'Select Accounts - YNAB to Monarch',
+    requiresAuth: false,
+    requiresAccounts: true,
+    layoutType: 'app'
+  },
+  '/map-accounts': {
+    template: accountMappingTemplate,
+    init: initAccountMappingView,
+    scroll: false,
+    title: 'Review Monarch Details - YNAB to Monarch',
+    requiresAuth: false,
+    requiresAccounts: true,
+    layoutType: 'app'
   },
   '/data-management': {
     template: dataManagementTemplate,
     init: initDataManagementView,
     scroll: true,
     title: 'Data Management - YNAB to Monarch',
-    requiresAuth: false
+    requiresAuth: false,
+    layoutType: 'document'
   },
   '/faq': {
     template: faqTemplate,
     init: initFaqView,
     scroll: true,
     title: 'FAQ - YNAB to Monarch',
-    requiresAuth: false
+    requiresAuth: false,
+    layoutType: 'document'
   }
 };
 
@@ -183,6 +218,19 @@ async function renderRoute(path) {
   const app = document.getElementById('app');
   const route = routes[path] || routes['/upload'];
 
+  const layoutType = route.layoutType || 'document';
+  if (typeof window.setLayoutType === 'function') {
+    window.setLayoutType(layoutType);
+  }
+  const layoutRoot = document.querySelector('[data-layout-root]');
+  if (layoutRoot) {
+    layoutRoot.dataset.layoutType = layoutType;
+  }
+  const footerMount = document.querySelector('[data-footer]');
+  if (footerMount) {
+    footerMount.classList.toggle('hidden', layoutType === 'app');
+  }
+
   // Reset loading overlay when navigating to a new route
   loadingOverlay.reset();
 
@@ -191,6 +239,7 @@ async function renderRoute(path) {
 
   // Dynamically control page overflow
   document.body.classList.toggle('always-scroll', route.scroll);
+  document.body.style.overflowY = route.scroll ? 'auto' : 'hidden';
 
   // Scroll to top on route change
   window.scrollTo(0, 0);

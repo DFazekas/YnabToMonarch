@@ -23,25 +23,25 @@ export default async function initYnabOauthCallbackView() {
     // Handle OAuth callback (token exchange + fetch accounts)
     await ynabApi.handleOauthCallback();
 
-    const accountList = await ynabApi.getAllData();
-    console.log('Fetched accounts after OAuth callback:', accountList);
-    await accountList.saveToDb();
+    const ynabAccounts = await ynabApi.getAccounts();
+    console.log('Fetched accounts after OAuth callback:', ynabAccounts);
+    await ynabAccounts.saveToDb();
     
     // Success - hide spinner, show success icon
     loadingSpinner.hidden = true;
     successIcon.hidden = false;
     statusTitle.textContent = 'We got your data!';
-    statusMessage.innerHTML = 'Still here? Sorry, sometimes redirections don\'t work.</br>Click the button below to review your data.';
+    statusMessage.innerHTML = 'Still here? Sorry, sometimes redirections don\'t work.</br>Click the button below to select your accounts.';
     
     // Redirect after a short delay to show success state
     setTimeout(() => {
-      navigate('/review', true);
+      navigate('/select-accounts', true);
     }, 1500);
     
     // Show manual button as backup
-    continueBtn.textContent = 'Review your Data';
+    continueBtn.textContent = 'Select Your Accounts';
     continueBtn.addEventListener('click', () => {
-      navigate('/review', true);
+      navigate('/select-accounts', true);
     });
     setTimeout(() => {
       manualRedirectContainer.hidden = false;

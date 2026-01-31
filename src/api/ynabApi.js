@@ -33,6 +33,7 @@ export async function getAccounts() {
     if (response.error) {
       throw new Error(response.error.id, response.error.name, response.error.detail);
     }
+    console.warn("getAccounts response:", response);
 
     const accountData = response.data.accounts;
     const accountList = new Accounts();

@@ -169,7 +169,7 @@ class FinancialDataDB {
           }
         }
 
-        console.log(`Saving account '${account.name}' with ID '${account.id}' with (${transactionIds.size}) transaction IDs`);
+        console.log(`Saving account '${account.ynabName}' with ID '${account.id}' with (${transactionIds.size}) transaction IDs`);
         accountStore.put(account.toObject());
       }
 
@@ -318,77 +318,6 @@ class FinancialDataDB {
   }
 
   /**
-   * Save an account and all its transactions to IndexedDB
-   * @param {string} accountId - The account ID
-   * @param {Object} accountData - Account object with all properties and transactions array
-   * @returns {Promise<void>}
-   */
-  // async saveAccount(accountId, accountData) {
-  //   console.group('FinancialDataDB.saveAccount');
-  //   if (!isIndexedDBAvailable || !this.db) {
-  //     console.error('IndexedDB not initialized, skipping account save');
-  //     console.groupEnd();
-  //     return;
-  //   }
-
-  //   return new Promise((resolve, reject) => {
-  //     const tx = this.db.transaction(['accounts', 'transactions'], 'readwrite');
-  //     const accountStore = tx.objectStore('accounts');
-  //     const txnStore = tx.objectStore('transactions');
-
-  //     const now = Date.now();
-  //     const account = {
-  //       id: accountId,
-  //       balance: accountData.balance || 0,
-  //       included: accountData.included !== undefined ? accountData.included : true,
-  //       modified: accountData.modified !== undefined ? accountData.modified : false,
-  //       name: accountData.name,
-  //       originalName: accountData.originalName || accountData.name,
-  //       originalType: accountData.originalType || accountData.type,
-  //       originalSubtype: accountData.originalSubtype || accountData.subtype,
-  //       selected: accountData.selected || false,
-  //       status: accountData.status || 'pending',
-  //       subtype: accountData.subtype,
-  //       type: accountData.type,
-  //       lastModified: accountData.lastModified || now,
-  //       syncedAt: now
-  //     };
-
-  //     console.log(`Saving account ${accountId} with ${accountData.transactions?.length || 0} transactions`);
-  //     accountStore.put(account);
-
-  //     // Save transactions if they exist
-  //     if (accountData.transactions && Array.isArray(accountData.transactions)) {
-  //       console.log(`Processing ${accountData.transactions.length} transactions for account ${accountId}`);
-  //       for (const txn of accountData.transactions) {
-  //         try {
-  //           const txnToStore = {
-  //             ...txn,
-  //             accountId: accountId
-  //           };
-  //           console.debug(`Storing transaction:`, txnToStore);
-  //           txnStore.put(txnToStore);
-  //         } catch (e) {
-  //           console.error(`Error storing transaction for account ${accountId}:`, e);
-  //         }
-  //       }
-  //     }
-
-  //     tx.oncomplete = () => {
-  //       console.log(`✅ Account ${accountId} and its transactions saved to IndexedDB`);
-  //       console.groupEnd();
-  //       resolve();
-  //     };
-
-  //     tx.onerror = () => {
-  //       console.error('Error saving account:', tx.error);
-  //       console.groupEnd();
-  //       reject(tx.error);
-  //     };
-  //   });
-  // }
-
-  /**
    * Check if accounts exist in the database
    * @returns {Promise<boolean>}
    */
@@ -489,6 +418,63 @@ class FinancialDataDB {
   }
 
   /**
+   * Save a complete account object with all its data (including transactions)
+   * @param {Account} account - Account instance to save
+   * @returns {Promise<void>}
+   */
+  async saveAccount(account) {
+    console.group('saveAccount:', account.id);
+    if (!isIndexedDBAvailable || !this.db) {
+      console.warn('IndexedDB not initialized');
+      console.groupEnd();
+      return;
+    }
+
+    const tx = this.db.transaction(['accounts', 'transactions'], 'readwrite');
+    const accountStore = tx.objectStore('accounts');
+    const transactionStore = tx.objectStore('transactions');
+
+    return new Promise((resolve, reject) => {
+      // Serialize the account
+      const accountData = account.toObject ? account.toObject() : (account.toJSON ? account.toJSON() : account);
+      
+      const putRequest = accountStore.put(accountData);
+
+      putRequest.onsuccess = () => {
+        console.log(`✅ Account ${account.id} saved successfully`);
+
+        // Save transactions if they exist
+        if (account.transactions && Array.isArray(account.transactions)) {
+          account.transactions.forEach(transaction => {
+            const txnData = transaction.toJSON ? transaction.toJSON() : transaction;
+            txnData.accountId = account.id;
+            transactionStore.put(txnData);
+          });
+        }
+      };
+
+      putRequest.onerror = () => {
+        console.error('Error saving account:', putRequest.error);
+        console.groupEnd();
+        reject(putRequest.error);
+        return;
+      };
+
+      tx.oncomplete = () => {
+        console.log(`✅ Account ${account.id} and its transactions saved to IndexedDB`);
+        console.groupEnd();
+        resolve();
+      };
+
+      tx.onerror = () => {
+        console.error('Transaction error:', tx.error);
+        console.groupEnd();
+        reject(tx.error);
+      };
+    });
+  }
+
+  /**
    * Clear all accounts and transactions
    * @returns {Promise<void>}
    */
@@ -514,6 +500,62 @@ class FinancialDataDB {
 
       tx.onerror = () => {
         console.error('Error clearing accounts:', tx.error);
+        console.groupEnd();
+        reject(tx.error);
+      };
+    });
+  }
+
+  /**
+   * Delete specific accounts and their transactions by account IDs
+   * @param {string[]} accountIds - Array of account IDs to delete
+   * @returns {Promise<void>}
+   */
+  async deleteAccounts(accountIds) {
+    console.group('deleteAccounts:', accountIds);
+    if (!isIndexedDBAvailable || !this.db) {
+      console.warn('IndexedDB not initialized, cannot delete accounts');
+      console.groupEnd();
+      return;
+    }
+
+    if (!Array.isArray(accountIds) || accountIds.length === 0) {
+      console.warn('No account IDs provided');
+      console.groupEnd();
+      return;
+    }
+
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(['accounts', 'transactions'], 'readwrite');
+      const accountStore = tx.objectStore('accounts');
+      const transactionStore = tx.objectStore('transactions');
+      const accountIndex = transactionStore.index('accountId');
+
+      accountIds.forEach(accountId => {
+        // Delete the account
+        accountStore.delete(accountId);
+
+        // Delete all transactions for this account
+        const range = IDBKeyRange.only(accountId);
+        const request = accountIndex.openCursor(range);
+
+        request.onsuccess = (event) => {
+          const cursor = event.target.result;
+          if (cursor) {
+            cursor.delete();
+            cursor.continue();
+          }
+        };
+      });
+
+      tx.oncomplete = () => {
+        console.log(`✅ Deleted ${accountIds.length} accounts and their transactions from IndexedDB`);
+        console.groupEnd();
+        resolve();
+      };
+
+      tx.onerror = () => {
+        console.error('Error deleting accounts:', tx.error);
         console.groupEnd();
         reject(tx.error);
       };

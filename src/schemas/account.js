@@ -24,12 +24,12 @@ export default class Account {
     /** The current name of the account.
      * @type {string}
      */
-    this._name = "";
+    this._ynabName = "";
 
     /** The original name of the account before any modifications. 
      * @type {string}
     */
-    this._originalName = "";
+    this._monarchName = "";
 
     /** The current balance of the account in dollars.
      * @type {number}
@@ -102,15 +102,30 @@ export default class Account {
      */
     this._isSelected = false;
 
+    /** Whether the user approved the account mapping.
+     * @type {boolean}
+     */
+    this._isUserApproved = false;
+
     /** Whether the account will be migrated.
      * @type {boolean}
      */
     this._isIncluded = true;
 
-    /** Whether this account is closed or not.
+    /** Whether the YNAB account is closed or not.
      * @type {boolean}
      */
-    this._isClosed = false;
+    this._isYnabClosed = false;
+
+    /** Whether the Monarch account is closed or not.
+     * @type {boolean}
+     */
+    this._isMonarchClosed = false;
+
+    /** Whether this account is deleted or not.
+     * @type {boolean}
+     */
+    this._isDeleted = false;
 
     /** A note associated with the account.
      * @type {string|null}
@@ -122,7 +137,7 @@ export default class Account {
      */
     this._isModified = false;
 
-    /** Whether the account is a budget account.
+    /** Whether the account is a budget or tracking account.
      * @type {boolean}
      */
     this._isOnBudget = true;
@@ -135,33 +150,45 @@ export default class Account {
   /** Gets the current account name.
    * @type {string}
    */
-  get name() {
-    return this._name;
+  get ynabName() {
+    return this._ynabName;
   }
   /** Sets the current account name and original name if not already set.
    * @param {string} name - The new name for the account.
    */
-  set name(name) {
-    logger.group('set name');
+  set ynabName(name) {
+    const methodName = "set ynab name";
+    logger.group(methodName);
     const sanitizedName = name.trim();
     if (sanitizedName.length === 0) {
-      logger.error('set name', "Attempted to set empty name for account ID:", this.id);
-      logger.groupEnd('set name');
+      logger.error(methodName, "Attempted to set empty name for account ID:", this.id);
+      logger.groupEnd(methodName);
       throw new Error("Account name cannot be empty.");
     }
 
-    logger.debug('set name', `Setting name to '${sanitizedName}'`);
-    this._name = sanitizedName;
-    if (this._originalName === null) {
-      this._originalName = sanitizedName;
+    logger.debug(methodName, `Setting name to '${sanitizedName}'`);
+    this._ynabName = sanitizedName;
+    logger.groupEnd(methodName);
+  }
+  
+  set monarchName(name) {
+    const methodName = "set monarch name";
+    logger.group(methodName);
+    const sanitizedName = name.trim();
+    if (sanitizedName.length === 0) {
+      logger.error(methodName, "Attempted to set empty monarch name for account ID:", this.id);
+      logger.groupEnd(methodName);
+      throw new Error("Monarch account name cannot be empty.");
     }
-    logger.groupEnd('set name');
+    logger.debug(methodName, `Setting monarch name to '${sanitizedName}'`);
+    this._monarchName = sanitizedName;
+    logger.groupEnd(methodName);
   }
   /** Gets the original account name.
    * @type {string}
    */
-  get originalName() {
-    return this._originalName;
+  get monarchName() {
+    return this._monarchName;
   }
 
   // YNAB Type
@@ -170,7 +197,7 @@ export default class Account {
    * @type {AccountType}
    */
   get ynabType() {
-    return this._ynabType;
+    return this._ynabType ?? this._type ?? null;
   }
   /** Sets the current YNAB account type and original type if not already set.
    * @param {AccountType} type - The new YNAB account type.
@@ -429,6 +456,29 @@ export default class Account {
     logger.groupEnd('set selected');
   }
 
+  // User Approved
+
+  /** Gets whether the account mapping is user approved.
+   * @type {boolean}
+   */
+  get isUserApproved() {
+    return this._isUserApproved;
+  }
+  /** Sets whether the account mapping is user approved.
+   * @param {boolean} value - The new approval status.
+   * @throws Will throw an error if the value is not a boolean.
+   */
+  set isUserApproved(value) {
+    logger.group('set user approved');
+    if (typeof value !== 'boolean') {
+      logger.error('set user approved', `Attempted to set invalid isUserApproved value for account ID: '${this.id}', Value: '${value}'`);
+      throw new Error("isUserApproved value must be a boolean.");
+    }
+
+    this._isUserApproved = value;
+    logger.groupEnd('set user approved');
+  }
+
   // Closed
 
   /** Gets whether the account is closed.
@@ -500,10 +550,10 @@ export default class Account {
 
   // Budget
 
-  /** Sets whether the account is on budget.
-   * @param {boolean} value - The new on budget status.
-   * @throws Will throw an error if the value is not a boolean.
-   */
+  get isOnBudget() {
+    return this._isOnBudget;
+  }
+
   set isOnBudget(value) {
     logger.group('set isOnBudget');
     if (typeof value !== 'boolean') {
@@ -656,6 +706,75 @@ export default class Account {
     logger.groupEnd('set lastReconciledAt');
   }
 
+  // YNAB Closed
+
+  /** Gets whether the YNAB account is closed.
+   * @type {boolean}
+   */
+  get isYnabClosed() {
+    return this._isYnabClosed;
+  }
+  /** Sets whether the YNAB account is closed.
+   * @param {boolean} value - The new closed status.
+   * @throws Will throw an error if the value is not a boolean.
+   */
+  set isYnabClosed(value) {
+    logger.group('set isYnabClosed');
+    if (typeof value !== 'boolean') {
+      logger.error('set isYnabClosed', `Attempted to set invalid isYnabClosed value for account ID: '${this.id}', Value: '${value}'`);
+      throw new Error("isYnabClosed value must be a boolean.");
+    }
+
+    this._isYnabClosed = value;
+    logger.groupEnd('set isYnabClosed');
+  }
+
+  // Monarch Closed
+
+  /** Gets whether the Monarch account is closed.
+   * @type {boolean}
+   */
+  get isMonarchClosed() {
+    return this._isMonarchClosed;
+  }
+  /** Sets whether the Monarch account is closed.
+   * @param {boolean} value - The new closed status.
+   * @throws Will throw an error if the value is not a boolean.
+   */
+  set isMonarchClosed(value) {
+    logger.group('set isMonarchClosed');
+    if (typeof value !== 'boolean') {
+      logger.error('set isMonarchClosed', `Attempted to set invalid isMonarchClosed value for account ID: '${this.id}', Value: '${value}'`);
+      throw new Error("isMonarchClosed value must be a boolean.");
+    }
+
+    this._isMonarchClosed = value;
+    logger.groupEnd('set isMonarchClosed');
+  }
+
+  // Deleted
+
+  /** Gets whether the account is deleted.
+   * @type {boolean}
+   */
+  get isDeleted() {
+    return this._isDeleted;
+  }
+  /** Sets whether the account is deleted.
+   * @param {boolean} value - The new deleted status.
+   * @throws Will throw an error if the value is not a boolean.
+   */
+  set isDeleted(value) {
+    logger.group('set isDeleted');
+    if (typeof value !== 'boolean') {
+      logger.error('set isDeleted', `Attempted to set invalid isDeleted value for account ID: '${this.id}', Value: '${value}'`);
+      throw new Error("isDeleted value must be a boolean.");
+    }
+
+    this._isDeleted = value;
+    logger.groupEnd('set isDeleted');
+  }
+
   // Modifications
 
   /** Gets whether the account has been modified.
@@ -664,7 +783,7 @@ export default class Account {
   get isModified() {
     const methodName = 'get isModified';
     logger.group(methodName);
-    const hasNameChanged = this._name !== this._originalName;
+    const hasNameChanged = this._ynabName !== this._monarchName;
     const hasTypeChanged = this._ynabType !== this._ynabOriginalType;
     const hasSubtypeChanged = this._subtype !== this._originalSubtype;
     const modified = hasNameChanged || hasTypeChanged || hasSubtypeChanged;
@@ -691,13 +810,13 @@ export default class Account {
    */
   async undoChanges() {
     logger.group('undoChanges');
-    this._name = this._originalName;
+    this._ynabName = this._monarchName;
     this._category = this._originalCategory;
     this._categoryGroup = this._originalCategoryGroup;
     this._isModified = false;
 
     await db.updateAccountModification(this.id, {
-      name: this._name,
+      name: this._ynabName,
       type: this._category,
       subtype: this._categoryGroup,
       modified: this._isModified
@@ -723,8 +842,8 @@ export default class Account {
 
     const modifications = {};
 
-    if (this._name !== this._originalName && this._name !== accountInDb.name) {
-      modifications.name = this._name;
+    if (this._ynabName !== this._monarchName && this._ynabName !== accountInDb.name) {
+      modifications.name = this._ynabName;
     }
     if (this._ynabType !== this._ynabOriginalType && this._ynabType !== accountInDb.type) {
       modifications.type = this._ynabType;
@@ -763,7 +882,9 @@ export default class Account {
    * @param {object} data - The API data object.
    */
   initFromApiData(data) {
-    this._name = data["name"];
+    this.ynabName = data["name"];
+    this.monarchName = data["name"];
+    this.ynabType = data["type"];
     this.isOnBudget = data["on_budget"];
     this.note = data["note"];
     this.balance = centsToDollars(data["balance"]);
@@ -777,32 +898,36 @@ export default class Account {
     this.debtInterestRates = data["debt_interest_rates"];
     this.debtMinimumPayments = data["debt_minimum_payments"];
     this.debtEscrowAmounts = data["debt_escrow_amounts"];
+    this.isYnabClosed = data["closed"];
+    this.isMonarchClosed = data["closed"];
+    this.isUserApproved = false;
   }
 
   // Serialization
 
-  /** Converts the account instance to a plain object.
-   * @returns {object} The plain object representation of the account.
-   */
   toObject() {
-    return {
-      id: this.id,
-      name: this._name,
-      originalName: this._originalName,
-      balanceDollars: this._balanceDollars,
-      clearedBalanceDollars: this._clearedBalanceDollars,
-      unclearedBalanceDollars: this._unclearedBalanceDollars,
-      isDirectImportLinked: this._isDirectImportLinked,
-      lastReconciledAt: this._lastReconciledAt,
-      type: this._ynabType,
-      originalType: this._ynabType,
-      transactions: Array.from(this._transactions.values()).map(txn => txn.id),
-      migrationStatus: this._migrationStatus,
-      isSelected: this._isSelected,
-      isIncluded: this._isIncluded,
-      isClosed: this._isClosed,
-      note: this._note,
-      isModified: this._isModified
-    };
+    const serialized = {};
+
+    Object.entries(this).forEach(([key, value]) => {
+      const normalizedKey = key.startsWith('_') ? key.slice(1) : key;
+      serialized[normalizedKey] = this._serializeForStorage(normalizedKey, value);
+    });
+
+    return serialized;
+  }
+
+  _serializeForStorage(key, value) {
+    if (value instanceof Map) {
+      if (key === 'transactions') {
+        return Array.from(value.values()).map(txn => (txn && typeof txn === 'object' && 'id' in txn ? txn.id : txn));
+      }
+      return Array.from(value.entries());
+    }
+
+    if (value instanceof Set) {
+      return Array.from(value);
+    }
+
+    return value;
   }
 }

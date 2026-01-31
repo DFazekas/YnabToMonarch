@@ -49,6 +49,7 @@ class ReusableTable extends HTMLElement {
     this._mobileBreakpoint = 'lg';
     this._enableSelection = true;
     this._rowIdKey = 'id';
+    this._enableRowClickToggle = false;
 
     // Bind methods
     this._handleMasterCheckboxChange = this._handleMasterCheckboxChange.bind(this);
@@ -64,6 +65,7 @@ class ReusableTable extends HTMLElement {
     this._mobileBreakpoint = this.getAttribute('data-mobile-breakpoint') || 'lg';
     this._enableSelection = this.getAttribute('data-enable-selection') !== 'false';
     this._rowIdKey = this.getAttribute('data-row-id-key') || 'id';
+    this._enableRowClickToggle = this.getAttribute('data-row-click-toggle') === 'true';
 
     this._render();
     this._setupSubscriptions();
@@ -119,7 +121,7 @@ class ReusableTable extends HTMLElement {
       </div>
       
       <!-- Desktop Table View -->
-      <div class="desktop-view hidden ${this._mobileBreakpoint}:block overflow-x-auto">
+      <div class="desktop-view hidden ${this._mobileBreakpoint}:block h-full overflow-auto">
         <table class="w-full min-w-[800px]" role="grid">
           <thead>
             <tr class="bg-gray-50 border-b border-gray-200" role="row"></tr>
@@ -177,6 +179,10 @@ class ReusableTable extends HTMLElement {
       const th = document.createElement('th');
       th.scope = 'col';
       th.className = col.headerClass || 'px-3 sm:px-4 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900';
+      th.style.position = 'sticky';
+      th.style.top = '0';
+      th.style.backgroundColor = 'rgb(249 250 251)';
+      th.style.zIndex = '10';
 
       if (col.width) th.style.width = col.width;
       if (col.minWidth) th.style.minWidth = col.minWidth;
@@ -208,6 +214,19 @@ class ReusableTable extends HTMLElement {
       }
       
       tr.dataset.rowId = this._getRowId(account);
+
+      if (this._enableRowClickToggle) {
+        tr.classList.add('cursor-pointer', 'hover:bg-gray-50', 'transition-colors');
+        tr.addEventListener('click', (event) => {
+          const target = event.target;
+          if (!target) return;
+          const interactive = target.closest('input, select, button, ui-button, a, label');
+          if (interactive) return;
+          const checkbox = tr.querySelector('input[type="checkbox"]');
+          if (!checkbox || checkbox.disabled) return;
+          checkbox.click();
+        });
+      }
 
       columns.forEach(col => {
         const td = document.createElement('td');
@@ -244,6 +263,19 @@ class ReusableTable extends HTMLElement {
       }
       
       card.dataset.rowId = this._getRowId(row);
+
+      if (this._enableRowClickToggle) {
+        card.classList.add('cursor-pointer', 'hover:bg-gray-50', 'transition-colors');
+        card.addEventListener('click', (event) => {
+          const target = event.target;
+          if (!target) return;
+          const interactive = target.closest('input, select, button, ui-button, a, label');
+          if (interactive) return;
+          const checkbox = card.querySelector('input[type="checkbox"]');
+          if (!checkbox || checkbox.disabled) return;
+          checkbox.click();
+        });
+      }
 
       // Card wrapper with padding
       const wrapper = document.createElement('div');

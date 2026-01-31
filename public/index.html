@@ -12,16 +12,16 @@
   <link rel="stylesheet" href="/styles.css" />
 </head>
 
-<body class="bg-white text-[#111518] font-inter min-h-screen flex flex-col w-full max-w-full min-w-1xl overflow-x-hidden">
+<body class="bg-white text-[#111518] font-inter h-screen flex flex-col w-full max-w-full min-w-1xl overflow-y-hidden">
 
-  <div data-layout-root data-subpage="false" class="flex flex-col flex-1 w-full max-w-full">
+  <div data-layout-root data-subpage="false" data-layout-type="document" class="flex flex-col flex-1 w-full max-w-full">
     <div data-navbar></div>
 
-    <main id="app" class="flex-1 flex justify-center min-h-0 py-4 w-full max-w-full overflow-x-hidden">
+    <main id="app" class="flex-1 flex justify-center min-h-0 w-full max-w-full overflow-x-hidden">
       <!-- router will inject views here -->
     </main>
 
-    <div data-footer></div>
+    <div data-footer class="mt-auto"></div>
   </div>
 
   <script src="/layout.js" defer></script>

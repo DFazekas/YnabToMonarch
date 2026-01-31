@@ -37,15 +37,15 @@ export function renderPageLayout(options = {}) {
   }
 
   // Set container as a page layout wrapper with consistent responsive styling
-  container.className = `min-h-screen flex flex-col w-full max-w-full mx-auto ${className}`;
+  container.className = `flex flex-col w-full max-w-full mx-auto ${className}`;
   container.innerHTML = `
     <main class="flex-1 w-full max-w-full mx-auto px-4 py-2 overflow-x-hidden">
-      <div class="max-w-6xl mx-auto w-full min-w-0 flex flex-col space-y-6 ">
-        <!-- Navigation Bar -->
-        <div id="navigationBar" class="min-w-0"></div>
-
-        <!-- Page Header -->
-        <div id="pageHeader" class="min-w-0 mx-auto"></div>
+      <div class="max-w-6xl mx-auto w-full min-w-0 flex flex-col space-y-4">
+        <div id="navigationBar" class="flex items-center gap-3">
+          <div id="navBackContainer" class="flex-1 min-w-0"></div>
+          <div id="pageHeader" class="flex-[2] min-w-0 text-center"></div>
+          <div id="navDataContainer" class="flex-1 min-w-0 flex justify-end"></div>
+        </div>
 
         <!-- Page Content Slot -->
         <div id="pageContent" class="min-w-0 mx-auto w-full"></div>
@@ -98,46 +98,43 @@ export function renderNavigationBar(options = {}) {
     return;
   }
 
+  const backContainer = container.querySelector('#navBackContainer');
+  const dataContainer = container.querySelector('#navDataContainer');
+
   // Check if there's any user data stored
   const hasData = checkForStoredData();
   const dataButtonText = hasData ? 'Manage your data' : 'No data currently stored';
 
-  // Build navigation HTML
-  let navHTML = '<div class="flex flex-wrap items-center justify-between gap-2 mb-4">';
-
-  // Back button (left side)
-  if (showBackButton) {
-    navHTML += `
-      <ui-button 
-        id="navBackBtn" 
-        data-type="text"
-      >
+  const backHTML = showBackButton
+    ? `
+      <ui-button id="navBackBtn" data-type="text">
         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
         ${backText}
       </ui-button>
-    `;
-  } else {
-    navHTML += '<div></div>'; // Spacer for flexbox
-  }
+    `
+    : '';
 
-  // Data management button (right side)
-  if (showDataButton) {
-    navHTML += `
-      <ui-button 
-        id="navDataBtn" 
-        data-type="text"
-        ${!hasData ? 'style="opacity: 0.6;"' : ''}
-      >
+  const dataHTML = showDataButton
+    ? `
+      <ui-button id="navDataBtn" data-type="text" ${!hasData ? 'style="opacity: 0.6;"' : ''}>
         ${dataButtonText}
       </ui-button>
+    `
+    : '';
+
+  if (backContainer && dataContainer) {
+    backContainer.innerHTML = backHTML;
+    dataContainer.innerHTML = dataHTML;
+  } else {
+    container.innerHTML = `
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>${backHTML || ''}</div>
+        <div>${dataHTML || ''}</div>
+      </div>
     `;
   }
-
-  navHTML += '</div>';
-
-  container.innerHTML = navHTML;
 
   // Attach event listeners
   if (showBackButton) {
@@ -213,14 +210,11 @@ export function renderPageHeader(options = {}) {
   }
 
   const headerHTML = `
-    <section class="text-center mb-2 ${className}">
-      <div class="inline-flex items-center justify-center gap-2 mb-6">
-        <h2 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
-          ${escapeHtml(title)}
-        </h2>
-      </div>
-
-      <p class="text-gray-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto px-2 leading-relaxed">
+    <section class="text-center ${className}">
+      <h2 class="text-base sm:text-lg md:text-xl font-semibold text-gray-900">
+        ${escapeHtml(title)}
+      </h2>
+      <p class="text-gray-600 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed">
         ${escapeHtml(description)}
       </p>
     </section>

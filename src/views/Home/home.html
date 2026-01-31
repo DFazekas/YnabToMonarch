@@ -1,90 +1,168 @@
 <div id="pageLayout"></div>
 
-<section class="flex flex-col items-center mb-6 max-w-md mx-auto gap-2">
+<section class="min-h-screen w-full bg-gradient-to-br from-blue-50 via-white to-indigo-50 -mt-2">
+  <div class="max-w-7xl mx-auto px-6 py-20 md:py-28">
+    <div class="text-center max-w-4xl mx-auto">
+      <h1 class="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+        Migrate from YNAB to Monarch
+        <span class="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mt-2">
+          Safely & Privately
+        </span>
+      </h1>
+      <p class="text-xl text-gray-600 mb-4 leading-relaxed max-w-3xl mx-auto">
+        Your data never leaves your browser. We don't store, sell, or even see your financial information.
+        100% read-only access ensures complete peace of mind during migration.
+      </p>
+      <p class="text-base text-blue-600 mb-10 flex items-center justify-center gap-2">
+        <span class="inline-flex h-5 w-5 items-center justify-center text-blue-600">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+          </svg>
+        </span>
+        <span>Zero server storage • Zero data collection • Zero risk</span>
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <ui-button id="getStartedButton" data-size="large">Start Migration</ui-button>
+        <a href="#how-it-works" class="inline-flex items-center justify-center rounded-lg border border-gray-300 px-8 py-3 text-lg text-gray-700 hover:bg-gray-50">Learn How It Works</a>
+      </div>
+    </div>
+  </div>
 
-  <!-- Get Started Btn -->
-  <ui-button id="getStartedButton" data-size="large">
-    Start Migrating Your Data
-  </ui-button>
-
-  <!-- Migration Info Modal -->
-  <ui-modal id="migrationInfoModal">
-    <ui-button slot="trigger" data-type="text">
-      How does this work?
-    </ui-button>
-
-    <h3 slot="title">How the Migration Process Works</h3>
-
-    <div slot="content">
-      <div class="space-y-4 text-sm text-gray-600">
-        <div>
-          <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 1: Access Your Data</h4>
-          <p class="text-gray-600 text-sm">Connect your YNAB account so we can retrieve your
-            budgets, transactions, categories, and accounts.</p>
+  <section class="max-w-7xl mx-auto px-6 py-16 mb-12">
+    <div class="bg-white rounded-2xl shadow-xl p-10 border border-blue-100">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Your Privacy Is Our Promise</h2>
+        <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+          Built with privacy-first architecture. Every decision we make prioritizes your data security.
+        </p>
+      </div>
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100 hover:shadow-lg transition-shadow">
+          <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4 shadow-md text-white">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
+              <circle cx="12" cy="12" r="10" />
+              <path d="m4.9 4.9 14.2 14.2" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">No Data Stored</h3>
+          <p class="text-sm text-gray-600">Everything runs in your browser. We have no servers storing your financial data.</p>
         </div>
-        <div>
-          <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 2: Filter & Process</h4>
-          <p class="text-gray-600 text-sm">Decide what to migrate and make edits as needed.</p>
+        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100 hover:shadow-lg transition-shadow">
+          <div class="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center mb-4 shadow-md text-white">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">No Data Sold</h3>
+          <p class="text-sm text-gray-600">We don't collect your data, so there's nothing to sell. Ever.</p>
         </div>
-        <div>
-          <h4 class="text-gray-900 text-sm font-semibold mb-1">Step 3: Download or Import</h4>
-          <p class="text-gray-600 text-sm">Decide to receive a ready-to-import file that you can upload into Monarch
-            Money yourself, or connect to your Monarch Money account to automatically migrate your data.</p>
+        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100 hover:shadow-lg transition-shadow">
+          <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4 shadow-md text-white">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
+              <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Read-Only Access</h3>
+          <p class="text-sm text-gray-600">We can only read your YNAB data—never modify, delete, or write to it.</p>
+        </div>
+        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100 hover:shadow-lg transition-shadow">
+          <div class="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center mb-4 shadow-md text-white">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16" />
+              <path d="M20 8V4a2 2 0 0 0-2-2h-2" />
+              <path d="M20 8H8a2 2 0 0 0-2 2v12" />
+              <path d="M12 18h8" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Open-Source & Auditable</h3>
+          <p class="text-sm text-gray-600">Our code is public on GitHub. Verify our security claims yourself.</p>
         </div>
       </div>
     </div>
-  </ui-modal>
-</section>
+  </section>
 
-<!-- Privacy Info -->
-<section class="max-w-3xl mx-auto mb-8">
-  <info-banner color="green" icon-type="checkmark" has-border>
-    <strong>Your data stays yours, always:</strong> We never store, sell, or share your financial information. You
-    remain in control of your data from start to finish.
-    <ui-modal slot="action" id="privacyInfoModal">
-      <ui-button slot="trigger" data-type="text">
-        Learn more about how we protect your privacy
-      </ui-button>
-
-      <h3 slot="title">Privacy is our top priority</h3>
-
-      <div slot="content">
-        <div class="space-y-4 text-sm text-gray-600">
-          <div>
-            <h4 class="text-gray-900 font-semibold mb-1">No Data Collection</h4>
-            <p>We never collect, store, or share your financial data.</p>
-          </div>
-          <div>
-            <h4 class="text-gray-900 font-semibold mb-1">Secure Connections</h4>
-            <p>We use secure, encrypted, and read-only connections when accessing your YNAB data.</p>
-          </div>
-          <div>
-            <h4 class="text-gray-900 font-semibold mb-1">You're in Control</h4>
-            <p>At any point in time you have full control to wipe your data and stop the migration process.</p>
-          </div>
-          <div>
-            <h4 class="text-gray-900 font-semibold mb-1">Open Source & Auditable</h4>
-            <p>Everything is transparent and can be reviewed by security experts. We have nothing to hide because we
-              keep no copies. See <a href="https://github.com/your-repo" class="text-blue-600 hover:underline">our
-                source code</a>.</p>
-          </div>
-        </div>
-
-        <div class="mt-6">
-          <info-banner color="green" icon-type="checkmark" has-border>
-            <strong>100% Private:</strong> Your financial data is sensitive, and we treat it that way. You remain the
-            sole owner of every byte.
-          </info-banner>
+  <section class="max-w-7xl mx-auto px-6 py-16">
+    <div class="grid md:grid-cols-2 gap-12 items-center">
+      <div>
+        <div class="inline-block bg-red-100 text-red-700 px-4 py-2 rounded-full text-sm font-semibold mb-6">The Problem</div>
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-6">Switching Budgeting Apps Shouldn't Be Painful</h2>
+        <div class="space-y-4 text-gray-600">
+          <p class="text-lg">You've spent months or years building your budget in YNAB. Categories, transactions, payees—all that valuable history.</p>
+          <p class="text-lg">Moving to Monarch Money means starting over... unless you deal with messy CSV exports, manual formatting, and data loss.</p>
+          <p class="text-lg">Most tools require uploading your sensitive financial data to unknown servers. That's a privacy nightmare.</p>
         </div>
       </div>
-    </ui-modal>
-  </info-banner>
-</section>
+      <div>
+        <div class="inline-block bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-semibold mb-6">The Solution</div>
+        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-6">Migrate Safely in Minutes</h2>
+        <div class="space-y-4 text-gray-600">
+          <p class="text-lg">Our tool connects directly to YNAB's API with read-only permissions, pulls your data, and transforms it into Monarch-ready format.</p>
+          <p class="text-lg">Everything happens in your browser. No servers. No uploads. No third-party access to your financial information.</p>
+          <p class="text-lg">In just a few clicks, you'll have all your YNAB history ready to import into Monarch Money, maintaining complete privacy throughout.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-<!-- FAQ -->
-<section class="max-w-3xl mx-auto mb-8">
-  <info-banner color="gray" icon-type="info" has-border>
-    <strong>Have Questions?</strong> Take a look at our <a href="/faq" class="text-blue-600 hover:underline">FAQ</a> for more
-    information about the migration process, supported data, and more.
-  </info-banner>
+  <section id="how-it-works" class="max-w-7xl mx-auto px-6 py-20 mb-12">
+    <div class="text-center mb-16">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
+      <p class="text-lg text-gray-600 max-w-2xl mx-auto">Three simple steps to complete your migration safely and quickly</p>
+    </div>
+    <div class="grid md:grid-cols-3 gap-8">
+      <div class="bg-white rounded-xl p-8 shadow-lg border border-blue-100 hover:shadow-xl transition-shadow h-full">
+        <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mb-6 shadow-md">1</div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-3">Connect YNAB</h3>
+        <p class="text-gray-600 leading-relaxed">Securely connect to your YNAB account with read-only API access. You maintain full control—we can only view, never modify.</p>
+      </div>
+      <div class="bg-white rounded-xl p-8 shadow-lg border border-blue-100 hover:shadow-xl transition-shadow h-full">
+        <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mb-6 shadow-md">2</div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-3">Review & Select Data</h3>
+        <p class="text-gray-600 leading-relaxed">Choose which budgets, accounts, and date ranges to migrate. Preview your data before export—full transparency every step.</p>
+      </div>
+      <div class="bg-white rounded-xl p-8 shadow-lg border border-blue-100 hover:shadow-xl transition-shadow h-full">
+        <div class="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mb-6 shadow-md">3</div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-3">Export to Monarch</h3>
+        <p class="text-gray-600 leading-relaxed">Download formatted files or use our automatic import feature. Your data flows from YNAB to Monarch without touching our servers.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="max-w-4xl mx-auto px-6 py-16">
+    <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-10 text-white shadow-2xl">
+      <div class="flex items-start gap-4 mb-6">
+        <div class="w-12 h-12 flex-shrink-0 mt-1">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-12 w-12 text-white">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-2xl md:text-3xl font-bold mb-4">Complete Transparency & Control</h2>
+          <p class="text-lg text-blue-100 leading-relaxed mb-4">We've built this tool with one core principle: your data is yours alone. Our client-side architecture means your financial information never reaches any server—ours or anyone else's.</p>
+          <p class="text-lg text-blue-100 leading-relaxed mb-4">Clear your browser data anytime to instantly remove all local information. Review our open-source code to verify every security claim we make.</p>
+          <p class="text-lg text-blue-100 leading-relaxed">We believe transparency builds trust. That's why we've made every line of code publicly auditable, and why we'll never ask you to compromise your privacy for convenience.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="max-w-4xl mx-auto px-6 py-16">
+    <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-10 text-center">Frequently Asked Questions</h2>
+    <div class="space-y-6">
+      <div class="bg-white rounded-xl p-8 shadow-md border border-gray-200">
+        <h3 class="text-xl font-semibold text-gray-900 mb-3">Is my YNAB data really safe?</h3>
+        <p class="text-gray-600 leading-relaxed">Absolutely. Your YNAB data is processed entirely in your browser using read-only API access. We have no servers to store your data, and we never see your transactions, account balances, or personal information. You can disconnect access at any time through YNAB's developer settings.</p>
+      </div>
+      <div class="bg-white rounded-xl p-8 shadow-md border border-gray-200">
+        <h3 class="text-xl font-semibold text-gray-900 mb-3">What data gets migrated?</h3>
+        <p class="text-gray-600 leading-relaxed">We migrate your budgets, accounts, categories, payees, and transaction history. You have full control over what data to include—select specific accounts, date ranges, or budgets. The tool shows you exactly what will be exported before you confirm.</p>
+      </div>
+      <div class="bg-white rounded-xl p-8 shadow-md border border-gray-200">
+        <h3 class="text-xl font-semibold text-gray-900 mb-3">Do I need to pay for this tool?</h3>
+        <p class="text-gray-600 leading-relaxed">The migration tool is completely free to use. If you find it valuable and want to support ongoing development and maintenance, you can optionally buy us a coffee. No payment is required to access any features.</p>
+      </div>
+    </div>
+  </section>
 </section>

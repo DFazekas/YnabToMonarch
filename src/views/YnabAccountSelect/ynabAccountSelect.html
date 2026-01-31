@@ -1,0 +1,33 @@
+<div id="pageLayout"></div>
+
+<div class="flex flex-col min-h-0 h-[calc(100dvh-220px)] max-h-[calc(100dvh-220px)] overflow-hidden">
+  <div class="bg-white rounded-lg border border-gray-100 shadow-sm p-4 sm:p-6 mb-4">
+    <div class="flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
+      <div class="flex flex-wrap items-center gap-3">
+        <label id="showClosedToggleContainer" class="inline-flex items-center gap-2 text-sm text-gray-700">
+          <input id="showClosedToggle" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+          Show closed (<span id="closedCount">0</span>)
+        </label>
+        <div class="flex items-center gap-2">
+          <ui-button id="selectAllBtn" data-type="secondary" data-size="small">Select All</ui-button>
+          <ui-button id="deselectAllBtn" data-type="secondary" data-size="small">Deselect All</ui-button>
+        </div>
+      </div>
+      <div class="text-sm text-gray-600">
+        Selected <span id="selectedCount" class="font-medium text-gray-900">0</span> of
+        <span id="totalCount" class="font-medium text-gray-900">0</span> accounts
+      </div>
+    </div>
+  </div>
+
+  <div class="flex-1 min-h-0 rounded-lg border border-gray-100 bg-white">
+    <ui-table id="ynabAccountsTable" data-mobile-breakpoint="lg" data-enable-selection="false" data-row-id-key="id" data-row-click-toggle="true" style="height: 100%; display: block;"></ui-table>
+  </div>
+
+  <div class="flex flex-col sm:flex-row sm:items-center gap-4 mt-4">
+    <ui-button id="continueBtn"></ui-button>
+    <p class="text-xs sm:text-sm text-gray-600">
+      At least one account must be selected to continue
+    </p>
+  </div>
+</div>

@@ -8,6 +8,12 @@
   if (!navbarMount || !footerMount) return;
 
   const isSubpage = root.dataset.subpage === 'true';
+  let layoutType = root.dataset.layoutType || 'document';
+  const appLayoutRoutes = new Set(['/select-accounts']);
+  if (appLayoutRoutes.has(window.location.pathname)) {
+    layoutType = 'app';
+    root.dataset.layoutType = layoutType;
+  }
 
   const brandIcon = `
     <div class="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-[#005B96] flex-shrink-0">
@@ -34,7 +40,13 @@
   `;
 
   navbarMount.outerHTML = navbarContent.trim();
-  renderFooter();
+  applyLayoutType(layoutType);
+
+  window.setLayoutType = (nextType) => {
+    layoutType = nextType || 'document';
+    root.dataset.layoutType = layoutType;
+    applyLayoutType(layoutType);
+  };
 
   async function renderFooter() {
     try {
@@ -44,9 +56,19 @@
       }
 
       const template = await response.text();
-      footerMount.outerHTML = template.trim();
+      footerMount.innerHTML = template.trim();
     } catch (error) {
       console.error('Footer render failed', error);
+    }
+  }
+
+  function applyLayoutType(type) {
+    if (type === 'document') {
+      renderFooter().then(() => {
+        footerMount.classList.remove('hidden');
+      });
+    } else {
+      footerMount.classList.add('hidden');
     }
   }
 })();
