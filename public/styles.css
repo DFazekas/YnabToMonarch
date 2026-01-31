@@ -643,6 +643,9 @@
   .w-48 {
     width: calc(var(--spacing) * 48);
   }
+  .w-56 {
+    width: calc(var(--spacing) * 56);
+  }
   .w-\[400px\] {
     width: 400px;
   }
@@ -1418,6 +1421,9 @@
   .pb-3 {
     padding-bottom: calc(var(--spacing) * 3);
   }
+  .pb-4 {
+    padding-bottom: calc(var(--spacing) * 4);
+  }
   .pb-6 {
     padding-bottom: calc(var(--spacing) * 6);
   }
@@ -1549,6 +1555,9 @@
   }
   .text-blue-100 {
     color: var(--color-blue-100);
+  }
+  .text-blue-300 {
+    color: var(--color-blue-300);
   }
   .text-blue-400 {
     color: var(--color-blue-400);
@@ -1816,6 +1825,13 @@
   }
   .group-hover\:visible {
     &:is(:where(.group):hover *) {
+      @media (hover: hover) {
+        visibility: visible;
+      }
+    }
+  }
+  .hover\:visible {
+    &:hover {
       @media (hover: hover) {
         visibility: visible;
       }
@@ -2097,6 +2113,13 @@
     &:hover {
       @media (hover: hover) {
         color: var(--color-amber-700);
+      }
+    }
+  }
+  .hover\:text-blue-200 {
+    &:hover {
+      @media (hover: hover) {
+        color: var(--color-blue-200);
       }
     }
   }

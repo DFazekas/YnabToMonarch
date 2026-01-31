@@ -248,6 +248,116 @@ export default async function initAccountMappingView() {
       .find(([, value]) => value === account.ynabType)?.[0]
       ?.replace(/_/g, ' ') || account.ynabType;
 
+    // Bank link status section
+    const bankLinkSection = document.createElement('div');
+    bankLinkSection.className = 'mb-4 pb-4 border-b border-gray-200';
+    const bankLinkBadge = document.createElement('span');
+    bankLinkBadge.className = 'group relative inline-flex items-center rounded-full px-3 py-1 text-xs font-medium border';
+    
+    if (account.isDirectImportLinked) {
+      bankLinkBadge.classList.add('bg-blue-50', 'text-blue-700', 'border-blue-200');
+      bankLinkBadge.innerHTML = `
+        Bank Linked
+        <svg class="w-4 h-4 cursor-help ml-2" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+        </svg>
+        <div class="tooltip-container invisible group-hover:visible hover:visible absolute w-56 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-10">
+          <p class="break-words mb-2 px-3 py-2">This account is linked to a bank connection in YNAB and cannot be created as a new account in Monarch. You'll need to link it to an existing account in Monarch instead.</p>
+          <a href="https://support.yoursite.com/linked-account-workaround" target="_blank" class="text-blue-300 hover:text-blue-200 underline px-3 py-2 block">Learn about the workaround →</a>
+          <div class="arrow absolute border-4 border-transparent border-t-gray-900"></div>
+        </div>
+      `;
+      
+      // Position tooltip to fit within viewport
+      let tooltipHideTimeout;
+      
+      const showTooltip = () => {
+        clearTimeout(tooltipHideTimeout);
+        const tooltip = bankLinkBadge.querySelector('.tooltip-container');
+        if (!tooltip) return;
+        
+        tooltip.classList.remove('invisible');
+        
+        const badgeRect = bankLinkBadge.getBoundingClientRect();
+        const tooltipWidth = 224; // w-56 = 14rem = 224px
+        const tooltipHeight = tooltip.offsetHeight;
+        const viewportWidth = window.innerWidth;
+        const padding = 16;
+        
+        // Remove previous positioning classes
+        tooltip.style.top = '';
+        tooltip.style.bottom = '';
+        tooltip.style.left = '';
+        tooltip.style.right = '';
+        tooltip.style.transform = '';
+        
+        const arrow = tooltip.querySelector('.arrow');
+        arrow.style.top = '';
+        arrow.style.bottom = '';
+        arrow.style.left = '';
+        arrow.style.right = '';
+        arrow.style.borderTop = '';
+        arrow.style.borderBottom = '';
+        
+        // Try to position above first
+        if (badgeRect.top > tooltipHeight + 20) {
+          tooltip.style.bottom = 'calc(100% + 8px)';
+          arrow.style.top = '100%';
+          arrow.style.borderTop = '4px solid #111827';
+          arrow.style.borderBottom = 'none';
+        } else {
+          // Position below if not enough space above
+          tooltip.style.top = 'calc(100% + 8px)';
+          arrow.style.bottom = '100%';
+          arrow.style.borderBottom = '4px solid #111827';
+          arrow.style.borderTop = 'none';
+        }
+        
+        // Center horizontally, but adjust if it goes off-screen
+        const centeredLeft = badgeRect.left + badgeRect.width / 2 - tooltipWidth / 2;
+        if (centeredLeft < padding) {
+          tooltip.style.left = padding + 'px';
+          arrow.style.left = (badgeRect.left + badgeRect.width / 2 - padding) + 'px';
+        } else if (centeredLeft + tooltipWidth > viewportWidth - padding) {
+          tooltip.style.right = padding + 'px';
+          arrow.style.right = (viewportWidth - badgeRect.right - badgeRect.width / 2 + padding) + 'px';
+        } else {
+          tooltip.style.left = centeredLeft + 'px';
+          arrow.style.left = '50%';
+          arrow.style.transform = 'translateX(-50%)';
+        }
+      };
+      
+      const hideTooltip = () => {
+        tooltipHideTimeout = setTimeout(() => {
+          const tooltip = bankLinkBadge.querySelector('.tooltip-container');
+          if (tooltip) {
+            tooltip.classList.add('invisible');
+          }
+        }, 100);
+      };
+      
+      bankLinkBadge.addEventListener('mouseenter', showTooltip);
+      bankLinkBadge.addEventListener('mouseleave', hideTooltip);
+      
+      // Add hover listener to tooltip itself to prevent hiding
+      setTimeout(() => {
+        const tooltip = bankLinkBadge.querySelector('.tooltip-container');
+        if (tooltip) {
+          tooltip.addEventListener('mouseenter', () => {
+            clearTimeout(tooltipHideTimeout);
+            tooltip.classList.remove('invisible');
+          });
+          tooltip.addEventListener('mouseleave', hideTooltip);
+        }
+      }, 0);
+    } else {
+      bankLinkBadge.classList.add('bg-gray-50', 'text-gray-700', 'border-gray-200');
+      bankLinkBadge.textContent = 'Manual Account';
+    }
+    bankLinkSection.appendChild(bankLinkBadge);
+    container.appendChild(bankLinkSection);
+
     // Grid layout with 4 rows
     const grid = document.createElement('div');
     grid.className = 'space-y-4 mb-4';
