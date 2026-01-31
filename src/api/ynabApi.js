@@ -36,6 +36,7 @@ export async function getAccounts() {
     console.warn("getAccounts response:", response);
 
     const accountData = response.data.accounts;
+    console.warn("getAccounts accountData:", accountData);
     const accountList = new Accounts();
     accountData.forEach(acc => {
       const account = new Account(acc['id']);

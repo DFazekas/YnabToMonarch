@@ -674,6 +674,13 @@ export default class Account {
     this._isDirectImportLinked = value;
     logger.groupEnd('set isDirectImportLinked');
   }
+  /** Gets whether the account is linked for direct import.
+   * @type {boolean}
+   */
+  get isDirectImportLinked(){
+    return this._isDirectImportLinked;
+  }
+
   /** Sets whether the account is in direct import error.
    * @param {boolean} value - The new direct import error status.
    * @throws Will throw an error if the value is not a boolean.
@@ -882,6 +889,7 @@ export default class Account {
    * @param {object} data - The API data object.
    */
   initFromApiData(data) {
+    console.warn("Account initFromApiData, data:", data);
     this.ynabName = data["name"];
     this.monarchName = data["name"];
     this.ynabType = data["type"];

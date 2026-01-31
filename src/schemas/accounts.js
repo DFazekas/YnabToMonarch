@@ -99,6 +99,7 @@ export default class Accounts {
     account._isYnabClosed = data.isYnabClosed ?? data.isClosed ?? data.closed ?? account._isYnabClosed;
     account._isMonarchClosed = data.isMonarchClosed ?? false;
     account._isModified = data.modified || false;
+    account._isDirectImportLinked = data.isDirectImportLinked ?? false;
 
     if (data.transactions && Array.isArray(data.transactions)) {
       data.transactions.forEach(txnData => {

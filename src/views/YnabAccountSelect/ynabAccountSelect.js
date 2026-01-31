@@ -24,13 +24,6 @@ const getAccountState = (account) => {
   return 'active';
 };
 
-const getRowTintStyle = (account) => {
-  if (account.isYnabClosed) {
-    return { backgroundColor: 'rgba(254, 243, 199, 0.5)' };
-  }
-  return {};
-};
-
 export default async function initYnabAccountSelectView() {
   renderPageLayout({
     navbar: {
@@ -53,11 +46,10 @@ export default async function initYnabAccountSelectView() {
   const deselectAllBtn = document.getElementById('deselectAllBtn');
   const showClosedToggle = document.getElementById('showClosedToggle');
   const showClosedToggleContainer = document.getElementById('showClosedToggleContainer');
-  const closedCountEl = document.getElementById('closedCount');
   const selectedCount = document.getElementById('selectedCount');
   const totalCount = document.getElementById('totalCount');
 
-  const sortState = { key: 'name', direction: 'asc' };
+  const sortState = { key: 'status', direction: 'desc' };
   const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 
   const getVisibleAccounts = () => accounts.accounts.filter(account => {
@@ -71,6 +63,8 @@ export default async function initYnabAccountSelectView() {
         return account.name || '';
       case 'type':
         return formatType(account.ynabType) || '';
+      case 'bankConnection':
+        return account.isDirectImportLinked ? 'Bank Linked' : 'Manual';
       case 'budget':
         return formatBudget(account) || '';
       case 'balance':
@@ -119,7 +113,6 @@ export default async function initYnabAccountSelectView() {
         updateCounts();
       },
       mobileLabel: 'Migrate',
-      cellStyle: getRowTintStyle,
       sortable: false
     },
     {
@@ -134,7 +127,6 @@ export default async function initYnabAccountSelectView() {
       getValue: (account) => account.ynabName,
       tooltip: (account) => account.ynabName,
       mobileLabel: false,
-      cellStyle: getRowTintStyle,
       sortable: true
     },
     {
@@ -144,7 +136,30 @@ export default async function initYnabAccountSelectView() {
       minWidth: '140px',
       getValue: (account) => formatType(account.ynabType),
       mobileLabel: 'Type',
-      cellStyle: getRowTintStyle,
+      sortable: true
+    },
+    {
+      key: 'bankConnection',
+      type: 'custom',
+      header: 'Bank Link',
+      minWidth: '140px',
+      /** Renders a badge indicating whether the account is linked for direct import.
+       * @param {import('../../schemas/account').default} account
+       * @returns {HTMLElement}
+       */
+      render: (account) => {
+        const badge = document.createElement('span');
+        badge.className = 'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border';
+        if (account.isDirectImportLinked) {
+          badge.classList.add('bg-green-50', 'text-green-700', 'border-green-200');
+          badge.textContent = 'Bank Linked';
+        } else {
+          badge.classList.add('bg-gray-50', 'text-gray-600', 'border-gray-200');
+          badge.textContent = 'Manual';
+        }
+        return badge;
+      },
+      mobileLabel: 'Bank Link',
       sortable: true
     },
     {
@@ -154,7 +169,6 @@ export default async function initYnabAccountSelectView() {
       minWidth: '120px',
       getValue: (account) => formatBudget(account),
       mobileLabel: 'Budget',
-      cellStyle: getRowTintStyle,
       sortable: true
     },
     {
@@ -164,7 +178,6 @@ export default async function initYnabAccountSelectView() {
       minWidth: '120px',
       getValue: (account) => currencyFormatter.format(account.balance),
       mobileLabel: 'Balance',
-      cellStyle: getRowTintStyle,
       sortable: true
     },
     {
@@ -186,7 +199,6 @@ export default async function initYnabAccountSelectView() {
         return badge;
       },
       mobileLabel: 'Status',
-      cellStyle: getRowTintStyle,
       sortable: true
     }
   ];
@@ -238,9 +250,6 @@ export default async function initYnabAccountSelectView() {
   refreshTable();
 
   const closedCount = accounts.accounts.filter(account => account.isYnabClosed).length;
-  if (closedCountEl) {
-    closedCountEl.textContent = closedCount;
-  }
   if (showClosedToggleContainer && closedCount === 0) {
     showClosedToggle.checked = false;
     showClosedToggleContainer.classList.add('hidden');

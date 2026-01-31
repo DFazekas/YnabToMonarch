@@ -5583,6 +5583,9 @@
       this._isDirectImportLinked = value;
       logger.groupEnd("set isDirectImportLinked");
     }
+    get isDirectImportLinked() {
+      return this._isDirectImportLinked;
+    }
     set isDirectImportOnError(value) {
       logger.group("set isDirectImportOnError");
       if (typeof value !== "boolean") {
@@ -5711,6 +5714,7 @@
       logger.groupEnd("syncDbModifications");
     }
     initFromApiData(data2) {
+      console.warn("Account initFromApiData, data:", data2);
       this.ynabName = data2["name"];
       this.monarchName = data2["name"];
       this.ynabType = data2["type"];
@@ -6385,6 +6389,7 @@
       account._isYnabClosed = data2.isYnabClosed ?? data2.isClosed ?? data2.closed ?? account._isYnabClosed;
       account._isMonarchClosed = data2.isMonarchClosed ?? false;
       account._isModified = data2.modified || false;
+      account._isDirectImportLinked = data2.isDirectImportLinked ?? false;
       if (data2.transactions && Array.isArray(data2.transactions)) {
         data2.transactions.forEach((txnData) => {
           const txn = new Transaction();
@@ -6899,6 +6904,7 @@ Existing Account:`, this._accounts.get(account.id));
       }
       console.warn("getAccounts response:", response);
       const accountData = response.data.accounts;
+      console.warn("getAccounts accountData:", accountData);
       const accountList = new Accounts();
       accountData.forEach((acc) => {
         const account = new Account(acc["id"]);
@@ -11081,12 +11087,6 @@ Existing Account:`, this._accounts.get(account.id));
       return "closed";
     return "active";
   };
-  var getRowTintStyle = (account) => {
-    if (account.isYnabClosed) {
-      return { backgroundColor: "rgba(254, 243, 199, 0.5)" };
-    }
-    return {};
-  };
   async function initYnabAccountSelectView() {
     renderPageLayout({
       navbar: {
@@ -11107,10 +11107,9 @@ Existing Account:`, this._accounts.get(account.id));
     const deselectAllBtn = document.getElementById("deselectAllBtn");
     const showClosedToggle = document.getElementById("showClosedToggle");
     const showClosedToggleContainer = document.getElementById("showClosedToggleContainer");
-    const closedCountEl = document.getElementById("closedCount");
     const selectedCount = document.getElementById("selectedCount");
     const totalCount = document.getElementById("totalCount");
-    const sortState = { key: "name", direction: "asc" };
+    const sortState = { key: "status", direction: "desc" };
     const collator = new Intl.Collator(void 0, { numeric: true, sensitivity: "base" });
     const getVisibleAccounts = () => accounts.accounts.filter((account) => {
       if (!showClosedToggle.checked && account.isYnabClosed)
@@ -11123,6 +11122,8 @@ Existing Account:`, this._accounts.get(account.id));
           return account.name || "";
         case "type":
           return formatType(account.ynabType) || "";
+        case "bankConnection":
+          return account.isDirectImportLinked ? "Bank Linked" : "Manual";
         case "budget":
           return formatBudget(account) || "";
         case "balance":
@@ -11166,7 +11167,6 @@ Existing Account:`, this._accounts.get(account.id));
           updateCounts();
         },
         mobileLabel: "Migrate",
-        cellStyle: getRowTintStyle,
         sortable: false
       },
       {
@@ -11177,7 +11177,6 @@ Existing Account:`, this._accounts.get(account.id));
         getValue: (account) => account.ynabName,
         tooltip: (account) => account.ynabName,
         mobileLabel: false,
-        cellStyle: getRowTintStyle,
         sortable: true
       },
       {
@@ -11187,7 +11186,26 @@ Existing Account:`, this._accounts.get(account.id));
         minWidth: "140px",
         getValue: (account) => formatType(account.ynabType),
         mobileLabel: "Type",
-        cellStyle: getRowTintStyle,
+        sortable: true
+      },
+      {
+        key: "bankConnection",
+        type: "custom",
+        header: "Bank Link",
+        minWidth: "140px",
+        render: (account) => {
+          const badge = document.createElement("span");
+          badge.className = "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border";
+          if (account.isDirectImportLinked) {
+            badge.classList.add("bg-green-50", "text-green-700", "border-green-200");
+            badge.textContent = "Bank Linked";
+          } else {
+            badge.classList.add("bg-gray-50", "text-gray-600", "border-gray-200");
+            badge.textContent = "Manual";
+          }
+          return badge;
+        },
+        mobileLabel: "Bank Link",
         sortable: true
       },
       {
@@ -11197,7 +11215,6 @@ Existing Account:`, this._accounts.get(account.id));
         minWidth: "120px",
         getValue: (account) => formatBudget(account),
         mobileLabel: "Budget",
-        cellStyle: getRowTintStyle,
         sortable: true
       },
       {
@@ -11207,7 +11224,6 @@ Existing Account:`, this._accounts.get(account.id));
         minWidth: "120px",
         getValue: (account) => currencyFormatter.format(account.balance),
         mobileLabel: "Balance",
-        cellStyle: getRowTintStyle,
         sortable: true
       },
       {
@@ -11229,7 +11245,6 @@ Existing Account:`, this._accounts.get(account.id));
           return badge;
         },
         mobileLabel: "Status",
-        cellStyle: getRowTintStyle,
         sortable: true
       }
     ];
@@ -11272,9 +11287,6 @@ Existing Account:`, this._accounts.get(account.id));
     accountsTable.columns = columns;
     refreshTable();
     const closedCount = accounts.accounts.filter((account) => account.isYnabClosed).length;
-    if (closedCountEl) {
-      closedCountEl.textContent = closedCount;
-    }
     if (showClosedToggleContainer && closedCount === 0) {
       showClosedToggle.checked = false;
       showClosedToggleContainer.classList.add("hidden");
@@ -11329,7 +11341,7 @@ Existing Account:`, this._accounts.get(account.id));
   }
 
   // src/views/YnabAccountSelect/ynabAccountSelect.html
-  var ynabAccountSelect_default = '<div id="pageLayout"></div>\n\n<div class="flex flex-col min-h-0 h-[calc(100dvh-220px)] max-h-[calc(100dvh-220px)] overflow-hidden">\n  <div class="bg-white rounded-lg border border-gray-100 shadow-sm p-4 sm:p-6 mb-4">\n    <div class="flex flex-col sm:flex-row gap-3 sm:items-center justify-between">\n      <div class="flex flex-wrap items-center gap-3">\n        <label id="showClosedToggleContainer" class="inline-flex items-center gap-2 text-sm text-gray-700">\n          <input id="showClosedToggle" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">\n          Show closed (<span id="closedCount">0</span>)\n        </label>\n        <div class="flex items-center gap-2">\n          <ui-button id="selectAllBtn" data-type="secondary" data-size="small">Select All</ui-button>\n          <ui-button id="deselectAllBtn" data-type="secondary" data-size="small">Deselect All</ui-button>\n        </div>\n      </div>\n      <div class="text-sm text-gray-600">\n        Selected <span id="selectedCount" class="font-medium text-gray-900">0</span> of\n        <span id="totalCount" class="font-medium text-gray-900">0</span> accounts\n      </div>\n    </div>\n  </div>\n\n  <div class="flex-1 min-h-0 rounded-lg border border-gray-100 bg-white">\n    <ui-table id="ynabAccountsTable" data-mobile-breakpoint="lg" data-enable-selection="false" data-row-id-key="id" data-row-click-toggle="true" style="height: 100%; display: block;"></ui-table>\n  </div>\n\n  <div class="flex flex-col sm:flex-row sm:items-center gap-4 mt-4">\n    <ui-button id="continueBtn"></ui-button>\n    <p class="text-xs sm:text-sm text-gray-600">\n      At least one account must be selected to continue\n    </p>\n  </div>\n</div>\n';
+  var ynabAccountSelect_default = '<div id="pageLayout"></div>\n\n<div class="flex flex-col min-h-0 h-[calc(100dvh-220px)] max-h-[calc(100dvh-220px)] overflow-hidden">\n  <div class="bg-white rounded-lg border border-gray-100 shadow-sm p-4 sm:p-6 mb-4">\n    <div class="flex flex-col sm:flex-row gap-3 sm:items-center justify-between">\n      <div class="flex flex-wrap items-center gap-3">\n        <label id="showClosedToggleContainer" class="inline-flex items-center gap-2 text-sm text-gray-700">\n          <input id="showClosedToggle" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">\n          Show Closed Accounts\n        </label>\n        <div class="flex items-center gap-2">\n          <ui-button id="selectAllBtn" data-type="secondary" data-size="small">Select All</ui-button>\n          <ui-button id="deselectAllBtn" data-type="secondary" data-size="small">Deselect All</ui-button>\n        </div>\n      </div>\n      <div class="text-sm text-gray-600">\n        Selected <span id="selectedCount" class="font-medium text-gray-900">0</span> of\n        <span id="totalCount" class="font-medium text-gray-900">0</span> accounts\n      </div>\n    </div>\n  </div>\n\n  <div class="flex-1 min-h-0 rounded-lg border border-gray-100 bg-white">\n    <ui-table id="ynabAccountsTable" data-mobile-breakpoint="lg" data-enable-selection="false" data-row-id-key="id" data-row-click-toggle="true" style="height: 100%; display: block;"></ui-table>\n  </div>\n\n  <div class="flex flex-col sm:flex-row sm:items-center gap-4 mt-4">\n    <ui-button id="continueBtn"></ui-button>\n    <p class="text-xs sm:text-sm text-gray-600">\n      At least one account must be selected to continue\n    </p>\n  </div>\n</div>\n';
 
   // src/views/AccountMapping/accountMapping.js
   var normalize = (value) => String(value || "").toLowerCase();
